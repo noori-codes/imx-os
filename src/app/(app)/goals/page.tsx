@@ -1,17 +1,21 @@
 import { Header } from "@/components/layout/header";
-import { PagePlaceholder } from "@/components/shared/page-placeholder";
+import { GoalForm } from "@/components/goals/goal-form";
+import { GoalList } from "@/components/goals/goal-list";
+import { getGoals } from "@/actions/goals";
 
-export default function GoalsPage() {
+export default async function GoalsPage() {
+  const goals = await getGoals();
+
   return (
     <>
       <Header
         title="Goals"
-        description="Goals, projects, and tasks"
+        description="Goals → Projects → Tasks"
       />
-      <PagePlaceholder
-        title="Goals → Projects → Tasks"
-        description="Phase 4 will add a three-level hierarchy so you can break big goals into projects and actionable tasks."
-      />
+      <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+        <GoalForm />
+        <GoalList goals={goals} />
+      </div>
     </>
   );
 }
