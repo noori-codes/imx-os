@@ -1,14 +1,23 @@
 import { Header } from "@/components/layout/header";
-import { PagePlaceholder } from "@/components/shared/page-placeholder";
+import { ProfileCard } from "@/components/settings/profile-card";
+import { createClient } from "@/lib/supabase/server";
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return null;
+  }
+
   return (
     <>
       <Header title="Settings" description="Preferences and account" />
-      <PagePlaceholder
-        title="Settings"
-        description="Phase 2 will add authentication here. Later phases will add theme preferences, notifications, and data export."
-      />
+      <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+        <ProfileCard user={user} />
+      </div>
     </>
   );
 }

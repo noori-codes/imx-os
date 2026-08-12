@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { SignOutButton } from "@/components/auth/sign-out-button";
+import { useUser } from "@/components/providers/user-provider";
 import { NAV_ITEMS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -14,6 +16,7 @@ type SidebarProps = {
 
 export function Sidebar({ onNavigate }: SidebarProps) {
   const pathname = usePathname();
+  const { email } = useUser();
 
   return (
     <aside className="flex h-full w-64 flex-col border-r bg-sidebar text-sidebar-foreground">
@@ -61,10 +64,11 @@ export function Sidebar({ onNavigate }: SidebarProps) {
 
       <Separator />
 
-      <div className="p-4">
-        <p className="text-xs text-muted-foreground">
-          Phase 1 — App shell ready
-        </p>
+      <div className="space-y-3 p-4">
+        {email ? (
+          <p className="truncate text-xs text-muted-foreground">{email}</p>
+        ) : null}
+        <SignOutButton className="w-full justify-start" />
       </div>
     </aside>
   );
