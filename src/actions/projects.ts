@@ -11,6 +11,7 @@ export type ProjectActionState = {
 
 function revalidateGoal(goalId: string) {
   revalidatePath("/goals", "layout");
+  revalidatePath("/dashboard");
   revalidatePath(`/goals/${goalId}`);
 }
 

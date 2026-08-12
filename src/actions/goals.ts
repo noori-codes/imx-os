@@ -11,6 +11,7 @@ export type GoalActionState = {
 
 function revalidateGoals() {
   revalidatePath("/goals", "layout");
+  revalidatePath("/dashboard");
 }
 
 export async function getGoals(): Promise<GoalWithCounts[]> {

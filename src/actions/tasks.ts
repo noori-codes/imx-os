@@ -11,6 +11,7 @@ export type TaskActionState = {
 
 function revalidateTaskViews() {
   revalidatePath("/tasks");
+  revalidatePath("/dashboard");
   revalidatePath("/goals", "layout");
 }
 
