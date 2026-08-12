@@ -2,6 +2,7 @@ import {
   Calendar,
   CheckSquare,
   LayoutDashboard,
+  ListTodo,
   Moon,
   NotebookPen,
   Settings,
@@ -23,6 +24,12 @@ export const NAV_ITEMS: NavItem[] = [
     href: "/dashboard",
     icon: LayoutDashboard,
     description: "Daily and weekly overview",
+  },
+  {
+    title: "Tasks",
+    href: "/tasks",
+    icon: ListTodo,
+    description: "Simple to-do list",
   },
   {
     title: "Goals",

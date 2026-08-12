@@ -43,8 +43,10 @@ export default function SetupPage() {
               </a>
             </li>
             <li>
-              Open <strong>Project Settings → API</strong> and copy the Project
-              URL and anon public key
+              Open <strong>Project Settings → API</strong> and copy the{" "}
+              <strong>Project URL</strong> (not the REST URL — no{" "}
+              <code className="rounded bg-muted px-1 py-0.5">/rest/v1</code>) and
+              the anon public key
             </li>
             <li>
               Create <code className="rounded bg-muted px-1.5 py-0.5">.env.local</code>{" "}
