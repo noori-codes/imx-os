@@ -13,6 +13,7 @@ export type NoteActionState = {
 
 function revalidateNotes(noteId?: string) {
   revalidatePath("/notes");
+  revalidatePath("/calendar");
   if (noteId) {
     revalidatePath(`/notes/${noteId}`);
   }

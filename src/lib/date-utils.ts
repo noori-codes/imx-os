@@ -114,3 +114,90 @@ export function computeStreaks(completedDates: string[], today = toDateString(ne
 
   return { current_streak: current, longest_streak: longest };
 }
+
+export function addDays(date: Date, amount: number) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + amount);
+  return startOfDay(next);
+}
+
+export function addMonths(date: Date, amount: number) {
+  const next = new Date(date);
+  next.setMonth(next.getMonth() + amount);
+  return startOfDay(next);
+}
+
+export function startOfMonth(date: Date) {
+  const d = startOfDay(date);
+  d.setDate(1);
+  return d;
+}
+
+/** Sunday-start week, matching typical US month calendars. */
+export function startOfWeek(date: Date) {
+  const d = startOfDay(date);
+  d.setDate(d.getDate() - d.getDay());
+  return d;
+}
+
+export function formatMonthYear(date: Date) {
+  return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+}
+
+export function formatWeekdayLong(date: Date) {
+  return date.toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+export function formatTime(time: string) {
+  const [hoursRaw, minutes] = time.split(":");
+  const hours = Number(hoursRaw);
+  const suffix = hours >= 12 ? "PM" : "AM";
+  const hour12 = hours % 12 || 12;
+  return `${hour12}:${minutes} ${suffix}`;
+}
+
+export type CalendarDay = {
+  date: string;
+  day: number;
+  inCurrentMonth: boolean;
+  isToday: boolean;
+};
+
+export function getMonthGrid(anchor: Date): CalendarDay[] {
+  const monthStart = startOfMonth(anchor);
+  const gridStart = startOfWeek(monthStart);
+  const today = toDateString(new Date());
+  const month = monthStart.getMonth();
+
+  return Array.from({ length: 42 }, (_, i) => {
+    const date = addDays(gridStart, i);
+    const dateStr = toDateString(date);
+    return {
+      date: dateStr,
+      day: date.getDate(),
+      inCurrentMonth: date.getMonth() === month,
+      isToday: dateStr === today,
+    };
+  });
+}
+
+export function getWeekGrid(anchor: Date): CalendarDay[] {
+  const weekStart = startOfWeek(anchor);
+  const today = toDateString(new Date());
+  const month = startOfMonth(anchor).getMonth();
+
+  return getWeekDays(weekStart).map((date) => {
+    const dateStr = toDateString(date);
+    return {
+      date: dateStr,
+      day: date.getDate(),
+      inCurrentMonth: date.getMonth() === month,
+      isToday: dateStr === today,
+    };
+  });
+}
