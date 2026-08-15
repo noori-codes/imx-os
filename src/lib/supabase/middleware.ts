@@ -14,6 +14,16 @@ function isPublicRoute(pathname: string) {
   return PUBLIC_ROUTES.some((route) => pathname.startsWith(route));
 }
 
+function hasSupabaseAuthCookie(request: NextRequest) {
+  return request.cookies
+    .getAll()
+    .some(
+      (cookie) =>
+        cookie.name.includes("-auth-token") ||
+        cookie.name.startsWith("sb-"),
+    );
+}
+
 export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -22,6 +32,13 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(new URL("/setup", request.url));
     }
     return NextResponse.next();
+  }
+
+  // Fast path: no auth cookie → skip network call for protected routes
+  if (!hasSupabaseAuthCookie(request) && !isAuthRoute(pathname) && !isPublicRoute(pathname)) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    return NextResponse.redirect(url);
   }
 
   let supabaseResponse = NextResponse.next({ request });
@@ -44,24 +61,28 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
+  // getSession reads the JWT from cookies (local) — much faster than getUser (network).
+  // Real validation still happens in the app layout via getUser().
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  const user = session?.user ?? null;
 
   if (isPublicRoute(pathname)) {
     return supabaseResponse;
   }
 
   if (!user && !isAuthRoute(pathname)) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    return NextResponse.redirect(url);
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = "/login";
+    return NextResponse.redirect(redirectUrl);
   }
 
   if (user && isAuthRoute(pathname)) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = "/dashboard";
+    return NextResponse.redirect(redirectUrl);
   }
 
   return supabaseResponse;
