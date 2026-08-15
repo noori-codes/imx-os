@@ -9,39 +9,44 @@ export function WeekOverview({ week }: WeekOverviewProps) {
   const maxCount = Math.max(...week.map((d) => d.task_count), 1);
 
   return (
-    <div className="rounded-2xl border bg-card p-4 shadow-sm md:p-5">
-      <h2 className="text-sm font-semibold tracking-tight">This week</h2>
-      <p className="mt-0.5 text-xs text-muted-foreground">
-        Tasks due each day (next 7 days)
-      </p>
+    <section>
+      <div className="mb-4">
+        <h2 className="text-base font-semibold tracking-tight">This week</h2>
+        <p className="mt-0.5 text-sm text-muted-foreground">
+          Tasks due over the next 7 days
+        </p>
+      </div>
 
-      <div className="mt-4 grid grid-cols-7 gap-2">
+      <div className="grid grid-cols-7 gap-3">
         {week.map((day) => (
           <div key={day.date} className="flex flex-col items-center gap-2">
             <span
               className={cn(
-                "text-xs font-medium",
+                "text-[11px] font-medium",
                 day.is_today ? "text-foreground" : "text-muted-foreground",
               )}
             >
-              {day.day_label}
+              {day.day_label.slice(0, 2)}
             </span>
-            <div className="flex h-24 w-full items-end justify-center rounded-lg bg-muted/40 px-1.5 pb-1.5">
+            <div className="flex h-16 w-full items-end justify-center">
               <div
                 className={cn(
-                  "w-full max-w-8 rounded-sm transition-all",
-                  day.task_count > 0 ? "bg-primary" : "bg-muted",
+                  "w-full max-w-6 rounded-sm transition-all",
+                  day.task_count > 0 ? "bg-foreground/80" : "bg-muted",
+                  day.is_today && day.task_count > 0 && "bg-foreground",
                 )}
                 style={{
-                  height: `${Math.max((day.task_count / maxCount) * 100, day.task_count > 0 ? 12 : 4)}%`,
+                  height: `${Math.max(
+                    (day.task_count / maxCount) * 100,
+                    day.task_count > 0 ? 16 : 6,
+                  )}%`,
                 }}
               />
             </div>
-            <span className="text-[11px] text-muted-foreground">{day.label}</span>
             <span
               className={cn(
                 "text-sm font-semibold tabular-nums",
-                day.is_today && "text-foreground",
+                day.is_today ? "text-foreground" : "text-muted-foreground",
               )}
             >
               {day.task_count}
@@ -49,6 +54,6 @@ export function WeekOverview({ week }: WeekOverviewProps) {
           </div>
         ))}
       </div>
-    </div>
+    </section>
   );
 }

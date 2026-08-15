@@ -1,117 +1,105 @@
 import Link from "next/link";
-import {
-  AlertCircle,
-  Calendar,
-  CheckCircle2,
-  FolderKanban,
-  ListTodo,
-  Target,
-  type LucideIcon,
-} from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import type { DashboardStats } from "@/types/dashboard";
 
-type StatCardProps = {
-  label: string;
-  value: number;
-  icon: LucideIcon;
-  href?: string;
-  variant?: "default" | "warning" | "success";
-};
-
-function StatCard({
-  label,
-  value,
-  icon: Icon,
-  href,
-  variant = "default",
-}: StatCardProps) {
-  const content = (
-    <>
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-xs font-medium text-muted-foreground">{label}</p>
-        <span
-          className={cn(
-            "flex size-7 items-center justify-center rounded-lg bg-muted/70",
-            variant === "warning" && "bg-destructive/10",
-            variant === "success" && "bg-primary/10",
-          )}
-        >
-          <Icon
-            className={cn(
-              "size-3.5 text-muted-foreground",
-              variant === "warning" && "text-destructive",
-              variant === "success" && "text-primary",
-            )}
-          />
-        </span>
-      </div>
-      <p className="mt-3 text-2xl font-semibold tracking-tight tabular-nums">
-        {value}
-      </p>
-    </>
-  );
-
-  const className = cn(
-    "rounded-2xl border bg-card p-4 shadow-sm transition-colors",
-    href && "hover:bg-accent/30",
-  );
-
-  if (href) {
-    return (
-      <Link href={href} className={className}>
-        {content}
-      </Link>
-    );
-  }
-
-  return <div className={className}>{content}</div>;
-}
-
-type StatGridProps = {
+type MetricStripProps = {
   stats: DashboardStats;
 };
 
-export function StatGrid({ stats }: StatGridProps) {
+export function MetricStrip({ stats }: MetricStripProps) {
+  const primary = [
+    {
+      label: "Due today",
+      value: stats.due_today,
+      warn: stats.due_today > 0,
+    },
+    {
+      label: "Overdue",
+      value: stats.overdue,
+      warn: stats.overdue > 0,
+    },
+    {
+      label: "Streak",
+      value: stats.activity_streak,
+      suffix: "d",
+    },
+    {
+      label: "Focus today",
+      value: stats.focus_minutes_today,
+      suffix: "m",
+    },
+  ];
+
+  const secondary = [
+    { label: "Active", value: stats.active_tasks, href: "/tasks" },
+    { label: "Done", value: stats.completed_tasks },
+    {
+      label: "Habits",
+      value: `${stats.habits_done}/${stats.habits_total || 0}`,
+      href: "/habits",
+    },
+    { label: "Goals", value: stats.goals, href: "/goals" },
+  ];
+
   return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-      <StatCard
-        label="Active tasks"
-        value={stats.active_tasks}
-        icon={ListTodo}
-        href="/tasks"
-      />
-      <StatCard
-        label="Due today"
-        value={stats.due_today}
-        icon={Calendar}
-        variant={stats.due_today > 0 ? "warning" : "default"}
-      />
-      <StatCard
-        label="Overdue"
-        value={stats.overdue}
-        icon={AlertCircle}
-        variant={stats.overdue > 0 ? "warning" : "default"}
-      />
-      <StatCard
-        label="Completed"
-        value={stats.completed_tasks}
-        icon={CheckCircle2}
-        variant="success"
-      />
-      <StatCard
-        label="Goals"
-        value={stats.goals}
-        icon={Target}
-        href="/goals"
-      />
-      <StatCard
-        label="Projects"
-        value={stats.projects}
-        icon={FolderKanban}
-        href="/goals"
-      />
+    <div className="space-y-4 border-y border-border/60 py-5">
+      <div className="flex flex-wrap gap-x-10 gap-y-4">
+        {primary.map((metric) => (
+          <div key={metric.label} className="min-w-[5rem]">
+            <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+              {metric.label}
+            </p>
+            <p
+              className={cn(
+                "mt-1 text-3xl font-semibold tracking-tight tabular-nums",
+                metric.warn && "text-destructive",
+              )}
+            >
+              {metric.value}
+              {metric.suffix ? (
+                <span className="ml-0.5 text-base font-medium text-muted-foreground">
+                  {metric.suffix}
+                </span>
+              ) : null}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
+        {secondary.map((metric) => {
+          const content = (
+            <>
+              <span>{metric.label}</span>
+              <span className="font-medium tabular-nums text-foreground/80">
+                {metric.value}
+              </span>
+            </>
+          );
+
+          if (metric.href) {
+            return (
+              <Link
+                key={metric.label}
+                href={metric.href}
+                className="inline-flex items-center gap-1.5 hover:text-foreground"
+              >
+                {content}
+              </Link>
+            );
+          }
+
+          return (
+            <span
+              key={metric.label}
+              className="inline-flex items-center gap-1.5"
+            >
+              {content}
+            </span>
+          );
+        })}
+      </div>
     </div>
   );
 }

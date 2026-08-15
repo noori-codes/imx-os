@@ -22,6 +22,10 @@ export type DashboardStats = {
   overdue: number;
   goals: number;
   projects: number;
+  focus_minutes_today: number;
+  habits_done: number;
+  habits_total: number;
+  activity_streak: number;
 };
 
 export type WeekDaySummary = {
@@ -53,13 +57,39 @@ export type ActivitySummary = {
   current_streak: number;
 };
 
+export type DashboardHabit = {
+  id: string;
+  title: string;
+  color: string;
+  completed_today: boolean;
+  current_streak: number;
+  longest_streak: number;
+};
+
+export type NextStep = {
+  id: string;
+  kind: "task" | "habit" | "review" | "focus" | "setup";
+  title: string;
+  href: string;
+  detail?: string;
+};
+
 export type DashboardData = {
   stats: DashboardStats;
   today_tasks: TaskWithContext[];
   overdue_tasks: TaskWithContext[];
+  next_tasks: TaskWithContext[];
   week: WeekDaySummary[];
   goals: GoalProgress[];
   activity: ActivitySummary;
+  habits_today: DashboardHabit[];
+  focus_today: { sessions: number; focus_minutes: number };
+  review: {
+    has_today: boolean;
+    intent: string | null;
+  };
+  next_steps: NextStep[];
+  is_new_user: boolean;
 };
 
 export function activityLevel(count: number): 0 | 1 | 2 | 3 | 4 {
@@ -95,7 +125,7 @@ export function buildActivitySummary(
   };
 }
 
-const emptyActivity: ActivitySummary = {
+export const emptyActivity: ActivitySummary = {
   days: [],
   total: 0,
   active_days: 0,
@@ -111,7 +141,7 @@ type TaskRow = Task & {
   } | null;
 };
 
-function mapTask(row: TaskRow): TaskWithContext {
+export function mapTask(row: TaskRow): TaskWithContext {
   const project = row.projects;
   const goal = project?.goals ?? null;
 
@@ -137,11 +167,99 @@ function mapTask(row: TaskRow): TaskWithContext {
   };
 }
 
+export function buildNextSteps(input: {
+  todayTasks: TaskWithContext[];
+  nextTasks: TaskWithContext[];
+  habits: DashboardHabit[];
+  hasReviewToday: boolean;
+  focusMinutes: number;
+  isNewUser: boolean;
+}): NextStep[] {
+  const steps: NextStep[] = [];
+
+  if (input.isNewUser) {
+    steps.push({
+      id: "setup-task",
+      kind: "setup",
+      title: "Add your first task",
+      href: "/tasks",
+      detail: "Give today a clear starting point",
+    });
+    steps.push({
+      id: "setup-goal",
+      kind: "setup",
+      title: "Create a goal",
+      href: "/goals",
+      detail: "Connect work to something bigger",
+    });
+    return steps.slice(0, 3);
+  }
+
+  for (const habit of input.habits.filter((h) => !h.completed_today).slice(0, 2)) {
+    steps.push({
+      id: `habit-${habit.id}`,
+      kind: "habit",
+      title: `Check in: ${habit.title}`,
+      href: "/habits",
+      detail:
+        habit.current_streak > 0
+          ? `${habit.current_streak} day streak`
+          : "Build the streak",
+    });
+  }
+
+  for (const task of [...input.todayTasks, ...input.nextTasks].slice(0, 3)) {
+    if (steps.some((s) => s.id === `task-${task.id}`)) continue;
+    steps.push({
+      id: `task-${task.id}`,
+      kind: "task",
+      title: task.title,
+      href: task.context_href ?? "/tasks",
+      detail: task.due_date
+        ? isOverdue(task.due_date)
+          ? "Overdue"
+          : "Due today"
+        : "Next up",
+    });
+  }
+
+  if (!input.hasReviewToday) {
+    steps.push({
+      id: "review",
+      kind: "review",
+      title: "Write today’s review",
+      href: "/review",
+      detail: "Close the day with a short reflection",
+    });
+  }
+
+  if (input.focusMinutes === 0) {
+    steps.push({
+      id: "focus",
+      kind: "focus",
+      title: "Start a focus session",
+      href: "/focus",
+      detail: "Protect time for deep work",
+    });
+  }
+
+  return steps.slice(0, 4);
+}
+
 export function buildDashboardData(
   rows: TaskRow[],
   goalCount: number,
   projectCount: number,
-): DashboardData {
+): Pick<
+  DashboardData,
+  | "stats"
+  | "today_tasks"
+  | "overdue_tasks"
+  | "next_tasks"
+  | "week"
+  | "goals"
+  | "activity"
+> {
   const todayStr = toDateString(startOfDay(new Date()));
   const tasks = rows.map(mapTask);
 
@@ -157,6 +275,10 @@ export function buildDashboardData(
   );
 
   const due_today_only = active.filter((t) => t.due_date === todayStr);
+
+  const next_tasks = active
+    .filter((t) => !t.due_date || (!isOverdue(t.due_date) && t.due_date !== todayStr))
+    .slice(0, 5);
 
   const weekStart = startOfDay(new Date());
   const week = getWeekDays(weekStart).map((day) => {
@@ -210,9 +332,14 @@ export function buildDashboardData(
       overdue: overdue_tasks.length,
       goals: goalCount,
       projects: projectCount,
+      focus_minutes_today: 0,
+      habits_done: 0,
+      habits_total: 0,
+      activity_streak: 0,
     },
     today_tasks: today_tasks.slice(0, 8),
     overdue_tasks: overdue_tasks.slice(0, 5),
+    next_tasks,
     week,
     goals,
     activity: emptyActivity,

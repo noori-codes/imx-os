@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Calendar, CheckCircle2, Circle, Sun } from "lucide-react";
+import { Calendar, CheckCircle2, Circle, Plus } from "lucide-react";
 
 import { toggleTaskComplete } from "@/actions/tasks";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,7 @@ function TaskRow({ task }: { task: TaskWithContext }) {
   const overdue = task.due_date ? isOverdue(task.due_date) : false;
 
   return (
-    <li className="flex items-start gap-3 rounded-lg border bg-background/60 px-3 py-2.5">
+    <li className="group flex items-start gap-3 border-b border-border/50 py-3 last:border-b-0">
       <form action={toggleTaskComplete.bind(null, task.id, !task.completed)}>
         <Button
           type="submit"
@@ -25,20 +25,20 @@ function TaskRow({ task }: { task: TaskWithContext }) {
           aria-label="Mark complete"
         >
           {task.completed ? (
-            <CheckCircle2 className="size-4 text-primary" />
+            <CheckCircle2 className="size-4 text-foreground" />
           ) : (
-            <Circle className="size-4 text-muted-foreground" />
+            <Circle className="size-4 text-muted-foreground group-hover:text-foreground" />
           )}
         </Button>
       </form>
 
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 pt-1">
         <p className="text-sm font-medium leading-snug">{task.title}</p>
-        <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
           {task.due_date ? (
             <span
               className={cn(
-                "flex items-center gap-1",
+                "inline-flex items-center gap-1",
                 overdue && "text-destructive",
               )}
             >
@@ -53,8 +53,6 @@ function TaskRow({ task }: { task: TaskWithContext }) {
             >
               {task.context}
             </Link>
-          ) : task.project_id === null ? (
-            <span>Standalone</span>
           ) : null}
         </div>
       </div>
@@ -64,31 +62,38 @@ function TaskRow({ task }: { task: TaskWithContext }) {
 
 export function TodayFocus({ tasks }: TodayFocusProps) {
   return (
-    <div className="rounded-2xl border bg-card p-4 shadow-sm md:p-5">
-      <div className="flex items-center gap-2">
-        <Sun className="size-4 text-muted-foreground" />
-        <h2 className="text-sm font-semibold tracking-tight">Today&apos;s focus</h2>
+    <section>
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <h2 className="text-base font-semibold tracking-tight">Today</h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Due today and overdue
+          </p>
+        </div>
+        <Button asChild variant="ghost" size="sm" className="text-muted-foreground">
+          <Link href="/tasks">
+            <Plus className="size-3.5" />
+            Add
+          </Link>
+        </Button>
       </div>
-      <p className="mt-0.5 text-xs text-muted-foreground">
-        Due today and overdue tasks
-      </p>
 
       {tasks.length === 0 ? (
-        <div className="mt-6 py-8 text-center">
-          <p className="text-sm text-muted-foreground">
-            Nothing due today — you&apos;re clear!
-          </p>
-          <Button asChild variant="link" size="sm" className="mt-2">
-            <Link href="/tasks">Add a task with a due date</Link>
-          </Button>
-        </div>
+        <p className="mt-4 text-sm text-muted-foreground">
+          Nothing due right now. Use <span className="text-foreground">Next up</span>{" "}
+          below, or{" "}
+          <Link href="/tasks" className="font-medium text-foreground hover:underline">
+            plan a task
+          </Link>
+          .
+        </p>
       ) : (
-        <ul className="mt-4 space-y-2">
+        <ul className="mt-2">
           {tasks.map((task) => (
             <TaskRow key={task.id} task={task} />
           ))}
         </ul>
       )}
-    </div>
+    </section>
   );
 }

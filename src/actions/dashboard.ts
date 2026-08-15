@@ -4,24 +4,23 @@ import { cache } from "react";
 
 import { getCurrentUser } from "@/lib/auth";
 import { CACHE_TTL, cacheTags, cachedQuery } from "@/lib/cache";
-import { toDateString } from "@/lib/date-utils";
+import {
+  computeStreaks,
+  toDateString,
+} from "@/lib/date-utils";
 import { createAdminClient, hasAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import {
   buildActivitySummary,
   buildDashboardData,
+  buildNextSteps,
+  emptyActivity,
   type ActivitySummary,
   type DashboardData,
+  type DashboardHabit,
 } from "@/types/dashboard";
 
-const ACTIVITY_RANGE_DAYS = 365; // rolling year, same idea as GitHub
-
-const emptyActivity: ActivitySummary = {
-  days: [],
-  total: 0,
-  active_days: 0,
-  current_streak: 0,
-};
+const ACTIVITY_RANGE_DAYS = 365;
 
 const emptyDashboard: DashboardData = {
   stats: {
@@ -31,12 +30,22 @@ const emptyDashboard: DashboardData = {
     overdue: 0,
     goals: 0,
     projects: 0,
+    focus_minutes_today: 0,
+    habits_done: 0,
+    habits_total: 0,
+    activity_streak: 0,
   },
   today_tasks: [],
   overdue_tasks: [],
+  next_tasks: [],
   week: [],
   goals: [],
   activity: emptyActivity,
+  habits_today: [],
+  focus_today: { sessions: 0, focus_minutes: 0 },
+  review: { has_today: false, intent: null },
+  next_steps: [],
+  is_new_user: true,
 };
 
 async function loadActivity(
@@ -87,16 +96,6 @@ async function loadActivity(
     focusQuery,
   ]);
 
-  if (tasksResult.error) {
-    console.error("[dashboard] activity tasks:", tasksResult.error.message);
-  }
-  if (habitsResult.error) {
-    console.error("[dashboard] activity habits:", habitsResult.error.message);
-  }
-  if (focusResult.error) {
-    console.error("[dashboard] activity focus:", focusResult.error.message);
-  }
-
   const counts = new Map<string, number>();
 
   for (const task of tasksResult.data ?? []) {
@@ -116,11 +115,111 @@ async function loadActivity(
   return buildActivitySummary(counts, ACTIVITY_RANGE_DAYS);
 }
 
+async function loadDashboardExtras(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string | null,
+) {
+  const today = toDateString(new Date());
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = toDateString(yesterday);
+
+  const focusStart = new Date();
+  focusStart.setHours(0, 0, 0, 0);
+
+  let habitsQuery = supabase
+    .from("habits")
+    .select("id, title, color")
+    .eq("archived", false)
+    .order("created_at", { ascending: true });
+
+  let habitLogsQuery = supabase
+    .from("habit_logs")
+    .select("habit_id, logged_on")
+    .gte("logged_on", toDateString(new Date(Date.now() - 90 * 86400000)));
+
+  let focusQuery = supabase
+    .from("focus_sessions")
+    .select("actual_seconds")
+    .eq("mode", "focus")
+    .gte("started_at", focusStart.toISOString());
+
+  let todayReviewQuery = supabase
+    .from("daily_reviews")
+    .select("id")
+    .eq("review_date", today);
+
+  let intentReviewQuery = supabase
+    .from("daily_reviews")
+    .select("tomorrow_focus, review_date")
+    .eq("review_date", yesterdayStr);
+
+  if (userId) {
+    habitsQuery = habitsQuery.eq("user_id", userId);
+    habitLogsQuery = habitLogsQuery.eq("user_id", userId);
+    focusQuery = focusQuery.eq("user_id", userId);
+    todayReviewQuery = todayReviewQuery.eq("user_id", userId);
+    intentReviewQuery = intentReviewQuery.eq("user_id", userId);
+  }
+
+  const [habitsResult, logsResult, focusResult, todayReview, intentReview] =
+    await Promise.all([
+      habitsQuery,
+      habitLogsQuery,
+      focusQuery,
+      todayReviewQuery.maybeSingle(),
+      intentReviewQuery.maybeSingle(),
+    ]);
+
+  const logsByHabit = new Map<string, string[]>();
+  for (const log of logsResult.data ?? []) {
+    const list = logsByHabit.get(log.habit_id) ?? [];
+    list.push(log.logged_on);
+    logsByHabit.set(log.habit_id, list);
+  }
+
+  const habits_today: DashboardHabit[] = (habitsResult.data ?? []).map(
+    (habit) => {
+      const dates = logsByHabit.get(habit.id) ?? [];
+      const { current_streak, longest_streak } = computeStreaks(dates, today);
+      return {
+        id: habit.id,
+        title: habit.title,
+        color: habit.color,
+        completed_today: dates.includes(today),
+        current_streak,
+        longest_streak,
+      };
+    },
+  );
+
+  const focus_minutes = Math.round(
+    (focusResult.data ?? []).reduce((sum, s) => sum + s.actual_seconds, 0) / 60,
+  );
+
+  const intent =
+    intentReview.data?.tomorrow_focus?.trim() ||
+    null;
+
+  return {
+    habits_today,
+    focus_today: {
+      sessions: focusResult.data?.length ?? 0,
+      focus_minutes,
+    },
+    review: {
+      has_today: Boolean(todayReview.data?.id),
+      intent,
+    },
+  };
+}
+
 async function loadDashboardData(
   userId: string | null,
 ): Promise<DashboardData> {
   const supabase =
     userId && hasAdminClient() ? createAdminClient() : await createClient();
+  const scopedUserId = userId && hasAdminClient() ? userId : null;
 
   let tasksQuery = supabase
     .from("tasks")
@@ -145,31 +244,64 @@ async function loadDashboardData(
     .from("projects")
     .select("id", { count: "exact", head: true });
 
-  if (userId && hasAdminClient()) {
-    tasksQuery = tasksQuery.eq("user_id", userId);
-    goalsQuery = goalsQuery.eq("user_id", userId);
-    projectsQuery = projectsQuery.eq("user_id", userId);
+  if (scopedUserId) {
+    tasksQuery = tasksQuery.eq("user_id", scopedUserId);
+    goalsQuery = goalsQuery.eq("user_id", scopedUserId);
+    projectsQuery = projectsQuery.eq("user_id", scopedUserId);
   }
 
-  const [tasksResult, goalsResult, projectsResult, activity] =
+  const [tasksResult, goalsResult, projectsResult, activity, extras] =
     await Promise.all([
       tasksQuery,
       goalsQuery,
       projectsQuery,
-      loadActivity(supabase, userId && hasAdminClient() ? userId : null),
+      loadActivity(supabase, scopedUserId),
+      loadDashboardExtras(supabase, scopedUserId),
     ]);
 
   if (tasksResult.error) {
     console.error("[dashboard] getDashboardData:", tasksResult.error.message);
   }
 
-  const data = buildDashboardData(
+  const base = buildDashboardData(
     tasksResult.data ?? [],
     goalsResult.count ?? 0,
     projectsResult.count ?? 0,
   );
 
-  return { ...data, activity };
+  const is_new_user =
+    base.stats.active_tasks === 0 &&
+    base.stats.goals === 0 &&
+    extras.habits_today.length === 0;
+
+  const habits_done = extras.habits_today.filter((h) => h.completed_today)
+    .length;
+
+  const next_steps = buildNextSteps({
+    todayTasks: base.today_tasks,
+    nextTasks: base.next_tasks,
+    habits: extras.habits_today,
+    hasReviewToday: extras.review.has_today,
+    focusMinutes: extras.focus_today.focus_minutes,
+    isNewUser: is_new_user,
+  });
+
+  return {
+    ...base,
+    activity,
+    habits_today: extras.habits_today,
+    focus_today: extras.focus_today,
+    review: extras.review,
+    next_steps,
+    is_new_user,
+    stats: {
+      ...base.stats,
+      focus_minutes_today: extras.focus_today.focus_minutes,
+      habits_done,
+      habits_total: extras.habits_today.length,
+      activity_streak: activity.current_streak,
+    },
+  };
 }
 
 /** Dashboard aggregates — request cache + optional cross-request cache. */
@@ -181,7 +313,7 @@ export const getDashboardData = cache(async (): Promise<DashboardData> => {
 
   if (hasAdminClient()) {
     return cachedQuery(
-      ["dashboard", user.id],
+      ["dashboard", user.id, "v3"],
       [cacheTags.dashboard(user.id)],
       CACHE_TTL.dashboard,
       async () => loadDashboardData(user.id),

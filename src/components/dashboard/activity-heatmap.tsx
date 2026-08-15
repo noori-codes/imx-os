@@ -1,3 +1,8 @@
+"use client";
+
+import { useState } from "react";
+import { ChevronDown } from "lucide-react";
+
 import { cn } from "@/lib/utils";
 import {
   addDays,
@@ -6,6 +11,7 @@ import {
   toDateString,
 } from "@/lib/date-utils";
 import type { ActivityDay, ActivitySummary } from "@/types/dashboard";
+import { Button } from "@/components/ui/button";
 
 const LEVEL_CLASS: Record<0 | 1 | 2 | 3 | 4, string> = {
   0: "bg-activity-0",
@@ -15,7 +21,7 @@ const LEVEL_CLASS: Record<0 | 1 | 2 | 3 | 4, string> = {
   4: "bg-activity-4",
 };
 
-const CELL = 11;
+const CELL = 10;
 const GAP = 3;
 
 type ActivityHeatmapProps = {
@@ -81,7 +87,6 @@ function monthLabels(weeks: (ActivityDay | null)[][]) {
     const month = parseDateString(firstDay.date).getMonth();
     if (month === lastMonth) return;
 
-    // Avoid overlapping month labels (GitHub skips tight ones)
     if (index - lastIndex < 3 && labels.length > 0) {
       labels.pop();
     }
@@ -100,101 +105,121 @@ function monthLabels(weeks: (ActivityDay | null)[][]) {
 }
 
 export function ActivityHeatmap({ activity }: ActivityHeatmapProps) {
+  const [open, setOpen] = useState(false);
   const weeks = buildWeeks(activity.days);
   const months = monthLabels(weeks);
   const gridWidth = weeks.length * CELL + Math.max(weeks.length - 1, 0) * GAP;
 
   return (
-    <section className="rounded-2xl border bg-card p-4 shadow-sm md:p-5">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h2 className="text-sm font-semibold tracking-tight">
-            {activity.total.toLocaleString()} contribution
-            {activity.total === 1 ? "" : "s"} in the last year
-          </h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            {activity.active_days} active days · {activity.current_streak} day
-            streak
-          </p>
-        </div>
-        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-          <span>Less</span>
-          {([0, 1, 2, 3, 4] as const).map((level) => (
-            <div
-              key={level}
-              className={cn("size-2.5 rounded-sm", LEVEL_CLASS[level])}
-            />
-          ))}
-          <span>More</span>
-        </div>
+    <section className="border-t border-border/60 pt-8">
+      <div className="flex flex-col items-center text-center">
+        <h2 className="text-base font-semibold tracking-tight">Activity</h2>
+        <p className="mt-0.5 text-sm text-muted-foreground">
+          {activity.total.toLocaleString()} in the last year ·{" "}
+          {activity.active_days} active · {activity.current_streak}d streak
+        </p>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="mt-3 text-muted-foreground"
+          onClick={() => setOpen((value) => !value)}
+          aria-expanded={open}
+        >
+          {open ? "Hide year" : "Show year"}
+          <ChevronDown
+            className={cn(
+              "size-3.5 transition-transform",
+              open && "rotate-180",
+            )}
+          />
+        </Button>
       </div>
 
-      <div className="mt-4 overflow-x-auto pb-1">
-        <div className="inline-flex min-w-full justify-start sm:justify-center">
-          <div className="inline-flex gap-2">
-            <div
-              className="flex w-7 shrink-0 flex-col text-[10px] leading-none text-muted-foreground"
-              style={{ gap: GAP, paddingTop: CELL + GAP }}
-            >
-              {[0, 1, 2, 3, 4, 5, 6].map((dayIndex) => (
-                <span
-                  key={dayIndex}
-                  className="flex items-center"
-                  style={{ height: CELL }}
+      {open ? (
+        <>
+          <div className="mt-5 overflow-x-auto">
+            <div className="mx-auto flex w-max max-w-full justify-center">
+              <div className="inline-flex gap-2">
+                <div
+                  className="flex w-7 shrink-0 flex-col text-[10px] leading-none text-muted-foreground"
+                  style={{ gap: GAP, paddingTop: CELL + GAP }}
                 >
-                  {dayIndex === 1
-                    ? "Mon"
-                    : dayIndex === 3
-                      ? "Wed"
-                      : dayIndex === 5
-                        ? "Fri"
-                        : ""}
-                </span>
-              ))}
-            </div>
+                  {[0, 1, 2, 3, 4, 5, 6].map((dayIndex) => (
+                    <span
+                      key={dayIndex}
+                      className="flex items-center"
+                      style={{ height: CELL }}
+                    >
+                      {dayIndex === 1
+                        ? "Mon"
+                        : dayIndex === 3
+                          ? "Wed"
+                          : dayIndex === 5
+                            ? "Fri"
+                            : ""}
+                    </span>
+                  ))}
+                </div>
 
-            <div style={{ width: gridWidth }}>
-              <div className="relative mb-1" style={{ height: 14 }}>
-                {months.map((month) => (
-                  <span
-                    key={`${month.label}-${month.index}`}
-                    className="absolute top-0 text-[10px] leading-none text-muted-foreground"
-                    style={{ left: month.index * (CELL + GAP) }}
-                  >
-                    {month.label}
-                  </span>
-                ))}
-              </div>
-
-              <div className="flex" style={{ gap: GAP }}>
-                {weeks.map((week, weekIndex) => (
-                  <div
-                    key={weekIndex}
-                    className="flex flex-col"
-                    style={{ gap: GAP, width: CELL }}
-                  >
-                    {week.map((day, dayIndex) =>
-                      day ? (
-                        <div
-                          key={day.date}
-                          title={formatTooltip(day)}
-                          className={cn("rounded-sm", LEVEL_CLASS[day.level])}
-                          style={{ width: CELL, height: CELL }}
-                        />
-                      ) : (
-                        <div
-                          key={`empty-${weekIndex}-${dayIndex}`}
-                          style={{ width: CELL, height: CELL }}
-                        />
-                      ),
-                    )}
+                <div style={{ width: gridWidth }}>
+                  <div className="relative mb-1" style={{ height: 14 }}>
+                    {months.map((month) => (
+                      <span
+                        key={`${month.label}-${month.index}`}
+                        className="absolute top-0 text-[10px] leading-none text-muted-foreground"
+                        style={{ left: month.index * (CELL + GAP) }}
+                      >
+                        {month.label}
+                      </span>
+                    ))}
                   </div>
-                ))}
+
+                  <div className="flex" style={{ gap: GAP }}>
+                    {weeks.map((week, weekIndex) => (
+                      <div
+                        key={weekIndex}
+                        className="flex flex-col"
+                        style={{ gap: GAP, width: CELL }}
+                      >
+                        {week.map((day, dayIndex) =>
+                          day ? (
+                            <div
+                              key={day.date}
+                              title={formatTooltip(day)}
+                              className={cn(
+                                "rounded-sm",
+                                LEVEL_CLASS[day.level],
+                              )}
+                              style={{ width: CELL, height: CELL }}
+                            />
+                          ) : (
+                            <div
+                              key={`empty-${weekIndex}-${dayIndex}`}
+                              style={{ width: CELL, height: CELL }}
+                            />
+                          ),
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
+
+          <div className="mt-4 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
+            <span>Less</span>
+            {([0, 1, 2, 3, 4] as const).map((level) => (
+              <div
+                key={level}
+                className={cn("size-2.5 rounded-sm", LEVEL_CLASS[level])}
+              />
+            ))}
+            <span>More</span>
+          </div>
+        </>
+      ) : null}
     </section>
   );
 }

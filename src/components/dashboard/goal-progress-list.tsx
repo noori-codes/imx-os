@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Target } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 import type { GoalProgress } from "@/types/dashboard";
 
@@ -9,56 +9,56 @@ type GoalProgressListProps = {
 
 export function GoalProgressList({ goals }: GoalProgressListProps) {
   return (
-    <div className="rounded-2xl border bg-card p-4 shadow-sm md:p-5">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold tracking-tight">Goal progress</h2>
+    <section>
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <div>
+          <h2 className="text-base font-semibold tracking-tight">Goals</h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">Progress</p>
+        </div>
         <Link
           href="/goals"
-          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
         >
-          View all
+          All
           <ArrowRight className="size-3" />
         </Link>
       </div>
 
       {goals.length === 0 ? (
-        <div className="mt-6 flex flex-col items-center py-6 text-center">
-          <Target className="mb-2 size-8 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">
-            No goal tasks yet. Create a goal and add projects to track progress.
-          </p>
-          <Link
-            href="/goals"
-            className="mt-3 text-sm font-medium text-primary hover:underline"
-          >
-            Go to Goals
+        <p className="text-sm text-muted-foreground">
+          No goal progress yet.{" "}
+          <Link href="/goals" className="font-medium text-foreground hover:underline">
+            Create a goal
           </Link>
-        </div>
+        </p>
       ) : (
-        <ul className="mt-4 space-y-4">
+        <ul className="space-y-5">
           {goals.map((goal) => (
             <li key={goal.id}>
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center justify-between gap-3">
                 <Link
                   href={`/goals/${goal.id}`}
                   className="truncate text-sm font-medium hover:underline"
                 >
                   {goal.title}
                 </Link>
-                <span className="shrink-0 text-xs text-muted-foreground">
-                  {goal.completed_task_count}/{goal.task_count}
+                <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                  {goal.progress}%
                 </span>
               </div>
-              <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
+              <div className="mt-2 h-1 overflow-hidden rounded-full bg-muted">
                 <div
-                  className="h-full rounded-full bg-primary transition-all"
+                  className="h-full rounded-full bg-foreground/80 transition-all"
                   style={{ width: `${goal.progress}%` }}
                 />
               </div>
+              <p className="mt-1.5 text-[11px] text-muted-foreground">
+                {goal.completed_task_count}/{goal.task_count} tasks
+              </p>
             </li>
           ))}
         </ul>
       )}
-    </div>
+    </section>
   );
 }
