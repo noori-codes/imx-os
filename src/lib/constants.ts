@@ -6,6 +6,7 @@ import {
   ListTodo,
   Moon,
   NotebookPen,
+  Search,
   Settings,
   Target,
   Timer,
@@ -73,6 +74,12 @@ export const NAV_ITEMS: NavItem[] = [
     href: "/analytics",
     icon: ChartColumn,
     description: "Streaks and productivity charts",
+  },
+  {
+    title: "Search",
+    href: "/search",
+    icon: Search,
+    description: "Full-text search",
   },
   {
     title: "Settings",
