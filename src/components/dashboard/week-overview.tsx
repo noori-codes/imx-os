@@ -12,9 +12,7 @@ export function WeekOverview({ week }: WeekOverviewProps) {
     <section>
       <div className="mb-4">
         <h2 className="text-base font-semibold tracking-tight">This week</h2>
-        <p className="mt-0.5 text-sm text-muted-foreground">
-          Tasks due over the next 7 days
-        </p>
+        <p className="mt-0.5 text-sm text-muted-foreground">Tasks due</p>
       </div>
 
       <div className="grid grid-cols-7 gap-3">
@@ -28,12 +26,11 @@ export function WeekOverview({ week }: WeekOverviewProps) {
             >
               {day.day_label.slice(0, 2)}
             </span>
-            <div className="flex h-16 w-full items-end justify-center">
+            <div className="flex h-14 w-full items-end justify-center">
               <div
                 className={cn(
-                  "w-full max-w-6 rounded-sm transition-all",
+                  "w-full max-w-5 rounded-sm transition-all",
                   day.task_count > 0 ? "bg-foreground/80" : "bg-muted",
-                  day.is_today && day.task_count > 0 && "bg-foreground",
                 )}
                 style={{
                   height: `${Math.max(

@@ -27,7 +27,7 @@ function TaskRow({ task }: { task: TaskWithContext }) {
           {task.completed ? (
             <CheckCircle2 className="size-4 text-foreground" />
           ) : (
-            <Circle className="size-4 text-muted-foreground group-hover:text-foreground" />
+            <Circle className="size-4 text-muted-foreground transition-colors group-hover:text-foreground" />
           )}
         </Button>
       </form>
@@ -67,7 +67,7 @@ export function TodayFocus({ tasks }: TodayFocusProps) {
         <div>
           <h2 className="text-base font-semibold tracking-tight">Today</h2>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            Due today and overdue
+            Your main focus for the day
           </p>
         </div>
         <Button asChild variant="ghost" size="sm" className="text-muted-foreground">
@@ -79,14 +79,15 @@ export function TodayFocus({ tasks }: TodayFocusProps) {
       </div>
 
       {tasks.length === 0 ? (
-        <p className="mt-4 text-sm text-muted-foreground">
-          Nothing due right now. Use <span className="text-foreground">Next up</span>{" "}
-          below, or{" "}
-          <Link href="/tasks" className="font-medium text-foreground hover:underline">
-            plan a task
+        <div className="mt-5">
+          <p className="text-sm text-muted-foreground">Nothing due today.</p>
+          <Link
+            href="/tasks"
+            className="mt-2 inline-flex text-sm font-medium hover:underline"
+          >
+            Add a task
           </Link>
-          .
-        </p>
+        </div>
       ) : (
         <ul className="mt-2">
           {tasks.map((task) => (

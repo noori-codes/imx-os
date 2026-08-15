@@ -25,12 +25,12 @@ export function GoalProgressList({ goals }: GoalProgressListProps) {
       </div>
 
       {goals.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          No goal progress yet.{" "}
-          <Link href="/goals" className="font-medium text-foreground hover:underline">
-            Create a goal
-          </Link>
-        </p>
+        <Link
+          href="/goals"
+          className="inline-flex text-sm font-medium hover:underline"
+        >
+          Create a goal
+        </Link>
       ) : (
         <ul className="space-y-5">
           {goals.map((goal) => (
@@ -52,9 +52,6 @@ export function GoalProgressList({ goals }: GoalProgressListProps) {
                   style={{ width: `${goal.progress}%` }}
                 />
               </div>
-              <p className="mt-1.5 text-[11px] text-muted-foreground">
-                {goal.completed_task_count}/{goal.task_count} tasks
-              </p>
             </li>
           ))}
         </ul>

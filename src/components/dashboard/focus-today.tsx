@@ -13,19 +13,21 @@ export function FocusToday({ sessions, focusMinutes }: FocusTodayProps) {
     <section>
       <div className="mb-3">
         <h2 className="text-base font-semibold tracking-tight">Focus</h2>
-        <p className="mt-0.5 text-sm text-muted-foreground">Today&apos;s sessions</p>
+        <p className="mt-0.5 text-sm text-muted-foreground">Today</p>
       </div>
 
       <div className="flex items-end justify-between gap-3">
         <div>
           <p className="text-3xl font-semibold tracking-tight tabular-nums">
             {focusMinutes}
-            <span className="ml-1 text-base font-medium text-muted-foreground">
+            <span className="ml-1 text-sm font-medium text-muted-foreground">
               min
             </span>
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            {sessions} session{sessions === 1 ? "" : "s"}
+            {sessions === 0
+              ? "No sessions yet"
+              : `${sessions} session${sessions === 1 ? "" : "s"}`}
           </p>
         </div>
         <Button asChild size="sm" variant="outline">
