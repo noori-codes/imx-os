@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { Menu, Search } from "lucide-react";
+import { Menu } from "lucide-react";
 
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Sidebar } from "@/components/layout/sidebar";
+import { SearchDialog } from "@/components/search/search-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -52,21 +52,7 @@ export function Header({ title, description }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-2">
-        <Button asChild variant="outline" size="icon" className="sm:hidden">
-          <Link href="/search" aria-label="Search">
-            <Search className="size-4" />
-          </Link>
-        </Button>
-        <Button
-          asChild
-          variant="outline"
-          className="hidden h-9 w-52 justify-start gap-2 text-muted-foreground sm:inline-flex"
-        >
-          <Link href="/search">
-            <Search className="size-4" />
-            <span className="truncate">Search…</span>
-          </Link>
-        </Button>
+        <SearchDialog />
         <ThemeToggle />
       </div>
     </header>

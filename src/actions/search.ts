@@ -215,3 +215,8 @@ export const searchAll = cache(
     return runSearch(query, null);
   },
 );
+
+/** Client-callable wrapper for the search dialog. */
+export async function searchQuery(rawQuery: string): Promise<SearchResponse> {
+  return searchAll(rawQuery);
+}
