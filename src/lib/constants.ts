@@ -1,5 +1,6 @@
 import {
   Calendar,
+  ChartColumn,
   CheckSquare,
   LayoutDashboard,
   ListTodo,
@@ -66,6 +67,12 @@ export const NAV_ITEMS: NavItem[] = [
     href: "/review",
     icon: Moon,
     description: "Daily reflection and review",
+  },
+  {
+    title: "Analytics",
+    href: "/analytics",
+    icon: ChartColumn,
+    description: "Streaks and productivity charts",
   },
   {
     title: "Settings",
