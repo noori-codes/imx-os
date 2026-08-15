@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 
+import { getCurrentUser } from "@/lib/auth";
+import { revalidateUserCaches } from "@/lib/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { Goal, GoalWithCounts } from "@/types/goal";
 
@@ -9,9 +11,14 @@ export type GoalActionState = {
   error?: string;
 };
 
-function revalidateGoals() {
+async function revalidateGoals() {
   revalidatePath("/goals", "layout");
-  revalidatePath("/dashboard");
+  const user = await getCurrentUser();
+  if (user) {
+    revalidateUserCaches(user.id);
+  } else {
+    revalidatePath("/dashboard");
+  }
 }
 
 export async function getGoals(): Promise<GoalWithCounts[]> {
@@ -115,7 +122,7 @@ export async function createGoal(
     return { error: error.message };
   }
 
-  revalidateGoals();
+  await revalidateGoals();
   return {};
 }
 
@@ -129,6 +136,6 @@ export async function deleteGoal(goalId: string) {
     return;
   }
 
-  revalidateGoals();
+  await revalidateGoals();
   revalidatePath("/tasks");
 }

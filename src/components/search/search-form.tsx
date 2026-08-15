@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState, useTransition } from "react";
 import { Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -23,12 +23,20 @@ export function SearchForm({
 }: SearchFormProps) {
   const router = useRouter();
   const [query, setQuery] = useState(initialQuery);
+  const [pending, startTransition] = useTransition();
+
+  useEffect(() => {
+    setQuery(initialQuery);
+  }, [initialQuery]);
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const q = query.trim();
     if (q.length < 2) return;
-    router.push(`/search?q=${encodeURIComponent(q)}`);
+
+    startTransition(() => {
+      router.push(`/search?q=${encodeURIComponent(q)}`);
+    });
   }
 
   return (
@@ -49,15 +57,15 @@ export function SearchForm({
         />
       </div>
       {!compact ? (
-        <Button type="submit" disabled={query.trim().length < 2}>
-          Search
+        <Button type="submit" disabled={query.trim().length < 2 || pending}>
+          {pending ? "Searching…" : "Search"}
         </Button>
       ) : (
         <Button
           type="submit"
           size="icon"
           variant="outline"
-          disabled={query.trim().length < 2}
+          disabled={query.trim().length < 2 || pending}
           aria-label="Search"
         >
           <Search className="size-4" />

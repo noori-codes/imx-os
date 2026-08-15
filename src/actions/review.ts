@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 
+import { getCurrentUser } from "@/lib/auth";
+import { revalidateUserCaches } from "@/lib/cache";
 import { addDays, parseDateString } from "@/lib/date-utils";
 import { createClient } from "@/lib/supabase/server";
 import type {
@@ -16,6 +18,16 @@ export type ReviewActionState = {
   error?: string;
   saved?: boolean;
 };
+
+async function revalidateReviews() {
+  revalidatePath("/review");
+  const user = await getCurrentUser();
+  if (user) {
+    revalidateUserCaches(user.id);
+  } else {
+    revalidatePath("/dashboard");
+  }
+}
 
 function dayBounds(dateStr: string) {
   const start = parseDateString(dateStr);
@@ -172,8 +184,7 @@ export async function saveDailyReview(
     return { error: error.message };
   }
 
-  revalidatePath("/review");
-  revalidatePath("/dashboard");
+  await revalidateReviews();
   return { saved: true };
 }
 
@@ -190,5 +201,5 @@ export async function deleteDailyReview(date: string) {
     return;
   }
 
-  revalidatePath("/review");
+  await revalidateReviews();
 }

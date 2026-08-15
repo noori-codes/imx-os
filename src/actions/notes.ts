@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { getCurrentUser } from "@/lib/auth";
+import { revalidateUserCaches } from "@/lib/cache";
 import { toDateString } from "@/lib/date-utils";
 import { createClient } from "@/lib/supabase/server";
 import type { Note, NoteType } from "@/types/note";
@@ -11,11 +13,16 @@ export type NoteActionState = {
   error?: string;
 };
 
-function revalidateNotes(noteId?: string) {
+async function revalidateNotes(noteId?: string) {
   revalidatePath("/notes");
   revalidatePath("/calendar");
+  revalidatePath("/review");
   if (noteId) {
     revalidatePath(`/notes/${noteId}`);
+  }
+  const user = await getCurrentUser();
+  if (user) {
+    revalidateUserCaches(user.id);
   }
 }
 
@@ -112,7 +119,7 @@ export async function createNote(type: NoteType = "note") {
       redirect("/notes");
     }
 
-    revalidateNotes();
+    await revalidateNotes();
     redirect(`/notes/${data.id}`);
   }
 
@@ -133,7 +140,7 @@ export async function createNote(type: NoteType = "note") {
     redirect("/notes");
   }
 
-  revalidateNotes();
+  await revalidateNotes();
   redirect(`/notes/${data.id}`);
 }
 
@@ -159,7 +166,7 @@ export async function updateNote(
     return { error: error.message };
   }
 
-  revalidateNotes(noteId);
+  await revalidateNotes(noteId);
   return {};
 }
 
@@ -173,6 +180,6 @@ export async function deleteNote(noteId: string) {
     return;
   }
 
-  revalidateNotes();
+  await revalidateNotes();
   redirect("/notes");
 }

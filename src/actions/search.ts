@@ -1,5 +1,10 @@
 "use server";
 
+import { cache } from "react";
+
+import { getCurrentUser } from "@/lib/auth";
+import { CACHE_TTL, cacheTags, cachedQuery } from "@/lib/cache";
+import { createAdminClient, hasAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { SearchResponse, SearchResult } from "@/types/search";
 
@@ -11,14 +16,17 @@ function escapeIlike(value: string) {
   return value.replace(/[%_\\]/g, "\\$&");
 }
 
-export async function searchAll(rawQuery: string): Promise<SearchResponse> {
-  const query = sanitizeQuery(rawQuery);
+async function runSearch(
+  query: string,
+  userId: string | null,
+): Promise<SearchResponse> {
+  const supabase =
+    userId && hasAdminClient() ? createAdminClient() : await createClient();
 
-  if (query.length < 2) {
-    return { query, results: [] };
+  if (hasAdminClient() && userId) {
+    // RPC relies on auth.uid() — use ILIKE fallback with explicit user_id.
+    return fallbackSearch(supabase, query, userId);
   }
-
-  const supabase = await createClient();
 
   const { data, error } = await supabase.rpc("search_imx", {
     search_query: query,
@@ -36,31 +44,66 @@ export async function searchAll(rawQuery: string): Promise<SearchResponse> {
     console.error("[search] rpc:", error.message);
   }
 
-  return fallbackSearch(supabase, query);
+  return fallbackSearch(supabase, query, null);
 }
 
 async function fallbackSearch(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase:
+    | Awaited<ReturnType<typeof createClient>>
+    | ReturnType<typeof createAdminClient>,
   query: string,
+  userId: string | null,
 ): Promise<SearchResponse> {
   const pattern = `%${escapeIlike(query)}%`;
 
+  let tasksQ = supabase
+    .from("tasks")
+    .select("id, title, completed, due_date, project_id")
+    .ilike("title", pattern)
+    .limit(10);
+  let goalsQ = supabase
+    .from("goals")
+    .select("id, title, description")
+    .ilike("title", pattern)
+    .limit(10);
+  let projectsQ = supabase
+    .from("projects")
+    .select("id, title, description, goal_id")
+    .ilike("title", pattern)
+    .limit(10);
+  let notesQ = supabase
+    .from("notes")
+    .select("id, title, type, journal_date")
+    .ilike("title", pattern)
+    .limit(10);
+  let habitsQ = supabase
+    .from("habits")
+    .select("id, title, description")
+    .eq("archived", false)
+    .ilike("title", pattern)
+    .limit(10);
+  let eventsQ = supabase
+    .from("calendar_events")
+    .select("id, title, event_date")
+    .ilike("title", pattern)
+    .limit(10);
+
+  if (userId) {
+    tasksQ = tasksQ.eq("user_id", userId);
+    goalsQ = goalsQ.eq("user_id", userId);
+    projectsQ = projectsQ.eq("user_id", userId);
+    notesQ = notesQ.eq("user_id", userId);
+    habitsQ = habitsQ.eq("user_id", userId);
+    eventsQ = eventsQ.eq("user_id", userId);
+  }
+
   const [tasks, goals, projects, notes, habits, events] = await Promise.all([
-    supabase.from("tasks").select("id, title, completed, due_date, project_id").ilike("title", pattern).limit(10),
-    supabase.from("goals").select("id, title, description").ilike("title", pattern).limit(10),
-    supabase.from("projects").select("id, title, description, goal_id").ilike("title", pattern).limit(10),
-    supabase.from("notes").select("id, title, type, journal_date").ilike("title", pattern).limit(10),
-    supabase
-      .from("habits")
-      .select("id, title, description")
-      .eq("archived", false)
-      .ilike("title", pattern)
-      .limit(10),
-    supabase
-      .from("calendar_events")
-      .select("id, title, event_date")
-      .ilike("title", pattern)
-      .limit(10),
+    tasksQ,
+    goalsQ,
+    projectsQ,
+    notesQ,
+    habitsQ,
+    eventsQ,
   ]);
 
   const results: SearchResult[] = [];
@@ -75,9 +118,7 @@ async function fallbackSearch(
         : task.due_date
           ? `Task · due ${task.due_date}`
           : "Task",
-      href: task.project_id
-        ? "/goals"
-        : "/tasks",
+      href: task.project_id ? "/goals" : "/tasks",
       rank: 0.5,
     });
   }
@@ -142,3 +183,35 @@ async function fallbackSearch(
 
   return { query, results };
 }
+
+/**
+ * Search is request-memoized; identical queries are cross-request cached
+ * for 30s when the service role key is available.
+ */
+export const searchAll = cache(
+  async (rawQuery: string): Promise<SearchResponse> => {
+    const query = sanitizeQuery(rawQuery);
+
+    if (query.length < 2) {
+      return { query, results: [] };
+    }
+
+    const user = await getCurrentUser();
+    if (!user) {
+      return { query, results: [] };
+    }
+
+    const normalized = query.toLowerCase();
+
+    if (hasAdminClient()) {
+      return cachedQuery(
+        ["search", user.id, normalized],
+        [cacheTags.search(user.id)],
+        CACHE_TTL.search,
+        async () => runSearch(query, user.id),
+      )();
+    }
+
+    return runSearch(query, null);
+  },
+);

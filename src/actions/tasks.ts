@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 
+import { getCurrentUser } from "@/lib/auth";
+import { revalidateUserCaches } from "@/lib/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { Task } from "@/types/task";
 
@@ -9,11 +11,17 @@ export type TaskActionState = {
   error?: string;
 };
 
-function revalidateTaskViews() {
+async function revalidateTaskViews() {
   revalidatePath("/tasks");
-  revalidatePath("/dashboard");
   revalidatePath("/calendar");
   revalidatePath("/goals", "layout");
+  revalidatePath("/review");
+  const user = await getCurrentUser();
+  if (user) {
+    revalidateUserCaches(user.id);
+  } else {
+    revalidatePath("/dashboard");
+  }
 }
 
 export async function getStandaloneTasks(): Promise<Task[]> {
@@ -87,7 +95,7 @@ export async function createTask(
     return { error: error.message };
   }
 
-  revalidateTaskViews();
+  await revalidateTaskViews();
   return {};
 }
 
@@ -104,7 +112,7 @@ export async function toggleTaskComplete(taskId: string, completed: boolean) {
     return;
   }
 
-  revalidateTaskViews();
+  await revalidateTaskViews();
 }
 
 export async function deleteTask(taskId: string) {
@@ -117,5 +125,5 @@ export async function deleteTask(taskId: string) {
     return;
   }
 
-  revalidateTaskViews();
+  await revalidateTaskViews();
 }

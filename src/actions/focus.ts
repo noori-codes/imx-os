@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 
+import { getCurrentUser } from "@/lib/auth";
+import { revalidateUserCaches } from "@/lib/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { FocusMode, FocusSession } from "@/types/focus";
 
@@ -9,9 +11,15 @@ export type FocusActionState = {
   error?: string;
 };
 
-function revalidateFocus() {
+async function revalidateFocus() {
   revalidatePath("/focus");
-  revalidatePath("/dashboard");
+  revalidatePath("/review");
+  const user = await getCurrentUser();
+  if (user) {
+    revalidateUserCaches(user.id);
+  } else {
+    revalidatePath("/dashboard");
+  }
 }
 
 export async function getRecentFocusSessions(
@@ -92,7 +100,7 @@ export async function logFocusSession(input: {
     return { error: error.message };
   }
 
-  revalidateFocus();
+  await revalidateFocus();
   return {};
 }
 
@@ -109,5 +117,5 @@ export async function deleteFocusSession(sessionId: string) {
     return;
   }
 
-  revalidateFocus();
+  await revalidateFocus();
 }

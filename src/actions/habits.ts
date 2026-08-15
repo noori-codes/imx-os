@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 
+import { getCurrentUser } from "@/lib/auth";
+import { revalidateUserCaches } from "@/lib/cache";
 import {
   computeStreaks,
   getPastDays,
@@ -16,9 +18,15 @@ export type HabitActionState = {
 
 const HABITS_PATH = "/habits";
 
-function revalidateHabits() {
+async function revalidateHabits() {
   revalidatePath(HABITS_PATH);
-  revalidatePath("/dashboard");
+  revalidatePath("/review");
+  const user = await getCurrentUser();
+  if (user) {
+    revalidateUserCaches(user.id);
+  } else {
+    revalidatePath("/dashboard");
+  }
 }
 
 export async function getHabitsWithStats(): Promise<HabitWithStats[]> {
@@ -119,7 +127,7 @@ export async function createHabit(
     return { error: error.message };
   }
 
-  revalidateHabits();
+  await revalidateHabits();
   return {};
 }
 
@@ -157,7 +165,7 @@ export async function toggleHabitToday(habitId: string, completed: boolean) {
     }
   }
 
-  revalidateHabits();
+  await revalidateHabits();
 }
 
 export async function deleteHabit(habitId: string) {
@@ -170,5 +178,5 @@ export async function deleteHabit(habitId: string) {
     return;
   }
 
-  revalidateHabits();
+  await revalidateHabits();
 }

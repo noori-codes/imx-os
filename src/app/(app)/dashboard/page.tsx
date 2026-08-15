@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { getDashboardData } from "@/actions/dashboard";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth";
 import { Header } from "@/components/layout/header";
 import { GoalProgressList } from "@/components/dashboard/goal-progress-list";
 import { QuickActions } from "@/components/dashboard/quick-actions";
@@ -17,12 +17,10 @@ function getGreeting() {
 }
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const data = await getDashboardData();
+  const [user, data] = await Promise.all([
+    getCurrentUser(),
+    getDashboardData(),
+  ]);
   const name = user?.email?.split("@")[0] ?? "there";
 
   return (

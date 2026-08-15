@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 
+import { getCurrentUser } from "@/lib/auth";
+import { revalidateUserCaches } from "@/lib/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { Project, ProjectWithCounts } from "@/types/project";
 
@@ -9,10 +11,15 @@ export type ProjectActionState = {
   error?: string;
 };
 
-function revalidateGoal(goalId: string) {
+async function revalidateGoal(goalId: string) {
   revalidatePath("/goals", "layout");
-  revalidatePath("/dashboard");
   revalidatePath(`/goals/${goalId}`);
+  const user = await getCurrentUser();
+  if (user) {
+    revalidateUserCaches(user.id);
+  } else {
+    revalidatePath("/dashboard");
+  }
 }
 
 export async function getProjectsByGoal(
@@ -115,7 +122,7 @@ export async function createProject(
     return { error: error.message };
   }
 
-  revalidateGoal(goalId);
+  await revalidateGoal(goalId);
   return {};
 }
 
@@ -133,6 +140,6 @@ export async function deleteProject(goalId: string, projectId: string) {
     return;
   }
 
-  revalidateGoal(goalId);
+  await revalidateGoal(goalId);
   revalidatePath("/tasks");
 }

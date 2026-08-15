@@ -1,11 +1,16 @@
 "use server";
 
+import { cache } from "react";
+
+import { getCurrentUser } from "@/lib/auth";
+import { CACHE_TTL, cacheTags, cachedQuery } from "@/lib/cache";
 import {
   computeStreaks,
   formatShortDate,
   getPastDays,
   toDateString,
 } from "@/lib/date-utils";
+import { createAdminClient, hasAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type {
   AnalyticsData,
@@ -15,10 +20,41 @@ import type {
 
 const RANGE_DAYS = 30;
 
-export async function getAnalyticsData(
-  rangeDays = RANGE_DAYS,
+type QueryClient = Awaited<ReturnType<typeof createClient>>;
+
+function emptyAnalytics(rangeDays: number): AnalyticsData {
+  const days = getPastDays(rangeDays);
+  return {
+    range_days: rangeDays,
+    summary: {
+      tasks_completed: 0,
+      focus_minutes: 0,
+      focus_sessions: 0,
+      habits_avg_rate: 0,
+      reviews_logged: 0,
+      avg_mood: null,
+      avg_energy: null,
+      best_habit_streak: 0,
+    },
+    series: days.map((day) => ({
+      date: toDateString(day),
+      label: formatShortDate(day),
+      tasks_completed: 0,
+      focus_minutes: 0,
+      habits_done: 0,
+      habits_total: 0,
+      mood: null,
+      energy: null,
+    })),
+    habit_streaks: [],
+  };
+}
+
+async function loadAnalyticsData(
+  supabase: QueryClient,
+  userId: string | null,
+  rangeDays: number,
 ): Promise<AnalyticsData> {
-  const supabase = await createClient();
   const days = getPastDays(rangeDays);
   const rangeStart = toDateString(days[0]);
   const rangeEnd = toDateString(days[days.length - 1]);
@@ -27,6 +63,48 @@ export async function getAnalyticsData(
   rangeEndExclusive.setDate(rangeEndExclusive.getDate() + 1);
   const rangeEndIso = rangeEndExclusive.toISOString();
 
+  let tasksQuery = supabase
+    .from("tasks")
+    .select("id, updated_at")
+    .eq("completed", true)
+    .gte("updated_at", rangeStartIso)
+    .lt("updated_at", rangeEndIso);
+
+  let focusQuery = supabase
+    .from("focus_sessions")
+    .select("actual_seconds, started_at")
+    .eq("mode", "focus")
+    .gte("started_at", rangeStartIso)
+    .lt("started_at", rangeEndIso);
+
+  let habitsQuery = supabase
+    .from("habits")
+    .select("id, title, color")
+    .eq("archived", false)
+    .order("created_at", { ascending: true });
+
+  let habitLogsQuery = supabase
+    .from("habit_logs")
+    .select("habit_id, logged_on")
+    .gte("logged_on", rangeStart)
+    .lte("logged_on", rangeEnd);
+
+  let reviewsQuery = supabase
+    .from("daily_reviews")
+    .select("review_date, mood, energy")
+    .gte("review_date", rangeStart)
+    .lte("review_date", rangeEnd)
+    .order("review_date", { ascending: true });
+
+  // Admin client bypasses RLS — always scope by user.
+  if (userId) {
+    tasksQuery = tasksQuery.eq("user_id", userId);
+    focusQuery = focusQuery.eq("user_id", userId);
+    habitsQuery = habitsQuery.eq("user_id", userId);
+    habitLogsQuery = habitLogsQuery.eq("user_id", userId);
+    reviewsQuery = reviewsQuery.eq("user_id", userId);
+  }
+
   const [
     completedTasksResult,
     focusResult,
@@ -34,34 +112,11 @@ export async function getAnalyticsData(
     habitLogsResult,
     reviewsResult,
   ] = await Promise.all([
-    supabase
-      .from("tasks")
-      .select("id, updated_at")
-      .eq("completed", true)
-      .gte("updated_at", rangeStartIso)
-      .lt("updated_at", rangeEndIso),
-    supabase
-      .from("focus_sessions")
-      .select("actual_seconds, started_at")
-      .eq("mode", "focus")
-      .gte("started_at", rangeStartIso)
-      .lt("started_at", rangeEndIso),
-    supabase
-      .from("habits")
-      .select("id, title, color")
-      .eq("archived", false)
-      .order("created_at", { ascending: true }),
-    supabase
-      .from("habit_logs")
-      .select("habit_id, logged_on")
-      .gte("logged_on", rangeStart)
-      .lte("logged_on", rangeEnd),
-    supabase
-      .from("daily_reviews")
-      .select("review_date, mood, energy")
-      .gte("review_date", rangeStart)
-      .lte("review_date", rangeEnd)
-      .order("review_date", { ascending: true }),
+    tasksQuery,
+    focusQuery,
+    habitsQuery,
+    habitLogsQuery,
+    reviewsQuery,
   ]);
 
   if (completedTasksResult.error) {
@@ -136,7 +191,6 @@ export async function getAnalyticsData(
     };
   });
 
-  // Longer lookback for accurate streaks
   const streakLookback = new Date();
   streakLookback.setDate(streakLookback.getDate() - 120);
   const streakLookbackStr = toDateString(streakLookback);
@@ -145,7 +199,7 @@ export async function getAnalyticsData(
     habitLogsResult.data ?? [];
 
   if (habits.length > 0) {
-    const { data: longLogs, error: longError } = await supabase
+    let longQuery = supabase
       .from("habit_logs")
       .select("habit_id, logged_on")
       .in(
@@ -154,6 +208,12 @@ export async function getAnalyticsData(
       )
       .gte("logged_on", streakLookbackStr)
       .order("logged_on", { ascending: true });
+
+    if (userId) {
+      longQuery = longQuery.eq("user_id", userId);
+    }
+
+    const { data: longLogs, error: longError } = await longQuery;
 
     if (longError) {
       console.error("[analytics] streak logs:", longError.message);
@@ -169,24 +229,30 @@ export async function getAnalyticsData(
     streakDatesByHabit.set(log.habit_id, list);
   }
 
-  const habit_streaks: HabitStreakSummary[] = habits.map((habit) => {
-    const allDates = streakDatesByHabit.get(habit.id) ?? [];
-    const rangeDates = logsByHabit.get(habit.id) ?? [];
-    const { current_streak, longest_streak } = computeStreaks(allDates, today);
-    const days_logged = new Set(rangeDates).size;
-    const completion_rate =
-      rangeDays > 0 ? Math.round((days_logged / rangeDays) * 100) : 0;
+  const habit_streaks: HabitStreakSummary[] = habits
+    .map((habit) => {
+      const allDates = streakDatesByHabit.get(habit.id) ?? [];
+      const rangeDates = logsByHabit.get(habit.id) ?? [];
+      const { current_streak, longest_streak } = computeStreaks(allDates, today);
+      const days_logged = new Set(rangeDates).size;
+      const completion_rate =
+        rangeDays > 0 ? Math.round((days_logged / rangeDays) * 100) : 0;
 
-    return {
-      id: habit.id,
-      title: habit.title,
-      color: habit.color,
-      current_streak,
-      longest_streak,
-      completion_rate,
-      days_logged,
-    };
-  }).sort((a, b) => b.current_streak - a.current_streak || b.longest_streak - a.longest_streak);
+      return {
+        id: habit.id,
+        title: habit.title,
+        color: habit.color,
+        current_streak,
+        longest_streak,
+        completion_rate,
+        days_logged,
+      };
+    })
+    .sort(
+      (a, b) =>
+        b.current_streak - a.current_streak ||
+        b.longest_streak - a.longest_streak,
+    );
 
   const tasks_completed = series.reduce((sum, d) => sum + d.tasks_completed, 0);
   const focus_minutes = series.reduce((sum, d) => sum + d.focus_minutes, 0);
@@ -240,3 +306,31 @@ export async function getAnalyticsData(
     habit_streaks,
   };
 }
+
+/**
+ * Analytics is expensive — request-memoized always;
+ * cross-request cached when SUPABASE_SERVICE_ROLE_KEY is set.
+ */
+export const getAnalyticsData = cache(
+  async (rangeDays = RANGE_DAYS): Promise<AnalyticsData> => {
+    const user = await getCurrentUser();
+    if (!user) {
+      return emptyAnalytics(rangeDays);
+    }
+
+    if (hasAdminClient()) {
+      return cachedQuery(
+        ["analytics", user.id, String(rangeDays)],
+        [cacheTags.analytics(user.id)],
+        CACHE_TTL.analytics,
+        async () => {
+          const admin = createAdminClient();
+          return loadAnalyticsData(admin as unknown as QueryClient, user.id, rangeDays);
+        },
+      )();
+    }
+
+    const supabase = await createClient();
+    return loadAnalyticsData(supabase, null, rangeDays);
+  },
+);

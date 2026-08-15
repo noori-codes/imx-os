@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 
+import { getCurrentUser } from "@/lib/auth";
+import { revalidateUserCaches } from "@/lib/cache";
 import { createClient } from "@/lib/supabase/server";
 import type {
   CalendarData,
@@ -48,9 +50,15 @@ function mapTask(row: TaskRow): CalendarTask {
   };
 }
 
-function revalidateCalendar() {
+async function revalidateCalendar() {
   revalidatePath("/calendar");
-  revalidatePath("/dashboard");
+  revalidatePath("/review");
+  const user = await getCurrentUser();
+  if (user) {
+    revalidateUserCaches(user.id);
+  } else {
+    revalidatePath("/dashboard");
+  }
 }
 
 export async function getCalendarData(
@@ -165,7 +173,7 @@ export async function createCalendarEvent(
     return { error: error.message };
   }
 
-  revalidateCalendar();
+  await revalidateCalendar();
   return {};
 }
 
@@ -182,5 +190,5 @@ export async function deleteCalendarEvent(eventId: string) {
     return;
   }
 
-  revalidateCalendar();
+  await revalidateCalendar();
 }
