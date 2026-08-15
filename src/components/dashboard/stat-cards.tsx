@@ -29,22 +29,32 @@ function StatCard({
 }: StatCardProps) {
   const content = (
     <>
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-muted-foreground">{label}</p>
-        <Icon
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-medium text-muted-foreground">{label}</p>
+        <span
           className={cn(
-            "size-4",
-            variant === "warning" && "text-destructive",
-            variant === "success" && "text-primary",
+            "flex size-7 items-center justify-center rounded-lg bg-muted/70",
+            variant === "warning" && "bg-destructive/10",
+            variant === "success" && "bg-primary/10",
           )}
-        />
+        >
+          <Icon
+            className={cn(
+              "size-3.5 text-muted-foreground",
+              variant === "warning" && "text-destructive",
+              variant === "success" && "text-primary",
+            )}
+          />
+        </span>
       </div>
-      <p className="mt-2 text-3xl font-semibold tracking-tight">{value}</p>
+      <p className="mt-3 text-2xl font-semibold tracking-tight tabular-nums">
+        {value}
+      </p>
     </>
   );
 
   const className = cn(
-    "rounded-xl border bg-card p-4 shadow-sm transition-colors",
+    "rounded-2xl border bg-card p-4 shadow-sm transition-colors",
     href && "hover:bg-accent/30",
   );
 

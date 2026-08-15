@@ -64,10 +64,10 @@ function TaskRow({ task }: { task: TaskWithContext }) {
 
 export function TodayFocus({ tasks }: TodayFocusProps) {
   return (
-    <div className="rounded-xl border bg-card p-4 shadow-sm">
+    <div className="rounded-2xl border bg-card p-4 shadow-sm md:p-5">
       <div className="flex items-center gap-2">
-        <Sun className="size-4 text-primary" />
-        <h2 className="text-sm font-semibold">Today&apos;s focus</h2>
+        <Sun className="size-4 text-muted-foreground" />
+        <h2 className="text-sm font-semibold tracking-tight">Today&apos;s focus</h2>
       </div>
       <p className="mt-0.5 text-xs text-muted-foreground">
         Due today and overdue tasks

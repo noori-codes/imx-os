@@ -1,29 +1,45 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
 /**
  * Thin top progress bar during client navigations.
- * Appears only if navigation takes >100ms (avoids flicker).
+ * Appears only if navigation takes >120ms (avoids flicker).
  */
 export function NavigationProgress() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const search = searchParams.toString();
   const [visible, setVisible] = useState(false);
+  const showTimerRef = useRef<number | undefined>(undefined);
+  const safetyTimerRef = useRef<number | undefined>(undefined);
 
+  function clearTimers() {
+    window.clearTimeout(showTimerRef.current);
+    window.clearTimeout(safetyTimerRef.current);
+    showTimerRef.current = undefined;
+    safetyTimerRef.current = undefined;
+  }
+
+  // Navigation finished — always clear any pending show and hide the bar.
   useEffect(() => {
+    clearTimers();
     setVisible(false);
-  }, [pathname, searchParams]);
+  }, [pathname, search]);
 
   useEffect(() => {
-    let showTimer: number | undefined;
-
     function onClick(event: MouseEvent) {
       const target = event.target as HTMLElement | null;
       const anchor = target?.closest("a[href]") as HTMLAnchorElement | null;
       if (!anchor) return;
-      if (anchor.target === "_blank" || event.metaKey || event.ctrlKey || event.shiftKey) {
+      if (
+        anchor.target === "_blank" ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey
+      ) {
         return;
       }
 
@@ -43,14 +59,20 @@ export function NavigationProgress() {
         return;
       }
 
-      window.clearTimeout(showTimer);
-      showTimer = window.setTimeout(() => setVisible(true), 100);
+      clearTimers();
+      showTimerRef.current = window.setTimeout(() => {
+        setVisible(true);
+        // Failsafe: never leave the bar stuck if the route update is missed.
+        safetyTimerRef.current = window.setTimeout(() => {
+          setVisible(false);
+        }, 8000);
+      }, 120);
     }
 
     document.addEventListener("click", onClick, true);
     return () => {
       document.removeEventListener("click", onClick, true);
-      window.clearTimeout(showTimer);
+      clearTimers();
     };
   }, []);
 

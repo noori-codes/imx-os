@@ -1,6 +1,8 @@
 import {
+  computeStreaks,
   formatShortDate,
   formatShortWeekday,
+  getPastDays,
   getWeekDays,
   isOverdue,
   startOfDay,
@@ -38,12 +40,66 @@ export type GoalProgress = {
   progress: number;
 };
 
+export type ActivityDay = {
+  date: string;
+  count: number;
+  level: 0 | 1 | 2 | 3 | 4;
+};
+
+export type ActivitySummary = {
+  days: ActivityDay[];
+  total: number;
+  active_days: number;
+  current_streak: number;
+};
+
 export type DashboardData = {
   stats: DashboardStats;
   today_tasks: TaskWithContext[];
   overdue_tasks: TaskWithContext[];
   week: WeekDaySummary[];
   goals: GoalProgress[];
+  activity: ActivitySummary;
+};
+
+export function activityLevel(count: number): 0 | 1 | 2 | 3 | 4 {
+  if (count <= 0) return 0;
+  if (count === 1) return 1;
+  if (count <= 3) return 2;
+  if (count <= 5) return 3;
+  return 4;
+}
+
+export function buildActivitySummary(
+  countsByDate: Map<string, number>,
+  rangeDays: number,
+): ActivitySummary {
+  const days = getPastDays(rangeDays).map((day) => {
+    const date = toDateString(day);
+    const count = countsByDate.get(date) ?? 0;
+    return {
+      date,
+      count,
+      level: activityLevel(count),
+    };
+  });
+
+  const activeDates = days.filter((d) => d.count > 0).map((d) => d.date);
+  const { current_streak } = computeStreaks(activeDates);
+
+  return {
+    days,
+    total: days.reduce((sum, d) => sum + d.count, 0),
+    active_days: activeDates.length,
+    current_streak,
+  };
+}
+
+const emptyActivity: ActivitySummary = {
+  days: [],
+  total: 0,
+  active_days: 0,
+  current_streak: 0,
 };
 
 type TaskRow = Task & {
@@ -159,5 +215,6 @@ export function buildDashboardData(
     overdue_tasks: overdue_tasks.slice(0, 5),
     week,
     goals,
+    activity: emptyActivity,
   };
 }

@@ -9,9 +9,9 @@ type GoalProgressListProps = {
 
 export function GoalProgressList({ goals }: GoalProgressListProps) {
   return (
-    <div className="rounded-xl border bg-card p-4 shadow-sm">
+    <div className="rounded-2xl border bg-card p-4 shadow-sm md:p-5">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold">Goal progress</h2>
+        <h2 className="text-sm font-semibold tracking-tight">Goal progress</h2>
         <Link
           href="/goals"
           className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
