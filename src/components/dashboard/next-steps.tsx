@@ -20,14 +20,14 @@ const ICONS = {
 
 type NextStepsProps = {
   steps: NextStep[];
-  show: boolean;
+  show?: boolean;
 };
 
-export function NextSteps({ steps, show }: NextStepsProps) {
+export function NextSteps({ steps, show = true }: NextStepsProps) {
   if (!show || steps.length === 0) return null;
 
   return (
-    <section>
+    <section className="border-t border-border/60 pt-8">
       <div className="mb-3">
         <h2 className="text-base font-semibold tracking-tight">Next up</h2>
         <p className="mt-0.5 text-sm text-muted-foreground">Suggested moves</p>

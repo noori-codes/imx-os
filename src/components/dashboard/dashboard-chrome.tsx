@@ -1,15 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { Flame, Timer } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-const DENSITY_KEY = "imx-dashboard-density";
-
-type Density = "comfortable" | "compact";
 
 type StickyStatusProps = {
   dueToday: number;
@@ -27,23 +22,6 @@ export function DashboardChrome({
   status: StickyStatusProps;
   children: React.ReactNode;
 }) {
-  const [density, setDensity] = useState<Density>("comfortable");
-
-  useEffect(() => {
-    const saved = window.localStorage.getItem(DENSITY_KEY);
-    if (saved === "compact" || saved === "comfortable") {
-      setDensity(saved);
-    }
-  }, []);
-
-  function toggleDensity() {
-    setDensity((current) => {
-      const next = current === "comfortable" ? "compact" : "comfortable";
-      window.localStorage.setItem(DENSITY_KEY, next);
-      return next;
-    });
-  }
-
   const attention = status.dueToday + status.overdue;
 
   return (
@@ -59,9 +37,7 @@ export function DashboardChrome({
                   : "text-muted-foreground",
               )}
             >
-              {attention > 0
-                ? `${attention} due`
-                : "Clear today"}
+              {attention > 0 ? `${attention} due` : "Clear today"}
             </span>
             <span className="hidden h-3 w-px bg-border sm:block" />
             <span className="inline-flex items-center gap-1 text-muted-foreground">
@@ -89,34 +65,16 @@ export function DashboardChrome({
             </span>
           </div>
 
-          <div className="flex shrink-0 items-center gap-1.5">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="hidden h-8 text-xs text-muted-foreground sm:inline-flex"
-              onClick={toggleDensity}
-            >
-              {density === "comfortable" ? "Compact" : "Comfortable"}
-            </Button>
-            <Button asChild size="sm" className="h-8">
-              <Link href="/focus">
-                <Timer className="size-3.5" />
-                Focus
-              </Link>
-            </Button>
-          </div>
+          <Button asChild size="sm" className="h-8 shrink-0">
+            <Link href="/focus">
+              <Timer className="size-3.5" />
+              Focus
+            </Link>
+          </Button>
         </div>
       </div>
 
-      <div
-        className={cn(
-          "mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 md:px-8",
-          density === "comfortable"
-            ? "gap-10 py-8 md:gap-12"
-            : "gap-6 py-5 md:gap-8",
-        )}
-      >
+      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-10 px-4 py-8 md:gap-12 md:px-8">
         {children}
       </div>
     </>

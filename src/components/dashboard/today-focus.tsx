@@ -67,7 +67,9 @@ export function TodayFocus({ tasks }: TodayFocusProps) {
         <div>
           <h2 className="text-base font-semibold tracking-tight">Today</h2>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            Your main focus for the day
+            {tasks.length === 0
+              ? "Nothing scheduled"
+              : `${tasks.length} task${tasks.length === 1 ? "" : "s"}`}
           </p>
         </div>
         <Button asChild variant="ghost" size="sm" className="text-muted-foreground">

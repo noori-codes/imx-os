@@ -7,10 +7,9 @@ import { Flame } from "lucide-react";
 import { toggleHabitToday } from "@/actions/habits";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { ActivitySummary, DashboardHabit } from "@/types/dashboard";
+import type { DashboardHabit } from "@/types/dashboard";
 
-type StreaksHabitsProps = {
-  activity: ActivitySummary;
+type HabitsTodayProps = {
   habits: DashboardHabit[];
 };
 
@@ -18,13 +17,6 @@ type ToggleAction = {
   id: string;
   completed: boolean;
 };
-
-function streakMessage(days: number) {
-  if (days <= 0) return "Check in once to start a streak.";
-  if (days < 7) return "Keep the chain alive.";
-  if (days < 30) return "Strong consistency.";
-  return "Outstanding streak.";
-}
 
 function applyToggle(
   habits: DashboardHabit[],
@@ -49,7 +41,7 @@ function applyToggle(
   });
 }
 
-export function StreaksHabits({ activity, habits }: StreaksHabitsProps) {
+export function HabitsToday({ habits }: HabitsTodayProps) {
   const [, startTransition] = useTransition();
   const [optimisticHabits, setOptimisticHabits] = useOptimistic(
     habits,
@@ -57,16 +49,6 @@ export function StreaksHabits({ activity, habits }: StreaksHabitsProps) {
   );
 
   const done = optimisticHabits.filter((h) => h.completed_today).length;
-  const ranked = [...optimisticHabits].sort(
-    (a, b) =>
-      b.current_streak - a.current_streak ||
-      b.longest_streak - a.longest_streak,
-  );
-  const best = Math.max(
-    activity.current_streak,
-    ...optimisticHabits.map((h) => h.current_streak),
-    0,
-  );
 
   function onToggle(habit: DashboardHabit) {
     const next = !habit.completed_today;
@@ -77,14 +59,14 @@ export function StreaksHabits({ activity, habits }: StreaksHabitsProps) {
   }
 
   return (
-    <section className="space-y-5">
+    <section className="lg:border-l lg:border-border/60 lg:pl-10">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <h2 className="text-base font-semibold tracking-tight">
-            Streaks & habits
-          </h2>
+          <h2 className="text-base font-semibold tracking-tight">Habits</h2>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            {streakMessage(best)}
+            {optimisticHabits.length === 0
+              ? "Build a daily rhythm"
+              : `${done}/${optimisticHabits.length} done`}
           </p>
         </div>
         <Link
@@ -95,47 +77,16 @@ export function StreaksHabits({ activity, habits }: StreaksHabitsProps) {
         </Link>
       </div>
 
-      <div className="flex flex-wrap gap-6">
-        <div>
-          <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-            Activity
-          </p>
-          <p className="mt-1 inline-flex items-center gap-1.5 text-2xl font-semibold tabular-nums">
-            <Flame
-              className={cn(
-                "size-4",
-                activity.current_streak > 0
-                  ? "fill-amber-500 text-amber-500"
-                  : "text-muted-foreground",
-              )}
-            />
-            {activity.current_streak}
-            <span className="text-sm font-medium text-muted-foreground">d</span>
-          </p>
-        </div>
-        <div>
-          <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-            Today
-          </p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums transition-all">
-            {done}
-            <span className="text-sm font-medium text-muted-foreground">
-              /{optimisticHabits.length || 0}
-            </span>
-          </p>
-        </div>
-      </div>
-
       {optimisticHabits.length === 0 ? (
         <Link
           href="/habits"
-          className="inline-flex text-sm font-medium hover:underline"
+          className="mt-5 inline-flex text-sm font-medium hover:underline"
         >
           Add a habit
         </Link>
       ) : (
-        <ul className="space-y-1">
-          {ranked.slice(0, 8).map((habit) => (
+        <ul className="mt-4 space-y-0.5">
+          {optimisticHabits.slice(0, 8).map((habit) => (
             <li key={habit.id} className="flex items-center gap-3 py-1.5">
               <Button
                 type="button"
@@ -185,22 +136,12 @@ export function StreaksHabits({ activity, habits }: StreaksHabitsProps) {
                 {habit.title}
               </p>
 
-              <span
-                className={cn(
-                  "inline-flex items-center gap-1 text-xs tabular-nums transition-colors",
-                  habit.current_streak > 0
-                    ? "font-semibold text-amber-700 dark:text-amber-300"
-                    : "text-muted-foreground",
-                )}
-              >
-                <Flame
-                  className={cn(
-                    "size-3",
-                    habit.current_streak > 0 && "fill-current",
-                  )}
-                />
-                {habit.current_streak}
-              </span>
+              {habit.current_streak > 0 ? (
+                <span className="inline-flex items-center gap-0.5 text-xs font-medium tabular-nums text-amber-700 dark:text-amber-300">
+                  <Flame className="size-3 fill-current" />
+                  {habit.current_streak}
+                </span>
+              ) : null}
             </li>
           ))}
         </ul>

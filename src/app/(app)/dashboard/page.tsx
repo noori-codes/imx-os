@@ -6,12 +6,10 @@ import { getCurrentUser } from "@/lib/auth";
 import { Header } from "@/components/layout/header";
 import { ActivityHeatmap } from "@/components/dashboard/activity-heatmap";
 import { DashboardChrome } from "@/components/dashboard/dashboard-chrome";
-import { FocusToday } from "@/components/dashboard/focus-today";
 import { GoalProgressList } from "@/components/dashboard/goal-progress-list";
+import { HabitsToday } from "@/components/dashboard/habits-today";
 import { NextSteps } from "@/components/dashboard/next-steps";
 import { OnboardingCard } from "@/components/dashboard/onboarding-card";
-import { MetricStrip } from "@/components/dashboard/stat-cards";
-import { StreaksHabits } from "@/components/dashboard/streaks-habits";
 import { TodayFocus } from "@/components/dashboard/today-focus";
 import { WeekOverview } from "@/components/dashboard/week-overview";
 import { Button } from "@/components/ui/button";
@@ -43,7 +41,6 @@ export default async function DashboardPage() {
   ]);
   const name = user ? displayName(user) : "there";
   const attention = data.stats.due_today + data.stats.overdue;
-  const showNextSteps = data.today_tasks.length === 0 || data.is_new_user;
 
   return (
     <>
@@ -96,27 +93,18 @@ export default async function DashboardPage() {
 
         {data.is_new_user ? <OnboardingCard /> : null}
 
-        <MetricStrip stats={data.stats} />
-
-        <div className="grid gap-10 lg:grid-cols-[minmax(0,1.6fr)_minmax(15rem,0.9fr)] lg:gap-14">
-          <div className="space-y-10">
-            <TodayFocus tasks={data.today_tasks} />
-            <NextSteps steps={data.next_steps} show={showNextSteps} />
-            <WeekOverview week={data.week} />
-          </div>
-
-          <aside className="space-y-10 lg:border-l lg:border-border/60 lg:pl-10">
-            <StreaksHabits
-              activity={data.activity}
-              habits={data.habits_today}
-            />
-            <FocusToday
-              sessions={data.focus_today.sessions}
-              focusMinutes={data.focus_today.focus_minutes}
-            />
-            <GoalProgressList goals={data.goals} />
-          </aside>
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1.7fr)_minmax(14rem,0.85fr)] lg:gap-14">
+          <TodayFocus tasks={data.today_tasks} />
+          <HabitsToday habits={data.habits_today} />
         </div>
+
+        {data.is_new_user ? (
+          <NextSteps steps={data.next_steps} show />
+        ) : null}
+
+        <WeekOverview week={data.week} />
+
+        <GoalProgressList goals={data.goals} />
 
         <ActivityHeatmap activity={data.activity} />
       </DashboardChrome>
