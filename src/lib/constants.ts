@@ -30,7 +30,7 @@ export const NAV_ITEMS: NavItem[] = [
     title: "Tasks",
     href: "/tasks",
     icon: ListTodo,
-    description: "Simple to-do list",
+    description: "Inbox, today, and upcoming",
   },
   {
     title: "Goals",

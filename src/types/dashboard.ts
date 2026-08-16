@@ -8,12 +8,9 @@ import {
   startOfDay,
   toDateString,
 } from "@/lib/date-utils";
-import type { Task } from "@/types/task";
+import type { Task, TaskWithContext } from "@/types/task";
 
-export type TaskWithContext = Task & {
-  context: string | null;
-  context_href: string | null;
-};
+export type { TaskWithContext };
 
 export type DashboardStats = {
   active_tasks: number;

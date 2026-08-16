@@ -1,91 +1,283 @@
-import { Calendar, CheckCircle2, Circle, Trash2 } from "lucide-react";
+"use client";
 
-import { deleteTask, toggleTaskComplete } from "@/actions/tasks";
+import Link from "next/link";
+import { useOptimistic, useState, useTransition } from "react";
+import {
+  Calendar,
+  CheckCircle2,
+  Circle,
+  Pencil,
+  Trash2,
+  X,
+} from "lucide-react";
+
+import { deleteTask, toggleTaskComplete, updateTask } from "@/actions/tasks";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { isOverdue, isToday } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
-import type { Task } from "@/types/task";
+import type { TaskWithContext } from "@/types/task";
 
 type TaskItemProps = {
-  task: Task;
+  task: TaskWithContext;
+  onOptimisticToggle: (id: string, completed: boolean) => void;
+  onOptimisticDelete: (id: string) => void;
+  onOptimisticUpdate: (
+    id: string,
+    patch: { title: string; due_date: string | null },
+  ) => void;
 };
 
-function formatDueDate(dueDate: string) {
+function formatDueLabel(dueDate: string) {
+  if (isToday(dueDate)) return "Today";
+  if (isOverdue(dueDate)) {
+    return new Date(`${dueDate}T00:00:00`).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
+  }
   return new Date(`${dueDate}T00:00:00`).toLocaleDateString("en-US", {
+    weekday: "short",
     month: "short",
     day: "numeric",
-    year: "numeric",
   });
 }
 
-function isOverdue(task: Task) {
-  if (!task.due_date || task.completed) return false;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const due = new Date(`${task.due_date}T00:00:00`);
-  return due < today;
-}
+export function TaskItem({
+  task,
+  onOptimisticToggle,
+  onOptimisticDelete,
+  onOptimisticUpdate,
+}: TaskItemProps) {
+  const [, startTransition] = useTransition();
+  const [editing, setEditing] = useState(false);
+  const [title, setTitle] = useState(task.title);
+  const [dueDate, setDueDate] = useState(task.due_date ?? "");
+  const [error, setError] = useState<string | null>(null);
 
-export function TaskItem({ task }: TaskItemProps) {
-  const overdue = isOverdue(task);
+  const overdue = Boolean(
+    task.due_date && !task.completed && isOverdue(task.due_date),
+  );
+
+  function handleToggle() {
+    const next = !task.completed;
+    startTransition(async () => {
+      onOptimisticToggle(task.id, next);
+      await toggleTaskComplete(task.id, next);
+    });
+  }
+
+  function handleDelete() {
+    startTransition(async () => {
+      onOptimisticDelete(task.id);
+      await deleteTask(task.id);
+    });
+  }
+
+  function startEdit() {
+    setTitle(task.title);
+    setDueDate(task.due_date ?? "");
+    setError(null);
+    setEditing(true);
+  }
+
+  function cancelEdit() {
+    setEditing(false);
+    setError(null);
+  }
+
+  function saveEdit() {
+    const nextTitle = title.trim();
+    if (!nextTitle) {
+      setError("Title is required.");
+      return;
+    }
+    const nextDue = dueDate.length ? dueDate : null;
+    startTransition(async () => {
+      onOptimisticUpdate(task.id, { title: nextTitle, due_date: nextDue });
+      const result = await updateTask(task.id, {
+        title: nextTitle,
+        due_date: nextDue,
+      });
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      setEditing(false);
+      setError(null);
+    });
+  }
+
+  if (editing) {
+    return (
+      <li className="border-b border-border/50 py-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <Input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                saveEdit();
+              }
+              if (e.key === "Escape") cancelEdit();
+            }}
+            className="flex-1"
+            autoFocus
+            aria-label="Task title"
+          />
+          <Input
+            type="date"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
+            className="w-full sm:w-40"
+            aria-label="Due date"
+          />
+          <div className="flex gap-2">
+            <Button type="button" size="sm" onClick={saveEdit}>
+              Save
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={cancelEdit}
+            >
+              <X className="size-4" />
+            </Button>
+          </div>
+        </div>
+        {error ? (
+          <p className="mt-2 text-sm text-destructive">{error}</p>
+        ) : null}
+      </li>
+    );
+  }
 
   return (
     <li
       className={cn(
-        "flex items-start gap-3 rounded-lg border bg-card px-4 py-3 shadow-sm transition-colors",
-        task.completed && "opacity-60",
+        "group flex items-center gap-3 border-b border-border/50 py-2.5 transition-colors",
+        task.completed && "opacity-55",
       )}
     >
-      <form action={toggleTaskComplete.bind(null, task.id, !task.completed)}>
-        <Button
-          type="submit"
-          variant="ghost"
-          size="icon"
-          className="mt-0.5 size-8 shrink-0"
-          aria-label={task.completed ? "Mark incomplete" : "Mark complete"}
-        >
-          {task.completed ? (
-            <CheckCircle2 className="size-5 text-primary" />
-          ) : (
-            <Circle className="size-5 text-muted-foreground" />
-          )}
-        </Button>
-      </form>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="size-8 shrink-0"
+        onClick={handleToggle}
+        aria-label={task.completed ? "Mark incomplete" : "Mark complete"}
+        aria-pressed={task.completed}
+      >
+        {task.completed ? (
+          <CheckCircle2 className="size-5 text-foreground" />
+        ) : (
+          <Circle className="size-5 text-muted-foreground transition-colors group-hover:text-foreground" />
+        )}
+      </Button>
 
       <div className="min-w-0 flex-1">
         <p
           className={cn(
-            "text-sm font-medium leading-snug",
+            "truncate text-sm font-medium leading-snug",
             task.completed && "text-muted-foreground line-through",
           )}
         >
           {task.title}
         </p>
-
-        {task.due_date ? (
-          <p
-            className={cn(
-              "mt-1 flex items-center gap-1 text-xs",
-              overdue ? "text-destructive" : "text-muted-foreground",
-            )}
+        {task.context && task.context_href ? (
+          <Link
+            href={task.context_href}
+            className="mt-0.5 block truncate text-xs text-muted-foreground hover:text-foreground hover:underline"
           >
-            <Calendar className="size-3 shrink-0" />
-            {overdue ? "Overdue · " : "Due "}
-            {formatDueDate(task.due_date)}
-          </p>
+            {task.context}
+          </Link>
         ) : null}
       </div>
 
-      <form action={deleteTask.bind(null, task.id)}>
+      {task.due_date ? (
+        <span
+          className={cn(
+            "inline-flex shrink-0 items-center gap-1 text-xs",
+            overdue ? "font-medium text-destructive" : "text-muted-foreground",
+          )}
+        >
+          <Calendar className="size-3" />
+          <span className="max-w-[5.5rem] truncate sm:max-w-none">
+            {overdue ? "Overdue" : formatDueLabel(task.due_date)}
+          </span>
+        </span>
+      ) : null}
+
+      <div className="flex shrink-0 opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
         <Button
-          type="submit"
+          type="button"
           variant="ghost"
           size="icon"
-          className="size-8 shrink-0 text-muted-foreground hover:text-destructive"
+          className="size-8 text-muted-foreground"
+          onClick={startEdit}
+          aria-label="Edit task"
+        >
+          <Pencil className="size-3.5" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="size-8 text-muted-foreground hover:text-destructive"
+          onClick={handleDelete}
           aria-label="Delete task"
         >
-          <Trash2 className="size-4" />
+          <Trash2 className="size-3.5" />
         </Button>
-      </form>
+      </div>
     </li>
   );
+}
+
+/** Lightweight optimistic list shell used by TaskList */
+export function useTaskOptimistic(tasks: TaskWithContext[]) {
+  type Action =
+    | { type: "toggle"; id: string; completed: boolean }
+    | { type: "delete"; id: string }
+    | {
+        type: "update";
+        id: string;
+        title: string;
+        due_date: string | null;
+      };
+
+  const [optimisticTasks, dispatch] = useOptimistic(
+    tasks,
+    (current: TaskWithContext[], action: Action) => {
+      switch (action.type) {
+        case "toggle":
+          return current.map((t) =>
+            t.id === action.id ? { ...t, completed: action.completed } : t,
+          );
+        case "delete":
+          return current.filter((t) => t.id !== action.id);
+        case "update":
+          return current.map((t) =>
+            t.id === action.id
+              ? { ...t, title: action.title, due_date: action.due_date }
+              : t,
+          );
+        default:
+          return current;
+      }
+    },
+  );
+
+  return {
+    optimisticTasks,
+    onOptimisticToggle: (id: string, completed: boolean) =>
+      dispatch({ type: "toggle", id, completed }),
+    onOptimisticDelete: (id: string) => dispatch({ type: "delete", id }),
+    onOptimisticUpdate: (
+      id: string,
+      patch: { title: string; due_date: string | null },
+    ) => dispatch({ type: "update", id, ...patch }),
+  };
 }

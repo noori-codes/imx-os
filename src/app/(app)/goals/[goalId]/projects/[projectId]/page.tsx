@@ -45,8 +45,8 @@ export default async function ProjectDetailPage({
           </p>
         ) : null}
 
-        <TaskForm projectId={projectId} />
-        <TaskList tasks={tasks} />
+        <TaskForm projectId={projectId} variant="card" />
+        <TaskList tasks={tasks} mode="project" />
       </div>
     </>
   );
