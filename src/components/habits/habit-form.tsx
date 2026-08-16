@@ -1,91 +1,127 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
-import { Plus } from "lucide-react";
+import { useActionState, useEffect, useRef, useState } from "react";
+import { ChevronDown, Plus } from "lucide-react";
 
 import { createHabit, type HabitActionState } from "@/actions/habits";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-
-const COLORS = [
-  { value: "#3b82f6", label: "Blue" },
-  { value: "#22c55e", label: "Green" },
-  { value: "#f59e0b", label: "Amber" },
-  { value: "#ef4444", label: "Red" },
-  { value: "#8b5cf6", label: "Violet" },
-  { value: "#06b6d4", label: "Cyan" },
-];
+import { cn } from "@/lib/utils";
+import { HABIT_COLORS } from "@/types/habit";
 
 export function HabitForm() {
   const formRef = useRef<HTMLFormElement>(null);
+  const titleRef = useRef<HTMLInputElement>(null);
+  const [moreOpen, setMoreOpen] = useState(false);
+
   const [state, formAction, pending] = useActionState<
     HabitActionState | null,
     FormData
-  >(createHabit, null);
+  >(async (prev, formData) => {
+    const result = await createHabit(prev, formData);
+    if (!result.error) {
+      formRef.current?.reset();
+      setMoreOpen(false);
+      queueMicrotask(() => titleRef.current?.focus());
+    }
+    return result;
+  }, null);
 
   useEffect(() => {
-    if (state && !state.error) {
-      formRef.current?.reset();
+    function onKey(e: KeyboardEvent) {
+      if (e.key !== "n" && e.key !== "N") return;
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if ((e.target as HTMLElement)?.isContentEditable) return;
+      e.preventDefault();
+      titleRef.current?.focus();
     }
-  }, [state]);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   return (
     <form
       ref={formRef}
       action={formAction}
-      className="rounded-xl border bg-card p-4 shadow-sm"
+      className="border-b border-border/60 pb-5"
     >
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="habit-title">New habit</Label>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="relative min-w-0 flex-1">
+          <Plus className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            id="habit-title"
+            ref={titleRef}
             name="title"
-            placeholder="e.g. Morning stretch"
+            placeholder="New daily habit"
             required
             autoComplete="off"
+            className="h-10 border-0 bg-muted/40 pl-9 shadow-none focus-visible:ring-1"
+            aria-label="New habit"
           />
         </div>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground"
+            onClick={() => setMoreOpen((v) => !v)}
+            aria-expanded={moreOpen}
+          >
+            More
+            <ChevronDown
+              className={cn(
+                "size-3.5 transition-transform",
+                moreOpen && "rotate-180",
+              )}
+            />
+          </Button>
+          <Button type="submit" disabled={pending} size="sm" className="h-9">
+            {pending ? "Adding..." : "Add"}
+          </Button>
+        </div>
+      </div>
 
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="habit-description">Description (optional)</Label>
+      {moreOpen ? (
+        <div className="mt-3 space-y-3">
           <Textarea
-            id="habit-description"
             name="description"
             placeholder="Why this habit matters"
             rows={2}
+            className="resize-none bg-muted/30"
           />
+          <fieldset>
+            <legend className="mb-2 text-xs font-medium text-muted-foreground">
+              Color
+            </legend>
+            <div className="flex flex-wrap gap-2">
+              {HABIT_COLORS.map((color, index) => (
+                <label key={color.value} className="cursor-pointer">
+                  <input
+                    type="radio"
+                    name="color"
+                    value={color.value}
+                    defaultChecked={index === 0}
+                    className="peer sr-only"
+                  />
+                  <span
+                    title={color.label}
+                    className="block size-7 rounded-full ring-offset-background transition peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-checked:ring-2 peer-checked:ring-foreground peer-checked:ring-offset-2"
+                    style={{ backgroundColor: color.value }}
+                  />
+                </label>
+              ))}
+            </div>
+          </fieldset>
         </div>
+      ) : (
+        <input type="hidden" name="color" value={HABIT_COLORS[0].value} />
+      )}
 
-        <fieldset className="flex flex-col gap-2">
-          <legend className="text-sm font-medium">Color</legend>
-          <div className="flex flex-wrap gap-2">
-            {COLORS.map((color, index) => (
-              <label key={color.value} className="cursor-pointer">
-                <input
-                  type="radio"
-                  name="color"
-                  value={color.value}
-                  defaultChecked={index === 0}
-                  className="peer sr-only"
-                />
-                <span
-                  title={color.label}
-                  className="block size-7 rounded-full ring-offset-background transition peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-checked:ring-2 peer-checked:ring-foreground peer-checked:ring-offset-2"
-                  style={{ backgroundColor: color.value }}
-                />
-              </label>
-            ))}
-          </div>
-        </fieldset>
-
-        <Button type="submit" disabled={pending} className="w-fit">
-          <Plus className="size-4" />
-          {pending ? "Adding..." : "Add habit"}
-        </Button>
-      </div>
+      <p className="mt-2 text-[11px] text-muted-foreground">
+        Press <kbd className="rounded border px-1">N</kbd> to focus
+      </p>
 
       {state?.error ? (
         <p className="mt-3 text-sm text-destructive">{state.error}</p>

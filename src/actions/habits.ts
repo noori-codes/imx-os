@@ -21,6 +21,7 @@ const HABITS_PATH = "/habits";
 async function revalidateHabits() {
   revalidatePath(HABITS_PATH);
   revalidatePath("/review");
+  revalidatePath("/analytics");
   const user = await getCurrentUser();
   if (user) {
     revalidateUserCaches(user.id);
@@ -29,7 +30,9 @@ async function revalidateHabits() {
   }
 }
 
-export async function getHabitsWithStats(): Promise<HabitWithStats[]> {
+async function loadHabitsWithStats(
+  archived: boolean,
+): Promise<HabitWithStats[]> {
   const supabase = await createClient();
   const today = toDateString(new Date());
   const weekDays = getPastDays(7);
@@ -37,11 +40,11 @@ export async function getHabitsWithStats(): Promise<HabitWithStats[]> {
   const { data: habits, error } = await supabase
     .from("habits")
     .select("*")
-    .eq("archived", false)
+    .eq("archived", archived)
     .order("created_at", { ascending: true });
 
   if (error || !habits) {
-    console.error("[habits] getHabitsWithStats:", error?.message);
+    console.error("[habits] loadHabitsWithStats:", error?.message);
     return [];
   }
 
@@ -51,7 +54,6 @@ export async function getHabitsWithStats(): Promise<HabitWithStats[]> {
 
   const habitIds = habits.map((h) => h.id);
 
-  // Fetch enough history for streak calculation (last ~90 days)
   const streakLookback = new Date();
   streakLookback.setDate(streakLookback.getDate() - 90);
   const lookbackStr = toDateString(streakLookback);
@@ -64,7 +66,7 @@ export async function getHabitsWithStats(): Promise<HabitWithStats[]> {
     .order("logged_on", { ascending: true });
 
   if (logsError) {
-    console.error("[habits] getHabitsWithStats logs:", logsError.message);
+    console.error("[habits] loadHabitsWithStats logs:", logsError.message);
   }
 
   const logsByHabit = new Map<string, string[]>();
@@ -93,6 +95,14 @@ export async function getHabitsWithStats(): Promise<HabitWithStats[]> {
       }),
     };
   });
+}
+
+export async function getHabitsWithStats(): Promise<HabitWithStats[]> {
+  return loadHabitsWithStats(false);
+}
+
+export async function getArchivedHabitsWithStats(): Promise<HabitWithStats[]> {
+  return loadHabitsWithStats(true);
 }
 
 export async function createHabit(
@@ -129,6 +139,53 @@ export async function createHabit(
 
   await revalidateHabits();
   return {};
+}
+
+export async function updateHabit(
+  habitId: string,
+  input: {
+    title: string;
+    description: string | null;
+    color: string;
+  },
+): Promise<HabitActionState> {
+  const title = input.title.trim();
+  if (!title) {
+    return { error: "Habit title is required." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("habits")
+    .update({
+      title,
+      description: input.description,
+      color: input.color || "#3b82f6",
+    })
+    .eq("id", habitId);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  await revalidateHabits();
+  return {};
+}
+
+export async function setHabitArchived(habitId: string, archived: boolean) {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("habits")
+    .update({ archived })
+    .eq("id", habitId);
+
+  if (error) {
+    console.error("[habits] setHabitArchived:", error.message);
+    return;
+  }
+
+  await revalidateHabits();
 }
 
 export async function toggleHabitToday(habitId: string, completed: boolean) {

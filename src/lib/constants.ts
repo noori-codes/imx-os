@@ -42,7 +42,7 @@ export const NAV_ITEMS: NavItem[] = [
     title: "Habits",
     href: "/habits",
     icon: CheckSquare,
-    description: "Track daily habits and streaks",
+    description: "Daily check-ins and streaks",
   },
   {
     title: "Focus",

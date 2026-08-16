@@ -1,36 +1,63 @@
+"use client";
+
+import { useOptimistic } from "react";
 import { CheckSquare } from "lucide-react";
 
 import { HabitItem } from "@/components/habits/habit-item";
-import type { HabitWithStats } from "@/types/habit";
+import type { HabitView, HabitWithStats } from "@/types/habit";
 
 type HabitListProps = {
   habits: HabitWithStats[];
+  view?: HabitView;
 };
 
-export function HabitList({ habits }: HabitListProps) {
-  if (habits.length === 0) {
+export function HabitList({ habits, view = "active" }: HabitListProps) {
+  const [optimisticHabits, removeOptimistic] = useOptimistic(
+    habits,
+    (current: HabitWithStats[], id: string) =>
+      current.filter((h) => h.id !== id),
+  );
+
+  if (optimisticHabits.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed bg-muted/30 px-6 py-16 text-center">
-        <CheckSquare className="mb-3 size-10 text-muted-foreground" />
-        <h3 className="text-lg font-medium">No habits yet</h3>
+      <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+        <CheckSquare className="mb-3 size-8 text-muted-foreground" />
+        <h3 className="text-base font-medium">
+          {view === "archived" ? "No archived habits" : "No habits yet"}
+        </h3>
         <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-          Add a daily habit above, then check it off each day to build your
-          streak.
+          {view === "archived"
+            ? "Archived habits will show up here."
+            : "Add a daily habit above, then check it off to build a streak."}
         </p>
       </div>
     );
   }
 
-  const doneToday = habits.filter((h) => h.completed_today).length;
+  const doneToday = optimisticHabits.filter((h) => h.completed_today).length;
 
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">
-        Today: {doneToday}/{habits.length} completed
-      </p>
-      <ul className="space-y-3">
-        {habits.map((habit) => (
-          <HabitItem key={habit.id} habit={habit} />
+    <div>
+      {view === "active" ? (
+        <p className="mb-3 text-sm text-muted-foreground">
+          Today{" "}
+          <span className="tabular-nums text-foreground">
+            {doneToday}/{optimisticHabits.length}
+          </span>
+        </p>
+      ) : (
+        <p className="mb-3 text-sm text-muted-foreground">
+          {optimisticHabits.length} archived
+        </p>
+      )}
+      <ul className="border-t border-border/60">
+        {optimisticHabits.map((habit) => (
+          <HabitItem
+            key={habit.id}
+            habit={habit}
+            archivedView={view === "archived"}
+            onOptimisticRemove={removeOptimistic}
+          />
         ))}
       </ul>
     </div>
