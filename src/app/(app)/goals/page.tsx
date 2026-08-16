@@ -10,9 +10,9 @@ export default async function GoalsPage() {
     <>
       <Header
         title="Goals"
-        description="Goals → Projects → Tasks"
+        description="Outcomes broken into projects and tasks"
       />
-      <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-6 md:px-8 md:py-8">
         <GoalForm />
         <GoalList goals={goals} />
       </div>

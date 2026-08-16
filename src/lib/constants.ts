@@ -36,7 +36,7 @@ export const NAV_ITEMS: NavItem[] = [
     title: "Goals",
     href: "/goals",
     icon: Target,
-    description: "Goals, projects, and tasks",
+    description: "Goals, projects, and progress",
   },
   {
     title: "Habits",

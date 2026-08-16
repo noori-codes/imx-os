@@ -116,7 +116,7 @@ export function TaskForm({
           />
         </div>
         <div className="flex items-center gap-2">
-          {!projectId && !defaultDueDate ? (
+          {!defaultDueDate ? (
             <Button
               type="button"
               variant="ghost"

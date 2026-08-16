@@ -1,60 +1,101 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
-import { Plus } from "lucide-react";
+import { useActionState, useEffect, useRef, useState } from "react";
+import { ChevronDown, Plus } from "lucide-react";
 
 import { createGoal, type GoalActionState } from "@/actions/goals";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 
 export function GoalForm() {
   const formRef = useRef<HTMLFormElement>(null);
+  const titleRef = useRef<HTMLInputElement>(null);
+  const [moreOpen, setMoreOpen] = useState(false);
+
   const [state, formAction, pending] = useActionState<
     GoalActionState | null,
     FormData
-  >(createGoal, null);
+  >(async (prev, formData) => {
+    const result = await createGoal(prev, formData);
+    if (!result.error) {
+      formRef.current?.reset();
+      setMoreOpen(false);
+      queueMicrotask(() => titleRef.current?.focus());
+    }
+    return result;
+  }, null);
 
   useEffect(() => {
-    if (state && !state.error) {
-      formRef.current?.reset();
+    function onKey(e: KeyboardEvent) {
+      if (e.key !== "n" && e.key !== "N") return;
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if ((e.target as HTMLElement)?.isContentEditable) return;
+      e.preventDefault();
+      titleRef.current?.focus();
     }
-  }, [state]);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   return (
     <form
       ref={formRef}
       action={formAction}
-      className="rounded-xl border bg-card p-4 shadow-sm"
+      className="border-b border-border/60 pb-5"
     >
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="goal-title">New goal</Label>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="relative min-w-0 flex-1">
+          <Plus className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            id="goal-title"
+            ref={titleRef}
             name="title"
-            placeholder="e.g. Launch my side project"
+            placeholder="What are you working toward?"
             required
             autoComplete="off"
+            className="h-10 border-0 bg-muted/40 pl-9 shadow-none focus-visible:ring-1"
+            aria-label="New goal"
           />
         </div>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground"
+            onClick={() => setMoreOpen((v) => !v)}
+            aria-expanded={moreOpen}
+          >
+            More
+            <ChevronDown
+              className={cn(
+                "size-3.5 transition-transform",
+                moreOpen && "rotate-180",
+              )}
+            />
+          </Button>
+          <Button type="submit" disabled={pending} size="sm" className="h-9">
+            {pending ? "Adding..." : "Add"}
+          </Button>
+        </div>
+      </div>
 
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="goal-description">Description (optional)</Label>
+      {moreOpen ? (
+        <div className="mt-3">
           <Textarea
-            id="goal-description"
             name="description"
             placeholder="What does success look like?"
             rows={2}
+            className="resize-none bg-muted/30"
           />
         </div>
+      ) : null}
 
-        <Button type="submit" disabled={pending} className="w-fit">
-          <Plus className="size-4" />
-          {pending ? "Adding..." : "Add goal"}
-        </Button>
-      </div>
+      <p className="mt-2 text-[11px] text-muted-foreground">
+        Press <kbd className="rounded border px-1">N</kbd> to focus
+      </p>
 
       {state?.error ? (
         <p className="mt-3 text-sm text-destructive">{state.error}</p>

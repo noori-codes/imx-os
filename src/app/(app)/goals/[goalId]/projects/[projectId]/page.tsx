@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 
 import { getGoal } from "@/actions/goals";
-import { getProject } from "@/actions/projects";
+import { getProject, updateProject } from "@/actions/projects";
 import { getProjectTasks } from "@/actions/tasks";
 import { Header } from "@/components/layout/header";
+import { EntityHeader } from "@/components/goals/entity-header";
 import { TaskForm } from "@/components/tasks/task-form";
 import { TaskList } from "@/components/tasks/task-list";
 import { Breadcrumbs } from "@/components/shared/breadcrumbs";
@@ -27,10 +28,16 @@ export default async function ProjectDetailPage({
     notFound();
   }
 
+  const active = tasks.filter((t) => !t.completed).length;
+  const done = tasks.filter((t) => t.completed).length;
+  const total = tasks.length;
+  const progress =
+    total > 0 ? Math.round((done / total) * 100) : null;
+
   return (
     <>
-      <Header title={project.title} description={`Project under ${goal.title}`} />
-      <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+      <Header title="Project" description={`Under ${goal.title}`} />
+      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-6 md:px-8 md:py-8">
         <Breadcrumbs
           items={[
             { label: "Goals", href: "/goals" },
@@ -39,13 +46,19 @@ export default async function ProjectDetailPage({
           ]}
         />
 
-        {project.description ? (
-          <p className="-mt-2 text-sm text-muted-foreground">
-            {project.description}
-          </p>
-        ) : null}
+        <EntityHeader
+          title={project.title}
+          description={project.description}
+          meta={
+            total === 0
+              ? "No tasks yet"
+              : `${done}/${total} done · ${active} open · ${progress}%`
+          }
+          progress={progress}
+          onSave={updateProject.bind(null, goalId, projectId)}
+        />
 
-        <TaskForm projectId={projectId} variant="card" />
+        <TaskForm projectId={projectId} variant="quick" />
         <TaskList tasks={tasks} mode="project" />
       </div>
     </>

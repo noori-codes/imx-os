@@ -10,4 +10,5 @@ export type Goal = {
 export type GoalWithCounts = Goal & {
   project_count: number;
   task_count: number;
+  completed_task_count: number;
 };

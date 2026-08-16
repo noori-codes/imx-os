@@ -13,6 +13,7 @@ export type GoalActionState = {
 
 async function revalidateGoals() {
   revalidatePath("/goals", "layout");
+  revalidatePath("/tasks");
   const user = await getCurrentUser();
   if (user) {
     revalidateUserCaches(user.id);
@@ -40,7 +41,7 @@ export async function getGoals(): Promise<GoalWithCounts[]> {
 
   const { data: tasks } = await supabase
     .from("tasks")
-    .select("id, project_id")
+    .select("id, project_id, completed")
     .not("project_id", "is", null);
 
   const projectIdsByGoal = new Map<string, string[]>();
@@ -50,27 +51,37 @@ export async function getGoals(): Promise<GoalWithCounts[]> {
     projectIdsByGoal.set(project.goal_id, list);
   }
 
-  const tasksByProject = new Map<string, number>();
+  const taskStatsByProject = new Map<
+    string,
+    { total: number; completed: number }
+  >();
   for (const task of tasks ?? []) {
-    if (task.project_id) {
-      tasksByProject.set(
-        task.project_id,
-        (tasksByProject.get(task.project_id) ?? 0) + 1,
-      );
-    }
+    if (!task.project_id) continue;
+    const current = taskStatsByProject.get(task.project_id) ?? {
+      total: 0,
+      completed: 0,
+    };
+    current.total += 1;
+    if (task.completed) current.completed += 1;
+    taskStatsByProject.set(task.project_id, current);
   }
 
   return goals.map((goal) => {
     const goalProjectIds = projectIdsByGoal.get(goal.id) ?? [];
-    const task_count = goalProjectIds.reduce(
-      (sum, pid) => sum + (tasksByProject.get(pid) ?? 0),
-      0,
-    );
+    let task_count = 0;
+    let completed_task_count = 0;
+    for (const pid of goalProjectIds) {
+      const stats = taskStatsByProject.get(pid);
+      if (!stats) continue;
+      task_count += stats.total;
+      completed_task_count += stats.completed;
+    }
 
     return {
       ...goal,
       project_count: goalProjectIds.length,
       task_count,
+      completed_task_count,
     };
   });
 }
@@ -90,6 +101,13 @@ export async function getGoal(goalId: string): Promise<Goal | null> {
   }
 
   return data;
+}
+
+export async function getGoalWithCounts(
+  goalId: string,
+): Promise<GoalWithCounts | null> {
+  const goals = await getGoals();
+  return goals.find((g) => g.id === goalId) ?? null;
 }
 
 export async function createGoal(
@@ -126,6 +144,32 @@ export async function createGoal(
   return {};
 }
 
+export async function updateGoal(
+  goalId: string,
+  input: { title: string; description: string | null },
+): Promise<GoalActionState> {
+  const title = input.title.trim();
+  if (!title) {
+    return { error: "Goal title is required." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("goals")
+    .update({
+      title,
+      description: input.description,
+    })
+    .eq("id", goalId);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  await revalidateGoals();
+  return {};
+}
+
 export async function deleteGoal(goalId: string) {
   const supabase = await createClient();
 
@@ -137,5 +181,4 @@ export async function deleteGoal(goalId: string) {
   }
 
   await revalidateGoals();
-  revalidatePath("/tasks");
 }

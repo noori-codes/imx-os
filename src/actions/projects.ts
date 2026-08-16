@@ -126,6 +126,36 @@ export async function createProject(
   return {};
 }
 
+export async function updateProject(
+  goalId: string,
+  projectId: string,
+  input: { title: string; description: string | null },
+): Promise<ProjectActionState> {
+  const title = input.title.trim();
+  if (!title) {
+    return { error: "Project title is required." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("projects")
+    .update({
+      title,
+      description: input.description,
+    })
+    .eq("id", projectId)
+    .eq("goal_id", goalId);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  await revalidateGoal(goalId);
+  revalidatePath(`/goals/${goalId}/projects/${projectId}`);
+  revalidatePath("/tasks");
+  return {};
+}
+
 export async function deleteProject(goalId: string, projectId: string) {
   const supabase = await createClient();
 
