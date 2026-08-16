@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useOptimistic, useTransition } from "react";
 import { Flame } from "lucide-react";
 
 import { toggleHabitToday } from "@/actions/habits";
@@ -11,6 +14,11 @@ type StreaksHabitsProps = {
   habits: DashboardHabit[];
 };
 
+type ToggleAction = {
+  id: string;
+  completed: boolean;
+};
+
 function streakMessage(days: number) {
   if (days <= 0) return "Check in once to start a streak.";
   if (days < 7) return "Keep the chain alive.";
@@ -18,18 +26,55 @@ function streakMessage(days: number) {
   return "Outstanding streak.";
 }
 
+function applyToggle(
+  habits: DashboardHabit[],
+  action: ToggleAction,
+): DashboardHabit[] {
+  return habits.map((habit) => {
+    if (habit.id !== action.id) return habit;
+
+    const wasDone = habit.completed_today;
+    const willBeDone = action.completed;
+    let current_streak = habit.current_streak;
+
+    if (!wasDone && willBeDone) current_streak += 1;
+    if (wasDone && !willBeDone) current_streak = Math.max(0, current_streak - 1);
+
+    return {
+      ...habit,
+      completed_today: willBeDone,
+      current_streak,
+      longest_streak: Math.max(habit.longest_streak, current_streak),
+    };
+  });
+}
+
 export function StreaksHabits({ activity, habits }: StreaksHabitsProps) {
-  const done = habits.filter((h) => h.completed_today).length;
-  const ranked = [...habits].sort(
+  const [, startTransition] = useTransition();
+  const [optimisticHabits, setOptimisticHabits] = useOptimistic(
+    habits,
+    applyToggle,
+  );
+
+  const done = optimisticHabits.filter((h) => h.completed_today).length;
+  const ranked = [...optimisticHabits].sort(
     (a, b) =>
       b.current_streak - a.current_streak ||
       b.longest_streak - a.longest_streak,
   );
   const best = Math.max(
     activity.current_streak,
-    ...habits.map((h) => h.current_streak),
+    ...optimisticHabits.map((h) => h.current_streak),
     0,
   );
+
+  function onToggle(habit: DashboardHabit) {
+    const next = !habit.completed_today;
+    startTransition(async () => {
+      setOptimisticHabits({ id: habit.id, completed: next });
+      await toggleHabitToday(habit.id, next);
+    });
+  }
 
   return (
     <section className="space-y-5">
@@ -72,16 +117,16 @@ export function StreaksHabits({ activity, habits }: StreaksHabitsProps) {
           <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
             Today
           </p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums">
+          <p className="mt-1 text-2xl font-semibold tabular-nums transition-all">
             {done}
             <span className="text-sm font-medium text-muted-foreground">
-              /{habits.length || 0}
+              /{optimisticHabits.length || 0}
             </span>
           </p>
         </div>
       </div>
 
-      {habits.length === 0 ? (
+      {optimisticHabits.length === 0 ? (
         <Link
           href="/habits"
           className="inline-flex text-sm font-medium hover:underline"
@@ -92,44 +137,47 @@ export function StreaksHabits({ activity, habits }: StreaksHabitsProps) {
         <ul className="space-y-1">
           {ranked.slice(0, 8).map((habit) => (
             <li key={habit.id} className="flex items-center gap-3 py-1.5">
-              <form
-                action={toggleHabitToday.bind(
-                  null,
-                  habit.id,
-                  !habit.completed_today,
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => onToggle(habit)}
+                className={cn(
+                  "size-7 shrink-0 rounded-full border-2 transition-all duration-150",
+                  habit.completed_today
+                    ? "scale-100 text-white"
+                    : "hover:scale-105 active:scale-95",
                 )}
+                style={
+                  habit.completed_today
+                    ? {
+                        backgroundColor: habit.color,
+                        borderColor: habit.color,
+                      }
+                    : { borderColor: habit.color }
+                }
+                aria-label={
+                  habit.completed_today
+                    ? `Undo ${habit.title}`
+                    : `Complete ${habit.title}`
+                }
+                aria-pressed={habit.completed_today}
               >
-                <Button
-                  type="submit"
-                  variant="outline"
-                  size="icon"
+                <span
                   className={cn(
-                    "size-7 shrink-0 rounded-full border-2 transition-colors",
-                    habit.completed_today && "text-white",
+                    "text-[10px] font-bold transition-all duration-150",
+                    habit.completed_today
+                      ? "scale-100 opacity-100"
+                      : "scale-50 opacity-0",
                   )}
-                  style={
-                    habit.completed_today
-                      ? {
-                          backgroundColor: habit.color,
-                          borderColor: habit.color,
-                        }
-                      : { borderColor: habit.color }
-                  }
-                  aria-label={
-                    habit.completed_today
-                      ? `Undo ${habit.title}`
-                      : `Complete ${habit.title}`
-                  }
                 >
-                  {habit.completed_today ? (
-                    <span className="text-[10px] font-bold">✓</span>
-                  ) : null}
-                </Button>
-              </form>
+                  ✓
+                </span>
+              </Button>
 
               <p
                 className={cn(
-                  "min-w-0 flex-1 truncate text-sm",
+                  "min-w-0 flex-1 truncate text-sm transition-colors",
                   habit.completed_today &&
                     "text-muted-foreground line-through",
                 )}
@@ -139,7 +187,7 @@ export function StreaksHabits({ activity, habits }: StreaksHabitsProps) {
 
               <span
                 className={cn(
-                  "inline-flex items-center gap-1 text-xs tabular-nums",
+                  "inline-flex items-center gap-1 text-xs tabular-nums transition-colors",
                   habit.current_streak > 0
                     ? "font-semibold text-amber-700 dark:text-amber-300"
                     : "text-muted-foreground",
