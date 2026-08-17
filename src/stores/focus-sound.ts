@@ -12,6 +12,7 @@ export const FOCUS_TRACKS = [
 export const DEFAULT_FOCUS_TRACK = "fourth";
 
 const VOLUME_KEY = "imx-focus-sound-volume";
+const AUDIO_ID = "imx-focus-audio";
 
 type FocusSoundState = {
   activeId: string;
@@ -23,85 +24,173 @@ type FocusSoundState = {
   setVolume: (volume: number) => void;
 };
 
-let audio: HTMLAudioElement | null = null;
+declare global {
+  interface Window {
+    __imxFocusAudio?: HTMLAudioElement;
+    __imxFocusWantSound?: boolean;
+    __imxFocusPlayers?: HTMLAudioElement[];
+  }
+}
 
-function onEnded() {
-  const el = audio;
-  if (!el) return;
-  el.currentTime = 0;
-  el.loop = true;
-  void el.play().then(() => {
+function registry() {
+  if (typeof window === "undefined") return [];
+  if (!window.__imxFocusPlayers) window.__imxFocusPlayers = [];
+  return window.__imxFocusPlayers;
+}
+
+function remember(el: HTMLAudioElement) {
+  const list = registry();
+  if (!list.includes(el)) list.push(el);
+}
+
+function wantsSound() {
+  return typeof window !== "undefined" && window.__imxFocusWantSound === true;
+}
+
+function halt(el: HTMLAudioElement) {
+  el.loop = false;
+  el.muted = true;
+  el.pause();
+}
+
+function haltAll() {
+  if (typeof window === "undefined") return;
+
+  window.__imxFocusWantSound = false;
+
+  const seen = new Set<HTMLAudioElement>();
+  const candidates: Array<HTMLAudioElement | null | undefined> = [
+    window.__imxFocusAudio,
+    document.getElementById(AUDIO_ID) as HTMLAudioElement | null,
+    ...registry(),
+    ...Array.from(document.querySelectorAll("audio")),
+  ];
+
+  for (const el of candidates) {
+    if (!el || seen.has(el)) continue;
+    seen.add(el);
+    halt(el);
+  }
+}
+
+function bindGuards(el: HTMLAudioElement) {
+  if (el.dataset.imxBound === "true") return;
+  el.dataset.imxBound = "true";
+  remember(el);
+
+  el.addEventListener("play", () => {
+    if (!wantsSound()) {
+      halt(el);
+      useFocusSound.setState({ playing: false });
+      return;
+    }
     useFocusSound.setState({ playing: true });
-  }).catch(() => {
-    useFocusSound.setState({ playing: false });
+  });
+
+  el.addEventListener("pause", () => {
+    if (!wantsSound()) {
+      useFocusSound.setState({ playing: false });
+    }
   });
 }
 
 function getAudio() {
   if (typeof window === "undefined") return null;
-  if (!audio) {
-    audio = new Audio();
-    audio.loop = true;
-    audio.preload = "auto";
-    audio.addEventListener("ended", onEnded);
+
+  const hosted = document.getElementById(AUDIO_ID);
+  if (hosted instanceof HTMLAudioElement) {
+    window.__imxFocusAudio = hosted;
+    bindGuards(hosted);
+    return hosted;
   }
-  audio.loop = true;
-  return audio;
+
+  let el = window.__imxFocusAudio;
+  if (!el) {
+    el = document.createElement("audio");
+    el.preload = "auto";
+    el.playsInline = true;
+    window.__imxFocusAudio = el;
+  }
+  bindGuards(el);
+  return el;
+}
+
+export function attachFocusAudio(el: HTMLAudioElement | null) {
+  if (!el) return;
+  window.__imxFocusAudio = el;
+  bindGuards(el);
 }
 
 function trackById(id: string) {
   return FOCUS_TRACKS.find((track) => track.id === id) ?? FOCUS_TRACKS[3];
 }
 
+function readVolume() {
+  if (typeof window === "undefined") return 0.7;
+  const saved = window.localStorage.getItem(VOLUME_KEY);
+  const next = saved ? Number(saved) : 0.7;
+  return Number.isFinite(next) && next >= 0 && next <= 1 ? next : 0.7;
+}
+
 export const useFocusSound = create<FocusSoundState>((set, get) => ({
   activeId: DEFAULT_FOCUS_TRACK,
   playing: false,
-  volume:
-    typeof window === "undefined"
-      ? 0.7
-      : (() => {
-          const saved = window.localStorage.getItem(VOLUME_KEY);
-          const next = saved ? Number(saved) : 0.7;
-          return Number.isFinite(next) && next >= 0 && next <= 1 ? next : 0.7;
-        })(),
+  volume: readVolume(),
 
   play: async (id) => {
+    if (typeof window === "undefined") return;
     const el = getAudio();
     if (!el) return;
+
+    window.__imxFocusWantSound = true;
 
     const trackId = id ?? DEFAULT_FOCUS_TRACK;
     const track = trackById(trackId);
     const nextSrc = new URL(track.src, window.location.origin).href;
 
     el.loop = true;
+    el.muted = false;
     el.volume = get().volume;
-    set({ activeId: trackId });
+    set({ activeId: trackId, playing: true });
 
     if (el.src !== nextSrc) {
       el.src = track.src;
-      el.loop = true;
     }
 
     try {
       await el.play();
-      set({ playing: true });
     } catch {
+      if (wantsSound()) {
+        window.__imxFocusWantSound = false;
+        set({ playing: false });
+      }
+      return;
+    }
+
+    if (!wantsSound()) {
+      haltAll();
       set({ playing: false });
     }
   },
 
   pause: () => {
-    getAudio()?.pause();
+    haltAll();
     set({ playing: false });
   },
 
   toggle: async (id) => {
     const target = id ?? get().activeId;
     const el = getAudio();
-    if (get().activeId === target && el && !el.paused) {
+    const isThisTrack = get().activeId === target;
+    const isAudible = Boolean(
+      (el && !el.paused) || registry().some((player) => !player.paused),
+    );
+
+    if (isThisTrack && (get().playing || isAudible || wantsSound())) {
       get().pause();
       return;
     }
+
     await get().play(target);
   },
 
@@ -118,4 +207,8 @@ export const useFocusSound = create<FocusSoundState>((set, get) => ({
 
 export function playDefaultFocusSound() {
   void useFocusSound.getState().play(DEFAULT_FOCUS_TRACK);
+}
+
+export function stopFocusSound() {
+  useFocusSound.getState().pause();
 }

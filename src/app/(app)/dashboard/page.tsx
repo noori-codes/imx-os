@@ -12,7 +12,6 @@ import { NextSteps } from "@/components/dashboard/next-steps";
 import { OnboardingCard } from "@/components/dashboard/onboarding-card";
 import { TodayFocus } from "@/components/dashboard/today-focus";
 import { WeekOverview } from "@/components/dashboard/week-overview";
-import { FocusEntryLink } from "@/components/focus/focus-entry-link";
 import { Button } from "@/components/ui/button";
 
 function getGreeting() {
@@ -78,10 +77,10 @@ export default async function DashboardPage() {
               </Link>
             </Button>
             <Button asChild variant="outline" size="sm">
-              <FocusEntryLink>
+              <Link href="/focus">
                 <Timer className="size-3.5" />
                 Focus
-              </FocusEntryLink>
+              </Link>
             </Button>
             <Button asChild variant="outline" size="sm">
               <Link href="/review">

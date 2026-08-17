@@ -8,7 +8,7 @@ import { FocusSounds } from "@/components/focus/focus-sounds";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { playDefaultFocusSound } from "@/stores/focus-sound";
+import { playDefaultFocusSound, stopFocusSound } from "@/stores/focus-sound";
 import { useFocusTimer } from "@/stores/focus-timer";
 import {
   FOCUS_DURATION_PRESETS,
@@ -71,6 +71,7 @@ export function FocusTimer() {
           actual_seconds: planned,
           completed: true,
         });
+        stopFocusSound();
         reset();
       });
     }
@@ -103,15 +104,21 @@ export function FocusTimer() {
     if (mode === "focus") playDefaultFocusSound();
   }
 
+  function handlePause() {
+    pause();
+    stopFocusSound();
+  }
+
   function handleToggle() {
     if (isRunning) {
-      pause();
+      handlePause();
       return;
     }
     handleStart();
   }
 
   function handleReset() {
+    stopFocusSound();
     if (remainingSeconds >= durationSeconds || remainingSeconds === 0) {
       reset();
       return;
@@ -302,7 +309,7 @@ export function FocusTimer() {
 
       <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
         {isRunning ? (
-          <Button type="button" size="lg" onClick={pause}>
+          <Button type="button" size="lg" onClick={handlePause}>
             <Pause className="size-4" />
             Pause
           </Button>

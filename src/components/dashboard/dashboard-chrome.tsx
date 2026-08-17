@@ -1,8 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { Flame, Timer } from "lucide-react";
 
-import { FocusEntryLink } from "@/components/focus/focus-entry-link";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatFocusMinutes } from "@/types/focus";
@@ -67,10 +67,10 @@ export function DashboardChrome({
           </div>
 
           <Button asChild size="sm" className="h-8 shrink-0">
-            <FocusEntryLink>
+            <Link href="/focus">
               <Timer className="size-3.5" />
               Focus
-            </FocusEntryLink>
+            </Link>
           </Button>
         </div>
       </div>

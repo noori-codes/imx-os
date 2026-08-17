@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 
+import { FocusAudioHost } from "@/components/focus/focus-audio-host";
 import { NavigationProgress } from "@/components/layout/navigation-progress";
 import { Sidebar } from "@/components/layout/sidebar";
 import { UserProvider } from "@/components/providers/user-provider";
@@ -15,6 +16,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
 
   return (
     <UserProvider email={user.email ?? null}>
+      <FocusAudioHost />
       <div className="flex min-h-screen">
         <div className="hidden md:block">
           <Sidebar />
