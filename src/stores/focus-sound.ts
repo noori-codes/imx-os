@@ -151,7 +151,6 @@ function getAudio() {
   if (!el) {
     el = document.createElement("audio");
     el.preload = "auto";
-    el.playsInline = true;
     enableLoop(el);
     window.__imxFocusAudio = el;
   }

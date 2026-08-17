@@ -19,7 +19,6 @@ export function FocusAudioHost() {
       id={AUDIO_ID}
       loop
       preload="auto"
-      playsInline
       className="hidden"
     />
   );
