@@ -4,8 +4,6 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { Pause, Play, RotateCcw } from "lucide-react";
 
 import { logFocusSession } from "@/actions/focus";
-import { FocusSounds } from "@/components/focus/focus-sounds";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { playDefaultFocusSound, stopFocusSound } from "@/stores/focus-sound";
@@ -166,9 +164,10 @@ export function FocusTimer() {
       : 0;
 
   return (
-    <section className="flex flex-col items-center">
-      <nav
-        className="flex gap-1 border-b border-border/60"
+    <section className="flex flex-col items-center rounded-3xl border bg-card px-5 py-8 sm:px-10 sm:py-10">
+      <div
+        className="inline-flex rounded-full bg-muted p-1"
+        role="tablist"
         aria-label="Timer mode"
       >
         {MODES.map((m) => {
@@ -177,34 +176,27 @@ export function FocusTimer() {
             <button
               key={m}
               type="button"
+              role="tab"
+              aria-selected={isActive}
               disabled={isRunning}
               onClick={() => {
                 if (isRunning) return;
                 setMode(m);
               }}
               className={cn(
-                "relative shrink-0 px-3 py-2.5 text-sm transition-colors disabled:opacity-50",
+                "rounded-full px-3.5 py-1.5 text-sm transition-colors disabled:opacity-50",
                 isActive
-                  ? "font-medium text-foreground"
+                  ? "bg-background font-medium text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground",
               )}
-              aria-current={isActive ? "true" : undefined}
             >
               {FOCUS_PRESETS[m].label}
-              {isActive ? (
-                <span className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-foreground" />
-              ) : null}
             </button>
           );
         })}
-      </nav>
+      </div>
 
-      <button
-        type="button"
-        onClick={handleToggle}
-        className="relative mx-auto mt-10 flex size-52 items-center justify-center rounded-full sm:size-56"
-        aria-label={isRunning ? "Pause timer" : "Start timer"}
-      >
+      <div className="relative mx-auto mt-10 flex size-64 items-center justify-center sm:size-72">
         <svg
           className="absolute inset-0 size-full -rotate-90"
           viewBox="0 0 100 100"
@@ -213,41 +205,41 @@ export function FocusTimer() {
           <circle
             cx="50"
             cy="50"
-            r="45"
+            r="44"
             fill="none"
             className="stroke-muted"
-            strokeWidth="3.5"
+            strokeWidth="3"
           />
           <circle
             cx="50"
             cy="50"
-            r="45"
+            r="44"
             fill="none"
             className="stroke-foreground transition-[stroke-dashoffset] duration-1000 ease-linear"
-            strokeWidth="3.5"
+            strokeWidth="3"
             strokeLinecap="round"
-            strokeDasharray={`${2 * Math.PI * 45}`}
-            strokeDashoffset={`${2 * Math.PI * 45 * (1 - progress / 100)}`}
+            strokeDasharray={`${2 * Math.PI * 44}`}
+            strokeDashoffset={`${2 * Math.PI * 44 * (1 - progress / 100)}`}
           />
         </svg>
         <div className="relative text-center">
           <p
             className={cn(
               "font-mono font-semibold tracking-tight tabular-nums",
-              remainingSeconds >= 3600 ? "text-4xl" : "text-5xl",
+              remainingSeconds >= 3600 ? "text-4xl sm:text-5xl" : "text-5xl sm:text-6xl",
             )}
           >
             {formatFocusClock(remainingSeconds)}
           </p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {isRunning ? "Tap to pause" : "Tap to start"}
+          <p className="mt-2 text-sm text-muted-foreground">
+            {isRunning ? "In session" : FOCUS_PRESETS[mode].label}
           </p>
         </div>
-      </button>
+      </div>
 
       {mode === "focus" && !isRunning ? (
-        <div className="mt-6 flex w-full max-w-sm flex-col items-center gap-3">
-          <div className="flex flex-wrap items-center justify-center gap-1.5">
+        <div className="mt-8 flex w-full max-w-md flex-col items-center gap-4">
+          <div className="flex flex-wrap items-center justify-center gap-2">
             {FOCUS_DURATION_PRESETS.map((preset) => {
               const active =
                 !customHours &&
@@ -263,10 +255,10 @@ export function FocusTimer() {
                     setDuration(preset.minutes * 60);
                   }}
                   className={cn(
-                    "rounded-md px-2.5 py-1 text-xs tabular-nums transition-colors",
+                    "rounded-full px-3.5 py-1.5 text-sm tabular-nums transition-colors",
                     active
                       ? "bg-foreground text-background"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                      : "bg-muted text-muted-foreground hover:text-foreground",
                   )}
                 >
                   {preset.label}
@@ -284,7 +276,7 @@ export function FocusTimer() {
               aria-label="Custom hours"
               value={customHours}
               onChange={(e) => setCustomHours(e.target.value)}
-              className="h-8 w-16 text-center"
+              className="h-9 w-16 rounded-full border-0 bg-muted text-center shadow-none"
             />
             <span className="text-muted-foreground">:</span>
             <Input
@@ -296,7 +288,7 @@ export function FocusTimer() {
               aria-label="Custom minutes"
               value={customMinutes}
               onChange={(e) => setCustomMinutes(e.target.value)}
-              className="h-8 w-16 text-center"
+              className="h-9 w-16 rounded-full border-0 bg-muted text-center shadow-none"
             />
             {!presetMatch && !customHours && !customMinutes ? (
               <span className="text-xs tabular-nums text-muted-foreground">
@@ -307,32 +299,32 @@ export function FocusTimer() {
         </div>
       ) : null}
 
-      <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
-        {isRunning ? (
-          <Button type="button" size="lg" onClick={handlePause}>
-            <Pause className="size-4" />
-            Pause
-          </Button>
-        ) : (
-          <Button type="button" size="lg" onClick={handleStart}>
-            <Play className="size-4" />
-            Start
-          </Button>
-        )}
-
-        <Button
+      <div className="mt-10 flex items-center gap-4">
+        <button
           type="button"
-          size="lg"
-          variant="ghost"
-          className="text-muted-foreground"
           onClick={handleReset}
+          className="flex size-12 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          aria-label="Reset timer"
         >
-          <RotateCcw className="size-4" />
-          Reset
-        </Button>
+          <RotateCcw className="size-5" />
+        </button>
+        <button
+          type="button"
+          onClick={handleToggle}
+          className="flex size-16 items-center justify-center rounded-full bg-foreground text-background transition-transform hover:scale-[1.03] active:scale-95"
+          aria-label={isRunning ? "Pause timer" : "Start timer"}
+        >
+          {isRunning ? (
+            <Pause className="size-6 fill-current" />
+          ) : (
+            <Play className="size-6 fill-current pl-0.5" />
+          )}
+        </button>
+        <span className="size-12" aria-hidden />
       </div>
-
-      <FocusSounds />
+      <p className="mt-4 text-xs text-muted-foreground">
+        Space to {isRunning ? "pause" : "start"} · R to reset
+      </p>
     </section>
   );
 }

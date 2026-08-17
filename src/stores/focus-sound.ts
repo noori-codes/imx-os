@@ -3,10 +3,34 @@
 import { create } from "zustand";
 
 export const FOCUS_TRACKS = [
-  { id: "first", label: "Sound 1", src: "/first-audio.mp3" },
-  { id: "second", label: "Sound 2", src: "/second-audio.mp3" },
-  { id: "third", label: "Sound 3", src: "/third-audio.mp3" },
-  { id: "fourth", label: "Sound 4", src: "/forth-audio.mp3" },
+  {
+    id: "first",
+    label: "Sound 1",
+    hint: "Warm",
+    tone: "from-amber-500/25 to-orange-500/5",
+    src: "/first-audio.mp3",
+  },
+  {
+    id: "second",
+    label: "Sound 2",
+    hint: "Air",
+    tone: "from-sky-500/25 to-cyan-500/5",
+    src: "/second-audio.mp3",
+  },
+  {
+    id: "third",
+    label: "Sound 3",
+    hint: "Soft",
+    tone: "from-violet-500/25 to-fuchsia-500/5",
+    src: "/third-audio.mp3",
+  },
+  {
+    id: "fourth",
+    label: "Sound 4",
+    hint: "Deep",
+    tone: "from-emerald-500/25 to-teal-500/5",
+    src: "/forth-audio.mp3",
+  },
 ] as const;
 
 export const DEFAULT_FOCUS_TRACK = "fourth";
@@ -47,8 +71,12 @@ function wantsSound() {
   return typeof window !== "undefined" && window.__imxFocusWantSound === true;
 }
 
+function enableLoop(el: HTMLAudioElement) {
+  el.loop = true;
+  el.setAttribute("loop", "");
+}
+
 function halt(el: HTMLAudioElement) {
-  el.loop = false;
   el.muted = true;
   el.pause();
 }
@@ -79,6 +107,7 @@ function bindGuards(el: HTMLAudioElement) {
   remember(el);
 
   el.addEventListener("play", () => {
+    enableLoop(el);
     if (!wantsSound()) {
       halt(el);
       useFocusSound.setState({ playing: false });
@@ -92,6 +121,19 @@ function bindGuards(el: HTMLAudioElement) {
       useFocusSound.setState({ playing: false });
     }
   });
+
+  el.addEventListener("ended", () => {
+    if (!wantsSound()) {
+      useFocusSound.setState({ playing: false });
+      return;
+    }
+    enableLoop(el);
+    el.currentTime = 0;
+    void el.play().catch(() => {
+      window.__imxFocusWantSound = false;
+      useFocusSound.setState({ playing: false });
+    });
+  });
 }
 
 function getAudio() {
@@ -100,6 +142,7 @@ function getAudio() {
   const hosted = document.getElementById(AUDIO_ID);
   if (hosted instanceof HTMLAudioElement) {
     window.__imxFocusAudio = hosted;
+    enableLoop(hosted);
     bindGuards(hosted);
     return hosted;
   }
@@ -109,6 +152,7 @@ function getAudio() {
     el = document.createElement("audio");
     el.preload = "auto";
     el.playsInline = true;
+    enableLoop(el);
     window.__imxFocusAudio = el;
   }
   bindGuards(el);
@@ -118,6 +162,7 @@ function getAudio() {
 export function attachFocusAudio(el: HTMLAudioElement | null) {
   if (!el) return;
   window.__imxFocusAudio = el;
+  enableLoop(el);
   bindGuards(el);
 }
 
@@ -148,7 +193,6 @@ export const useFocusSound = create<FocusSoundState>((set, get) => ({
     const track = trackById(trackId);
     const nextSrc = new URL(track.src, window.location.origin).href;
 
-    el.loop = true;
     el.muted = false;
     el.volume = get().volume;
     set({ activeId: trackId, playing: true });
@@ -156,6 +200,7 @@ export const useFocusSound = create<FocusSoundState>((set, get) => ({
     if (el.src !== nextSrc) {
       el.src = track.src;
     }
+    enableLoop(el);
 
     try {
       await el.play();
