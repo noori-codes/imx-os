@@ -4,9 +4,11 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { Pause, Play, RotateCcw } from "lucide-react";
 
 import { logFocusSession } from "@/actions/focus";
+import { FocusSounds } from "@/components/focus/focus-sounds";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { playDefaultFocusSound } from "@/stores/focus-sound";
 import { useFocusTimer } from "@/stores/focus-timer";
 import {
   FOCUS_DURATION_PRESETS,
@@ -98,6 +100,7 @@ export function FocusTimer() {
   function handleStart() {
     const custom = secondsFromCustom();
     start(custom ?? undefined);
+    if (mode === "focus") playDefaultFocusSound();
   }
 
   function handleToggle() {
@@ -321,6 +324,8 @@ export function FocusTimer() {
           Reset
         </Button>
       </div>
+
+      <FocusSounds />
     </section>
   );
 }

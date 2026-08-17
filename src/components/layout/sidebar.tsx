@@ -7,6 +7,7 @@ import { SignOutButton } from "@/components/auth/sign-out-button";
 import { NavLink } from "@/components/layout/nav-link";
 import { useUser } from "@/components/providers/user-provider";
 import { NAV_ITEMS } from "@/lib/constants";
+import { playDefaultFocusSound } from "@/stores/focus-sound";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 
@@ -48,7 +49,10 @@ export function Sidebar({ onNavigate }: SidebarProps) {
                 key={item.href}
                 href={item.href}
                 isActive={isActive}
-                onNavigate={onNavigate}
+                onNavigate={() => {
+                  if (item.href === "/focus") playDefaultFocusSound();
+                  onNavigate?.();
+                }}
               >
                 <Icon className="size-4 shrink-0" />
                 <span>{item.title}</span>
