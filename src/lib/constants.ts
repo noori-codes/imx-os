@@ -48,7 +48,7 @@ export const NAV_ITEMS: NavItem[] = [
     title: "Focus",
     href: "/focus",
     icon: Timer,
-    description: "Pomodoro and focus sessions",
+    description: "Pomodoro timer and history",
   },
   {
     title: "Notes",

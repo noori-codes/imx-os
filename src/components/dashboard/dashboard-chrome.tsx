@@ -5,6 +5,7 @@ import { Flame, Timer } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { formatFocusMinutes } from "@/types/focus";
 
 type StickyStatusProps = {
   dueToday: number;
@@ -61,7 +62,7 @@ export function DashboardChrome({
             ) : null}
             <span className="hidden h-3 w-px bg-border md:block" />
             <span className="hidden text-muted-foreground tabular-nums md:inline">
-              Focus {status.focusMinutes}m
+              Focus {formatFocusMinutes(status.focusMinutes)}
             </span>
           </div>
 

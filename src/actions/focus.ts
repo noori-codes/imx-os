@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { revalidateUserCaches } from "@/lib/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { FocusMode, FocusSession } from "@/types/focus";
+import { FOCUS_MAX_SECONDS } from "@/types/focus";
 
 export type FocusActionState = {
   error?: string;
@@ -14,6 +15,7 @@ export type FocusActionState = {
 async function revalidateFocus() {
   revalidatePath("/focus");
   revalidatePath("/review");
+  revalidatePath("/analytics");
   const user = await getCurrentUser();
   if (user) {
     revalidateUserCaches(user.id);
@@ -86,6 +88,13 @@ export async function logFocusSession(input: {
     return { error: "Session too short to log." };
   }
 
+  if (input.actual_seconds > FOCUS_MAX_SECONDS) {
+    return { error: "Sessions can be at most 12 hours." };
+  }
+
+  const ended = new Date();
+  const started = new Date(ended.getTime() - input.actual_seconds * 1000);
+
   const { error } = await supabase.from("focus_sessions").insert({
     user_id: user.id,
     mode: input.mode,
@@ -93,7 +102,8 @@ export async function logFocusSession(input: {
     actual_seconds: input.actual_seconds,
     completed: input.completed,
     note: input.note?.trim() || null,
-    ended_at: new Date().toISOString(),
+    started_at: started.toISOString(),
+    ended_at: ended.toISOString(),
   });
 
   if (error) {
@@ -102,6 +112,37 @@ export async function logFocusSession(input: {
 
   await revalidateFocus();
   return {};
+}
+
+export async function logManualFocusSession(
+  _prevState: FocusActionState | null,
+  formData: FormData,
+): Promise<FocusActionState> {
+  const hours = Number(formData.get("hours") ?? 0);
+  const minutes = Number(formData.get("minutes") ?? 0);
+  const note = (formData.get("note") as string | null)?.trim() || undefined;
+
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) {
+    return { error: "Enter a valid duration." };
+  }
+
+  if (hours < 0 || minutes < 0 || minutes > 59) {
+    return { error: "Use hours and 0–59 minutes." };
+  }
+
+  const actual_seconds = Math.round(hours * 3600 + minutes * 60);
+
+  if (actual_seconds < 60) {
+    return { error: "Log at least 1 minute." };
+  }
+
+  return logFocusSession({
+    mode: "focus",
+    planned_seconds: actual_seconds,
+    actual_seconds,
+    completed: true,
+    note,
+  });
 }
 
 export async function deleteFocusSession(sessionId: string) {
