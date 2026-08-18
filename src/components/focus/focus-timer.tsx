@@ -1,16 +1,24 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { Pause, Play, RotateCcw } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Pause, Play, RotateCcw, SkipForward } from "lucide-react";
 
 import { logFocusSession } from "@/actions/focus";
 import { Input } from "@/components/ui/input";
+import {
+  notifyFocusPhase,
+  playFocusChime,
+  requestFocusNotifyPermission,
+} from "@/lib/focus-alerts";
 import { cn } from "@/lib/utils";
 import { playDefaultFocusSound, stopFocusSound } from "@/stores/focus-sound";
-import { useFocusTimer } from "@/stores/focus-timer";
+import { nextFocusMode, useFocusTimer } from "@/stores/focus-timer";
 import {
+  BREAK_DURATION_PRESETS,
   FOCUS_DURATION_PRESETS,
   FOCUS_MAX_SECONDS,
+  FOCUS_POMODOROS_PER_LONG_BREAK,
   FOCUS_PRESETS,
   formatFocusClock,
   type FocusMode,
@@ -27,17 +35,45 @@ function isTypingTarget(target: EventTarget | null) {
   return false;
 }
 
+function formatClockTime(ts: number) {
+  return new Date(ts).toLocaleTimeString([], {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function filledDots(count: number, mode: FocusMode) {
+  const inRound = count % FOCUS_POMODOROS_PER_LONG_BREAK;
+  if (
+    inRound === 0 &&
+    count > 0 &&
+    mode === "long_break"
+  ) {
+    return FOCUS_POMODOROS_PER_LONG_BREAK;
+  }
+  return inRound;
+}
+
 export function FocusTimer() {
+  const router = useRouter();
   const {
     mode,
     durationSeconds,
     remainingSeconds,
     isRunning,
+    endsAt,
+    completedFocusCount,
+    autoStartNext,
+    intention,
     setMode,
     setDuration,
+    setIntention,
+    setAutoStartNext,
     start,
     pause,
     reset,
+    skip,
+    advance,
     tick,
   } = useFocusTimer();
 
@@ -48,10 +84,35 @@ export function FocusTimer() {
   const [customMinutes, setCustomMinutes] = useState("");
 
   useEffect(() => {
+    const stored = window.localStorage.getItem("imx-focus-auto-start") === "1";
+    if (stored) setAutoStartNext(true);
+  }, [setAutoStartNext]);
+
+  useEffect(() => {
     if (!isRunning) return;
-    const id = window.setInterval(() => tick(), 1000);
+    const id = window.setInterval(() => tick(), 500);
     return () => window.clearInterval(id);
   }, [isRunning, tick]);
+
+  useEffect(() => {
+    function catchUp() {
+      tick();
+    }
+    document.addEventListener("visibilitychange", catchUp);
+    window.addEventListener("focus", catchUp);
+    return () => {
+      document.removeEventListener("visibilitychange", catchUp);
+      window.removeEventListener("focus", catchUp);
+    };
+  }, [tick]);
+
+  useEffect(() => {
+    const previous = document.title;
+    document.title = `${formatFocusClock(remainingSeconds)} · ${FOCUS_PRESETS[mode].label}`;
+    return () => {
+      document.title = previous;
+    };
+  }, [remainingSeconds, mode]);
 
   useEffect(() => {
     if (
@@ -62,19 +123,43 @@ export function FocusTimer() {
       loggedRef.current = true;
       const planned = durationSeconds;
       const currentMode = mode;
+      const note = currentMode === "focus" ? intention : "";
+      const nextLabel =
+        FOCUS_PRESETS[nextFocusMode(currentMode, completedFocusCount, "complete")]
+          .label;
+
       startTransition(async () => {
         await logFocusSession({
           mode: currentMode,
           planned_seconds: planned,
           actual_seconds: planned,
           completed: true,
+          note,
         });
-        stopFocusSound();
-        reset();
+        router.refresh();
       });
+
+      stopFocusSound();
+      playFocusChime();
+      notifyFocusPhase(`${FOCUS_PRESETS[currentMode].label} done`, `Up next: ${nextLabel}`);
+      advance("complete");
+
+      const next = useFocusTimer.getState();
+      if (next.autoStartNext) {
+        next.start();
+        if (next.mode === "focus") playDefaultFocusSound();
+      }
     }
     prevRemaining.current = remainingSeconds;
-  }, [remainingSeconds, mode, durationSeconds, reset]);
+  }, [
+    remainingSeconds,
+    mode,
+    durationSeconds,
+    intention,
+    completedFocusCount,
+    advance,
+    router,
+  ]);
 
   useEffect(() => {
     if (remainingSeconds > 0) {
@@ -83,7 +168,9 @@ export function FocusTimer() {
   }, [remainingSeconds, mode]);
 
   const durationMinutes = Math.round(durationSeconds / 60);
-  const presetMatch = FOCUS_DURATION_PRESETS.some(
+  const durationPresets =
+    mode === "focus" ? FOCUS_DURATION_PRESETS : BREAK_DURATION_PRESETS[mode];
+  const presetMatch = durationPresets.some(
     (preset) => preset.minutes === durationMinutes,
   );
 
@@ -98,8 +185,9 @@ export function FocusTimer() {
 
   function handleStart() {
     const custom = secondsFromCustom();
+    void requestFocusNotifyPermission();
     start(custom ?? undefined);
-    if (mode === "focus") playDefaultFocusSound();
+    if (useFocusTimer.getState().mode === "focus") playDefaultFocusSound();
   }
 
   function handlePause() {
@@ -125,6 +213,7 @@ export function FocusTimer() {
     const actual = durationSeconds - remainingSeconds;
     const currentMode = mode;
     const planned = durationSeconds;
+    const note = currentMode === "focus" ? intention : "";
     startTransition(async () => {
       if (actual >= 5) {
         await logFocusSession({
@@ -132,10 +221,41 @@ export function FocusTimer() {
           planned_seconds: planned,
           actual_seconds: actual,
           completed: false,
+          note,
         });
+        router.refresh();
       }
       reset();
     });
+  }
+
+  function handleSkip() {
+    const actual = durationSeconds - remainingSeconds;
+    const currentMode = mode;
+    const planned = durationSeconds;
+    const note = currentMode === "focus" ? intention : "";
+
+    stopFocusSound();
+
+    if (actual >= 5) {
+      startTransition(async () => {
+        await logFocusSession({
+          mode: currentMode,
+          planned_seconds: planned,
+          actual_seconds: actual,
+          completed: false,
+          note,
+        });
+        router.refresh();
+      });
+    }
+
+    skip();
+    const next = useFocusTimer.getState();
+    if (next.autoStartNext) {
+      next.start();
+      if (next.mode === "focus") playDefaultFocusSound();
+    }
   }
 
   useEffect(() => {
@@ -145,6 +265,12 @@ export function FocusTimer() {
       if (e.code === "Space") {
         e.preventDefault();
         handleToggle();
+        return;
+      }
+
+      if ((e.key === "s" || e.key === "S") && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        handleSkip();
         return;
       }
 
@@ -162,6 +288,10 @@ export function FocusTimer() {
     durationSeconds > 0
       ? ((durationSeconds - remainingSeconds) / durationSeconds) * 100
       : 0;
+  const dots = filledDots(completedFocusCount, mode);
+  const upcoming = nextFocusMode(mode, completedFocusCount, "complete");
+  const endedHint =
+    isRunning && endsAt ? `Ends ${formatClockTime(endsAt)}` : null;
 
   return (
     <section className="flex flex-col items-center rounded-3xl border bg-card px-5 py-8 sm:px-10 sm:py-10">
@@ -181,6 +311,8 @@ export function FocusTimer() {
               disabled={isRunning}
               onClick={() => {
                 if (isRunning) return;
+                setCustomHours("");
+                setCustomMinutes("");
                 setMode(m);
               }}
               className={cn(
@@ -196,7 +328,22 @@ export function FocusTimer() {
         })}
       </div>
 
-      <div className="relative mx-auto mt-10 flex size-64 items-center justify-center sm:size-72">
+      <div
+        className="mt-5 flex items-center gap-2"
+        aria-label={`${dots} of ${FOCUS_POMODOROS_PER_LONG_BREAK} toward a long break`}
+      >
+        {Array.from({ length: FOCUS_POMODOROS_PER_LONG_BREAK }).map((_, i) => (
+          <span
+            key={i}
+            className={cn(
+              "size-2 rounded-full transition-colors",
+              i < dots ? "bg-foreground" : "bg-muted-foreground/30",
+            )}
+          />
+        ))}
+      </div>
+
+      <div className="relative mx-auto mt-8 flex size-64 items-center justify-center sm:size-72">
         <svg
           className="absolute inset-0 size-full -rotate-90"
           viewBox="0 0 100 100"
@@ -215,7 +362,7 @@ export function FocusTimer() {
             cy="50"
             r="44"
             fill="none"
-            className="stroke-foreground transition-[stroke-dashoffset] duration-1000 ease-linear"
+            className="stroke-foreground transition-[stroke-dashoffset] duration-500 ease-linear"
             strokeWidth="3"
             strokeLinecap="round"
             strokeDasharray={`${2 * Math.PI * 44}`}
@@ -226,21 +373,36 @@ export function FocusTimer() {
           <p
             className={cn(
               "font-mono font-semibold tracking-tight tabular-nums",
-              remainingSeconds >= 3600 ? "text-4xl sm:text-5xl" : "text-5xl sm:text-6xl",
+              remainingSeconds >= 3600
+                ? "text-4xl sm:text-5xl"
+                : "text-5xl sm:text-6xl",
             )}
           >
             {formatFocusClock(remainingSeconds)}
           </p>
           <p className="mt-2 text-sm text-muted-foreground">
-            {isRunning ? "In session" : FOCUS_PRESETS[mode].label}
+            {endedHint ??
+              (isRunning
+                ? `Up next: ${FOCUS_PRESETS[upcoming].label}`
+                : FOCUS_PRESETS[mode].label)}
           </p>
         </div>
       </div>
 
-      {mode === "focus" && !isRunning ? (
-        <div className="mt-8 flex w-full max-w-md flex-col items-center gap-4">
+      {mode === "focus" ? (
+        <Input
+          value={intention}
+          onChange={(e) => setIntention(e.target.value)}
+          placeholder="Working on…"
+          aria-label="What are you focusing on"
+          className="mt-6 h-10 w-full max-w-sm rounded-full border-0 bg-muted px-4 text-center shadow-none"
+        />
+      ) : null}
+
+      {!isRunning ? (
+        <div className="mt-6 flex w-full max-w-md flex-col items-center gap-4">
           <div className="flex flex-wrap items-center justify-center gap-2">
-            {FOCUS_DURATION_PRESETS.map((preset) => {
+            {durationPresets.map((preset) => {
               const active =
                 !customHours &&
                 !customMinutes &&
@@ -266,36 +428,38 @@ export function FocusTimer() {
               );
             })}
           </div>
-          <div className="flex items-center gap-2 text-sm">
-            <Input
-              type="number"
-              min={0}
-              max={12}
-              inputMode="numeric"
-              placeholder="hrs"
-              aria-label="Custom hours"
-              value={customHours}
-              onChange={(e) => setCustomHours(e.target.value)}
-              className="h-9 w-16 rounded-full border-0 bg-muted text-center shadow-none"
-            />
-            <span className="text-muted-foreground">:</span>
-            <Input
-              type="number"
-              min={0}
-              max={59}
-              inputMode="numeric"
-              placeholder="min"
-              aria-label="Custom minutes"
-              value={customMinutes}
-              onChange={(e) => setCustomMinutes(e.target.value)}
-              className="h-9 w-16 rounded-full border-0 bg-muted text-center shadow-none"
-            />
-            {!presetMatch && !customHours && !customMinutes ? (
-              <span className="text-xs tabular-nums text-muted-foreground">
-                {formatFocusClock(durationSeconds)}
-              </span>
-            ) : null}
-          </div>
+          {mode === "focus" ? (
+            <div className="flex items-center gap-2 text-sm">
+              <Input
+                type="number"
+                min={0}
+                max={12}
+                inputMode="numeric"
+                placeholder="hrs"
+                aria-label="Custom hours"
+                value={customHours}
+                onChange={(e) => setCustomHours(e.target.value)}
+                className="h-9 w-16 rounded-full border-0 bg-muted text-center shadow-none"
+              />
+              <span className="text-muted-foreground">:</span>
+              <Input
+                type="number"
+                min={0}
+                max={59}
+                inputMode="numeric"
+                placeholder="min"
+                aria-label="Custom minutes"
+                value={customMinutes}
+                onChange={(e) => setCustomMinutes(e.target.value)}
+                className="h-9 w-16 rounded-full border-0 bg-muted text-center shadow-none"
+              />
+              {!presetMatch && !customHours && !customMinutes ? (
+                <span className="text-xs tabular-nums text-muted-foreground">
+                  {formatFocusClock(durationSeconds)}
+                </span>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       ) : null}
 
@@ -320,11 +484,31 @@ export function FocusTimer() {
             <Play className="size-6 fill-current pl-0.5" />
           )}
         </button>
-        <span className="size-12" aria-hidden />
+        <button
+          type="button"
+          onClick={handleSkip}
+          className="flex size-12 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          aria-label="Skip to next phase"
+        >
+          <SkipForward className="size-5" />
+        </button>
       </div>
-      <p className="mt-4 text-xs text-muted-foreground">
-        Space to {isRunning ? "pause" : "start"} · R to reset
-      </p>
+
+      <div className="mt-5 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+        <button
+          type="button"
+          onClick={() => setAutoStartNext(!autoStartNext)}
+          className={cn(
+            "rounded-full px-2.5 py-1 transition-colors",
+            autoStartNext
+              ? "bg-foreground text-background"
+              : "hover:bg-muted hover:text-foreground",
+          )}
+        >
+          Auto-start {autoStartNext ? "on" : "off"}
+        </button>
+        <span>Space start · S skip · R reset</span>
+      </div>
     </section>
   );
 }

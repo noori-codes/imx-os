@@ -30,6 +30,24 @@ export const FOCUS_DURATION_PRESETS = [
   { label: "3h", minutes: 180 },
 ] as const;
 
+export const BREAK_DURATION_PRESETS: Record<
+  Exclude<FocusMode, "focus">,
+  readonly { label: string; minutes: number }[]
+> = {
+  short_break: [
+    { label: "5m", minutes: 5 },
+    { label: "10m", minutes: 10 },
+    { label: "15m", minutes: 15 },
+  ],
+  long_break: [
+    { label: "15m", minutes: 15 },
+    { label: "20m", minutes: 20 },
+    { label: "30m", minutes: 30 },
+  ],
+};
+
+export const FOCUS_POMODOROS_PER_LONG_BREAK = 4;
+
 export const FOCUS_MAX_SECONDS = 12 * 60 * 60;
 
 export function formatFocusClock(totalSeconds: number) {

@@ -3,7 +3,13 @@
 import { create } from "zustand";
 
 import type { FocusMode } from "@/types/focus";
-import { FOCUS_MAX_SECONDS, FOCUS_PRESETS } from "@/types/focus";
+import {
+  FOCUS_MAX_SECONDS,
+  FOCUS_POMODOROS_PER_LONG_BREAK,
+  FOCUS_PRESETS,
+} from "@/types/focus";
+
+const AUTO_START_KEY = "imx-focus-auto-start";
 
 type FocusTimerState = {
   mode: FocusMode;
@@ -11,15 +17,45 @@ type FocusTimerState = {
   remainingSeconds: number;
   isRunning: boolean;
   startedAt: number | null;
+  endsAt: number | null;
   completedFocusCount: number;
+  autoStartNext: boolean;
+  intention: string;
+  lastFocusSeconds: number;
   setMode: (mode: FocusMode) => void;
   setDuration: (seconds: number) => void;
+  setIntention: (intention: string) => void;
+  setAutoStartNext: (value: boolean) => void;
   start: (seconds?: number) => void;
   pause: () => void;
   reset: () => void;
-  tick: () => void;
+  skip: () => void;
+  advance: (reason: "complete" | "skip") => void;
+  syncFromClock: () => boolean;
+  tick: () => boolean;
   complete: () => void;
 };
+
+function remainingFromEndsAt(endsAt: number | null, fallback: number) {
+  if (!endsAt) return fallback;
+  return Math.max(0, Math.round((endsAt - Date.now()) / 1000));
+}
+
+export function nextFocusMode(
+  mode: FocusMode,
+  completedFocusCount: number,
+  reason: "complete" | "skip",
+): FocusMode {
+  if (mode !== "focus") return "focus";
+  if (
+    reason === "complete" &&
+    completedFocusCount > 0 &&
+    completedFocusCount % FOCUS_POMODOROS_PER_LONG_BREAK === 0
+  ) {
+    return "long_break";
+  }
+  return "short_break";
+}
 
 export const useFocusTimer = create<FocusTimerState>((set, get) => ({
   mode: "focus",
@@ -27,16 +63,24 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
   remainingSeconds: FOCUS_PRESETS.focus.minutes * 60,
   isRunning: false,
   startedAt: null,
+  endsAt: null,
   completedFocusCount: 0,
+  autoStartNext: false,
+  intention: "",
+  lastFocusSeconds: FOCUS_PRESETS.focus.minutes * 60,
 
   setMode: (mode) => {
-    const durationSeconds = FOCUS_PRESETS[mode].minutes * 60;
+    const durationSeconds =
+      mode === "focus"
+        ? get().lastFocusSeconds
+        : FOCUS_PRESETS[mode].minutes * 60;
     set({
       mode,
       durationSeconds,
       remainingSeconds: durationSeconds,
       isRunning: false,
       startedAt: null,
+      endsAt: null,
     });
   },
 
@@ -51,7 +95,19 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
       durationSeconds,
       remainingSeconds: durationSeconds,
       startedAt: null,
+      endsAt: null,
+      lastFocusSeconds:
+        get().mode === "focus" ? durationSeconds : get().lastFocusSeconds,
     });
+  },
+
+  setIntention: (intention) => set({ intention }),
+
+  setAutoStartNext: (value) => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(AUTO_START_KEY, value ? "1" : "0");
+    }
+    set({ autoStartNext: value });
   },
 
   start: (seconds) => {
@@ -68,16 +124,26 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
 
     if (remainingSeconds <= 0) return;
 
+    const now = Date.now();
     set({
       durationSeconds,
       remainingSeconds,
       isRunning: true,
-      startedAt: Date.now(),
+      startedAt: now,
+      endsAt: now + remainingSeconds * 1000,
+      lastFocusSeconds:
+        current.mode === "focus" ? durationSeconds : current.lastFocusSeconds,
     });
   },
 
   pause: () => {
-    set({ isRunning: false });
+    const { isRunning, endsAt, remainingSeconds } = get();
+    if (!isRunning) return;
+    set({
+      isRunning: false,
+      remainingSeconds: remainingFromEndsAt(endsAt, remainingSeconds),
+      endsAt: null,
+    });
   },
 
   reset: () => {
@@ -86,26 +152,47 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
       remainingSeconds: durationSeconds,
       isRunning: false,
       startedAt: null,
+      endsAt: null,
     });
   },
 
-  tick: () => {
-    const { isRunning, remainingSeconds } = get();
-    if (!isRunning) return;
-
-    if (remainingSeconds <= 1) {
-      get().complete();
-      return;
-    }
-
-    set({ remainingSeconds: remainingSeconds - 1 });
+  skip: () => {
+    get().advance("skip");
   },
 
-  complete: () => {
+  advance: (reason) => {
     const { mode, completedFocusCount } = get();
+    const next = nextFocusMode(mode, completedFocusCount, reason);
+    get().setMode(next);
+  },
+
+  syncFromClock: () => {
+    const { isRunning, endsAt, remainingSeconds } = get();
+    if (!isRunning || !endsAt) return false;
+
+    const remaining = remainingFromEndsAt(endsAt, remainingSeconds);
+    if (remaining <= 0) {
+      get().complete();
+      return true;
+    }
+
+    if (remaining !== remainingSeconds) {
+      set({ remainingSeconds: remaining });
+    }
+    return false;
+  },
+
+  tick: () => get().syncFromClock(),
+
+  complete: () => {
+    const { mode, isRunning, remainingSeconds, completedFocusCount } = get();
+    if (!isRunning && remainingSeconds === 0) return;
+
     set({
       remainingSeconds: 0,
       isRunning: false,
+      startedAt: null,
+      endsAt: null,
       completedFocusCount:
         mode === "focus" ? completedFocusCount + 1 : completedFocusCount,
     });
