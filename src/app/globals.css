@@ -179,7 +179,8 @@
   }
 }
 
-.dashboard-skeleton [aria-hidden="true"] {
+.dashboard-skeleton [aria-hidden="true"],
+.imx-skeleton [aria-hidden="true"] {
   background-color: color-mix(in oklab, var(--muted) 88%, transparent);
   background-image: linear-gradient(
     105deg,
@@ -193,7 +194,8 @@
   animation: dashboard-shimmer 1.35s ease-in-out infinite;
 }
 
-.dark .dashboard-skeleton [aria-hidden="true"] {
+.dark .dashboard-skeleton [aria-hidden="true"],
+.dark .imx-skeleton [aria-hidden="true"] {
   background-color: color-mix(in oklab, var(--muted) 92%, transparent);
   background-image: linear-gradient(
     105deg,

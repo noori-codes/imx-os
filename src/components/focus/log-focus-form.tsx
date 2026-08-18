@@ -28,7 +28,7 @@ export function LogFocusForm() {
   }, null);
 
   return (
-    <section className="border-t border-border/60 pt-6">
+    <section className="rounded-[1.75rem] border border-border/60 bg-card px-5 py-4">
       <button
         type="button"
         className="flex w-full items-center justify-between text-sm text-muted-foreground hover:text-foreground"
@@ -64,7 +64,7 @@ export function LogFocusForm() {
                   step={1}
                   placeholder="2"
                   inputMode="numeric"
-                  className="h-10 border-0 bg-muted/40 shadow-none focus-visible:ring-1"
+                  className="h-10 rounded-xl border-0 bg-muted/50 shadow-none"
                 />
               </div>
               <div className="min-w-0 flex-1 space-y-1.5">
@@ -83,7 +83,7 @@ export function LogFocusForm() {
                   step={1}
                   placeholder="0"
                   inputMode="numeric"
-                  className="h-10 border-0 bg-muted/40 shadow-none focus-visible:ring-1"
+                  className="h-10 rounded-xl border-0 bg-muted/50 shadow-none"
                 />
               </div>
             </div>
@@ -94,7 +94,7 @@ export function LogFocusForm() {
           <Input
             name="note"
             placeholder="What did you work on? (optional)"
-            className="h-10 border-0 bg-muted/40 shadow-none focus-visible:ring-1"
+            className="h-10 rounded-xl border-0 bg-muted/50 shadow-none"
           />
           {state?.error ? (
             <p className="text-sm text-destructive">{state.error}</p>

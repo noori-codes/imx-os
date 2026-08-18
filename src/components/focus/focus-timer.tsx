@@ -293,10 +293,25 @@ export function FocusTimer() {
   const endedHint =
     isRunning && endsAt ? `Ends ${formatClockTime(endsAt)}` : null;
 
+  const glow =
+    mode === "focus"
+      ? "from-violet-500/25 via-fuchsia-500/5 to-transparent dark:from-violet-400/20"
+      : mode === "short_break"
+        ? "from-teal-500/25 via-emerald-500/5 to-transparent dark:from-teal-400/20"
+        : "from-sky-500/25 via-cyan-500/5 to-transparent dark:from-sky-400/20";
+
   return (
-    <section className="flex flex-col items-center rounded-3xl border bg-card px-5 py-8 sm:px-10 sm:py-10">
+    <section className="relative overflow-hidden rounded-4xl border border-border/60 bg-card px-6 py-10 sm:px-12 sm:py-12">
       <div
-        className="inline-flex rounded-full bg-muted p-1"
+        className={cn(
+          "pointer-events-none absolute -top-24 left-1/2 size-112 -translate-x-1/2 rounded-full bg-linear-to-b blur-3xl",
+          glow,
+        )}
+        aria-hidden
+      />
+      <div className="relative flex flex-col items-center">
+      <div
+        className="inline-flex rounded-full bg-background/70 p-1 shadow-sm ring-1 ring-border/70 backdrop-blur"
         role="tablist"
         aria-label="Timer mode"
       >
@@ -475,7 +490,7 @@ export function FocusTimer() {
         <button
           type="button"
           onClick={handleToggle}
-          className="flex size-16 items-center justify-center rounded-full bg-foreground text-background transition-transform hover:scale-[1.03] active:scale-95"
+          className="flex size-16 items-center justify-center rounded-full bg-foreground text-background shadow-lg shadow-foreground/20 transition-transform hover:scale-[1.03] active:scale-95"
           aria-label={isRunning ? "Pause timer" : "Start timer"}
         >
           {isRunning ? (
@@ -508,6 +523,7 @@ export function FocusTimer() {
           Auto-start {autoStartNext ? "on" : "off"}
         </button>
         <span>Space start · S skip · R reset</span>
+      </div>
       </div>
     </section>
   );

@@ -5,6 +5,7 @@ import { Clock, Trash2 } from "lucide-react";
 
 import { deleteFocusSession } from "@/actions/focus";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   formatFocusDuration,
   FOCUS_PRESETS,
@@ -62,6 +63,12 @@ function groupSessions(sessions: FocusSession[]) {
   return groups;
 }
 
+function modeDot(mode: FocusSession["mode"]) {
+  if (mode === "focus") return "bg-violet-500/80";
+  if (mode === "short_break") return "bg-teal-500/80";
+  return "bg-sky-500/80";
+}
+
 export function FocusSessionList({ sessions }: FocusSessionListProps) {
   const [, startTransition] = useTransition();
   const [optimisticSessions, removeOptimistic] = useOptimistic(
@@ -72,17 +79,12 @@ export function FocusSessionList({ sessions }: FocusSessionListProps) {
 
   if (optimisticSessions.length === 0) {
     return (
-      <section>
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Recent
-        </h2>
-        <div className="mt-6 flex flex-col items-center justify-center px-6 py-10 text-center">
-          <Clock className="mb-3 size-8 text-muted-foreground" />
-          <h3 className="text-base font-medium">No sessions yet</h3>
-          <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-            Start the timer. Finished and stopped sessions will land here.
-          </p>
-        </div>
+      <section className="rounded-[1.75rem] border border-border/60 bg-card px-5 py-10 text-center sm:px-6">
+        <Clock className="mx-auto mb-3 size-8 text-muted-foreground" />
+        <h2 className="text-base font-medium">No sessions yet</h2>
+        <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
+          Start the timer. Finished and stopped sessions will land here.
+        </p>
       </section>
     );
   }
@@ -90,7 +92,11 @@ export function FocusSessionList({ sessions }: FocusSessionListProps) {
   const groups = groupSessions(optimisticSessions);
 
   function handleDelete(session: FocusSession) {
-    if (!window.confirm(`Delete this ${FOCUS_PRESETS[session.mode].label.toLowerCase()} session?`)) {
+    if (
+      !window.confirm(
+        `Delete this ${FOCUS_PRESETS[session.mode].label.toLowerCase()} session?`,
+      )
+    ) {
       return;
     }
     startTransition(async () => {
@@ -100,58 +106,67 @@ export function FocusSessionList({ sessions }: FocusSessionListProps) {
   }
 
   return (
-    <section className="space-y-8">
-      {groups.map((group) => (
-        <div key={group.key}>
-          <div className="mb-1 flex items-baseline justify-between gap-3">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {group.label}
-            </h2>
-            <span className="text-xs tabular-nums text-muted-foreground">
-              {group.sessions.length}
-            </span>
-          </div>
-          <ul className="border-t border-border/60">
-            {group.sessions.map((session) => (
-              <li
-                key={session.id}
-                className="group flex items-center gap-3 border-b border-border/50 py-2.5"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">
-                    {FOCUS_PRESETS[session.mode].label}
-                    {!session.completed ? (
-                      <span className="ml-2 text-xs font-normal text-muted-foreground">
-                        stopped early
-                      </span>
-                    ) : null}
-                  </p>
-                  {session.note ? (
-                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                      {session.note}
-                    </p>
-                  ) : null}
-                </div>
-                <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-                  {formatFocusDuration(session.actual_seconds)}
-                  <span className="mx-1.5 text-border">·</span>
-                  {formatTime(session.started_at)}
-                </span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="size-8 shrink-0 text-muted-foreground opacity-100 hover:text-destructive sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
-                  onClick={() => handleDelete(session)}
-                  aria-label="Delete session"
+    <section className="rounded-[1.75rem] border border-border/60 bg-card px-5 py-6 sm:px-6">
+      <div className="space-y-7">
+        {groups.map((group) => (
+          <div key={group.key}>
+            <div className="mb-3 flex items-baseline justify-between gap-3">
+              <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                {group.label}
+              </h2>
+              <span className="text-xs tabular-nums text-muted-foreground">
+                {group.sessions.length}
+              </span>
+            </div>
+            <ul className="space-y-1">
+              {group.sessions.map((session) => (
+                <li
+                  key={session.id}
+                  className="group flex items-center gap-3 rounded-2xl px-2 py-2.5 hover:bg-muted/50"
                 >
-                  <Trash2 className="size-3.5" />
-                </Button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ))}
+                  <span
+                    className={cn(
+                      "size-2.5 shrink-0 rounded-full",
+                      modeDot(session.mode),
+                    )}
+                    aria-hidden
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">
+                      {FOCUS_PRESETS[session.mode].label}
+                      {!session.completed ? (
+                        <span className="ml-2 text-xs font-normal text-muted-foreground">
+                          stopped early
+                        </span>
+                      ) : null}
+                    </p>
+                    {session.note ? (
+                      <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                        {session.note}
+                      </p>
+                    ) : null}
+                  </div>
+                  <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                    {formatFocusDuration(session.actual_seconds)}
+                    <span className="mx-1.5 text-border">·</span>
+                    {formatTime(session.started_at)}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-8 shrink-0 text-muted-foreground opacity-100 hover:text-destructive sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
+                    onClick={() => handleDelete(session)}
+                    aria-label="Delete session"
+                  >
+                    <Trash2 className="size-3.5" />
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
     </section>
   );
 }
