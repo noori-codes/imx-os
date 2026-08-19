@@ -2,7 +2,7 @@ import {
   getRecentFocusSessions,
   getTodayFocusStats,
 } from "@/actions/focus";
-import { FocusPageFrame, FocusWorkspace } from "@/components/focus/focus-page-frame";
+import { FocusPageFrame } from "@/components/focus/focus-page-frame";
 import { FocusSessionList } from "@/components/focus/focus-session-list";
 import { FocusSounds } from "@/components/focus/focus-sounds";
 import { FocusStats } from "@/components/focus/focus-stats";
@@ -20,20 +20,27 @@ export default async function FocusPage() {
     <>
       <Header title="Focus" description="Timer, sound, one session" />
       <FocusPageFrame>
-        <FocusWorkspace
-          stage={<FocusTimer />}
-          rail={
-            <>
-              <FocusStats
-                sessions={stats.sessions}
-                focusMinutes={stats.focus_minutes}
-              />
-              <FocusSounds />
-              <LogFocusForm />
-            </>
-          }
-        />
-        <FocusSessionList sessions={sessions} />
+        <div className="mx-auto w-full max-w-4xl">
+          <FocusTimer />
+        </div>
+
+        <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+          <div className="space-y-4">
+            <FocusStats
+              sessions={stats.sessions}
+              focusMinutes={stats.focus_minutes}
+            />
+            <LogFocusForm />
+          </div>
+
+          <div>
+            <FocusSounds />
+          </div>
+        </div>
+
+        <div className="mx-auto w-full max-w-4xl">
+          <FocusSessionList sessions={sessions} />
+        </div>
       </FocusPageFrame>
     </>
   );

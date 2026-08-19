@@ -301,10 +301,17 @@ export function FocusTimer() {
         : "from-sky-500/25 via-cyan-500/5 to-transparent dark:from-sky-400/20";
 
   return (
-    <section className="relative overflow-hidden rounded-4xl border border-border/60 bg-card px-6 py-10 sm:px-12 sm:py-12">
+    <section className="relative overflow-hidden rounded-4xl border border-border/60 bg-card px-6 py-8 sm:px-10 sm:py-10">
       <div
         className={cn(
           "pointer-events-none absolute -top-24 left-1/2 size-112 -translate-x-1/2 rounded-full bg-linear-to-b blur-3xl",
+          glow,
+        )}
+        aria-hidden
+      />
+      <div
+        className={cn(
+          "pointer-events-none absolute -bottom-28 left-1/2 size-112 -translate-x-1/2 rounded-full bg-linear-to-t blur-3xl opacity-70",
           glow,
         )}
         aria-hidden
@@ -358,7 +365,7 @@ export function FocusTimer() {
         ))}
       </div>
 
-      <div className="relative mx-auto mt-8 flex size-64 items-center justify-center sm:size-72">
+      <div className="relative mx-auto mt-6 flex size-64 items-center justify-center sm:size-72">
         <svg
           className="absolute inset-0 size-full -rotate-90"
           viewBox="0 0 100 100"
@@ -410,12 +417,12 @@ export function FocusTimer() {
           onChange={(e) => setIntention(e.target.value)}
           placeholder="Working on…"
           aria-label="What are you focusing on"
-          className="mt-6 h-10 w-full max-w-sm rounded-full border-0 bg-muted px-4 text-center shadow-none"
+          className="mt-4 h-10 w-full max-w-sm rounded-full border-0 bg-muted px-4 text-center shadow-none"
         />
       ) : null}
 
       {!isRunning ? (
-        <div className="mt-6 flex w-full max-w-md flex-col items-center gap-4">
+        <div className="mt-4 flex w-full max-w-md flex-col items-center gap-4">
           <div className="flex flex-wrap items-center justify-center gap-2">
             {durationPresets.map((preset) => {
               const active =
@@ -478,7 +485,7 @@ export function FocusTimer() {
         </div>
       ) : null}
 
-      <div className="mt-10 flex items-center gap-4">
+      <div className="mt-8 flex items-center gap-4">
         <button
           type="button"
           onClick={handleReset}
@@ -509,7 +516,7 @@ export function FocusTimer() {
         </button>
       </div>
 
-      <div className="mt-5 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+      <div className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
         <button
           type="button"
           onClick={() => setAutoStartNext(!autoStartNext)}
