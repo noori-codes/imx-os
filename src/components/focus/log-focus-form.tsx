@@ -37,7 +37,7 @@ export function LogFocusForm() {
   }, null);
 
   return (
-    <section className="rounded-[1.75rem] border border-border/60 bg-card/95 p-4 shadow-[0_1px_0_rgba(255,255,255,0.03)]">
+    <section className="flex h-full flex-col rounded-[1.75rem] border border-border/60 bg-card/95 p-5 shadow-[0_1px_0_rgba(255,255,255,0.03)]">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
@@ -100,7 +100,7 @@ export function LogFocusForm() {
       </div>
 
       {open ? (
-        <form ref={formRef} action={formAction} className="mt-4 space-y-3">
+        <form ref={formRef} action={formAction} className="mt-4 flex flex-1 flex-col space-y-3">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
             <div className="flex min-w-0 flex-1 items-end gap-3">
               <div className="min-w-0 flex-1 space-y-1.5">
@@ -160,7 +160,7 @@ export function LogFocusForm() {
           ) : null}
         </form>
       ) : (
-        <p className="mt-4 text-sm text-muted-foreground">
+        <p className="mt-auto pt-4 text-sm text-muted-foreground">
           Expand to enter hours, minutes, and an optional note.
         </p>
       )}

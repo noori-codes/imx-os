@@ -12,7 +12,7 @@ export function FocusSounds() {
     FOCUS_TRACKS.find((track) => track.id === activeId) ?? FOCUS_TRACKS[3];
 
   return (
-    <aside className="rounded-[1.75rem] border border-border/60 bg-card/95 p-5 shadow-[0_1px_0_rgba(255,255,255,0.03)]">
+    <aside className="flex h-full flex-col rounded-[1.75rem] border border-border/60 bg-card/95 p-5 shadow-[0_1px_0_rgba(255,255,255,0.03)]">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
@@ -82,7 +82,7 @@ export function FocusSounds() {
         </div>
       </div>
 
-      <ul className="mt-4 space-y-2">
+      <ul className="mt-4 flex-1 space-y-2">
         {FOCUS_TRACKS.map((track) => {
           const isActive = activeId === track.id;
           return (
