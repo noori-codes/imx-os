@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useRef, useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Timer } from "lucide-react";
 
 import {
   logManualFocusSession,
@@ -28,14 +28,20 @@ export function LogFocusForm() {
   }, null);
 
   return (
-    <section className="rounded-[1.75rem] border border-border/60 bg-card px-5 py-4">
+    <section className="rounded-[1.75rem] border border-border/60 bg-card/95 p-4 shadow-[0_1px_0_rgba(255,255,255,0.03)]">
       <button
         type="button"
-        className="flex w-full items-center justify-between text-sm text-muted-foreground hover:text-foreground"
+        className="flex w-full items-center justify-between gap-3 rounded-2xl border border-border/60 bg-muted/25 px-4 py-3 text-sm text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
       >
-        Already focused? Log time
+        <span className="flex items-center gap-2">
+          <Timer className="size-4 shrink-0" />
+          <span className="font-medium text-foreground/90">
+            Already focused?
+          </span>
+          <span className="text-muted-foreground">Log time</span>
+        </span>
         <ChevronDown
           className={cn(
             "size-3.5 transition-transform",
@@ -64,7 +70,7 @@ export function LogFocusForm() {
                   step={1}
                   placeholder="2"
                   inputMode="numeric"
-                  className="h-10 rounded-xl border-0 bg-muted/50 shadow-none"
+                  className="h-10 rounded-xl border-0 bg-muted/35 shadow-none"
                 />
               </div>
               <div className="min-w-0 flex-1 space-y-1.5">
@@ -83,7 +89,7 @@ export function LogFocusForm() {
                   step={1}
                   placeholder="0"
                   inputMode="numeric"
-                  className="h-10 rounded-xl border-0 bg-muted/50 shadow-none"
+                  className="h-10 rounded-xl border-0 bg-muted/35 shadow-none"
                 />
               </div>
             </div>
@@ -94,7 +100,7 @@ export function LogFocusForm() {
           <Input
             name="note"
             placeholder="What did you work on? (optional)"
-            className="h-10 rounded-xl border-0 bg-muted/50 shadow-none"
+            className="h-10 rounded-xl border-0 bg-muted/35 shadow-none"
           />
           {state?.error ? (
             <p className="text-sm text-destructive">{state.error}</p>

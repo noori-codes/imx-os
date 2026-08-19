@@ -24,17 +24,19 @@ export default async function FocusPage() {
           <FocusTimer />
         </div>
 
-        <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
-          <div className="space-y-4">
-            <FocusStats
-              sessions={stats.sessions}
-              focusMinutes={stats.focus_minutes}
-            />
-            <LogFocusForm />
-          </div>
+        <div className="mx-auto w-full max-w-4xl">
+          <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+            <div className="space-y-4">
+              <FocusStats
+                sessions={stats.sessions}
+                focusMinutes={stats.focus_minutes}
+              />
+              <LogFocusForm />
+            </div>
 
-          <div>
-            <FocusSounds />
+            <div>
+              <FocusSounds />
+            </div>
           </div>
         </div>
 

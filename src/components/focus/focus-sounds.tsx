@@ -12,13 +12,16 @@ export function FocusSounds() {
     FOCUS_TRACKS.find((track) => track.id === activeId) ?? FOCUS_TRACKS[3];
 
   return (
-    <aside className="rounded-[1.75rem] border border-border/60 bg-card p-5">
+    <aside className="rounded-[1.75rem] border border-border/60 bg-card/95 p-5 shadow-[0_1px_0_rgba(255,255,255,0.03)]">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
             Sound
           </p>
           <h2 className="mt-1 text-base font-semibold">Ambient player</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Keep a loop running while you focus.
+          </p>
         </div>
         <button
           type="button"
@@ -34,11 +37,11 @@ export function FocusSounds() {
         </button>
       </div>
 
-      <div className="mt-4 rounded-3xl bg-muted/45 p-4">
+      <div className="mt-4 rounded-3xl border border-border/60 bg-muted/25 p-4">
         <div className="flex items-center gap-3">
           <div
             className={cn(
-              "relative flex size-14 shrink-0 items-end justify-center gap-0.5 overflow-hidden rounded-2xl bg-linear-to-br p-3",
+              "relative flex size-14 shrink-0 items-end justify-center gap-0.5 overflow-hidden rounded-2xl bg-linear-to-br p-3 ring-1 ring-white/8",
               active.tone,
             )}
           >
@@ -59,6 +62,9 @@ export function FocusSounds() {
               {playing ? "Looping" : "Ready"} · {active.hint}
             </p>
           </div>
+          <span className="rounded-full border border-border/70 bg-background/35 px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
+            {playing ? "Live" : "Idle"}
+          </span>
         </div>
 
         <div className="mt-4 flex items-center gap-2.5">
@@ -87,14 +93,14 @@ export function FocusSounds() {
                 className={cn(
                   "flex w-full items-center gap-3 rounded-2xl border px-3 py-3 text-left transition-colors",
                   isActive
-                    ? "border-foreground/15 bg-muted/70"
-                    : "border-transparent bg-muted/35 hover:bg-muted/60",
+                    ? "border-border bg-muted/45"
+                    : "border-transparent bg-muted/20 hover:bg-muted/35",
                 )}
                 aria-pressed={isActive && playing}
               >
                 <span
                   className={cn(
-                    "size-8 shrink-0 rounded-xl bg-linear-to-br",
+                    "size-8 shrink-0 rounded-xl bg-linear-to-br ring-1 ring-white/8",
                     track.tone,
                   )}
                 />
@@ -106,11 +112,14 @@ export function FocusSounds() {
                     {track.hint}
                   </span>
                 </span>
-                {isActive ? (
-                  <span className="text-[11px] font-medium text-muted-foreground">
-                    {playing ? "Live" : "Selected"}
-                  </span>
-                ) : null}
+                <span
+                  className={cn(
+                    "text-[11px] font-medium",
+                    isActive ? "text-foreground" : "text-muted-foreground",
+                  )}
+                >
+                  {isActive ? (playing ? "Playing" : "Selected") : "Cue"}
+                </span>
               </button>
             </li>
           );

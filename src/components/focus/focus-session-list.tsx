@@ -106,7 +106,7 @@ export function FocusSessionList({ sessions }: FocusSessionListProps) {
   }
 
   return (
-    <section className="rounded-[1.75rem] border border-border/60 bg-card px-5 py-6 sm:px-6">
+    <section className="rounded-[1.75rem] border border-border/60 bg-card/95 px-5 py-6 shadow-[0_1px_0_rgba(255,255,255,0.03)] sm:px-6">
       <div className="space-y-7">
         {groups.map((group) => (
           <div key={group.key}>

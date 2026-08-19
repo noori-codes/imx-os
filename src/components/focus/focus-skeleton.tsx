@@ -40,43 +40,45 @@ export function FocusSkeleton() {
           </section>
         </div>
 
-        <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
-          <div className="space-y-4">
-            <section className="rounded-[1.75rem] border border-border/60 bg-card p-4">
-              <Bone className="h-3 w-28" />
-              <div className="mt-4 grid grid-cols-3 gap-2.5">
-                <Bone className="h-18 rounded-2xl" />
-                <Bone className="h-18 rounded-2xl" />
-                <Bone className="h-18 rounded-2xl" />
+        <div className="mx-auto w-full max-w-4xl">
+          <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+            <div className="space-y-4">
+              <section className="rounded-[1.75rem] border border-border/60 bg-card p-4">
+                <Bone className="h-3 w-28" />
+                <div className="mt-4 grid grid-cols-3 gap-2.5">
+                  <Bone className="h-18 rounded-2xl" />
+                  <Bone className="h-18 rounded-2xl" />
+                  <Bone className="h-18 rounded-2xl" />
+                </div>
+              </section>
+              <Bone className="h-14 rounded-[1.75rem]" />
+            </div>
+
+            <section className="rounded-[1.75rem] border border-border/60 bg-card p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-2">
+                  <Bone className="h-3 w-16" />
+                  <Bone className="h-5 w-32" />
+                </div>
+                <Bone className="size-10 rounded-full" />
+              </div>
+              <div className="mt-4 rounded-3xl p-4">
+                <div className="flex items-center gap-3">
+                  <Bone className="size-14 rounded-2xl" />
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <Bone className="h-4 w-24" />
+                    <Bone className="h-3 w-20" />
+                  </div>
+                </div>
+                <Bone className="mt-4 h-2 w-full rounded-full" />
+              </div>
+              <div className="mt-4 space-y-2">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <Bone key={i} className="h-14 rounded-2xl" />
+                ))}
               </div>
             </section>
-            <Bone className="h-14 rounded-[1.75rem]" />
           </div>
-
-          <section className="rounded-[1.75rem] border border-border/60 bg-card p-5">
-            <div className="flex items-start justify-between gap-4">
-              <div className="space-y-2">
-                <Bone className="h-3 w-16" />
-                <Bone className="h-5 w-32" />
-              </div>
-              <Bone className="size-10 rounded-full" />
-            </div>
-            <div className="mt-4 rounded-3xl p-4">
-              <div className="flex items-center gap-3">
-                <Bone className="size-14 rounded-2xl" />
-                <div className="min-w-0 flex-1 space-y-2">
-                  <Bone className="h-4 w-24" />
-                  <Bone className="h-3 w-20" />
-                </div>
-              </div>
-              <Bone className="mt-4 h-2 w-full rounded-full" />
-            </div>
-            <div className="mt-4 space-y-2">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Bone key={i} className="h-14 rounded-2xl" />
-              ))}
-            </div>
-          </section>
         </div>
 
         <section className="mx-auto w-full max-w-4xl rounded-[1.75rem] border border-border/60 bg-card px-5 py-6 sm:px-6">

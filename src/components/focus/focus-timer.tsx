@@ -295,13 +295,13 @@ export function FocusTimer() {
 
   const glow =
     mode === "focus"
-      ? "from-violet-500/25 via-fuchsia-500/5 to-transparent dark:from-violet-400/20"
+      ? "from-white/7 via-white/2 to-transparent"
       : mode === "short_break"
-        ? "from-teal-500/25 via-emerald-500/5 to-transparent dark:from-teal-400/20"
-        : "from-sky-500/25 via-cyan-500/5 to-transparent dark:from-sky-400/20";
+        ? "from-white/6 via-white/2 to-transparent"
+        : "from-white/6 via-white/2 to-transparent";
 
   return (
-    <section className="relative overflow-hidden rounded-4xl border border-border/60 bg-card px-6 py-8 sm:px-10 sm:py-10">
+    <section className="relative overflow-hidden rounded-4xl border border-border/60 bg-card/95 px-6 py-8 shadow-[0_1px_0_rgba(255,255,255,0.03)] sm:px-10 sm:py-10">
       <div
         className={cn(
           "pointer-events-none absolute -top-24 left-1/2 size-112 -translate-x-1/2 rounded-full bg-linear-to-b blur-3xl",
@@ -311,14 +311,28 @@ export function FocusTimer() {
       />
       <div
         className={cn(
-          "pointer-events-none absolute -bottom-28 left-1/2 size-112 -translate-x-1/2 rounded-full bg-linear-to-t blur-3xl opacity-70",
+          "pointer-events-none absolute -bottom-28 left-1/2 size-112 -translate-x-1/2 rounded-full bg-linear-to-t blur-3xl opacity-50",
           glow,
         )}
         aria-hidden
       />
       <div className="relative flex flex-col items-center">
+      <div className="flex w-full max-w-xl items-start justify-between gap-4">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            Focus Room
+          </p>
+          <h2 className="mt-1 text-lg font-semibold">
+            {mode === "focus" ? "Deep work session" : FOCUS_PRESETS[mode].label}
+          </h2>
+        </div>
+        <span className="rounded-full border border-border/70 bg-muted/25 px-3 py-1 text-[11px] font-medium text-muted-foreground">
+          {isRunning ? "Running" : "Ready"}
+        </span>
+      </div>
+
       <div
-        className="inline-flex rounded-full bg-background/70 p-1 shadow-sm ring-1 ring-border/70 backdrop-blur"
+        className="mt-5 inline-flex rounded-full bg-muted/25 p-1 ring-1 ring-border/70"
         role="tablist"
         aria-label="Timer mode"
       >
@@ -351,7 +365,7 @@ export function FocusTimer() {
       </div>
 
       <div
-        className="mt-5 flex items-center gap-2"
+        className="mt-4 flex items-center gap-2"
         aria-label={`${dots} of ${FOCUS_POMODOROS_PER_LONG_BREAK} toward a long break`}
       >
         {Array.from({ length: FOCUS_POMODOROS_PER_LONG_BREAK }).map((_, i) => (
@@ -365,7 +379,7 @@ export function FocusTimer() {
         ))}
       </div>
 
-      <div className="relative mx-auto mt-6 flex size-64 items-center justify-center sm:size-72">
+      <div className="relative mx-auto mt-5 flex size-64 items-center justify-center sm:size-72">
         <svg
           className="absolute inset-0 size-full -rotate-90"
           viewBox="0 0 100 100"
@@ -417,7 +431,7 @@ export function FocusTimer() {
           onChange={(e) => setIntention(e.target.value)}
           placeholder="Working on…"
           aria-label="What are you focusing on"
-          className="mt-4 h-10 w-full max-w-sm rounded-full border-0 bg-muted px-4 text-center shadow-none"
+          className="mt-4 h-10 w-full max-w-sm rounded-full border-0 bg-muted/35 px-4 text-center shadow-none"
         />
       ) : null}
 
@@ -461,7 +475,7 @@ export function FocusTimer() {
                 aria-label="Custom hours"
                 value={customHours}
                 onChange={(e) => setCustomHours(e.target.value)}
-                className="h-9 w-16 rounded-full border-0 bg-muted text-center shadow-none"
+                className="h-9 w-16 rounded-full border-0 bg-muted/35 text-center shadow-none"
               />
               <span className="text-muted-foreground">:</span>
               <Input
@@ -473,7 +487,7 @@ export function FocusTimer() {
                 aria-label="Custom minutes"
                 value={customMinutes}
                 onChange={(e) => setCustomMinutes(e.target.value)}
-                className="h-9 w-16 rounded-full border-0 bg-muted text-center shadow-none"
+                className="h-9 w-16 rounded-full border-0 bg-muted/35 text-center shadow-none"
               />
               {!presetMatch && !customHours && !customMinutes ? (
                 <span className="text-xs tabular-nums text-muted-foreground">
