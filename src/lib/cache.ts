@@ -4,6 +4,7 @@ import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 export const cacheTags = {
   analytics: (userId: string) => `analytics:${userId}`,
   dashboard: (userId: string) => `dashboard:${userId}`,
+  notes: (userId: string) => `notes:${userId}`,
   search: (userId: string) => `search:${userId}`,
 };
 
@@ -11,6 +12,8 @@ export const CACHE_TTL = {
   /** Heavy aggregations — safe to be briefly stale */
   analytics: 60,
   dashboard: 30,
+  /** Notes list/detail — short so edits show up quickly */
+  notes: 30,
   /** Search results — short so edits show up quickly */
   search: 30,
 } as const;
@@ -22,9 +25,11 @@ export const CACHE_TTL = {
 export function revalidateUserCaches(userId: string) {
   revalidateTag(cacheTags.analytics(userId), "max");
   revalidateTag(cacheTags.dashboard(userId), "max");
+  revalidateTag(cacheTags.notes(userId), "max");
   revalidateTag(cacheTags.search(userId), "max");
   revalidatePath("/dashboard");
   revalidatePath("/analytics");
+  revalidatePath("/notes");
   revalidatePath("/search");
 }
 

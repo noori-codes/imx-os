@@ -1,17 +1,23 @@
 "use server";
 
+import { cache } from "react";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { getCurrentUser } from "@/lib/auth";
-import { revalidateUserCaches } from "@/lib/cache";
+import { CACHE_TTL, cacheTags, cachedQuery, revalidateUserCaches } from "@/lib/cache";
 import { toDateString } from "@/lib/date-utils";
+import { createAdminClient, hasAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { Note, NoteType } from "@/types/note";
 
 export type NoteActionState = {
   error?: string;
 };
+
+type QueryClient =
+  | Awaited<ReturnType<typeof createClient>>
+  | ReturnType<typeof createAdminClient>;
 
 async function revalidateNotes(noteId?: string) {
   revalidatePath("/notes");
@@ -26,13 +32,27 @@ async function revalidateNotes(noteId?: string) {
   }
 }
 
-export async function getNotes(type?: NoteType): Promise<Note[]> {
-  const supabase = await createClient();
+function notesClient(userId: string | null): QueryClient | Promise<QueryClient> {
+  if (userId && hasAdminClient()) {
+    return createAdminClient();
+  }
+  return createClient();
+}
+
+async function loadNotes(
+  userId: string | null,
+  type?: NoteType,
+): Promise<Note[]> {
+  const supabase = await notesClient(userId);
 
   let query = supabase
     .from("notes")
     .select("*")
     .order("updated_at", { ascending: false });
+
+  if (userId && hasAdminClient()) {
+    query = query.eq("user_id", userId);
+  }
 
   if (type) {
     query = query.eq("type", type);
@@ -48,14 +68,19 @@ export async function getNotes(type?: NoteType): Promise<Note[]> {
   return data ?? [];
 }
 
-export async function getNote(noteId: string): Promise<Note | null> {
-  const supabase = await createClient();
+async function loadNote(
+  userId: string | null,
+  noteId: string,
+): Promise<Note | null> {
+  const supabase = await notesClient(userId);
 
-  const { data, error } = await supabase
-    .from("notes")
-    .select("*")
-    .eq("id", noteId)
-    .single();
+  let query = supabase.from("notes").select("*").eq("id", noteId);
+
+  if (userId && hasAdminClient()) {
+    query = query.eq("user_id", userId);
+  }
+
+  const { data, error } = await query.maybeSingle();
 
   if (error) {
     console.error("[notes] getNote:", error.message);
@@ -65,16 +90,21 @@ export async function getNote(noteId: string): Promise<Note | null> {
   return data;
 }
 
-export async function getTodayJournal(): Promise<Note | null> {
-  const supabase = await createClient();
+async function loadTodayJournal(userId: string | null): Promise<Note | null> {
+  const supabase = await notesClient(userId);
   const today = toDateString(new Date());
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("notes")
     .select("*")
     .eq("type", "journal")
-    .eq("journal_date", today)
-    .maybeSingle();
+    .eq("journal_date", today);
+
+  if (userId && hasAdminClient()) {
+    query = query.eq("user_id", userId);
+  }
+
+  const { data, error } = await query.maybeSingle();
 
   if (error) {
     console.error("[notes] getTodayJournal:", error.message);
@@ -83,6 +113,65 @@ export async function getTodayJournal(): Promise<Note | null> {
 
   return data;
 }
+
+/** Notes list — request memoized; cross-request cached when service role is set. */
+export const getNotes = cache(async (type?: NoteType): Promise<Note[]> => {
+  const user = await getCurrentUser();
+  if (!user) {
+    return [];
+  }
+
+  if (hasAdminClient()) {
+    return cachedQuery(
+      ["notes", user.id, type ?? "all", "v1"],
+      [cacheTags.notes(user.id)],
+      CACHE_TTL.notes,
+      async () => loadNotes(user.id, type),
+    )();
+  }
+
+  return loadNotes(null, type);
+});
+
+/** Single note — request memoized; cross-request cached when service role is set. */
+export const getNote = cache(async (noteId: string): Promise<Note | null> => {
+  const user = await getCurrentUser();
+  if (!user) {
+    return null;
+  }
+
+  if (hasAdminClient()) {
+    return cachedQuery(
+      ["notes", user.id, "detail", noteId, "v1"],
+      [cacheTags.notes(user.id)],
+      CACHE_TTL.notes,
+      async () => loadNote(user.id, noteId),
+    )();
+  }
+
+  return loadNote(null, noteId);
+});
+
+/** Today's journal — request memoized; cross-request cached when service role is set. */
+export const getTodayJournal = cache(async (): Promise<Note | null> => {
+  const user = await getCurrentUser();
+  if (!user) {
+    return null;
+  }
+
+  const today = toDateString(new Date());
+
+  if (hasAdminClient()) {
+    return cachedQuery(
+      ["notes", user.id, "journal", today, "v1"],
+      [cacheTags.notes(user.id)],
+      CACHE_TTL.notes,
+      async () => loadTodayJournal(user.id),
+    )();
+  }
+
+  return loadTodayJournal(null);
+});
 
 export async function createNote(type: NoteType = "note") {
   const supabase = await createClient();
