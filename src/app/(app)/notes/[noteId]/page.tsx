@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getNote } from "@/actions/notes";
 import { Header } from "@/components/layout/header";
 import { NoteEditor } from "@/components/notes/note-editor";
+import { NotesPageFrame } from "@/components/notes/notes-page-frame";
 import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 
 type NoteDetailPageProps = {
@@ -27,15 +28,17 @@ export default async function NoteDetailPage({ params }: NoteDetailPageProps) {
             : "Edit and save your writing"
         }
       />
-      <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
-        <Breadcrumbs
-          items={[
-            { label: "Notes", href: "/notes" },
-            { label: note.title || "Untitled" },
-          ]}
-        />
-        <NoteEditor note={note} />
-      </div>
+      <NotesPageFrame>
+        <div className="mx-auto w-full max-w-4xl">
+          <Breadcrumbs
+            items={[
+              { label: "Notes", href: "/notes" },
+              { label: note.title || "Untitled" },
+            ]}
+          />
+          <NoteEditor note={note} />
+        </div>
+      </NotesPageFrame>
     </>
   );
 }
