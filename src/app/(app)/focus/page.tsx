@@ -4,7 +4,6 @@ import {
 } from "@/actions/focus";
 import { getFocusLinkableTasks } from "@/actions/tasks";
 import { FocusSessionList } from "@/components/focus/focus-session-list";
-import { FocusSounds } from "@/components/focus/focus-sounds";
 import { FocusStats } from "@/components/focus/focus-stats";
 import { FocusTimer } from "@/components/focus/focus-timer";
 import { FocusWorkspace } from "@/components/focus/focus-workspace";
@@ -24,11 +23,15 @@ export default async function FocusPage() {
       <Header title="Focus" description="One session at a time" />
       <AppPageFrame className="max-w-6xl gap-8 md:py-10">
         <FocusWorkspace
-          timer={<FocusTimer tasks={tasks} />}
+          timer={
+            <FocusTimer
+              tasks={tasks}
+              focusMinutesToday={stats.focus_minutes}
+            />
+          }
           rail={
             <>
               <FocusStats stats={stats} />
-              <FocusSounds />
               <LogFocusForm tasks={tasks} />
             </>
           }

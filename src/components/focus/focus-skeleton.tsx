@@ -15,18 +15,22 @@ export function FocusSkeleton() {
       <AppPageFrame className="max-w-6xl gap-8 md:py-10">
         <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(18.5rem,22rem)] lg:gap-8">
           <section className="flex min-h-[28rem] flex-col items-center justify-center px-2 py-6 sm:min-h-[32rem] sm:px-4 sm:py-8">
-            <Bone className="h-3 w-20" />
-            <Bone className="mt-2 h-4 w-40" />
-            <div className="mt-6 grid w-full max-w-xl grid-cols-3 gap-2">
-              <Bone className="h-14 rounded-xl" />
-              <Bone className="h-14 rounded-xl" />
-              <Bone className="h-14 rounded-xl" />
-            </div>
-            <Bone className="mt-8 size-64 rounded-full sm:size-72" />
+            <Bone className="h-3 w-28" />
+            <Bone className="mt-4 h-12 w-full max-w-md rounded-2xl" />
+            <Bone className="mt-3 h-9 w-56 rounded-xl" />
+            <Bone className="mt-8 size-[17.5rem] rounded-full sm:size-[19.5rem]" />
             <div className="mt-8 flex items-center gap-4">
               <Bone className="size-12 rounded-full" />
               <Bone className="size-16 rounded-full" />
               <Bone className="size-12 rounded-full" />
+            </div>
+            <Bone className="mt-3 h-3 w-28" />
+            <Bone className="mt-6 h-8 w-48 rounded-full" />
+            <div className="mt-8 flex w-full max-w-xl gap-2">
+              <Bone className="h-12 flex-1 rounded-2xl" />
+              <Bone className="h-12 flex-1 rounded-2xl" />
+              <Bone className="h-12 flex-1 rounded-2xl" />
+              <Bone className="h-12 flex-1 rounded-2xl" />
             </div>
           </section>
 
@@ -37,18 +41,6 @@ export function FocusSkeleton() {
               <div className="flex justify-end gap-1.5">
                 {Array.from({ length: 7 }).map((_, i) => (
                   <Bone key={i} className="size-3.5 rounded-sm" />
-                ))}
-              </div>
-            </section>
-            <section className="imx-panel imx-panel-tight">
-              <div className="flex items-center justify-between">
-                <Bone className="h-4 w-24" />
-                <Bone className="size-9 rounded-full" />
-              </div>
-              <Bone className="mt-3 h-1.5 w-full rounded-full" />
-              <div className="mt-3 space-y-2">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <Bone key={i} className="h-11 rounded-xl" />
                 ))}
               </div>
             </section>
