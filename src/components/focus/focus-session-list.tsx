@@ -65,10 +65,10 @@ function groupSessions(sessions: FocusSession[]) {
   return groups;
 }
 
-function modeDot(mode: FocusSession["mode"]) {
-  if (mode === "focus") return "bg-violet-500/80";
-  if (mode === "short_break") return "bg-teal-500/80";
-  return "bg-sky-500/80";
+function modeTone(mode: FocusSession["mode"]) {
+  if (mode === "focus") return "bg-foreground/80";
+  if (mode === "short_break") return "bg-amber-600/70 dark:bg-amber-400/70";
+  return "bg-emerald-700/60 dark:bg-emerald-400/60";
 }
 
 export function FocusSessionList({ sessions }: FocusSessionListProps) {
@@ -81,7 +81,10 @@ export function FocusSessionList({ sessions }: FocusSessionListProps) {
 
   if (optimisticSessions.length === 0) {
     return (
-      <section className="imx-panel">
+      <section>
+        <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+          Recent sessions
+        </p>
         <EmptyState
           icon={Clock}
           title="No sessions yet"
@@ -109,36 +112,40 @@ export function FocusSessionList({ sessions }: FocusSessionListProps) {
   }
 
   return (
-    <section className="imx-panel">
-      <div className="mb-4 flex items-baseline justify-between gap-3">
+    <section>
+      <div className="mb-6 flex items-end justify-between gap-3">
         <div>
-          <h2 className="text-sm font-medium">Recent sessions</h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">
+          <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+            Recent sessions
+          </p>
+          <p className="mt-1.5 text-sm text-muted-foreground">
             {optimisticSessions.length} logged
           </p>
         </div>
       </div>
-      <div className="space-y-6">
+
+      <div className="space-y-7">
         {groups.map((group) => (
           <div key={group.key}>
-            <div className="mb-2 flex items-baseline justify-between gap-3">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <div className="mb-3 flex items-baseline justify-between gap-3">
+              <h3 className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
                 {group.label}
-              </h2>
+              </h3>
               <span className="text-xs tabular-nums text-muted-foreground">
                 {group.sessions.length}
               </span>
             </div>
-            <ul className="border-t border-border/60">
+
+            <ul className="space-y-1">
               {group.sessions.map((session) => (
                 <li
                   key={session.id}
-                  className="group flex items-center gap-3 border-b border-border/50 py-3.5"
+                  className="group flex items-center gap-3 rounded-2xl px-2.5 py-2.5 transition-colors hover:bg-muted/40"
                 >
                   <span
                     className={cn(
-                      "size-2.5 shrink-0 rounded-full",
-                      modeDot(session.mode),
+                      "size-2 shrink-0 rounded-full",
+                      modeTone(session.mode),
                     )}
                     aria-hidden
                   />
@@ -168,11 +175,14 @@ export function FocusSessionList({ sessions }: FocusSessionListProps) {
                       </p>
                     ) : null}
                   </div>
-                  <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-                    {formatFocusDuration(session.actual_seconds)}
-                    <span className="mx-1.5 text-border">·</span>
-                    {formatTime(session.started_at)}
-                  </span>
+                  <div className="shrink-0 text-right">
+                    <p className="focus-clock text-sm text-foreground">
+                      {formatFocusDuration(session.actual_seconds)}
+                    </p>
+                    <p className="mt-0.5 text-[11px] tabular-nums text-muted-foreground">
+                      {formatTime(session.started_at)}
+                    </p>
+                  </div>
                   <Button
                     type="button"
                     variant="ghost"
