@@ -29,6 +29,16 @@ export type FocusOverviewStats = {
   week: FocusWeekDay[];
 };
 
+export const FOCUS_DAILY_GOAL_PRESETS = [
+  { label: "1h", minutes: 60 },
+  { label: "2h", minutes: 120 },
+  { label: "3h", minutes: 180 },
+  { label: "4h", minutes: 240 },
+] as const;
+
+export const FOCUS_DAILY_GOAL_DEFAULT = 120;
+export const FOCUS_DAILY_GOAL_KEY = "imx-focus-daily-goal";
+
 export const FOCUS_PRESETS: Record<
   FocusMode,
   { label: string; minutes: number }

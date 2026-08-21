@@ -38,6 +38,18 @@ export function FocusSkeleton() {
             <Bone className="h-4 w-28" />
             <Bone className="h-4 w-28" />
           </div>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <Bone className="h-3 w-40" />
+              <div className="flex gap-1">
+                <Bone className="h-5 w-8 rounded-md" />
+                <Bone className="h-5 w-8 rounded-md" />
+                <Bone className="h-5 w-8 rounded-md" />
+                <Bone className="h-5 w-8 rounded-md" />
+              </div>
+            </div>
+            <Bone className="h-1.5 w-full rounded-full" />
+          </div>
           <div className="flex items-center justify-between gap-3">
             <Bone className="h-3 w-20" />
             <div className="flex gap-1.5">
