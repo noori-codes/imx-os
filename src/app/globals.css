@@ -234,3 +234,77 @@
   transform-origin: bottom;
   animation: focus-eq 0.9s ease-in-out infinite;
 }
+
+/* Focus timer stage atmosphere */
+.focus-stage {
+  --focus-glow: oklch(0.55 0.04 250 / 0.14);
+  --focus-wash: oklch(0.55 0.03 250 / 0.06);
+  isolation: isolate;
+  border-radius: 1.5rem;
+  transition:
+    background-color 700ms ease,
+    box-shadow 700ms ease;
+}
+
+.focus-stage[data-mode="focus"] {
+  --focus-glow: oklch(0.52 0.045 245 / 0.16);
+  --focus-wash: oklch(0.5 0.035 245 / 0.07);
+}
+
+.focus-stage[data-mode="short_break"] {
+  --focus-glow: oklch(0.72 0.06 75 / 0.2);
+  --focus-wash: oklch(0.78 0.05 70 / 0.09);
+}
+
+.focus-stage[data-mode="long_break"] {
+  --focus-glow: oklch(0.7 0.055 55 / 0.22);
+  --focus-wash: oklch(0.76 0.045 50 / 0.1);
+}
+
+.focus-stage[data-running="true"] {
+  background: color-mix(in oklab, var(--focus-wash) 100%, transparent);
+}
+
+.focus-stage-glow {
+  pointer-events: none;
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: min(34rem, 92%);
+  height: min(34rem, 92%);
+  translate: -50% -50%;
+  border-radius: 9999px;
+  background: radial-gradient(
+    circle at center,
+    var(--focus-glow) 0%,
+    transparent 68%
+  );
+  opacity: 0.55;
+  transition:
+    opacity 700ms ease,
+    background 700ms ease,
+    width 700ms ease,
+    height 700ms ease;
+}
+
+.focus-stage[data-running="true"] .focus-stage-glow {
+  opacity: 1;
+  width: min(38rem, 98%);
+  height: min(38rem, 98%);
+}
+
+.dark .focus-stage[data-mode="focus"] {
+  --focus-glow: oklch(0.45 0.05 245 / 0.28);
+  --focus-wash: oklch(0.35 0.04 245 / 0.18);
+}
+
+.dark .focus-stage[data-mode="short_break"] {
+  --focus-glow: oklch(0.55 0.07 75 / 0.28);
+  --focus-wash: oklch(0.4 0.05 70 / 0.16);
+}
+
+.dark .focus-stage[data-mode="long_break"] {
+  --focus-glow: oklch(0.52 0.065 55 / 0.3);
+  --focus-wash: oklch(0.38 0.045 50 / 0.18);
+}
+

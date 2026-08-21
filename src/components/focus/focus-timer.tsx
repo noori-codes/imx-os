@@ -324,301 +324,350 @@ export function FocusTimer({
   const activeProfile =
     FOCUS_PROFILES.find((profile) => profile.id === profileId) ?? null;
 
+  const sessionLine =
+    mode === "focus"
+      ? intention.trim() || linkedTask?.title || null
+      : null;
+
   return (
-    <section className="imx-panel flex h-full flex-col px-5 py-6 sm:px-8 sm:py-8">
-      <div className="flex flex-col items-center">
-      <div className="flex w-full items-start justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold tracking-tight">
+    <section
+      data-mode={mode}
+      data-running={isRunning ? "true" : "false"}
+      className="focus-stage group relative flex h-full min-h-[28rem] flex-col items-center justify-center overflow-hidden px-2 py-6 sm:min-h-[32rem] sm:px-4 sm:py-8"
+    >
+      <div className="focus-stage-glow" aria-hidden />
+      <div className="relative z-[1] flex w-full max-w-xl flex-col items-center">
+        <div className="text-center">
+          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
             {mode === "focus" ? "Deep work" : FOCUS_PRESETS[mode].label}
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {isRunning ? "Running" : "Ready"}
-            {activeProfile ? ` · ${activeProfile.label}` : " · Custom"}
-            {" · "}
-            Space · S · R
           </p>
+          {!isRunning ? (
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              {activeProfile ? activeProfile.label : "Custom"}
+              {" · Space · S · R"}
+            </p>
+          ) : sessionLine ? (
+            <p className="mt-2 max-w-sm truncate text-sm text-foreground/80">
+              {sessionLine}
+            </p>
+          ) : (
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              {endedHint ?? `Up next: ${FOCUS_PRESETS[upcoming].label}`}
+            </p>
+          )}
         </div>
-      </div>
 
-      {!isRunning ? (
-        <div className="mt-5 grid w-full max-w-lg grid-cols-3 gap-2">
-          {FOCUS_PROFILES.map((profile) => {
-            const active = profileId === profile.id;
-            return (
-              <button
-                key={profile.id}
-                type="button"
-                onClick={() => {
-                  setCustomHours("");
-                  setCustomMinutes("");
-                  applyProfile(profile.id);
-                }}
-                className={cn(
-                  "rounded-xl px-3 py-2.5 text-left transition-colors",
-                  active
-                    ? "bg-foreground text-background"
-                    : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground",
-                )}
-                aria-pressed={active}
-              >
-                <span className="block text-sm font-medium">{profile.label}</span>
-                <span
-                  className={cn(
-                    "mt-0.5 block text-[11px] tabular-nums",
-                    active ? "text-background/70" : "text-muted-foreground",
-                  )}
-                >
-                  {profile.hint}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      ) : null}
-
-      <div
-        className="mt-6 flex w-full max-w-md justify-center gap-1 rounded-full bg-muted/40 p-1"
-        role="tablist"
-        aria-label="Timer mode"
-      >
-        {MODES.map((m) => {
-          const isActive = mode === m;
-          return (
-            <button
-              key={m}
-              type="button"
-              role="tab"
-              aria-selected={isActive}
-              disabled={isRunning}
-              onClick={() => {
-                if (isRunning) return;
-                setCustomHours("");
-                setCustomMinutes("");
-                setMode(m);
-              }}
-              className={cn(
-                "min-w-0 flex-1 rounded-full px-3 py-1.5 text-sm transition-colors disabled:opacity-50",
-                isActive
-                  ? "bg-background font-medium text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {FOCUS_PRESETS[m].label}
-            </button>
-          );
-        })}
-      </div>
-
-      <div
-        className="mt-4 flex items-center gap-2"
-        aria-label={`${dots} of ${FOCUS_POMODOROS_PER_LONG_BREAK} toward a long break`}
-      >
-        {Array.from({ length: FOCUS_POMODOROS_PER_LONG_BREAK }).map((_, i) => (
-          <span
-            key={i}
-            className={cn(
-              "size-2 rounded-full transition-colors",
-              i < dots ? "bg-foreground" : "bg-muted-foreground/30",
-            )}
-          />
-        ))}
-      </div>
-
-      <div className="relative mx-auto mt-6 flex size-64 items-center justify-center sm:size-72">
-        <svg
-          className="absolute inset-0 size-full -rotate-90"
-          viewBox="0 0 100 100"
-          aria-hidden
-        >
-          <circle
-            cx="50"
-            cy="50"
-            r="44"
-            fill="none"
-            className="stroke-muted"
-            strokeWidth="2.5"
-          />
-          <circle
-            cx="50"
-            cy="50"
-            r="44"
-            fill="none"
-            className="stroke-foreground transition-[stroke-dashoffset] duration-500 ease-linear"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeDasharray={`${2 * Math.PI * 44}`}
-            strokeDashoffset={`${2 * Math.PI * 44 * (1 - progress / 100)}`}
-          />
-        </svg>
-        <div className="relative text-center">
-          <p
-            className={cn(
-              "font-mono font-semibold tracking-tight tabular-nums",
-              remainingSeconds >= 3600
-                ? "text-4xl sm:text-5xl"
-                : "text-5xl sm:text-6xl",
-            )}
-          >
-            {formatFocusClock(remainingSeconds)}
-          </p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {endedHint ??
-              (isRunning
-                ? `Up next: ${FOCUS_PRESETS[upcoming].label}`
-                : FOCUS_PRESETS[mode].label)}
-          </p>
-        </div>
-      </div>
-
-      {mode === "focus" ? (
-        <div className="mt-5 flex w-full max-w-sm flex-col gap-2">
-          {tasks.length > 0 ? (
-            <select
-              value={linkedTaskId ?? ""}
-              disabled={isRunning}
-              onChange={(e) => {
-                const nextId = e.target.value || null;
-                setLinkedTaskId(nextId);
-                if (nextId && !intention.trim()) {
-                  const task = tasks.find((item) => item.id === nextId);
-                  if (task) setIntention(task.title);
-                }
-              }}
-              aria-label="Link a task"
-              className="h-9 w-full rounded-xl border border-border/60 bg-background/60 px-3 text-sm text-foreground disabled:opacity-60"
-            >
-              <option value="">No linked task</option>
-              {tasks.map((task) => (
-                <option key={task.id} value={task.id}>
-                  {task.context
-                    ? `${task.title} · ${task.context}`
-                    : task.title}
-                </option>
-              ))}
-            </select>
-          ) : null}
-          <Input
-            value={intention}
-            onChange={(e) => setIntention(e.target.value)}
-            placeholder={
-              linkedTask ? `Working on ${linkedTask.title}` : "Working on…"
-            }
-            aria-label="What are you focusing on"
-            className="h-9 w-full rounded-xl border-border/60 bg-background/60 text-center"
-          />
-        </div>
-      ) : null}
-
-      {!isRunning ? (
-        <div className="mt-5 flex w-full max-w-md flex-col items-center gap-3">
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            {durationPresets.map((preset) => {
-              const active =
-                !customHours &&
-                !customMinutes &&
-                durationMinutes === preset.minutes;
+        {!isRunning ? (
+          <div className="mt-6 grid w-full grid-cols-3 gap-2">
+            {FOCUS_PROFILES.map((profile) => {
+              const active = profileId === profile.id;
               return (
                 <button
-                  key={preset.minutes}
+                  key={profile.id}
                   type="button"
                   onClick={() => {
                     setCustomHours("");
                     setCustomMinutes("");
-                    setDuration(preset.minutes * 60);
+                    applyProfile(profile.id);
                   }}
                   className={cn(
-                    "rounded-full px-3 py-1 text-sm tabular-nums transition-colors",
+                    "rounded-xl px-3 py-2.5 text-left transition-colors",
                     active
                       ? "bg-foreground text-background"
-                      : "bg-muted/60 text-muted-foreground hover:text-foreground",
+                      : "bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground",
                   )}
+                  aria-pressed={active}
                 >
-                  {preset.label}
+                  <span className="block text-sm font-medium">
+                    {profile.label}
+                  </span>
+                  <span
+                    className={cn(
+                      "mt-0.5 block text-[11px] tabular-nums",
+                      active ? "text-background/70" : "text-muted-foreground",
+                    )}
+                  >
+                    {profile.hint}
+                  </span>
                 </button>
               );
             })}
           </div>
-          {mode === "focus" ? (
-            <div className="flex items-center gap-2 text-sm">
-              <Input
-                type="number"
-                min={0}
-                max={12}
-                inputMode="numeric"
-                placeholder="hrs"
-                aria-label="Custom hours"
-                value={customHours}
-                onChange={(e) => setCustomHours(e.target.value)}
-                className="h-9 w-16 rounded-xl border-border/60 bg-background/60 text-center"
+        ) : null}
+
+        {!isRunning ? (
+          <div
+            className="mt-5 flex w-full justify-center gap-1 rounded-full bg-muted/35 p-1"
+            role="tablist"
+            aria-label="Timer mode"
+          >
+            {MODES.map((m) => {
+              const isActive = mode === m;
+              return (
+                <button
+                  key={m}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  onClick={() => {
+                    setCustomHours("");
+                    setCustomMinutes("");
+                    setMode(m);
+                  }}
+                  className={cn(
+                    "min-w-0 flex-1 rounded-full px-3 py-1.5 text-sm transition-colors",
+                    isActive
+                      ? "bg-background font-medium text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {FOCUS_PRESETS[m].label}
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
+
+        <div
+          className={cn(
+            "relative mx-auto flex items-center justify-center",
+            isRunning ? "mt-10 sm:mt-14" : "mt-8",
+          )}
+        >
+          <div
+            className={cn(
+              "relative flex items-center justify-center",
+              isRunning
+                ? "size-[min(88vw,22rem)] sm:size-[24rem]"
+                : "size-64 sm:size-72",
+            )}
+          >
+            <svg
+              className="absolute inset-0 size-full -rotate-90"
+              viewBox="0 0 100 100"
+              aria-hidden
+            >
+              <circle
+                cx="50"
+                cy="50"
+                r="44"
+                fill="none"
+                className="stroke-muted/70"
+                strokeWidth={isRunning ? "1.5" : "2"}
               />
-              <span className="text-muted-foreground">:</span>
-              <Input
-                type="number"
-                min={0}
-                max={59}
-                inputMode="numeric"
-                placeholder="min"
-                aria-label="Custom minutes"
-                value={customMinutes}
-                onChange={(e) => setCustomMinutes(e.target.value)}
-                className="h-9 w-16 rounded-xl border-border/60 bg-background/60 text-center"
+              <circle
+                cx="50"
+                cy="50"
+                r="44"
+                fill="none"
+                className="stroke-foreground transition-[stroke-dashoffset] duration-500 ease-linear"
+                strokeWidth={isRunning ? "1.5" : "2"}
+                strokeLinecap="round"
+                strokeDasharray={`${2 * Math.PI * 44}`}
+                strokeDashoffset={`${2 * Math.PI * 44 * (1 - progress / 100)}`}
               />
-              {!presetMatch && !customHours && !customMinutes ? (
-                <span className="text-xs tabular-nums text-muted-foreground">
-                  {formatFocusClock(durationSeconds)}
-                </span>
+            </svg>
+
+            <div className="relative px-6 text-center">
+              <p
+                className={cn(
+                  "font-mono font-medium tracking-[-0.03em] tabular-nums leading-none text-foreground",
+                  remainingSeconds >= 3600
+                    ? "text-[clamp(2.25rem,6.5vw,3.75rem)]"
+                    : "text-[clamp(2.75rem,8vw,4.75rem)]",
+                )}
+              >
+                {formatFocusClock(remainingSeconds)}
+              </p>
+              {!isRunning ? (
+                <p className="mt-3 text-sm text-muted-foreground">
+                  {FOCUS_PRESETS[mode].label}
+                </p>
+              ) : endedHint ? (
+                <p className="mt-4 text-sm text-muted-foreground">{endedHint}</p>
               ) : null}
             </div>
-          ) : null}
+          </div>
         </div>
-      ) : null}
 
-      <div className="mt-8 flex items-center gap-4">
-        <button
-          type="button"
-          onClick={handleReset}
-          className="flex size-12 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          aria-label="Reset timer"
-        >
-          <RotateCcw className="size-5" />
-        </button>
-        <button
-          type="button"
-          onClick={handleToggle}
-          className="flex size-16 items-center justify-center rounded-full bg-foreground text-background transition-transform hover:scale-[1.03] active:scale-95"
-          aria-label={isRunning ? "Pause timer" : "Start timer"}
-        >
-          {isRunning ? (
-            <Pause className="size-6 fill-current" />
-          ) : (
-            <Play className="size-6 fill-current pl-0.5" />
-          )}
-        </button>
-        <button
-          type="button"
-          onClick={handleSkip}
-          className="flex size-12 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          aria-label="Skip to next phase"
-        >
-          <SkipForward className="size-5" />
-        </button>
-      </div>
-
-      <div className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-        <button
-          type="button"
-          onClick={() => setAutoStartNext(!autoStartNext)}
+        <div
           className={cn(
-            "rounded-full px-3 py-1 transition-colors",
-            autoStartNext
-              ? "bg-foreground text-background"
-              : "hover:bg-muted hover:text-foreground",
+            "mt-5 flex items-center gap-2",
+            isRunning && "opacity-70",
           )}
+          aria-label={`${dots} of ${FOCUS_POMODOROS_PER_LONG_BREAK} toward a long break`}
         >
-          Auto-start {autoStartNext ? "on" : "off"}
-        </button>
-      </div>
+          {Array.from({ length: FOCUS_POMODOROS_PER_LONG_BREAK }).map((_, i) => (
+            <span
+              key={i}
+              className={cn(
+                "size-1.5 rounded-full transition-colors",
+                i < dots ? "bg-foreground" : "bg-muted-foreground/25",
+              )}
+            />
+          ))}
+        </div>
+
+        {mode === "focus" && !isRunning ? (
+          <div className="mt-6 flex w-full max-w-sm flex-col gap-2">
+            {tasks.length > 0 ? (
+              <select
+                value={linkedTaskId ?? ""}
+                onChange={(e) => {
+                  const nextId = e.target.value || null;
+                  setLinkedTaskId(nextId);
+                  if (nextId && !intention.trim()) {
+                    const task = tasks.find((item) => item.id === nextId);
+                    if (task) setIntention(task.title);
+                  }
+                }}
+                aria-label="Link a task"
+                className="h-9 w-full rounded-xl border border-border/50 bg-transparent px-3 text-sm text-foreground"
+              >
+                <option value="">No linked task</option>
+                {tasks.map((task) => (
+                  <option key={task.id} value={task.id}>
+                    {task.context
+                      ? `${task.title} · ${task.context}`
+                      : task.title}
+                  </option>
+                ))}
+              </select>
+            ) : null}
+            <Input
+              value={intention}
+              onChange={(e) => setIntention(e.target.value)}
+              placeholder={
+                linkedTask ? `Working on ${linkedTask.title}` : "Working on…"
+              }
+              aria-label="What are you focusing on"
+              className="h-9 w-full rounded-xl border-border/50 bg-transparent text-center"
+            />
+          </div>
+        ) : null}
+
+        {!isRunning ? (
+          <div className="mt-5 flex w-full max-w-md flex-col items-center gap-3">
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              {durationPresets.map((preset) => {
+                const active =
+                  !customHours &&
+                  !customMinutes &&
+                  durationMinutes === preset.minutes;
+                return (
+                  <button
+                    key={preset.minutes}
+                    type="button"
+                    onClick={() => {
+                      setCustomHours("");
+                      setCustomMinutes("");
+                      setDuration(preset.minutes * 60);
+                    }}
+                    className={cn(
+                      "rounded-full px-3 py-1 text-sm tabular-nums transition-colors",
+                      active
+                        ? "bg-foreground text-background"
+                        : "bg-muted/50 text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {preset.label}
+                  </button>
+                );
+              })}
+            </div>
+            {mode === "focus" ? (
+              <div className="flex items-center gap-2 text-sm">
+                <Input
+                  type="number"
+                  min={0}
+                  max={12}
+                  inputMode="numeric"
+                  placeholder="hrs"
+                  aria-label="Custom hours"
+                  value={customHours}
+                  onChange={(e) => setCustomHours(e.target.value)}
+                  className="h-9 w-16 rounded-xl border-border/50 bg-transparent text-center"
+                />
+                <span className="text-muted-foreground">:</span>
+                <Input
+                  type="number"
+                  min={0}
+                  max={59}
+                  inputMode="numeric"
+                  placeholder="min"
+                  aria-label="Custom minutes"
+                  value={customMinutes}
+                  onChange={(e) => setCustomMinutes(e.target.value)}
+                  className="h-9 w-16 rounded-xl border-border/50 bg-transparent text-center"
+                />
+                {!presetMatch && !customHours && !customMinutes ? (
+                  <span className="text-xs tabular-nums text-muted-foreground">
+                    {formatFocusClock(durationSeconds)}
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        <div className="mt-8 flex items-center gap-3 sm:gap-4">
+          <button
+            type="button"
+            onClick={handleReset}
+            className={cn(
+              "flex size-12 items-center justify-center rounded-full text-muted-foreground transition-all hover:bg-muted hover:text-foreground",
+              isRunning &&
+                "opacity-0 group-hover:opacity-100 focus-visible:opacity-100 max-sm:opacity-100",
+            )}
+            aria-label="Reset timer"
+          >
+            <RotateCcw className="size-5" />
+          </button>
+          <button
+            type="button"
+            onClick={handleToggle}
+            className={cn(
+              "flex items-center justify-center rounded-full bg-foreground text-background transition-transform hover:scale-[1.03] active:scale-95",
+              isRunning ? "size-[4.25rem]" : "size-16",
+            )}
+            aria-label={isRunning ? "Pause timer" : "Start timer"}
+          >
+            {isRunning ? (
+              <Pause className="size-6 fill-current" />
+            ) : (
+              <Play className="size-6 fill-current pl-0.5" />
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={handleSkip}
+            className={cn(
+              "flex size-12 items-center justify-center rounded-full text-muted-foreground transition-all hover:bg-muted hover:text-foreground",
+              isRunning &&
+                "opacity-0 group-hover:opacity-100 focus-visible:opacity-100 max-sm:opacity-100",
+            )}
+            aria-label="Skip to next phase"
+          >
+            <SkipForward className="size-5" />
+          </button>
+        </div>
+
+        {!isRunning ? (
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+            <button
+              type="button"
+              onClick={() => setAutoStartNext(!autoStartNext)}
+              className={cn(
+                "rounded-full px-3 py-1 transition-colors",
+                autoStartNext
+                  ? "bg-foreground text-background"
+                  : "hover:bg-muted hover:text-foreground",
+              )}
+            >
+              Auto-start {autoStartNext ? "on" : "off"}
+            </button>
+          </div>
+        ) : null}
       </div>
     </section>
   );

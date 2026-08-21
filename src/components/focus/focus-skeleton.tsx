@@ -14,21 +14,19 @@ export function FocusSkeleton() {
     >
       <AppPageFrame className="max-w-6xl gap-8 md:py-10">
         <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(18.5rem,22rem)] lg:gap-8">
-          <section className="imx-panel px-5 py-6 sm:px-8 sm:py-8">
-            <Bone className="h-5 w-28" />
-            <Bone className="mt-2 h-4 w-48" />
-            <div className="mt-5 grid grid-cols-3 gap-2">
+          <section className="flex min-h-[28rem] flex-col items-center justify-center px-2 py-6 sm:min-h-[32rem] sm:px-4 sm:py-8">
+            <Bone className="h-3 w-20" />
+            <Bone className="mt-2 h-4 w-40" />
+            <div className="mt-6 grid w-full max-w-xl grid-cols-3 gap-2">
               <Bone className="h-14 rounded-xl" />
               <Bone className="h-14 rounded-xl" />
               <Bone className="h-14 rounded-xl" />
             </div>
-            <div className="mt-8 flex flex-col items-center">
-              <Bone className="size-64 rounded-full sm:size-72" />
-              <div className="mt-8 flex items-center gap-4">
-                <Bone className="size-12 rounded-full" />
-                <Bone className="size-16 rounded-full" />
-                <Bone className="size-12 rounded-full" />
-              </div>
+            <Bone className="mt-8 size-64 rounded-full sm:size-72" />
+            <div className="mt-8 flex items-center gap-4">
+              <Bone className="size-12 rounded-full" />
+              <Bone className="size-16 rounded-full" />
+              <Bone className="size-12 rounded-full" />
             </div>
           </section>
 
