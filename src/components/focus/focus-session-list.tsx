@@ -81,11 +81,14 @@ export function FocusSessionList({ sessions }: FocusSessionListProps) {
 
   if (optimisticSessions.length === 0) {
     return (
-      <EmptyState
-        icon={Clock}
-        title="No sessions yet"
-        description="Start the timer. Finished and stopped sessions will land here."
-      />
+      <section className="imx-panel">
+        <EmptyState
+          icon={Clock}
+          title="No sessions yet"
+          description="Start the timer. Finished and stopped sessions will land here."
+          className="py-10"
+        />
+      </section>
     );
   }
 
@@ -106,13 +109,15 @@ export function FocusSessionList({ sessions }: FocusSessionListProps) {
   }
 
   return (
-    <div>
-      <p className="mb-3 text-sm text-muted-foreground">
-        Recent{" "}
-        <span className="tabular-nums text-foreground">
-          {optimisticSessions.length}
-        </span>
-      </p>
+    <section className="imx-panel">
+      <div className="mb-4 flex items-baseline justify-between gap-3">
+        <div>
+          <h2 className="text-sm font-medium">Recent sessions</h2>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {optimisticSessions.length} logged
+          </p>
+        </div>
+      </div>
       <div className="space-y-6">
         {groups.map((group) => (
           <div key={group.key}>
@@ -184,6 +189,6 @@ export function FocusSessionList({ sessions }: FocusSessionListProps) {
           </div>
         ))}
       </div>
-    </div>
+    </section>
   );
 }

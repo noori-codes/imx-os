@@ -58,8 +58,8 @@ export function FocusStats({ stats }: FocusStatsProps) {
   const met = stats.focus_minutes >= goalMinutes;
 
   return (
-    <div className="space-y-3 border-b border-border/60 pb-4">
-      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm text-muted-foreground">
+    <div className="imx-panel imx-panel-tight space-y-3">
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm text-muted-foreground">
         <span>
           Today{" "}
           <span className="tabular-nums text-foreground">{today}</span>

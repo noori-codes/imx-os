@@ -12,12 +12,12 @@ export function FocusSounds() {
     FOCUS_TRACKS.find((track) => track.id === activeId) ?? FOCUS_TRACKS[3];
 
   return (
-    <section>
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <div>
-          <h2 className="text-sm font-medium">Ambient sound</h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            {playing ? "Looping" : "Ready"} · {active.label} · {active.hint}
+    <section className="imx-panel imx-panel-tight">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="text-sm font-medium">Ambient</h2>
+          <p className="mt-0.5 truncate text-xs text-muted-foreground">
+            {playing ? "Looping" : "Ready"} · {active.label}
           </p>
         </div>
         <button
@@ -34,7 +34,7 @@ export function FocusSounds() {
         </button>
       </div>
 
-      <div className="mb-3 flex items-center gap-2.5">
+      <div className="mt-3 flex items-center gap-2.5">
         <Volume2 className="size-4 shrink-0 text-muted-foreground" />
         <input
           type="range"
@@ -48,23 +48,25 @@ export function FocusSounds() {
         />
       </div>
 
-      <ul className="border-t border-border/60">
+      <ul className="mt-3 space-y-1">
         {FOCUS_TRACKS.map((track) => {
           const isActive = activeId === track.id;
           return (
-            <li key={track.id} className="border-b border-border/50">
+            <li key={track.id}>
               <button
                 type="button"
                 onClick={() => void toggle(track.id)}
                 className={cn(
-                  "flex w-full items-center gap-3 py-3 text-left transition-colors hover:bg-muted/40",
-                  isActive && "bg-muted/30",
+                  "flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left transition-colors",
+                  isActive
+                    ? "bg-muted/60"
+                    : "hover:bg-muted/40",
                 )}
                 aria-pressed={isActive && playing}
               >
                 <span
                   className={cn(
-                    "size-8 shrink-0 rounded-md bg-linear-to-br ring-1 ring-border/60",
+                    "size-7 shrink-0 rounded-lg bg-linear-to-br ring-1 ring-border/50",
                     track.tone,
                   )}
                 />
@@ -72,17 +74,17 @@ export function FocusSounds() {
                   <span className="block truncate text-sm font-medium">
                     {track.label}
                   </span>
-                  <span className="block text-xs text-muted-foreground">
+                  <span className="block text-[11px] text-muted-foreground">
                     {track.hint}
                   </span>
                 </span>
                 <span
                   className={cn(
-                    "text-xs font-medium",
+                    "text-[11px] font-medium",
                     isActive ? "text-foreground" : "text-muted-foreground",
                   )}
                 >
-                  {isActive ? (playing ? "Playing" : "Selected") : "Cue"}
+                  {isActive ? (playing ? "Playing" : "On") : "Cue"}
                 </span>
               </button>
             </li>

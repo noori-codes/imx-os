@@ -325,24 +325,24 @@ export function FocusTimer({
     FOCUS_PROFILES.find((profile) => profile.id === profileId) ?? null;
 
   return (
-    <section className="border-b border-border/60 pb-8">
+    <section className="imx-panel flex h-full flex-col px-5 py-6 sm:px-8 sm:py-8">
       <div className="flex flex-col items-center">
       <div className="flex w-full items-start justify-between gap-4">
         <div>
-          <h2 className="text-base font-semibold">
+          <h2 className="text-lg font-semibold tracking-tight">
             {mode === "focus" ? "Deep work" : FOCUS_PRESETS[mode].label}
           </h2>
-          <p className="mt-0.5 text-sm text-muted-foreground">
+          <p className="mt-1 text-sm text-muted-foreground">
             {isRunning ? "Running" : "Ready"}
             {activeProfile ? ` · ${activeProfile.label}` : " · Custom"}
             {" · "}
-            Space start · S skip · R reset
+            Space · S · R
           </p>
         </div>
       </div>
 
       {!isRunning ? (
-        <div className="mt-4 flex w-full max-w-md flex-wrap items-center justify-center gap-2">
+        <div className="mt-5 grid w-full max-w-lg grid-cols-3 gap-2">
           {FOCUS_PROFILES.map((profile) => {
             const active = profileId === profile.id;
             return (
@@ -355,18 +355,18 @@ export function FocusTimer({
                   applyProfile(profile.id);
                 }}
                 className={cn(
-                  "rounded-md px-2.5 py-1.5 text-left transition-colors",
+                  "rounded-xl px-3 py-2.5 text-left transition-colors",
                   active
                     ? "bg-foreground text-background"
-                    : "bg-muted text-muted-foreground hover:text-foreground",
+                    : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground",
                 )}
                 aria-pressed={active}
               >
                 <span className="block text-sm font-medium">{profile.label}</span>
                 <span
                   className={cn(
-                    "block text-[11px] tabular-nums",
-                    active ? "text-background/75" : "text-muted-foreground",
+                    "mt-0.5 block text-[11px] tabular-nums",
+                    active ? "text-background/70" : "text-muted-foreground",
                   )}
                 >
                   {profile.hint}
@@ -378,7 +378,7 @@ export function FocusTimer({
       ) : null}
 
       <div
-        className="mt-5 flex gap-4 border-b border-border/60"
+        className="mt-6 flex w-full max-w-md justify-center gap-1 rounded-full bg-muted/40 p-1"
         role="tablist"
         aria-label="Timer mode"
       >
@@ -398,10 +398,10 @@ export function FocusTimer({
                 setMode(m);
               }}
               className={cn(
-                "border-b-2 pb-2 text-sm transition-colors disabled:opacity-50",
+                "min-w-0 flex-1 rounded-full px-3 py-1.5 text-sm transition-colors disabled:opacity-50",
                 isActive
-                  ? "border-foreground font-medium text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground",
+                  ? "bg-background font-medium text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
               {FOCUS_PRESETS[m].label}
@@ -425,7 +425,7 @@ export function FocusTimer({
         ))}
       </div>
 
-      <div className="relative mx-auto mt-5 flex size-64 items-center justify-center sm:size-72">
+      <div className="relative mx-auto mt-6 flex size-64 items-center justify-center sm:size-72">
         <svg
           className="absolute inset-0 size-full -rotate-90"
           viewBox="0 0 100 100"
@@ -437,7 +437,7 @@ export function FocusTimer({
             r="44"
             fill="none"
             className="stroke-muted"
-            strokeWidth="3"
+            strokeWidth="2.5"
           />
           <circle
             cx="50"
@@ -445,7 +445,7 @@ export function FocusTimer({
             r="44"
             fill="none"
             className="stroke-foreground transition-[stroke-dashoffset] duration-500 ease-linear"
-            strokeWidth="3"
+            strokeWidth="2.5"
             strokeLinecap="round"
             strokeDasharray={`${2 * Math.PI * 44}`}
             strokeDashoffset={`${2 * Math.PI * 44 * (1 - progress / 100)}`}
@@ -472,7 +472,7 @@ export function FocusTimer({
       </div>
 
       {mode === "focus" ? (
-        <div className="mt-4 flex w-full max-w-sm flex-col gap-2">
+        <div className="mt-5 flex w-full max-w-sm flex-col gap-2">
           {tasks.length > 0 ? (
             <select
               value={linkedTaskId ?? ""}
@@ -486,7 +486,7 @@ export function FocusTimer({
                 }
               }}
               aria-label="Link a task"
-              className="h-9 w-full rounded-md border border-border/60 bg-background px-3 text-sm text-foreground disabled:opacity-60"
+              className="h-9 w-full rounded-xl border border-border/60 bg-background/60 px-3 text-sm text-foreground disabled:opacity-60"
             >
               <option value="">No linked task</option>
               {tasks.map((task) => (
@@ -505,13 +505,13 @@ export function FocusTimer({
               linkedTask ? `Working on ${linkedTask.title}` : "Working on…"
             }
             aria-label="What are you focusing on"
-            className="h-9 w-full text-center"
+            className="h-9 w-full rounded-xl border-border/60 bg-background/60 text-center"
           />
         </div>
       ) : null}
 
       {!isRunning ? (
-        <div className="mt-4 flex w-full max-w-md flex-col items-center gap-4">
+        <div className="mt-5 flex w-full max-w-md flex-col items-center gap-3">
           <div className="flex flex-wrap items-center justify-center gap-2">
             {durationPresets.map((preset) => {
               const active =
@@ -528,10 +528,10 @@ export function FocusTimer({
                     setDuration(preset.minutes * 60);
                   }}
                   className={cn(
-                    "rounded-md px-2.5 py-1 text-sm tabular-nums transition-colors",
+                    "rounded-full px-3 py-1 text-sm tabular-nums transition-colors",
                     active
                       ? "bg-foreground text-background"
-                      : "bg-muted text-muted-foreground hover:text-foreground",
+                      : "bg-muted/60 text-muted-foreground hover:text-foreground",
                   )}
                 >
                   {preset.label}
@@ -550,7 +550,7 @@ export function FocusTimer({
                 aria-label="Custom hours"
                 value={customHours}
                 onChange={(e) => setCustomHours(e.target.value)}
-                className="h-9 w-16 text-center"
+                className="h-9 w-16 rounded-xl border-border/60 bg-background/60 text-center"
               />
               <span className="text-muted-foreground">:</span>
               <Input
@@ -562,7 +562,7 @@ export function FocusTimer({
                 aria-label="Custom minutes"
                 value={customMinutes}
                 onChange={(e) => setCustomMinutes(e.target.value)}
-                className="h-9 w-16 text-center"
+                className="h-9 w-16 rounded-xl border-border/60 bg-background/60 text-center"
               />
               {!presetMatch && !customHours && !customMinutes ? (
                 <span className="text-xs tabular-nums text-muted-foreground">
@@ -586,7 +586,7 @@ export function FocusTimer({
         <button
           type="button"
           onClick={handleToggle}
-          className="flex size-14 items-center justify-center rounded-full bg-foreground text-background transition-transform hover:scale-[1.03] active:scale-95"
+          className="flex size-16 items-center justify-center rounded-full bg-foreground text-background transition-transform hover:scale-[1.03] active:scale-95"
           aria-label={isRunning ? "Pause timer" : "Start timer"}
         >
           {isRunning ? (
@@ -610,7 +610,7 @@ export function FocusTimer({
           type="button"
           onClick={() => setAutoStartNext(!autoStartNext)}
           className={cn(
-            "rounded-md px-2.5 py-1 transition-colors",
+            "rounded-full px-3 py-1 transition-colors",
             autoStartNext
               ? "bg-foreground text-background"
               : "hover:bg-muted hover:text-foreground",

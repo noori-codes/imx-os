@@ -42,12 +42,12 @@ export function LogFocusForm({
   }, null);
 
   return (
-    <section className="border-b border-border/60 pb-5">
+    <section className="imx-panel imx-panel-tight">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-sm font-medium">Log focus manually</h2>
+          <h2 className="text-sm font-medium">Log manually</h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Missed the timer? Add time with an optional note.
+            Add focus you already did.
           </p>
         </div>
         <button

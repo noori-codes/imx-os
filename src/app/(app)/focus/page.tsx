@@ -21,11 +21,17 @@ export default async function FocusPage() {
   return (
     <>
       <Header title="Focus" description="Timer, sound, one session" />
-      <AppPageFrame>
-        <FocusTimer tasks={tasks} />
-        <FocusStats stats={stats} />
-        <FocusSounds />
-        <LogFocusForm tasks={tasks} />
+      <AppPageFrame className="max-w-6xl gap-8 md:py-10">
+        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(18.5rem,22rem)] lg:gap-8">
+          <FocusTimer tasks={tasks} />
+
+          <aside className="flex min-w-0 flex-col gap-4 lg:sticky lg:top-20">
+            <FocusStats stats={stats} />
+            <FocusSounds />
+            <LogFocusForm tasks={tasks} />
+          </aside>
+        </div>
+
         <FocusSessionList sessions={sessions} />
       </AppPageFrame>
     </>

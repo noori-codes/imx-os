@@ -118,6 +118,19 @@
   }
 }
 
+/* Soft workspace panels (Focus room, etc.) */
+.imx-panel {
+  border-radius: 1.25rem;
+  border: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
+  background: color-mix(in oklab, var(--card) 88%, transparent);
+  box-shadow: 0 1px 0 color-mix(in oklab, white 3%, transparent);
+  padding: 1.25rem;
+}
+
+.imx-panel-tight {
+  padding: 1rem;
+}
+
 /* TipTap editor */
 .note-editor h2 {
   margin: 0.75rem 0 0.35rem;
