@@ -16,34 +16,10 @@ export function FocusWorkspace({ timer, rail, sessions }: FocusWorkspaceProps) {
 
   return (
     <>
-      <div
-        className={cn(
-          "grid items-start gap-6 transition-[grid-template-columns] duration-500 ease-out lg:gap-8",
-          isRunning
-            ? "lg:grid-cols-1"
-            : "lg:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)]",
-        )}
-      >
-        <div
-          className={cn(
-            "min-w-0 transition-[max-width] duration-500 ease-out",
-            isRunning && "mx-auto w-full max-w-3xl",
-          )}
-        >
-          {timer}
-        </div>
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)] lg:gap-8">
+        <div className="min-w-0">{timer}</div>
 
-        <aside
-          aria-hidden={isRunning}
-          className={cn(
-            "flex min-w-0 flex-col gap-10 overflow-hidden transition-all duration-500 ease-out lg:sticky lg:top-20",
-            isRunning
-              ? "pointer-events-none max-h-0 opacity-0 lg:max-h-none lg:w-0 lg:min-w-0 lg:opacity-0 lg:translate-x-3"
-              : "max-h-[2000px] opacity-100 lg:translate-x-0",
-          )}
-        >
-          {rail}
-        </aside>
+        <aside className="min-w-0 lg:sticky lg:top-20">{rail}</aside>
       </div>
 
       <div

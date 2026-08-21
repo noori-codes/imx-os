@@ -2,11 +2,12 @@
 
 import { create } from "zustand";
 
-import type { FocusMode, FocusProfileId } from "@/types/focus";
+import type { FocusClock, FocusMode, FocusProfileId } from "@/types/focus";
 import {
+  FOCUS_CLOCK_DEFAULT,
+  FOCUS_CLOCK_KEY,
   FOCUS_MAX_SECONDS,
   FOCUS_POMODOROS_PER_LONG_BREAK,
-  FOCUS_PRESETS,
   FOCUS_PROFILE_DEFAULT,
   FOCUS_PROFILE_KEY,
   getFocusProfile,
@@ -17,8 +18,10 @@ const AUTO_START_KEY = "imx-focus-auto-start";
 
 type FocusTimerState = {
   mode: FocusMode;
+  clock: FocusClock;
   durationSeconds: number;
   remainingSeconds: number;
+  elapsedSeconds: number;
   isRunning: boolean;
   startedAt: number | null;
   endsAt: number | null;
@@ -31,6 +34,7 @@ type FocusTimerState = {
   lastShortBreakSeconds: number;
   lastLongBreakSeconds: number;
   setMode: (mode: FocusMode) => void;
+  setClock: (clock: FocusClock) => void;
   setDuration: (seconds: number) => void;
   setIntention: (intention: string) => void;
   setLinkedTaskId: (taskId: string | null) => void;
@@ -45,11 +49,20 @@ type FocusTimerState = {
   syncFromClock: () => boolean;
   tick: () => boolean;
   complete: () => void;
+  displaySeconds: () => number;
 };
 
 function remainingFromEndsAt(endsAt: number | null, fallback: number) {
   if (!endsAt) return fallback;
   return Math.max(0, Math.round((endsAt - Date.now()) / 1000));
+}
+
+function elapsedFromStartedAt(startedAt: number | null, base: number) {
+  if (!startedAt) return base;
+  return Math.min(
+    FOCUS_MAX_SECONDS,
+    base + Math.max(0, Math.round((Date.now() - startedAt) / 1000)),
+  );
 }
 
 function clampSeconds(seconds: number) {
@@ -100,8 +113,10 @@ const classic = getFocusProfile(FOCUS_PROFILE_DEFAULT);
 
 export const useFocusTimer = create<FocusTimerState>((set, get) => ({
   mode: "focus",
+  clock: FOCUS_CLOCK_DEFAULT,
   durationSeconds: classic.focus * 60,
   remainingSeconds: classic.focus * 60,
+  elapsedSeconds: 0,
   isRunning: false,
   startedAt: null,
   endsAt: null,
@@ -114,12 +129,54 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
   lastShortBreakSeconds: classic.short_break * 60,
   lastLongBreakSeconds: classic.long_break * 60,
 
+  displaySeconds: () => {
+    const current = get();
+    if (current.clock === "up") {
+      return elapsedFromStartedAt(current.startedAt, current.elapsedSeconds);
+    }
+    return remainingFromEndsAt(current.endsAt, current.remainingSeconds);
+  },
+
   setMode: (mode) => {
-    const durationSeconds = durationForMode(mode, get());
+    const current = get();
+    if (current.isRunning) return;
+    const durationSeconds = durationForMode(mode, current);
     set({
       mode,
       durationSeconds,
       remainingSeconds: durationSeconds,
+      elapsedSeconds: 0,
+      isRunning: false,
+      startedAt: null,
+      endsAt: null,
+    });
+  },
+
+  setClock: (clock) => {
+    const current = get();
+    if (current.isRunning) return;
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(FOCUS_CLOCK_KEY, clock);
+    }
+    if (clock === "up") {
+      set({
+        clock,
+        mode: "focus",
+        elapsedSeconds: 0,
+        remainingSeconds: current.lastFocusSeconds,
+        durationSeconds: current.lastFocusSeconds,
+        isRunning: false,
+        startedAt: null,
+        endsAt: null,
+      });
+      return;
+    }
+    const durationSeconds = durationForMode(current.mode, current);
+    set({
+      clock,
+      durationSeconds,
+      remainingSeconds: durationSeconds,
+      elapsedSeconds: 0,
       isRunning: false,
       startedAt: null,
       endsAt: null,
@@ -129,6 +186,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
   setDuration: (seconds) => {
     const current = get();
     if (current.isRunning) return;
+    if (current.clock === "up") return;
     const durationSeconds = clampSeconds(seconds);
     const next = {
       durationSeconds,
@@ -190,6 +248,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
       lastLongBreakSeconds,
       durationSeconds,
       remainingSeconds: durationSeconds,
+      elapsedSeconds: 0,
       startedAt: null,
       endsAt: null,
       isRunning: false,
@@ -198,17 +257,38 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
 
   hydrateProfile: () => {
     if (typeof window === "undefined") return;
+    const storedClock = window.localStorage.getItem(FOCUS_CLOCK_KEY);
+    const clock: FocusClock =
+      storedClock === "up" || storedClock === "down"
+        ? storedClock
+        : FOCUS_CLOCK_DEFAULT;
     const stored = window.localStorage.getItem(FOCUS_PROFILE_KEY);
     const profileId =
       stored === "classic" || stored === "deep" || stored === "quick"
         ? stored
         : FOCUS_PROFILE_DEFAULT;
     get().applyProfile(profileId);
+    if (clock !== get().clock) {
+      get().setClock(clock);
+    }
   },
 
   start: (seconds) => {
     const current = get();
     if (current.isRunning) return;
+
+    const now = Date.now();
+
+    if (current.clock === "up") {
+      if (current.elapsedSeconds >= FOCUS_MAX_SECONDS) return;
+      set({
+        mode: "focus",
+        isRunning: true,
+        startedAt: now,
+        endsAt: null,
+      });
+      return;
+    }
 
     const durationSeconds = seconds
       ? clampSeconds(seconds)
@@ -220,7 +300,6 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
 
     if (remainingSeconds <= 0) return;
 
-    const now = Date.now();
     const lastFocusSeconds =
       current.mode === "focus" ? durationSeconds : current.lastFocusSeconds;
     const lastShortBreakSeconds =
@@ -235,6 +314,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
     set({
       durationSeconds,
       remainingSeconds,
+      elapsedSeconds: 0,
       isRunning: true,
       startedAt: now,
       endsAt: now + remainingSeconds * 1000,
@@ -250,19 +330,47 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
   },
 
   pause: () => {
-    const { isRunning, endsAt, remainingSeconds } = get();
-    if (!isRunning) return;
+    const current = get();
+    if (!current.isRunning) return;
+
+    if (current.clock === "up") {
+      set({
+        isRunning: false,
+        elapsedSeconds: elapsedFromStartedAt(
+          current.startedAt,
+          current.elapsedSeconds,
+        ),
+        startedAt: null,
+        endsAt: null,
+      });
+      return;
+    }
+
     set({
       isRunning: false,
-      remainingSeconds: remainingFromEndsAt(endsAt, remainingSeconds),
+      remainingSeconds: remainingFromEndsAt(
+        current.endsAt,
+        current.remainingSeconds,
+      ),
       endsAt: null,
+      startedAt: null,
     });
   },
 
   reset: () => {
-    const { durationSeconds } = get();
+    const current = get();
+    if (current.clock === "up") {
+      set({
+        elapsedSeconds: 0,
+        isRunning: false,
+        startedAt: null,
+        endsAt: null,
+      });
+      return;
+    }
     set({
-      remainingSeconds: durationSeconds,
+      remainingSeconds: current.durationSeconds,
+      elapsedSeconds: 0,
       isRunning: false,
       startedAt: null,
       endsAt: null,
@@ -270,26 +378,55 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
   },
 
   skip: () => {
+    if (get().clock === "up") return;
     get().advance("skip");
   },
 
   advance: (reason) => {
+    if (get().clock === "up") return;
     const { mode, completedFocusCount } = get();
     const next = nextFocusMode(mode, completedFocusCount, reason);
     get().setMode(next);
   },
 
   syncFromClock: () => {
-    const { isRunning, endsAt, remainingSeconds } = get();
-    if (!isRunning || !endsAt) return false;
+    const current = get();
+    if (!current.isRunning) return false;
 
-    const remaining = remainingFromEndsAt(endsAt, remainingSeconds);
+    if (current.clock === "up") {
+      const elapsed = elapsedFromStartedAt(
+        current.startedAt,
+        current.elapsedSeconds,
+      );
+      if (elapsed >= FOCUS_MAX_SECONDS) {
+        set({
+          elapsedSeconds: FOCUS_MAX_SECONDS,
+          isRunning: false,
+          startedAt: null,
+          endsAt: null,
+        });
+        return true;
+      }
+      // Re-anchor so the next tick doesn't double-count.
+      set({
+        elapsedSeconds: elapsed,
+        startedAt: Date.now(),
+      });
+      return false;
+    }
+
+    if (!current.endsAt) return false;
+
+    const remaining = remainingFromEndsAt(
+      current.endsAt,
+      current.remainingSeconds,
+    );
     if (remaining <= 0) {
       get().complete();
       return true;
     }
 
-    if (remaining !== remainingSeconds) {
+    if (remaining !== current.remainingSeconds) {
       set({ remainingSeconds: remaining });
     }
     return false;
@@ -298,7 +435,9 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
   tick: () => get().syncFromClock(),
 
   complete: () => {
-    const { mode, isRunning, remainingSeconds, completedFocusCount } = get();
+    const { mode, isRunning, remainingSeconds, completedFocusCount, clock } =
+      get();
+    if (clock === "up") return;
     if (!isRunning && remainingSeconds === 0) return;
 
     set({

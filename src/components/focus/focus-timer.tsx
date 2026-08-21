@@ -24,11 +24,16 @@ import {
   FOCUS_PROFILES,
   formatFocusClock,
   formatFocusMinutes,
+  type FocusClock,
   type FocusMode,
 } from "@/types/focus";
 import type { FocusLinkableTask } from "@/types/task";
 
 const MODES: FocusMode[] = ["focus", "short_break", "long_break"];
+const CLOCKS: { id: FocusClock; label: string; hint: string }[] = [
+  { id: "down", label: "Countdown", hint: "Timed blocks" },
+  { id: "up", label: "Count up", hint: "Until you stop" },
+];
 
 type SealMoment = {
   mode: FocusMode;
@@ -75,16 +80,20 @@ export function FocusTimer({
   const router = useRouter();
   const {
     mode,
+    clock,
     durationSeconds,
     remainingSeconds,
+    elapsedSeconds,
     isRunning,
     endsAt,
+    startedAt,
     completedFocusCount,
     autoStartNext,
     intention,
     linkedTaskId,
     profileId,
     setMode,
+    setClock,
     setDuration,
     setIntention,
     setLinkedTaskId,
@@ -97,10 +106,13 @@ export function FocusTimer({
     skip,
     advance,
     tick,
+    displaySeconds,
   } = useFocusTimer();
 
   const linkedTask =
     tasks.find((task) => task.id === linkedTaskId) ?? null;
+  const shownSeconds = displaySeconds();
+  const isStopwatch = clock === "up";
 
   useEffect(() => {
     if (linkedTaskId && !tasks.some((task) => task.id === linkedTaskId)) {
@@ -141,13 +153,15 @@ export function FocusTimer({
 
   useEffect(() => {
     const previous = document.title;
-    document.title = `${formatFocusClock(remainingSeconds)} · ${FOCUS_PRESETS[mode].label}`;
+    const label = isStopwatch ? "Open" : FOCUS_PRESETS[mode].label;
+    document.title = `${formatFocusClock(shownSeconds)} · ${label}`;
     return () => {
       document.title = previous;
     };
-  }, [remainingSeconds, mode]);
+  }, [shownSeconds, mode, isStopwatch]);
 
   useEffect(() => {
+    if (isStopwatch) return;
     if (
       remainingSeconds === 0 &&
       prevRemaining.current > 0 &&
@@ -197,6 +211,7 @@ export function FocusTimer({
     }
     prevRemaining.current = remainingSeconds;
   }, [
+    isStopwatch,
     remainingSeconds,
     mode,
     durationSeconds,
@@ -236,11 +251,55 @@ export function FocusTimer({
     return seconds;
   }
 
+  function sealStopwatch(actual: number) {
+    if (actual < 5) {
+      reset();
+      return;
+    }
+
+    const note = intention;
+    const taskId = linkedTaskId;
+    startTransition(async () => {
+      await logFocusSession({
+        mode: "focus",
+        planned_seconds: actual,
+        actual_seconds: actual,
+        completed: true,
+        note,
+        task_id: taskId,
+      });
+      router.refresh();
+    });
+
+    stopFocusSound();
+    playFocusChime();
+    notifyFocusPhase("Open session sealed", formatFocusClock(actual));
+    setSeal({
+      mode: "focus",
+      seconds: actual,
+      todayMinutes: focusMinutesToday + Math.max(1, Math.round(actual / 60)),
+      nextLabel: "Open",
+    });
+    reset();
+  }
+
+  useEffect(() => {
+    if (!isStopwatch) return;
+    if (elapsedSeconds < FOCUS_MAX_SECONDS) return;
+    if (loggedRef.current) return;
+    loggedRef.current = true;
+    sealStopwatch(FOCUS_MAX_SECONDS);
+    // sealStopwatch closes over latest intention/task
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [elapsedSeconds, isStopwatch]);
+
   function handleStart() {
-    const custom = secondsFromCustom();
+    const custom = isStopwatch ? undefined : secondsFromCustom();
     void requestFocusNotifyPermission();
     start(custom ?? undefined);
-    if (useFocusTimer.getState().mode === "focus") playDefaultFocusSound();
+    if (useFocusTimer.getState().mode === "focus" || isStopwatch) {
+      playDefaultFocusSound();
+    }
   }
 
   function handlePause() {
@@ -258,6 +317,17 @@ export function FocusTimer({
 
   function handleReset() {
     stopFocusSound();
+
+    if (isStopwatch) {
+      const actual = displaySeconds();
+      if (actual >= 5) {
+        sealStopwatch(actual);
+        return;
+      }
+      reset();
+      return;
+    }
+
     if (remainingSeconds >= durationSeconds || remainingSeconds === 0) {
       reset();
       return;
@@ -285,6 +355,8 @@ export function FocusTimer({
   }
 
   function handleSkip() {
+    if (isStopwatch) return;
+
     const actual = durationSeconds - remainingSeconds;
     const currentMode = mode;
     const planned = durationSeconds;
@@ -326,6 +398,7 @@ export function FocusTimer({
       }
 
       if ((e.key === "s" || e.key === "S") && !e.metaKey && !e.ctrlKey) {
+        if (isStopwatch) return;
         e.preventDefault();
         handleSkip();
         return;
@@ -341,30 +414,41 @@ export function FocusTimer({
     return () => window.removeEventListener("keydown", onKey);
   });
 
-  const progress =
-    durationSeconds > 0
+  const progress = isStopwatch
+    ? Math.min(100, (shownSeconds / (2 * 60 * 60)) * 100)
+    : durationSeconds > 0
       ? ((durationSeconds - remainingSeconds) / durationSeconds) * 100
       : 0;
   const dots = filledDots(completedFocusCount, mode);
   const upcoming = nextFocusMode(mode, completedFocusCount, "complete");
   const endedHint =
-    isRunning && endsAt ? `Ends ${formatClockTime(endsAt)}` : null;
+    !isStopwatch && isRunning && endsAt
+      ? `Ends ${formatClockTime(endsAt)}`
+      : null;
+  const runningHint =
+    isStopwatch && isRunning && startedAt
+      ? `Since ${formatClockTime(startedAt)}`
+      : isStopwatch && !isRunning && shownSeconds > 0
+        ? "Paused · R seals"
+        : null;
 
   const activeProfile =
     FOCUS_PROFILES.find((profile) => profile.id === profileId) ?? null;
 
   const sessionLine =
-    mode === "focus"
+    mode === "focus" || isStopwatch
       ? intention.trim() || linkedTask?.title || null
       : null;
 
   const ringRadius = 45.5;
   const ringCircumference = 2 * Math.PI * ringRadius;
-  const setupSummary = [
-    activeProfile?.label ?? "Custom",
-    FOCUS_PRESETS[mode].label,
-    formatFocusClock(durationSeconds),
-  ].join(" · ");
+  const setupSummary = isStopwatch
+    ? "Count up · until you stop"
+    : [
+        activeProfile?.label ?? "Custom",
+        FOCUS_PRESETS[mode].label,
+        formatFocusClock(durationSeconds),
+      ].join(" · ");
 
   return (
     <section
@@ -409,10 +493,14 @@ export function FocusTimer({
         {!isRunning ? (
           <div className="w-full max-w-md text-center">
             <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-              {mode === "focus" ? "Set your intention" : FOCUS_PRESETS[mode].label}
+              {isStopwatch
+                ? "Open session"
+                : mode === "focus"
+                  ? "Set your intention"
+                  : FOCUS_PRESETS[mode].label}
             </p>
 
-            {mode === "focus" ? (
+            {mode === "focus" || isStopwatch ? (
               <div className="mt-4 space-y-3">
                 <Input
                   value={intention}
@@ -450,8 +538,9 @@ export function FocusTimer({
                   </select>
                 ) : (
                   <p className="text-xs text-muted-foreground">
-                    {activeProfile ? activeProfile.label : "Custom"} · Space to
-                    begin
+                    {isStopwatch
+                      ? "Counts up until you seal · Space"
+                      : `${activeProfile ? activeProfile.label : "Custom"} · Space to begin`}
                   </p>
                 )}
               </div>
@@ -517,21 +606,27 @@ export function FocusTimer({
               <p
                 className={cn(
                   "focus-clock text-foreground",
-                  remainingSeconds >= 3600
+                  shownSeconds >= 3600
                     ? "text-[clamp(2.25rem,6.5vw,3.75rem)]"
                     : "text-[clamp(2.75rem,8vw,4.75rem)]",
                 )}
               >
-                {formatFocusClock(remainingSeconds)}
+                {formatFocusClock(shownSeconds)}
               </p>
               {isRunning ? (
                 <div className="mt-4 space-y-1">
                   <p className="mx-auto max-w-[14rem] truncate text-sm text-foreground/85">
-                    {mode === "focus" ? "Deep work" : FOCUS_PRESETS[mode].label}
+                    {isStopwatch
+                      ? "Open"
+                      : mode === "focus"
+                        ? "Deep work"
+                        : FOCUS_PRESETS[mode].label}
                     {sessionLine ? ` · ${sessionLine}` : ""}
                   </p>
                   {endedHint ? (
                     <p className="text-xs text-muted-foreground">{endedHint}</p>
+                  ) : runningHint ? (
+                    <p className="text-xs text-muted-foreground">{runningHint}</p>
                   ) : (
                     <p className="text-xs text-muted-foreground">
                       Up next: {FOCUS_PRESETS[upcoming].label}
@@ -540,30 +635,46 @@ export function FocusTimer({
                 </div>
               ) : (
                 <p className="mt-3 text-sm tabular-nums text-muted-foreground">
-                  {FOCUS_PRESETS[mode].label} · {formatFocusClock(durationSeconds)}
+                  {isStopwatch
+                    ? shownSeconds > 0
+                      ? `Paused · ${formatFocusClock(shownSeconds)}`
+                      : "Count up · 00:00"
+                    : `${FOCUS_PRESETS[mode].label} · ${formatFocusClock(durationSeconds)}`}
                 </p>
               )}
             </div>
           </div>
         </div>
 
-        <div
-          className={cn(
-            "mt-5 flex items-center gap-2",
-            isRunning && "opacity-70",
-          )}
-          aria-label={`${dots} of ${FOCUS_POMODOROS_PER_LONG_BREAK} toward a long break`}
-        >
-          {Array.from({ length: FOCUS_POMODOROS_PER_LONG_BREAK }).map((_, i) => (
-            <span
-              key={i}
-              className={cn(
-                "size-1.5 rounded-full transition-colors",
-                i < dots ? "bg-foreground" : "bg-muted-foreground/25",
-              )}
-            />
-          ))}
-        </div>
+        {!isStopwatch ? (
+          <div
+            className={cn(
+              "mt-5 flex items-center gap-2",
+              isRunning && "opacity-70",
+            )}
+            aria-label={`${dots} of ${FOCUS_POMODOROS_PER_LONG_BREAK} toward a long break`}
+          >
+            {Array.from({ length: FOCUS_POMODOROS_PER_LONG_BREAK }).map(
+              (_, i) => (
+                <span
+                  key={i}
+                  className={cn(
+                    "size-1.5 rounded-full transition-colors",
+                    i < dots ? "bg-foreground" : "bg-muted-foreground/25",
+                  )}
+                />
+              ),
+            )}
+          </div>
+        ) : (
+          <p className="mt-5 text-xs text-muted-foreground">
+            {isRunning
+              ? "Pause anytime · R seals the session"
+              : shownSeconds > 0
+                ? "R seals · Space resumes"
+                : "Open focus · no timer limit"}
+          </p>
+        )}
 
         <div className="mt-8 flex flex-col items-center gap-3">
           <div className="flex items-center gap-3 sm:gap-4">
@@ -575,7 +686,11 @@ export function FocusTimer({
                 isRunning &&
                   "opacity-0 group-hover:opacity-100 focus-visible:opacity-100 max-sm:opacity-100",
               )}
-              aria-label="Reset timer"
+              aria-label={
+                isStopwatch && shownSeconds >= 5
+                  ? "Seal open session"
+                  : "Reset timer"
+              }
             >
               <RotateCcw className="size-5" />
             </button>
@@ -586,7 +701,13 @@ export function FocusTimer({
                 "flex items-center justify-center rounded-full bg-foreground text-background transition-transform hover:scale-[1.03] active:scale-95",
                 isRunning ? "size-[4.25rem]" : "size-16",
               )}
-              aria-label={isRunning ? "Pause timer" : "Begin session"}
+              aria-label={
+                isRunning
+                  ? "Pause timer"
+                  : isStopwatch
+                    ? "Start counting up"
+                    : "Begin session"
+              }
             >
               {isRunning ? (
                 <Pause className="size-6 fill-current" />
@@ -594,24 +715,35 @@ export function FocusTimer({
                 <Play className="size-6 fill-current pl-0.5" />
               )}
             </button>
-            <button
-              type="button"
-              onClick={handleSkip}
-              className={cn(
-                "flex size-12 items-center justify-center rounded-full text-muted-foreground transition-all hover:bg-muted hover:text-foreground",
-                isRunning &&
-                  "opacity-0 group-hover:opacity-100 focus-visible:opacity-100 max-sm:opacity-100",
-              )}
-              aria-label="Skip to next phase"
-            >
-              <SkipForward className="size-5" />
-            </button>
+            {!isStopwatch ? (
+              <button
+                type="button"
+                onClick={handleSkip}
+                className={cn(
+                  "flex size-12 items-center justify-center rounded-full text-muted-foreground transition-all hover:bg-muted hover:text-foreground",
+                  isRunning &&
+                    "opacity-0 group-hover:opacity-100 focus-visible:opacity-100 max-sm:opacity-100",
+                )}
+                aria-label="Skip to next phase"
+              >
+                <SkipForward className="size-5" />
+              </button>
+            ) : (
+              <span className="size-12" aria-hidden />
+            )}
           </div>
-        {!isRunning ? (
-          <p className="text-xs text-muted-foreground">
-            {mode === "focus" ? "Begin session" : "Start break"} · Space
-          </p>
-        ) : null}
+          {!isRunning ? (
+            <p className="text-xs text-muted-foreground">
+              {isStopwatch
+                ? shownSeconds > 0
+                  ? "Resume · Space"
+                  : "Start counting · Space"
+                : mode === "focus"
+                  ? "Begin session"
+                  : "Start break"}{" "}
+              {!isStopwatch ? "· Space" : null}
+            </p>
+          ) : null}
         </div>
 
         {!isRunning ? (
@@ -622,6 +754,49 @@ export function FocusTimer({
             </summary>
 
             <div className="mt-4 space-y-4 p-1">
+              <div
+                className="flex w-full justify-center gap-1 rounded-full bg-muted/30 p-1"
+                role="tablist"
+                aria-label="Clock style"
+              >
+                {CLOCKS.map((item) => {
+                  const active = clock === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={active}
+                      onClick={() => setClock(item.id)}
+                      className={cn(
+                        "min-w-0 flex-1 rounded-full px-3 py-2 text-left transition-colors sm:text-center",
+                        active
+                          ? "bg-background font-medium text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      <span className="block text-sm">{item.label}</span>
+                      <span
+                        className={cn(
+                          "block text-[11px]",
+                          active
+                            ? "text-foreground/60"
+                            : "text-muted-foreground",
+                        )}
+                      >
+                        {item.hint}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {isStopwatch ? (
+                <p className="text-center text-xs text-muted-foreground">
+                  Starts at 00:00 and climbs until you pause and seal with R.
+                </p>
+              ) : (
+                <>
               <div className="grid grid-cols-3 gap-2">
                 {FOCUS_PROFILES.map((profile) => {
                   const active = profileId === profile.id;
@@ -767,6 +942,8 @@ export function FocusTimer({
                   Auto-start {autoStartNext ? "on" : "off"}
                 </button>
               </div>
+                </>
+              )}
             </div>
           </details>
         ) : null}

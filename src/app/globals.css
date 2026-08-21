@@ -392,6 +392,7 @@
     transparent 68%
   );
   opacity: 0.85;
+  transition: opacity 700ms ease, transform 700ms ease;
 }
 
 .dark .focus-progress-glow {
@@ -400,6 +401,38 @@
     oklch(0.42 0.045 245 / 0.26) 0%,
     transparent 68%
   );
+}
+
+@keyframes focus-progress-breathe {
+  0%,
+  100% {
+    opacity: 0.65;
+    width: min(20rem, 90%);
+    height: min(20rem, 90%);
+  }
+  50% {
+    opacity: 1;
+    width: min(24rem, 108%);
+    height: min(24rem, 108%);
+  }
+}
+
+@keyframes focus-progress-arc {
+  0%,
+  100% {
+    opacity: 0.78;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.focus-progress[data-live="true"] .focus-progress-glow {
+  animation: focus-progress-breathe 3.2s ease-in-out infinite;
+}
+
+.focus-progress[data-live="true"] .focus-progress-arc {
+  animation: focus-progress-arc 3.2s ease-in-out infinite;
 }
 
 

@@ -106,6 +106,12 @@ function readGoalMinutes() {
 
 export function FocusStats({ stats }: FocusStatsProps) {
   const lastFocusSeconds = useFocusTimer((s) => s.lastFocusSeconds);
+  const isRunning = useFocusTimer((s) => s.isRunning);
+  const mode = useFocusTimer((s) => s.mode);
+  const clock = useFocusTimer((s) => s.clock);
+  const remainingSeconds = useFocusTimer((s) => s.remainingSeconds);
+  const durationSeconds = useFocusTimer((s) => s.durationSeconds);
+  const elapsedSeconds = useFocusTimer((s) => s.elapsedSeconds);
   const [goalMinutes, setGoalMinutes] = useState(FOCUS_DAILY_GOAL_DEFAULT);
   const [ready, setReady] = useState(false);
   const [goalOpen, setGoalOpen] = useState(false);
@@ -121,27 +127,42 @@ export function FocusStats({ stats }: FocusStatsProps) {
     setGoalOpen(false);
   }
 
+  const liveFocus =
+    isRunning &&
+    (clock === "up" ||
+      (mode === "focus" && durationSeconds > remainingSeconds));
+  const liveExtraMinutes = liveFocus
+    ? clock === "up"
+      ? Math.max(0, Math.floor(elapsedSeconds / 60))
+      : Math.max(0, Math.floor((durationSeconds - remainingSeconds) / 60))
+    : 0;
+  const focusMinutes = stats.focus_minutes + liveExtraMinutes;
+
   const progress = Math.min(
     100,
-    (stats.focus_minutes / Math.max(goalMinutes, 1)) * 100,
+    (focusMinutes / Math.max(goalMinutes, 1)) * 100,
   );
-  const remaining = Math.max(0, goalMinutes - stats.focus_minutes);
-  const met = stats.focus_minutes >= goalMinutes;
+  const remaining = Math.max(0, goalMinutes - focusMinutes);
+  const met = focusMinutes >= goalMinutes;
   const blockMinutes = Math.max(1, Math.round(lastFocusSeconds / 60));
   const honestBlock = ready
-    ? nextHonestBlock({
-        remaining,
-        met,
-        blockMinutes,
-        todayMinutes: stats.focus_minutes,
-      })
+    ? liveFocus
+      ? remaining <= 0
+        ? "Sealing the goal · stay with it"
+        : `${formatFocusMinutes(remaining)} still open · keep going`
+      : nextHonestBlock({
+          remaining,
+          met,
+          blockMinutes,
+          todayMinutes: focusMinutes,
+        })
     : null;
   const yesterdayDate = new Date();
   yesterdayDate.setDate(yesterdayDate.getDate() - 1);
   const yesterdayKey = toDateString(yesterdayDate);
   const yesterdayMinutes =
     stats.week.find((day) => day.date === yesterdayKey)?.minutes ?? 0;
-  const vsYesterday = yesterdayWhisper(stats.focus_minutes, yesterdayMinutes);
+  const vsYesterday = yesterdayWhisper(focusMinutes, yesterdayMinutes);
   const marks = stats.today_marks ?? [];
 
   const ringRadius = 42;
@@ -151,7 +172,10 @@ export function FocusStats({ stats }: FocusStatsProps) {
   const weekday = new Date().toLocaleDateString("en-US", { weekday: "long" });
 
   return (
-    <section className="focus-progress relative flex min-h-[34rem] flex-col overflow-hidden sm:min-h-[40rem]">
+    <section
+      data-live={liveFocus ? "true" : "false"}
+      className="focus-progress relative flex min-h-[34rem] flex-col overflow-hidden sm:min-h-[40rem]"
+    >
       <div className="focus-progress-glow" aria-hidden />
 
       <div className="relative z-[1] flex flex-1 flex-col">
@@ -159,13 +183,15 @@ export function FocusStats({ stats }: FocusStatsProps) {
           <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
             Today
           </p>
-          <p className="mt-1.5 text-sm text-muted-foreground">{weekday}</p>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            {liveFocus ? "Session live" : weekday}
+          </p>
         </div>
 
         <div className="flex flex-1 flex-col items-center justify-center py-8">
           <div className="relative flex size-[13.5rem] items-center justify-center sm:size-[15rem]">
             <svg
-              className="absolute inset-0 size-full -rotate-90"
+              className="focus-progress-ring absolute inset-0 size-full -rotate-90"
               viewBox="0 0 100 100"
               aria-hidden
             >
@@ -192,7 +218,7 @@ export function FocusStats({ stats }: FocusStatsProps) {
                 cy="50"
                 r={ringRadius}
                 fill="none"
-                className="stroke-foreground transition-[stroke-dashoffset] duration-700 ease-out"
+                className="focus-progress-arc stroke-foreground transition-[stroke-dashoffset] duration-700 ease-out"
                 strokeWidth="2.5"
                 strokeLinecap="round"
                 strokeDasharray={ringCircumference}
@@ -205,16 +231,20 @@ export function FocusStats({ stats }: FocusStatsProps) {
               role="progressbar"
               aria-valuemin={0}
               aria-valuemax={goalMinutes}
-              aria-valuenow={Math.min(stats.focus_minutes, goalMinutes)}
+              aria-valuenow={Math.min(focusMinutes, goalMinutes)}
               aria-label="Daily focus goal progress"
             >
               <p className="focus-clock text-[2.35rem] text-foreground sm:text-[2.75rem]">
-                {formatFocusMinutes(stats.focus_minutes)}
+                {formatFocusMinutes(focusMinutes)}
               </p>
               <p className="mt-2 text-xs text-muted-foreground">
-                {stats.sessions === 0
-                  ? "No sessions yet"
-                  : `${stats.sessions} session${stats.sessions === 1 ? "" : "s"}`}
+                {liveFocus
+                  ? liveExtraMinutes > 0
+                    ? `Live · +${formatFocusMinutes(liveExtraMinutes)}`
+                    : "Live · just started"
+                  : stats.sessions === 0
+                    ? "No sessions yet"
+                    : `${stats.sessions} session${stats.sessions === 1 ? "" : "s"}`}
               </p>
             </div>
           </div>
@@ -231,7 +261,7 @@ export function FocusStats({ stats }: FocusStatsProps) {
               {ready ? (
                 met ? (
                   <>
-                    {formatFocusMinutes(stats.focus_minutes)} /{" "}
+                    {formatFocusMinutes(focusMinutes)} /{" "}
                     {formatFocusMinutes(goalMinutes)}
                   </>
                 ) : (

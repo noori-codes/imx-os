@@ -1,5 +1,10 @@
 export type FocusMode = "focus" | "short_break" | "long_break";
 
+export type FocusClock = "down" | "up";
+
+export const FOCUS_CLOCK_KEY = "imx-focus-clock";
+export const FOCUS_CLOCK_DEFAULT: FocusClock = "down";
+
 export type FocusSession = {
   id: string;
   user_id: string;
