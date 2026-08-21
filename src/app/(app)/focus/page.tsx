@@ -1,6 +1,6 @@
 import {
+  getFocusOverviewStats,
   getRecentFocusSessions,
-  getTodayFocusStats,
 } from "@/actions/focus";
 import { getFocusLinkableTasks } from "@/actions/tasks";
 import { FocusSessionList } from "@/components/focus/focus-session-list";
@@ -14,7 +14,7 @@ import { AppPageFrame } from "@/components/shared/app-page-frame";
 export default async function FocusPage() {
   const [sessions, stats, tasks] = await Promise.all([
     getRecentFocusSessions(20),
-    getTodayFocusStats(),
+    getFocusOverviewStats(),
     getFocusLinkableTasks(),
   ]);
 
@@ -23,10 +23,7 @@ export default async function FocusPage() {
       <Header title="Focus" description="Timer, sound, one session" />
       <AppPageFrame>
         <FocusTimer tasks={tasks} />
-        <FocusStats
-          sessions={stats.sessions}
-          focusMinutes={stats.focus_minutes}
-        />
+        <FocusStats stats={stats} />
         <FocusSounds />
         <LogFocusForm tasks={tasks} />
         <FocusSessionList sessions={sessions} />

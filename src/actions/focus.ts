@@ -5,7 +5,8 @@ import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
 import { revalidateUserCaches } from "@/lib/cache";
 import { createClient } from "@/lib/supabase/server";
-import type { FocusMode, FocusSession } from "@/types/focus";
+import { computeStreaks, getPastDays, toDateString } from "@/lib/date-utils";
+import type { FocusMode, FocusSession, FocusWeekDay } from "@/types/focus";
 import { FOCUS_MAX_SECONDS } from "@/types/focus";
 
 export type FocusActionState = {
@@ -82,28 +83,87 @@ export async function getRecentFocusSessions(
 }
 
 export async function getTodayFocusStats() {
-  const supabase = await createClient();
+  const overview = await getFocusOverviewStats();
+  return {
+    sessions: overview.sessions,
+    focus_minutes: overview.focus_minutes,
+  };
+}
 
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
+function focusLevel(minutes: number): FocusWeekDay["level"] {
+  if (minutes <= 0) return 0;
+  if (minutes < 25) return 1;
+  if (minutes < 50) return 2;
+  if (minutes < 90) return 3;
+  return 4;
+}
+
+/** Today totals + streak + last-7-day heatmap for the Focus page. */
+export async function getFocusOverviewStats() {
+  const supabase = await createClient();
+  const days = getPastDays(7);
+  const today = toDateString(new Date());
+
+  const streakLookback = new Date();
+  streakLookback.setDate(streakLookback.getDate() - 120);
+  streakLookback.setHours(0, 0, 0, 0);
 
   const { data, error } = await supabase
     .from("focus_sessions")
-    .select("mode, actual_seconds, completed")
+    .select("actual_seconds, started_at")
     .eq("mode", "focus")
-    .gte("started_at", start.toISOString());
+    .gte("started_at", streakLookback.toISOString());
 
   if (error) {
-    console.error("[focus] getTodayFocusStats:", error.message);
-    return { sessions: 0, focus_minutes: 0 };
+    console.error("[focus] getFocusOverviewStats:", error.message);
+    return {
+      sessions: 0,
+      focus_minutes: 0,
+      current_streak: 0,
+      longest_streak: 0,
+      week: days.map((day) => ({
+        date: toDateString(day),
+        minutes: 0,
+        level: 0 as const,
+      })),
+    };
   }
 
-  const sessions = data?.length ?? 0;
-  const focus_minutes = Math.round(
-    (data ?? []).reduce((sum, s) => sum + s.actual_seconds, 0) / 60,
-  );
+  const minutesByDay = new Map<string, number>();
+  const activeDates: string[] = [];
 
-  return { sessions, focus_minutes };
+  for (const row of data ?? []) {
+    const date = toDateString(new Date(row.started_at));
+    const minutes = Math.round(row.actual_seconds / 60);
+    if (minutes <= 0) continue;
+    minutesByDay.set(date, (minutesByDay.get(date) ?? 0) + minutes);
+    activeDates.push(date);
+  }
+
+  const { current_streak, longest_streak } = computeStreaks(activeDates, today);
+
+  const week: FocusWeekDay[] = days.map((day) => {
+    const date = toDateString(day);
+    const minutes = minutesByDay.get(date) ?? 0;
+    return {
+      date,
+      minutes,
+      level: focusLevel(minutes),
+    };
+  });
+
+  const todayMinutes = minutesByDay.get(today) ?? 0;
+  const todaySessions = (data ?? []).filter(
+    (row) => toDateString(new Date(row.started_at)) === today,
+  ).length;
+
+  return {
+    sessions: todaySessions,
+    focus_minutes: todayMinutes,
+    current_streak,
+    longest_streak,
+    week,
+  };
 }
 
 export async function logFocusSession(input: {

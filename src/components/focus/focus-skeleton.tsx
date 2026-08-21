@@ -31,10 +31,21 @@ export function FocusSkeleton() {
           </div>
         </section>
 
-        <div className="flex gap-4 border-b border-border/60 pb-4">
-          <Bone className="h-4 w-24" />
-          <Bone className="h-4 w-24" />
-          <Bone className="h-4 w-28" />
+        <div className="space-y-3 border-b border-border/60 pb-4">
+          <div className="flex gap-4">
+            <Bone className="h-4 w-24" />
+            <Bone className="h-4 w-24" />
+            <Bone className="h-4 w-28" />
+            <Bone className="h-4 w-28" />
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <Bone className="h-3 w-20" />
+            <div className="flex gap-1.5">
+              {Array.from({ length: 7 }).map((_, i) => (
+                <Bone key={i} className="size-3.5 rounded-sm" />
+              ))}
+            </div>
+          </div>
         </div>
 
         <div>

@@ -15,6 +15,20 @@ export type FocusSession = {
   created_at: string;
 };
 
+export type FocusWeekDay = {
+  date: string;
+  minutes: number;
+  level: 0 | 1 | 2 | 3 | 4;
+};
+
+export type FocusOverviewStats = {
+  sessions: number;
+  focus_minutes: number;
+  current_streak: number;
+  longest_streak: number;
+  week: FocusWeekDay[];
+};
+
 export const FOCUS_PRESETS: Record<
   FocusMode,
   { label: string; minutes: number }
