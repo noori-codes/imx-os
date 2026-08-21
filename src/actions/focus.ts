@@ -126,11 +126,13 @@ export async function getFocusOverviewStats() {
         minutes: 0,
         level: 0 as const,
       })),
+      today_marks: [],
     };
   }
 
   const minutesByDay = new Map<string, number>();
   const activeDates: string[] = [];
+  const todayMarks: { started_at: string; minutes: number }[] = [];
 
   for (const row of data ?? []) {
     const date = toDateString(new Date(row.started_at));
@@ -138,6 +140,9 @@ export async function getFocusOverviewStats() {
     if (minutes <= 0) continue;
     minutesByDay.set(date, (minutesByDay.get(date) ?? 0) + minutes);
     activeDates.push(date);
+    if (date === today) {
+      todayMarks.push({ started_at: row.started_at, minutes });
+    }
   }
 
   const { current_streak, longest_streak } = computeStreaks(activeDates, today);
@@ -153,16 +158,18 @@ export async function getFocusOverviewStats() {
   });
 
   const todayMinutes = minutesByDay.get(today) ?? 0;
-  const todaySessions = (data ?? []).filter(
-    (row) => toDateString(new Date(row.started_at)) === today,
-  ).length;
+  todayMarks.sort(
+    (a, b) =>
+      new Date(a.started_at).getTime() - new Date(b.started_at).getTime(),
+  );
 
   return {
-    sessions: todaySessions,
+    sessions: todayMarks.length,
     focus_minutes: todayMinutes,
     current_streak,
     longest_streak,
     week,
+    today_marks: todayMarks,
   };
 }
 

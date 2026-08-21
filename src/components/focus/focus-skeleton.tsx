@@ -13,19 +13,19 @@ export function FocusSkeleton() {
       aria-label="Loading focus"
     >
       <AppPageFrame className="max-w-6xl gap-8 md:py-10">
-        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(18.5rem,22rem)] lg:gap-8">
-          <section className="flex min-h-[28rem] flex-col items-center justify-center px-2 py-6 sm:min-h-[32rem] sm:px-4 sm:py-8">
-            <Bone className="h-3 w-28" />
-            <Bone className="mt-4 h-12 w-full max-w-md rounded-2xl" />
-            <Bone className="mt-3 h-9 w-56 rounded-xl" />
-            <Bone className="mt-8 size-[17.5rem] rounded-full sm:size-[19.5rem]" />
-            <div className="mt-8 flex items-center gap-4">
+        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)] lg:gap-8">
+          <section className="flex min-h-[34rem] flex-col px-2 py-6 sm:min-h-[40rem] sm:px-4 sm:py-8">
+            <Bone className="mx-auto h-3 w-28" />
+            <Bone className="mx-auto mt-4 h-12 w-full max-w-md rounded-2xl" />
+            <Bone className="mx-auto mt-3 h-9 w-56 rounded-xl" />
+            <Bone className="mx-auto mt-8 size-[17.5rem] rounded-full sm:size-[19.5rem]" />
+            <div className="mx-auto mt-8 flex items-center gap-4">
               <Bone className="size-12 rounded-full" />
               <Bone className="size-16 rounded-full" />
               <Bone className="size-12 rounded-full" />
             </div>
-            <Bone className="mt-3 h-3 w-28" />
-            <div className="mt-auto flex w-full max-w-xl flex-col pt-10">
+            <Bone className="mx-auto mt-3 h-3 w-28" />
+            <div className="mx-auto mt-auto flex w-full max-w-xl flex-col pt-10">
               <Bone className="h-3 w-24" />
               <Bone className="mt-2 h-3 w-40 opacity-60" />
               <div className="mt-5 grid grid-cols-4 gap-4">
@@ -39,19 +39,22 @@ export function FocusSkeleton() {
             </div>
           </section>
 
-          <aside className="flex flex-col gap-8">
-            <section className="space-y-4">
-              <Bone className="h-3 w-20" />
-              <Bone className="h-8 w-24" />
-              <Bone className="h-4 w-40 opacity-60" />
-              <Bone className="h-3 w-32 opacity-50" />
-              <Bone className="mt-2 h-1 w-full rounded-full" />
-              <div className="flex items-center justify-between gap-2 pt-1">
-                {Array.from({ length: 7 }).map((_, i) => (
-                  <Bone key={i} className="size-2 rounded-full" />
-                ))}
+          <aside className="flex min-h-[34rem] flex-col sm:min-h-[40rem]">
+            <Bone className="h-3 w-16" />
+            <Bone className="mt-2 h-4 w-28 opacity-60" />
+            <Bone className="mx-auto mt-10 size-[13.5rem] rounded-full sm:size-[15rem]" />
+            <Bone className="mx-auto mt-6 h-4 w-40" />
+            <div className="mt-auto space-y-3 pt-10">
+              <div className="flex justify-between">
+                <Bone className="h-3 w-24" />
+                <Bone className="h-3 w-14" />
               </div>
-            </section>
+              <Bone className="mx-auto h-24 w-full max-w-[17rem] rounded-full opacity-40" />
+              <div className="flex justify-between">
+                <Bone className="h-3 w-24" />
+                <Bone className="h-3 w-28" />
+              </div>
+            </div>
           </aside>
         </div>
 

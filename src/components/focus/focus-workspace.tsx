@@ -21,7 +21,7 @@ export function FocusWorkspace({ timer, rail, sessions }: FocusWorkspaceProps) {
           "grid items-start gap-6 transition-[grid-template-columns] duration-500 ease-out lg:gap-8",
           isRunning
             ? "lg:grid-cols-1"
-            : "lg:grid-cols-[minmax(0,1fr)_minmax(18.5rem,22rem)]",
+            : "lg:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)]",
         )}
       >
         <div

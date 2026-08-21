@@ -371,5 +371,37 @@
   font-synthesis: none;
 }
 
+/* Progress companion stage (mirrors timer room) */
+.focus-progress {
+  isolation: isolate;
+  border-radius: 1.5rem;
+}
+
+.focus-progress-glow {
+  pointer-events: none;
+  position: absolute;
+  left: 50%;
+  top: 38%;
+  width: min(22rem, 100%);
+  height: min(22rem, 100%);
+  translate: -50% -50%;
+  border-radius: 9999px;
+  background: radial-gradient(
+    circle at center,
+    oklch(0.55 0.035 245 / 0.14) 0%,
+    transparent 68%
+  );
+  opacity: 0.85;
+}
+
+.dark .focus-progress-glow {
+  background: radial-gradient(
+    circle at center,
+    oklch(0.42 0.045 245 / 0.26) 0%,
+    transparent 68%
+  );
+}
+
+
 
 

@@ -21,12 +21,18 @@ export type FocusWeekDay = {
   level: 0 | 1 | 2 | 3 | 4;
 };
 
+export type FocusTodayMark = {
+  started_at: string;
+  minutes: number;
+};
+
 export type FocusOverviewStats = {
   sessions: number;
   focus_minutes: number;
   current_streak: number;
   longest_streak: number;
   week: FocusWeekDay[];
+  today_marks: FocusTodayMark[];
 };
 
 export const FOCUS_DAILY_GOAL_PRESETS = [

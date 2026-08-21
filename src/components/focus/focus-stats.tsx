@@ -4,27 +4,95 @@ import { useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { parseDateString, toDateString } from "@/lib/date-utils";
+import { toDateString } from "@/lib/date-utils";
+import { useFocusTimer } from "@/stores/focus-timer";
 import {
   FOCUS_DAILY_GOAL_DEFAULT,
   FOCUS_DAILY_GOAL_KEY,
   FOCUS_DAILY_GOAL_PRESETS,
   formatFocusMinutes,
   type FocusOverviewStats,
-  type FocusWeekDay,
 } from "@/types/focus";
-
-const DOT_SIZE: Record<FocusWeekDay["level"], string> = {
-  0: "size-1.5 opacity-30",
-  1: "size-2 opacity-55",
-  2: "size-2.5 opacity-75",
-  3: "size-3 opacity-90",
-  4: "size-3.5",
-};
 
 type FocusStatsProps = {
   stats: FocusOverviewStats;
 };
+
+function yesterdayWhisper(todayMinutes: number, yesterdayMinutes: number) {
+  if (todayMinutes === 0 && yesterdayMinutes === 0) {
+    return "Even with yesterday · still early";
+  }
+  if (todayMinutes === 0 && yesterdayMinutes > 0) {
+    return `Yesterday held ${formatFocusMinutes(yesterdayMinutes)}`;
+  }
+  if (yesterdayMinutes === 0 && todayMinutes > 0) {
+    return "Ahead of a quiet yesterday";
+  }
+
+  const delta = todayMinutes - yesterdayMinutes;
+  if (delta === 0) return "Matched yesterday";
+  if (delta > 0) return `+${formatFocusMinutes(delta)} vs yesterday`;
+  return `${formatFocusMinutes(Math.abs(delta))} quieter than yesterday`;
+}
+
+/** Map clock time onto a sky arc (dawn left → night right). */
+function constellationPoint(startedAt: string) {
+  const date = new Date(startedAt);
+  const hours = date.getHours() + date.getMinutes() / 60;
+  const dayStart = 5;
+  const dayEnd = 23;
+  const t = Math.min(1, Math.max(0, (hours - dayStart) / (dayEnd - dayStart)));
+  const angle = Math.PI - t * Math.PI;
+  const cx = 50;
+  const cy = 58;
+  const r = 36;
+  return {
+    x: cx + r * Math.cos(angle),
+    y: cy - r * Math.sin(angle),
+    t,
+  };
+}
+
+function markRadius(minutes: number) {
+  if (minutes >= 90) return 2.4;
+  if (minutes >= 50) return 2;
+  if (minutes >= 25) return 1.65;
+  return 1.25;
+}
+
+function formatMarkTime(iso: string) {
+  return new Date(iso).toLocaleTimeString([], {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function nextHonestBlock({
+  remaining,
+  met,
+  blockMinutes,
+  todayMinutes,
+}: {
+  remaining: number;
+  met: boolean;
+  blockMinutes: number;
+  todayMinutes: number;
+}) {
+  const block = Math.max(1, blockMinutes);
+
+  if (met) {
+    return "Goal sealed · another block is bonus";
+  }
+  if (todayMinutes <= 0) {
+    return "Goal is open — begin when ready";
+  }
+  if (remaining <= block) {
+    return `One more ${formatFocusMinutes(block)} seals the goal`;
+  }
+
+  const blocks = Math.ceil(remaining / block);
+  return `${blocks} honest blocks to goal · begin when ready`;
+}
 
 function readGoalMinutes() {
   if (typeof window === "undefined") return FOCUS_DAILY_GOAL_DEFAULT;
@@ -37,6 +105,7 @@ function readGoalMinutes() {
 }
 
 export function FocusStats({ stats }: FocusStatsProps) {
+  const lastFocusSeconds = useFocusTimer((s) => s.lastFocusSeconds);
   const [goalMinutes, setGoalMinutes] = useState(FOCUS_DAILY_GOAL_DEFAULT);
   const [ready, setReady] = useState(false);
   const [goalOpen, setGoalOpen] = useState(false);
@@ -54,172 +123,271 @@ export function FocusStats({ stats }: FocusStatsProps) {
 
   const progress = Math.min(
     100,
-    Math.round((stats.focus_minutes / Math.max(goalMinutes, 1)) * 100),
+    (stats.focus_minutes / Math.max(goalMinutes, 1)) * 100,
   );
   const remaining = Math.max(0, goalMinutes - stats.focus_minutes);
   const met = stats.focus_minutes >= goalMinutes;
-  const todayKey = toDateString(new Date());
+  const blockMinutes = Math.max(1, Math.round(lastFocusSeconds / 60));
+  const honestBlock = ready
+    ? nextHonestBlock({
+        remaining,
+        met,
+        blockMinutes,
+        todayMinutes: stats.focus_minutes,
+      })
+    : null;
+  const yesterdayDate = new Date();
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+  const yesterdayKey = toDateString(yesterdayDate);
+  const yesterdayMinutes =
+    stats.week.find((day) => day.date === yesterdayKey)?.minutes ?? 0;
+  const vsYesterday = yesterdayWhisper(stats.focus_minutes, yesterdayMinutes);
+  const marks = stats.today_marks ?? [];
 
-  const streakLine = [
-    `${stats.current_streak}d streak`,
-    stats.longest_streak > 0 ? `best ${stats.longest_streak}d` : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  const ringRadius = 42;
+  const ringCircumference = 2 * Math.PI * ringRadius;
+  const ringOffset = ringCircumference * (1 - (ready ? progress : 0) / 100);
+
+  const weekday = new Date().toLocaleDateString("en-US", { weekday: "long" });
 
   return (
-    <section className="space-y-5">
-      <div>
-        <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-          Progress
-        </p>
-        <p className="focus-clock mt-2 text-[2rem] text-foreground">
-          {formatFocusMinutes(stats.focus_minutes)}
-        </p>
-        <p className="mt-1.5 text-sm text-muted-foreground">
-          Focused today
-          {stats.sessions > 0
-            ? ` · ${stats.sessions} session${stats.sessions === 1 ? "" : "s"}`
-            : ""}
-        </p>
-        <p className="mt-1 text-xs tabular-nums text-muted-foreground/80">
-          {streakLine}
-        </p>
-      </div>
+    <section className="focus-progress relative flex min-h-[34rem] flex-col overflow-hidden sm:min-h-[40rem]">
+      <div className="focus-progress-glow" aria-hidden />
 
-      <div className="space-y-2">
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-xs text-muted-foreground">
-            {ready ? (
-              met ? (
-                <>
-                  Goal met ·{" "}
-                  <span className="tabular-nums text-foreground">
-                    {formatFocusMinutes(goalMinutes)}
-                  </span>
-                </>
-              ) : (
-                <>
-                  <span className="tabular-nums text-foreground">
-                    {formatFocusMinutes(remaining)}
-                  </span>{" "}
-                  to{" "}
-                  <span className="tabular-nums">
-                    {formatFocusMinutes(goalMinutes)}
-                  </span>{" "}
-                  goal
-                </>
-              )
-            ) : (
-              "Daily goal"
-            )}
+      <div className="relative z-[1] flex flex-1 flex-col">
+        <div className="text-center lg:text-left">
+          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+            Today
           </p>
-          <button
-            type="button"
-            onClick={() => setGoalOpen((value) => !value)}
-            className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
-            aria-expanded={goalOpen}
-          >
-            Change
-            <ChevronDown
-              className={cn(
-                "size-3.5 transition-transform duration-200",
-                goalOpen && "rotate-180",
-              )}
-            />
-          </button>
+          <p className="mt-1.5 text-sm text-muted-foreground">{weekday}</p>
         </div>
 
-        <div
-          className="h-1 overflow-hidden rounded-full bg-muted/70"
-          role="progressbar"
-          aria-valuemin={0}
-          aria-valuemax={goalMinutes}
-          aria-valuenow={Math.min(stats.focus_minutes, goalMinutes)}
-          aria-label="Daily focus goal progress"
-        >
-          <div
-            className={cn(
-              "h-full rounded-full transition-[width] duration-500",
-              met ? "bg-foreground" : "bg-foreground/70",
-            )}
-            style={{ width: `${ready ? progress : 0}%` }}
-          />
-        </div>
-
-        {goalOpen ? (
-          <div className="flex flex-wrap gap-1.5 pt-1">
-            {FOCUS_DAILY_GOAL_PRESETS.map((preset) => {
-              const active = goalMinutes === preset.minutes;
-              return (
-                <button
-                  key={preset.minutes}
-                  type="button"
-                  onClick={() => updateGoal(preset.minutes)}
-                  className={cn(
-                    "rounded-full px-2.5 py-1 text-[11px] tabular-nums transition-colors",
-                    active
-                      ? "bg-foreground text-background"
-                      : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
-                  )}
-                >
-                  {preset.label}
-                </button>
-              );
-            })}
-          </div>
-        ) : null}
-      </div>
-
-      <div
-        className="flex items-center justify-between gap-2"
-        aria-label="Focus week"
-      >
-        {stats.week.map((day) => {
-          const label = parseDateString(day.date).toLocaleDateString("en-US", {
-            weekday: "short",
-            month: "short",
-            day: "numeric",
-          });
-          const title =
-            day.minutes <= 0
-              ? `No focus on ${label}`
-              : `${formatFocusMinutes(day.minutes)} on ${label}`;
-          const isToday = day.date === todayKey;
-
-          return (
-            <div
-              key={day.date}
-              className="flex flex-col items-center gap-1.5"
-              title={title}
+        <div className="flex flex-1 flex-col items-center justify-center py-8">
+          <div className="relative flex size-[13.5rem] items-center justify-center sm:size-[15rem]">
+            <svg
+              className="absolute inset-0 size-full -rotate-90"
+              viewBox="0 0 100 100"
+              aria-hidden
             >
-              <span
-                className={cn(
-                  "rounded-full transition-colors",
-                  DOT_SIZE[day.level],
-                  day.level === 0
-                    ? "bg-muted-foreground"
-                    : isToday
-                      ? "bg-foreground"
-                      : "bg-foreground/70",
-                )}
-                aria-label={title}
+              <circle
+                cx="50"
+                cy="50"
+                r={ringRadius}
+                fill="none"
+                className="stroke-muted/45"
+                strokeWidth="1"
               />
-              <span
-                className={cn(
-                  "text-[10px] tabular-nums",
-                  isToday
-                    ? "text-foreground"
-                    : "text-muted-foreground/70",
-                )}
-              >
-                {parseDateString(day.date).toLocaleDateString("en-US", {
-                  weekday: "narrow",
-                })}
-              </span>
+              <circle
+                cx="50"
+                cy="50"
+                r={ringRadius}
+                fill="none"
+                className="stroke-muted/70"
+                strokeWidth="2.5"
+                strokeDasharray="1.1 2.2"
+                opacity={0.35}
+              />
+              <circle
+                cx="50"
+                cy="50"
+                r={ringRadius}
+                fill="none"
+                className="stroke-foreground transition-[stroke-dashoffset] duration-700 ease-out"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeDasharray={ringCircumference}
+                strokeDashoffset={ringOffset}
+              />
+            </svg>
+
+            <div
+              className="relative px-4 text-center"
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={goalMinutes}
+              aria-valuenow={Math.min(stats.focus_minutes, goalMinutes)}
+              aria-label="Daily focus goal progress"
+            >
+              <p className="focus-clock text-[2.35rem] text-foreground sm:text-[2.75rem]">
+                {formatFocusMinutes(stats.focus_minutes)}
+              </p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                {stats.sessions === 0
+                  ? "No sessions yet"
+                  : `${stats.sessions} session${stats.sessions === 1 ? "" : "s"}`}
+              </p>
             </div>
-          );
-        })}
+          </div>
+
+          <p className="mt-5 max-w-[16rem] text-center text-sm text-muted-foreground">
+            {vsYesterday}
+          </p>
+
+          <div className="mt-4 max-w-[16rem] text-center">
+            <p className="text-sm text-foreground/85">
+              {honestBlock ?? "Loading goal…"}
+            </p>
+            <p className="mt-1.5 text-xs tabular-nums text-muted-foreground">
+              {ready ? (
+                met ? (
+                  <>
+                    {formatFocusMinutes(stats.focus_minutes)} /{" "}
+                    {formatFocusMinutes(goalMinutes)}
+                  </>
+                ) : (
+                  <>
+                    {formatFocusMinutes(remaining)} left ·{" "}
+                    {formatFocusMinutes(goalMinutes)} goal
+                  </>
+                )
+              ) : null}
+            </p>
+            <button
+              type="button"
+              onClick={() => setGoalOpen((value) => !value)}
+              className="mt-2 inline-flex items-center gap-1 text-xs text-muted-foreground/80 transition-colors hover:text-foreground"
+              aria-expanded={goalOpen}
+            >
+              Change goal
+              <ChevronDown
+                className={cn(
+                  "size-3.5 transition-transform duration-200",
+                  goalOpen && "rotate-180",
+                )}
+              />
+            </button>
+
+            {goalOpen ? (
+              <div className="mt-3 flex flex-wrap justify-center gap-1.5">
+                {FOCUS_DAILY_GOAL_PRESETS.map((preset) => {
+                  const active = goalMinutes === preset.minutes;
+                  return (
+                    <button
+                      key={preset.minutes}
+                      type="button"
+                      onClick={() => updateGoal(preset.minutes)}
+                      className={cn(
+                        "rounded-full px-2.5 py-1 text-[11px] tabular-nums transition-colors",
+                        active
+                          ? "bg-foreground text-background"
+                          : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                      )}
+                    >
+                      {preset.label}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="mt-auto space-y-4">
+          <div>
+            <div className="mb-2 flex items-baseline justify-between gap-3">
+              <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                Constellation
+              </p>
+              <p className="text-xs tabular-nums text-muted-foreground">
+                {marks.length === 0
+                  ? "Clear sky"
+                  : `${marks.length} lit`}
+              </p>
+            </div>
+
+            <div
+              className="relative mx-auto w-full max-w-[17rem]"
+              aria-label="Today's focus sessions by time of day"
+            >
+              <svg viewBox="0 0 100 72" className="h-auto w-full">
+                <path
+                  d="M 14 58 A 36 36 0 0 1 86 58"
+                  fill="none"
+                  className="stroke-border/60"
+                  strokeWidth="0.7"
+                  strokeDasharray="1.2 1.8"
+                />
+                <text
+                  x="12"
+                  y="68"
+                  className="fill-muted-foreground"
+                  fontSize="3.2"
+                >
+                  Dawn
+                </text>
+                <text
+                  x="44"
+                  y="68"
+                  className="fill-muted-foreground"
+                  fontSize="3.2"
+                  textAnchor="middle"
+                >
+                  Noon
+                </text>
+                <text
+                  x="88"
+                  y="68"
+                  className="fill-muted-foreground"
+                  fontSize="3.2"
+                  textAnchor="end"
+                >
+                  Night
+                </text>
+
+                {marks.length === 0 ? (
+                  <circle
+                    cx="50"
+                    cy="40"
+                    r="0.9"
+                    className="fill-muted-foreground/35"
+                  />
+                ) : (
+                  marks.map((mark) => {
+                    const point = constellationPoint(mark.started_at);
+                    const r = markRadius(mark.minutes);
+                    return (
+                      <g key={mark.started_at + mark.minutes}>
+                        <title>
+                          {formatMarkTime(mark.started_at)} ·{" "}
+                          {formatFocusMinutes(mark.minutes)}
+                        </title>
+                        <circle
+                          cx={point.x}
+                          cy={point.y}
+                          r={r + 1.1}
+                          className="fill-foreground/10"
+                        />
+                        <circle
+                          cx={point.x}
+                          cy={point.y}
+                          r={r}
+                          className="fill-foreground"
+                        />
+                      </g>
+                    );
+                  })
+                )}
+              </svg>
+            </div>
+          </div>
+
+          <div className="flex items-baseline justify-between gap-3 text-xs text-muted-foreground">
+            <span>
+              Streak{" "}
+              <span className="tabular-nums text-foreground">
+                {stats.current_streak}d
+              </span>
+              {stats.longest_streak > 0
+                ? ` · best ${stats.longest_streak}d`
+                : ""}
+            </span>
+            <span className="tabular-nums">
+              {marks.length === 0
+                ? "Plot the first star"
+                : "Day taking shape"}
+            </span>
+          </div>
+        </div>
       </div>
     </section>
   );
