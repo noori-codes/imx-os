@@ -4,6 +4,7 @@ import { useOptimistic } from "react";
 import { CheckSquare } from "lucide-react";
 
 import { HabitItem } from "@/components/habits/habit-item";
+import { EmptyState } from "@/components/shared/empty-state";
 import type { HabitView, HabitWithStats } from "@/types/habit";
 
 type HabitListProps = {
@@ -20,17 +21,15 @@ export function HabitList({ habits, view = "active" }: HabitListProps) {
 
   if (optimisticHabits.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
-        <CheckSquare className="mb-3 size-8 text-muted-foreground" />
-        <h3 className="text-base font-medium">
-          {view === "archived" ? "No archived habits" : "No habits yet"}
-        </h3>
-        <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-          {view === "archived"
+      <EmptyState
+        icon={CheckSquare}
+        title={view === "archived" ? "No archived habits" : "No habits yet"}
+        description={
+          view === "archived"
             ? "Archived habits will show up here."
-            : "Add a daily habit above, then check it off to build a streak."}
-        </p>
-      </div>
+            : "Add a daily habit above, then check it off to build a streak."
+        }
+      />
     );
   }
 

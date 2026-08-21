@@ -6,6 +6,7 @@ import { HabitForm } from "@/components/habits/habit-form";
 import { HabitList } from "@/components/habits/habit-list";
 import { HabitViewTabs } from "@/components/habits/habit-view-tabs";
 import { Header } from "@/components/layout/header";
+import { AppPageFrame } from "@/components/shared/app-page-frame";
 import type { HabitView } from "@/types/habit";
 
 type HabitsPageProps = {
@@ -30,7 +31,7 @@ export default async function HabitsPage({ searchParams }: HabitsPageProps) {
   return (
     <>
       <Header title="Habits" description="Daily check-ins and streaks" />
-      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-6 md:px-8 md:py-8">
+      <AppPageFrame>
         <HabitViewTabs
           active={view}
           activeCount={activeHabits.length}
@@ -38,7 +39,7 @@ export default async function HabitsPage({ searchParams }: HabitsPageProps) {
         />
         {view === "active" ? <HabitForm /> : null}
         <HabitList habits={habits} view={view} />
-      </div>
+      </AppPageFrame>
     </>
   );
 }
