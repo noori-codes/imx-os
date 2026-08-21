@@ -293,46 +293,22 @@ export function FocusTimer() {
   const endedHint =
     isRunning && endsAt ? `Ends ${formatClockTime(endsAt)}` : null;
 
-  const glow =
-    mode === "focus"
-      ? "from-white/7 via-white/2 to-transparent"
-      : mode === "short_break"
-        ? "from-white/6 via-white/2 to-transparent"
-        : "from-white/6 via-white/2 to-transparent";
-
   return (
-    <section className="relative overflow-hidden rounded-4xl border border-border/60 bg-card/95 px-6 py-8 shadow-[0_1px_0_rgba(255,255,255,0.03)] sm:px-10 sm:py-10">
-      <div
-        className={cn(
-          "pointer-events-none absolute -top-24 left-1/2 size-112 -translate-x-1/2 rounded-full bg-linear-to-b blur-3xl",
-          glow,
-        )}
-        aria-hidden
-      />
-      <div
-        className={cn(
-          "pointer-events-none absolute -bottom-28 left-1/2 size-112 -translate-x-1/2 rounded-full bg-linear-to-t blur-3xl opacity-50",
-          glow,
-        )}
-        aria-hidden
-      />
-      <div className="relative flex flex-col items-center">
-      <div className="flex w-full max-w-xl items-start justify-between gap-4">
+    <section className="border-b border-border/60 pb-8">
+      <div className="flex flex-col items-center">
+      <div className="flex w-full items-start justify-between gap-4">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            Focus Room
-          </p>
-          <h2 className="mt-1 text-lg font-semibold">
-            {mode === "focus" ? "Deep work session" : FOCUS_PRESETS[mode].label}
+          <h2 className="text-base font-semibold">
+            {mode === "focus" ? "Deep work" : FOCUS_PRESETS[mode].label}
           </h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            {isRunning ? "Running" : "Ready"} · Space start · S skip · R reset
+          </p>
         </div>
-        <span className="rounded-full border border-border/70 bg-muted/25 px-3 py-1 text-[11px] font-medium text-muted-foreground">
-          {isRunning ? "Running" : "Ready"}
-        </span>
       </div>
 
       <div
-        className="mt-5 inline-flex rounded-full bg-muted/25 p-1 ring-1 ring-border/70"
+        className="mt-5 flex gap-4 border-b border-border/60"
         role="tablist"
         aria-label="Timer mode"
       >
@@ -352,10 +328,10 @@ export function FocusTimer() {
                 setMode(m);
               }}
               className={cn(
-                "rounded-full px-3.5 py-1.5 text-sm transition-colors disabled:opacity-50",
+                "border-b-2 pb-2 text-sm transition-colors disabled:opacity-50",
                 isActive
-                  ? "bg-background font-medium text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground",
+                  ? "border-foreground font-medium text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground",
               )}
             >
               {FOCUS_PRESETS[m].label}
@@ -431,7 +407,7 @@ export function FocusTimer() {
           onChange={(e) => setIntention(e.target.value)}
           placeholder="Working on…"
           aria-label="What are you focusing on"
-          className="mt-4 h-10 w-full max-w-sm rounded-full border-0 bg-muted/35 px-4 text-center shadow-none"
+          className="mt-4 h-9 w-full max-w-sm text-center"
         />
       ) : null}
 
@@ -453,7 +429,7 @@ export function FocusTimer() {
                     setDuration(preset.minutes * 60);
                   }}
                   className={cn(
-                    "rounded-full px-3.5 py-1.5 text-sm tabular-nums transition-colors",
+                    "rounded-md px-2.5 py-1 text-sm tabular-nums transition-colors",
                     active
                       ? "bg-foreground text-background"
                       : "bg-muted text-muted-foreground hover:text-foreground",
@@ -475,7 +451,7 @@ export function FocusTimer() {
                 aria-label="Custom hours"
                 value={customHours}
                 onChange={(e) => setCustomHours(e.target.value)}
-                className="h-9 w-16 rounded-full border-0 bg-muted/35 text-center shadow-none"
+                className="h-9 w-16 text-center"
               />
               <span className="text-muted-foreground">:</span>
               <Input
@@ -487,7 +463,7 @@ export function FocusTimer() {
                 aria-label="Custom minutes"
                 value={customMinutes}
                 onChange={(e) => setCustomMinutes(e.target.value)}
-                className="h-9 w-16 rounded-full border-0 bg-muted/35 text-center shadow-none"
+                className="h-9 w-16 text-center"
               />
               {!presetMatch && !customHours && !customMinutes ? (
                 <span className="text-xs tabular-nums text-muted-foreground">
@@ -511,7 +487,7 @@ export function FocusTimer() {
         <button
           type="button"
           onClick={handleToggle}
-          className="flex size-16 items-center justify-center rounded-full bg-foreground text-background shadow-lg shadow-foreground/20 transition-transform hover:scale-[1.03] active:scale-95"
+          className="flex size-14 items-center justify-center rounded-full bg-foreground text-background transition-transform hover:scale-[1.03] active:scale-95"
           aria-label={isRunning ? "Pause timer" : "Start timer"}
         >
           {isRunning ? (
@@ -535,7 +511,7 @@ export function FocusTimer() {
           type="button"
           onClick={() => setAutoStartNext(!autoStartNext)}
           className={cn(
-            "rounded-full px-2.5 py-1 transition-colors",
+            "rounded-md px-2.5 py-1 transition-colors",
             autoStartNext
               ? "bg-foreground text-background"
               : "hover:bg-muted hover:text-foreground",
@@ -543,7 +519,6 @@ export function FocusTimer() {
         >
           Auto-start {autoStartNext ? "on" : "off"}
         </button>
-        <span>Space start · S skip · R reset</span>
       </div>
       </div>
     </section>

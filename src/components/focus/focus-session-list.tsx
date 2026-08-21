@@ -4,6 +4,7 @@ import { useOptimistic, useTransition } from "react";
 import { Clock, Trash2 } from "lucide-react";
 
 import { deleteFocusSession } from "@/actions/focus";
+import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -79,13 +80,11 @@ export function FocusSessionList({ sessions }: FocusSessionListProps) {
 
   if (optimisticSessions.length === 0) {
     return (
-      <section className="rounded-[1.75rem] border border-border/60 bg-card px-5 py-10 text-center sm:px-6">
-        <Clock className="mx-auto mb-3 size-8 text-muted-foreground" />
-        <h2 className="text-base font-medium">No sessions yet</h2>
-        <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
-          Start the timer. Finished and stopped sessions will land here.
-        </p>
-      </section>
+      <EmptyState
+        icon={Clock}
+        title="No sessions yet"
+        description="Start the timer. Finished and stopped sessions will land here."
+      />
     );
   }
 
@@ -106,23 +105,29 @@ export function FocusSessionList({ sessions }: FocusSessionListProps) {
   }
 
   return (
-    <section className="rounded-[1.75rem] border border-border/60 bg-card/95 px-5 py-6 shadow-[0_1px_0_rgba(255,255,255,0.03)] sm:px-6">
-      <div className="space-y-7">
+    <div>
+      <p className="mb-3 text-sm text-muted-foreground">
+        Recent{" "}
+        <span className="tabular-nums text-foreground">
+          {optimisticSessions.length}
+        </span>
+      </p>
+      <div className="space-y-6">
         {groups.map((group) => (
           <div key={group.key}>
-            <div className="mb-3 flex items-baseline justify-between gap-3">
-              <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <div className="mb-2 flex items-baseline justify-between gap-3">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 {group.label}
               </h2>
               <span className="text-xs tabular-nums text-muted-foreground">
                 {group.sessions.length}
               </span>
             </div>
-            <ul className="space-y-1">
+            <ul className="border-t border-border/60">
               {group.sessions.map((session) => (
                 <li
                   key={session.id}
-                  className="group flex items-center gap-3 rounded-2xl px-2 py-2.5 hover:bg-muted/50"
+                  className="group flex items-center gap-3 border-b border-border/50 py-3.5"
                 >
                   <span
                     className={cn(
@@ -167,6 +172,6 @@ export function FocusSessionList({ sessions }: FocusSessionListProps) {
           </div>
         ))}
       </div>
-    </section>
+    </div>
   );
 }

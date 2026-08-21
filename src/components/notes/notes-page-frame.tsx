@@ -1,9 +1,8 @@
 import type { ReactNode } from "react";
 
+import { AppPageFrame } from "@/components/shared/app-page-frame";
+
+/** @deprecated Prefer AppPageFrame — kept as alias during migration. */
 export function NotesPageFrame({ children }: { children: ReactNode }) {
-  return (
-    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 px-4 py-6 md:px-8 md:py-10">
-      {children}
-    </div>
-  );
+  return <AppPageFrame>{children}</AppPageFrame>;
 }

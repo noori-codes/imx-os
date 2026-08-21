@@ -1,11 +1,10 @@
 import type { ReactNode } from "react";
 
+import { AppPageFrame } from "@/components/shared/app-page-frame";
+
+/** @deprecated Prefer AppPageFrame — kept as alias during migration. */
 export function FocusPageFrame({ children }: { children: ReactNode }) {
-  return (
-    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 px-4 py-6 md:px-8 md:py-10">
-      {children}
-    </div>
-  );
+  return <AppPageFrame>{children}</AppPageFrame>;
 }
 
 export function FocusWorkspace({
@@ -16,11 +15,9 @@ export function FocusWorkspace({
   rail: ReactNode;
 }) {
   return (
-    <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_22.5rem] xl:gap-8">
+    <div className="grid items-start gap-6">
       {stage}
-      <div className="flex min-w-0 flex-col gap-5 xl:sticky xl:top-20">
-        {rail}
-      </div>
+      <div className="flex min-w-0 flex-col gap-5">{rail}</div>
     </div>
   );
 }
