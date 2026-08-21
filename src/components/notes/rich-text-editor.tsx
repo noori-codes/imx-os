@@ -32,7 +32,7 @@ export function RichTextEditor({
     editorProps: {
       attributes: {
         class:
-          "note-editor min-h-[320px] px-4 py-4 text-sm leading-relaxed focus:outline-none sm:px-5 sm:py-5",
+          "note-editor min-h-[280px] px-0 py-3 text-sm leading-relaxed focus:outline-none",
       },
     },
     onUpdate: ({ editor: ed }) => {
@@ -42,7 +42,7 @@ export function RichTextEditor({
 
   if (!editor) {
     return (
-      <div className="min-h-[360px] rounded-3xl border border-border/60 bg-muted/20 p-5 text-sm text-muted-foreground">
+      <div className="min-h-[320px] border-y border-border/60 py-4 text-sm text-muted-foreground">
         Loading editor…
       </div>
     );
@@ -51,8 +51,8 @@ export function RichTextEditor({
   const isEmpty = editor.isEmpty;
 
   return (
-    <div className="overflow-hidden rounded-3xl border border-border/60 bg-muted/15">
-      <div className="flex flex-wrap gap-1 border-b border-border/60 bg-muted/25 p-2">
+    <div className="border-y border-border/60">
+      <div className="flex flex-wrap gap-1 border-b border-border/60 py-1.5">
         <ToolbarButton
           active={editor.isActive("bold")}
           onClick={() => editor.chain().focus().toggleBold().run()}
@@ -101,7 +101,7 @@ export function RichTextEditor({
 
       <div className="relative">
         {isEmpty ? (
-          <p className="pointer-events-none absolute left-4 top-4 text-sm text-muted-foreground sm:left-5 sm:top-5">
+          <p className="pointer-events-none absolute left-0 top-3 text-sm text-muted-foreground">
             {placeholder}
           </p>
         ) : null}
@@ -127,10 +127,7 @@ function ToolbarButton({
       type="button"
       size="icon"
       variant="ghost"
-      className={cn(
-        "size-8 rounded-xl",
-        active && "bg-background/70 text-foreground",
-      )}
+      className={cn("size-8", active && "bg-muted text-foreground")}
       onClick={onClick}
       aria-label={label}
     >

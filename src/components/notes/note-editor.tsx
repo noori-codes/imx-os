@@ -37,21 +37,17 @@ export function NoteEditor({ note }: NoteEditorProps) {
   }, [state, router]);
 
   return (
-    <form
-      action={formAction}
-      className="overflow-hidden rounded-[1.75rem] border border-border/60 bg-card/95 shadow-[0_1px_0_rgba(255,255,255,0.03)]"
-    >
+    <form action={formAction} className="space-y-4">
       <input type="hidden" name="content" value={content} />
 
-      <div className="border-b border-border/60 px-5 py-5 sm:px-6">
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-            {note.type === "journal" ? "Journal" : "Note"}
-          </p>
+      <div className="border-b border-border/60 pb-4">
+        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+          <span>{note.type === "journal" ? "Journal" : "Note"}</span>
           {note.journal_date ? (
-            <span className="rounded-full border border-border/70 bg-muted/35 px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
-              {note.journal_date}
-            </span>
+            <>
+              <span className="text-border">·</span>
+              <span className="tabular-nums">{note.journal_date}</span>
+            </>
           ) : null}
         </div>
         <input
@@ -60,32 +56,31 @@ export function NoteEditor({ note }: NoteEditorProps) {
           defaultValue={note.title}
           placeholder="Untitled"
           aria-label="Title"
-          className="mt-3 w-full bg-transparent text-2xl font-semibold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/60"
+          className="mt-2 w-full bg-transparent text-xl font-semibold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/60"
         />
       </div>
 
-      <div className="px-2 py-2 sm:px-3 sm:py-3">
-        <RichTextEditor
-          content={note.content}
-          onChange={setContent}
-          placeholder={
-            note.type === "journal"
-              ? "How was today? What went well?"
-              : "Start writing…"
-          }
-        />
-      </div>
+      <RichTextEditor
+        content={note.content}
+        onChange={setContent}
+        placeholder={
+          note.type === "journal"
+            ? "How was today? What went well?"
+            : "Start writing…"
+        }
+      />
 
-      <div className="flex flex-wrap items-center gap-3 border-t border-border/60 px-5 py-4 sm:px-6">
-        <Button type="submit" disabled={pending} className="h-9 rounded-full px-5">
+      <div className="flex flex-wrap items-center gap-3 border-t border-border/60 pt-4">
+        <Button type="submit" disabled={pending} size="sm" className="h-9">
           {pending ? "Saving…" : "Save"}
         </Button>
 
         <Button
           type="submit"
           variant="outline"
+          size="sm"
           formAction={deleteNote.bind(null, note.id)}
-          className="h-9 rounded-full border-border/70 text-destructive hover:text-destructive"
+          className="h-9 text-destructive hover:text-destructive"
         >
           <Trash2 className="size-4" />
           Delete
