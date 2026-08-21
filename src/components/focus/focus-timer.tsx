@@ -20,6 +20,7 @@ import {
   FOCUS_MAX_SECONDS,
   FOCUS_POMODOROS_PER_LONG_BREAK,
   FOCUS_PRESETS,
+  FOCUS_PROFILES,
   formatFocusClock,
   type FocusMode,
 } from "@/types/focus";
@@ -71,11 +72,14 @@ export function FocusTimer({
     autoStartNext,
     intention,
     linkedTaskId,
+    profileId,
     setMode,
     setDuration,
     setIntention,
     setLinkedTaskId,
     setAutoStartNext,
+    applyProfile,
+    hydrateProfile,
     start,
     pause,
     reset,
@@ -102,7 +106,8 @@ export function FocusTimer({
   useEffect(() => {
     const stored = window.localStorage.getItem("imx-focus-auto-start") === "1";
     if (stored) setAutoStartNext(true);
-  }, [setAutoStartNext]);
+    hydrateProfile();
+  }, [setAutoStartNext, hydrateProfile]);
 
   useEffect(() => {
     if (!isRunning) return;
@@ -316,6 +321,9 @@ export function FocusTimer({
   const endedHint =
     isRunning && endsAt ? `Ends ${formatClockTime(endsAt)}` : null;
 
+  const activeProfile =
+    FOCUS_PROFILES.find((profile) => profile.id === profileId) ?? null;
+
   return (
     <section className="border-b border-border/60 pb-8">
       <div className="flex flex-col items-center">
@@ -325,10 +333,49 @@ export function FocusTimer({
             {mode === "focus" ? "Deep work" : FOCUS_PRESETS[mode].label}
           </h2>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            {isRunning ? "Running" : "Ready"} · Space start · S skip · R reset
+            {isRunning ? "Running" : "Ready"}
+            {activeProfile ? ` · ${activeProfile.label}` : " · Custom"}
+            {" · "}
+            Space start · S skip · R reset
           </p>
         </div>
       </div>
+
+      {!isRunning ? (
+        <div className="mt-4 flex w-full max-w-md flex-wrap items-center justify-center gap-2">
+          {FOCUS_PROFILES.map((profile) => {
+            const active = profileId === profile.id;
+            return (
+              <button
+                key={profile.id}
+                type="button"
+                onClick={() => {
+                  setCustomHours("");
+                  setCustomMinutes("");
+                  applyProfile(profile.id);
+                }}
+                className={cn(
+                  "rounded-md px-2.5 py-1.5 text-left transition-colors",
+                  active
+                    ? "bg-foreground text-background"
+                    : "bg-muted text-muted-foreground hover:text-foreground",
+                )}
+                aria-pressed={active}
+              >
+                <span className="block text-sm font-medium">{profile.label}</span>
+                <span
+                  className={cn(
+                    "block text-[11px] tabular-nums",
+                    active ? "text-background/75" : "text-muted-foreground",
+                  )}
+                >
+                  {profile.hint}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
 
       <div
         className="mt-5 flex gap-4 border-b border-border/60"

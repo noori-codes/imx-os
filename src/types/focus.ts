@@ -39,6 +39,63 @@ export const FOCUS_DAILY_GOAL_PRESETS = [
 export const FOCUS_DAILY_GOAL_DEFAULT = 120;
 export const FOCUS_DAILY_GOAL_KEY = "imx-focus-daily-goal";
 
+export type FocusProfileId = "classic" | "deep" | "quick";
+
+export const FOCUS_PROFILES = [
+  {
+    id: "classic",
+    label: "Classic",
+    hint: "25 · 5 · 15",
+    focus: 25,
+    short_break: 5,
+    long_break: 15,
+  },
+  {
+    id: "deep",
+    label: "Deep",
+    hint: "50 · 10 · 20",
+    focus: 50,
+    short_break: 10,
+    long_break: 20,
+  },
+  {
+    id: "quick",
+    label: "Quick",
+    hint: "15 · 3 · 10",
+    focus: 15,
+    short_break: 3,
+    long_break: 10,
+  },
+] as const satisfies ReadonlyArray<{
+  id: FocusProfileId;
+  label: string;
+  hint: string;
+  focus: number;
+  short_break: number;
+  long_break: number;
+}>;
+
+export const FOCUS_PROFILE_KEY = "imx-focus-profile";
+export const FOCUS_PROFILE_DEFAULT: FocusProfileId = "classic";
+
+export function getFocusProfile(id: FocusProfileId) {
+  return FOCUS_PROFILES.find((profile) => profile.id === id) ?? FOCUS_PROFILES[0];
+}
+
+export function matchFocusProfile(durations: {
+  focus: number;
+  short_break: number;
+  long_break: number;
+}): FocusProfileId | null {
+  const match = FOCUS_PROFILES.find(
+    (profile) =>
+      profile.focus === durations.focus &&
+      profile.short_break === durations.short_break &&
+      profile.long_break === durations.long_break,
+  );
+  return match?.id ?? null;
+}
+
 export const FOCUS_PRESETS: Record<
   FocusMode,
   { label: string; minutes: number }
