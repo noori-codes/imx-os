@@ -62,11 +62,11 @@ function TaskRow({ task }: { task: TaskWithContext }) {
 
 export function TodayFocus({ tasks }: TodayFocusProps) {
   return (
-    <section>
+    <section className="imx-panel h-full">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <h2 className="text-base font-semibold tracking-tight">Today</h2>
-          <p className="mt-0.5 text-sm text-muted-foreground">
+          <h2 className="text-sm font-medium">Today</h2>
+          <p className="mt-0.5 text-xs text-muted-foreground">
             {tasks.length === 0
               ? "Nothing scheduled"
               : `${tasks.length} task${tasks.length === 1 ? "" : "s"}`}
@@ -91,7 +91,7 @@ export function TodayFocus({ tasks }: TodayFocusProps) {
           </Link>
         </div>
       ) : (
-        <ul className="mt-2">
+        <ul className="mt-3">
           {tasks.map((task) => (
             <TaskRow key={task.id} task={task} />
           ))}

@@ -75,7 +75,7 @@ export function DashboardChrome({
         </div>
       </div>
 
-      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-10 px-4 py-8 md:gap-12 md:px-8">
+      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-6 md:gap-8 md:px-8 md:py-10">
         {children}
       </div>
     </>

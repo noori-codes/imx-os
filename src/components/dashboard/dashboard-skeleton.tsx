@@ -25,7 +25,7 @@ export function DashboardSkeleton() {
         </div>
       </div>
 
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 py-8 md:gap-12 md:px-8">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 md:gap-8 md:px-8 md:py-10">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="space-y-3">
             <Bone className="h-9 w-72 max-w-full" />
@@ -38,15 +38,13 @@ export function DashboardSkeleton() {
           </div>
         </div>
 
-        <div className="grid gap-10 lg:grid-cols-[minmax(0,1.7fr)_minmax(14rem,0.85fr)] lg:gap-14">
-          <section className="space-y-4">
-            <div className="space-y-2">
-              <Bone className="h-4 w-16" />
-              <Bone className="h-3 w-24 opacity-60" />
-            </div>
-            <div className="divide-y divide-border/50 border-y border-border/50">
+        <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(18.5rem,22rem)] lg:gap-6">
+          <section className="imx-panel space-y-3">
+            <Bone className="h-4 w-16" />
+            <Bone className="h-3 w-24 opacity-60" />
+            <div className="space-y-2 pt-2">
               {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-3 py-3">
+                <div key={i} className="flex items-center gap-3 py-2">
                   <Bone className="size-8 shrink-0 rounded-full" />
                   <div className="min-w-0 flex-1 space-y-2">
                     <Bone className="h-3.5 w-[70%] max-w-[16rem]" />
@@ -57,12 +55,10 @@ export function DashboardSkeleton() {
             </div>
           </section>
 
-          <aside className="space-y-4 lg:border-l lg:border-border/60 lg:pl-10">
-            <div className="space-y-2">
-              <Bone className="h-4 w-16" />
-              <Bone className="h-3 w-20 opacity-60" />
-            </div>
-            <div className="space-y-1">
+          <aside className="imx-panel imx-panel-tight space-y-3">
+            <Bone className="h-4 w-16" />
+            <Bone className="h-3 w-20 opacity-60" />
+            <div className="space-y-2 pt-1">
               {Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="flex items-center gap-3 py-1.5">
                   <Bone className="size-7 shrink-0 rounded-full" />
@@ -73,23 +69,38 @@ export function DashboardSkeleton() {
           </aside>
         </div>
 
-        <section className="space-y-4 border-t border-border/60 pt-8">
-          <div className="flex items-baseline justify-between">
-            <Bone className="h-4 w-24" />
-            <Bone className="h-3 w-12 opacity-60" />
-          </div>
-          <div className="grid grid-cols-7 gap-2 sm:gap-3">
-            {Array.from({ length: 7 }).map((_, i) => (
-              <div key={i} className="flex flex-col items-center gap-1.5">
-                <Bone className="h-2.5 w-6 opacity-60" />
-                <Bone className="h-10 w-full max-w-4 rounded-sm opacity-80 sm:h-12" />
-                <Bone className="h-3 w-3" />
+        <div className="grid items-start gap-4 lg:grid-cols-2 lg:gap-6">
+          <section className="imx-panel space-y-4">
+            <div className="flex items-baseline justify-between">
+              <Bone className="h-4 w-24" />
+              <Bone className="h-3 w-12 opacity-60" />
+            </div>
+            <div className="grid grid-cols-7 gap-2 sm:gap-3">
+              {Array.from({ length: 7 }).map((_, i) => (
+                <div key={i} className="flex flex-col items-center gap-1.5">
+                  <Bone className="h-2.5 w-6 opacity-60" />
+                  <Bone className="h-10 w-full max-w-4 rounded-sm opacity-80 sm:h-12" />
+                  <Bone className="h-3 w-3" />
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="imx-panel space-y-4">
+            <Bone className="h-4 w-16" />
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="space-y-2">
+                <div className="flex justify-between gap-3">
+                  <Bone className="h-3.5 w-32" />
+                  <Bone className="h-3 w-8" />
+                </div>
+                <Bone className="h-1.5 w-full rounded-full" />
               </div>
             ))}
-          </div>
-        </section>
+          </section>
+        </div>
 
-        <section className="space-y-3 border-t border-border/60 pt-8">
+        <section className="imx-panel space-y-3">
           <div className="flex flex-col items-center gap-2.5">
             <Bone className="h-4 w-20" />
             <Bone className="h-3 w-48 opacity-60" />

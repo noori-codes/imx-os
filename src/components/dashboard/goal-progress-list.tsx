@@ -8,12 +8,34 @@ type GoalProgressListProps = {
 };
 
 export function GoalProgressList({ goals }: GoalProgressListProps) {
-  if (goals.length === 0) return null;
+  if (goals.length === 0) {
+    return (
+      <section className="imx-panel h-full">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <h2 className="text-sm font-medium">Goals</h2>
+          <Link
+            href="/goals"
+            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+          >
+            All
+            <ArrowRight className="size-3" />
+          </Link>
+        </div>
+        <p className="text-sm text-muted-foreground">No goals yet.</p>
+        <Link
+          href="/goals"
+          className="mt-2 inline-flex text-sm font-medium hover:underline"
+        >
+          Create a goal
+        </Link>
+      </section>
+    );
+  }
 
   return (
-    <section className="border-t border-border/60 pt-8">
+    <section className="imx-panel h-full">
       <div className="mb-4 flex items-center justify-between gap-2">
-        <h2 className="text-base font-semibold tracking-tight">Goals</h2>
+        <h2 className="text-sm font-medium">Goals</h2>
         <Link
           href="/goals"
           className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
@@ -23,7 +45,7 @@ export function GoalProgressList({ goals }: GoalProgressListProps) {
         </Link>
       </div>
 
-      <ul className="grid gap-5 sm:grid-cols-2">
+      <ul className="space-y-4">
         {goals.slice(0, 4).map((goal) => (
           <li key={goal.id}>
             <div className="flex items-center justify-between gap-3">
@@ -37,7 +59,7 @@ export function GoalProgressList({ goals }: GoalProgressListProps) {
                 {goal.progress}%
               </span>
             </div>
-            <div className="mt-2 h-1 overflow-hidden rounded-full bg-muted">
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
               <div
                 className="h-full rounded-full bg-foreground/80 transition-all"
                 style={{ width: `${goal.progress}%` }}

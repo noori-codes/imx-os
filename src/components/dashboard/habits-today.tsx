@@ -59,11 +59,11 @@ export function HabitsToday({ habits }: HabitsTodayProps) {
   }
 
   return (
-    <section className="lg:border-l lg:border-border/60 lg:pl-10">
+    <section className="imx-panel imx-panel-tight h-full">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <h2 className="text-base font-semibold tracking-tight">Habits</h2>
-          <p className="mt-0.5 text-sm text-muted-foreground">
+          <h2 className="text-sm font-medium">Habits</h2>
+          <p className="mt-0.5 text-xs text-muted-foreground">
             {optimisticHabits.length === 0
               ? "Build a daily rhythm"
               : `${done}/${optimisticHabits.length} done`}

@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button";
 
 export function OnboardingCard() {
   return (
-    <section className="flex flex-wrap items-center justify-between gap-4 border-y border-border/60 py-5">
+    <section className="imx-panel flex flex-wrap items-center justify-between gap-4">
       <div>
-        <h2 className="text-base font-semibold tracking-tight">Get started</h2>
-        <p className="mt-0.5 text-sm text-muted-foreground">
+        <h2 className="text-sm font-medium">Get started</h2>
+        <p className="mt-0.5 text-xs text-muted-foreground">
           Add a task or goal to bring the dashboard to life.
         </p>
       </div>

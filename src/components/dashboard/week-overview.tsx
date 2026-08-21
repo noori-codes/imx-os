@@ -10,10 +10,10 @@ export function WeekOverview({ week }: WeekOverviewProps) {
   const total = week.reduce((sum, d) => sum + d.task_count, 0);
 
   return (
-    <section className="border-t border-border/60 pt-8">
+    <section className="imx-panel h-full">
       <div className="mb-4 flex items-baseline justify-between gap-3">
-        <h2 className="text-base font-semibold tracking-tight">This week</h2>
-        <p className="text-sm tabular-nums text-muted-foreground">
+        <h2 className="text-sm font-medium">This week</h2>
+        <p className="text-xs tabular-nums text-muted-foreground">
           {total} due
         </p>
       </div>

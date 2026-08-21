@@ -111,10 +111,10 @@ export function ActivityHeatmap({ activity }: ActivityHeatmapProps) {
   const gridWidth = weeks.length * CELL + Math.max(weeks.length - 1, 0) * GAP;
 
   return (
-    <section className="border-t border-border/60 pt-8">
+    <section className="imx-panel">
       <div className="flex flex-col items-center text-center">
-        <h2 className="text-base font-semibold tracking-tight">Activity</h2>
-        <p className="mt-0.5 text-sm text-muted-foreground">
+        <h2 className="text-sm font-medium">Activity</h2>
+        <p className="mt-0.5 text-xs text-muted-foreground">
           {activity.total.toLocaleString()} in the last year ·{" "}
           {activity.active_days} active · {activity.current_streak}d streak
         </p>

@@ -93,18 +93,21 @@ export default async function DashboardPage() {
 
         {data.is_new_user ? <OnboardingCard /> : null}
 
-        <div className="grid gap-10 lg:grid-cols-[minmax(0,1.7fr)_minmax(14rem,0.85fr)] lg:gap-14">
+        <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(18.5rem,22rem)] lg:gap-6">
           <TodayFocus tasks={data.today_tasks} />
-          <HabitsToday habits={data.habits_today} />
+          <div className="lg:sticky lg:top-28">
+            <HabitsToday habits={data.habits_today} />
+          </div>
         </div>
 
         {data.is_new_user ? (
           <NextSteps steps={data.next_steps} show />
         ) : null}
 
-        <WeekOverview week={data.week} />
-
-        <GoalProgressList goals={data.goals} />
+        <div className="grid items-start gap-4 lg:grid-cols-2 lg:gap-6">
+          <WeekOverview week={data.week} />
+          <GoalProgressList goals={data.goals} />
+        </div>
 
         <ActivityHeatmap activity={data.activity} />
       </DashboardChrome>
