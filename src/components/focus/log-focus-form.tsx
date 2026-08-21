@@ -10,8 +10,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import type { FocusLinkableTask } from "@/types/task";
 
-export function LogFocusForm() {
+export function LogFocusForm({
+  tasks = [],
+}: {
+  tasks?: FocusLinkableTask[];
+}) {
   const formRef = useRef<HTMLFormElement>(null);
   const [open, setOpen] = useState(false);
   const [hours, setHours] = useState("");
@@ -128,6 +133,23 @@ export function LogFocusForm() {
               {pending ? "Saving..." : "Log"}
             </Button>
           </div>
+          {tasks.length > 0 ? (
+            <select
+              name="task_id"
+              defaultValue=""
+              aria-label="Link a task"
+              className="h-9 w-full rounded-md border border-border/60 bg-background px-3 text-sm"
+            >
+              <option value="">No linked task</option>
+              {tasks.map((task) => (
+                <option key={task.id} value={task.id}>
+                  {task.context
+                    ? `${task.title} · ${task.context}`
+                    : task.title}
+                </option>
+              ))}
+            </select>
+          ) : null}
           <Input
             name="note"
             placeholder="What did you work on? (optional)"

@@ -21,10 +21,12 @@ type FocusTimerState = {
   completedFocusCount: number;
   autoStartNext: boolean;
   intention: string;
+  linkedTaskId: string | null;
   lastFocusSeconds: number;
   setMode: (mode: FocusMode) => void;
   setDuration: (seconds: number) => void;
   setIntention: (intention: string) => void;
+  setLinkedTaskId: (taskId: string | null) => void;
   setAutoStartNext: (value: boolean) => void;
   start: (seconds?: number) => void;
   pause: () => void;
@@ -67,6 +69,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
   completedFocusCount: 0,
   autoStartNext: false,
   intention: "",
+  linkedTaskId: null,
   lastFocusSeconds: FOCUS_PRESETS.focus.minutes * 60,
 
   setMode: (mode) => {
@@ -102,6 +105,8 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
   },
 
   setIntention: (intention) => set({ intention }),
+
+  setLinkedTaskId: (taskId) => set({ linkedTaskId: taskId }),
 
   setAutoStartNext: (value) => {
     if (typeof window !== "undefined") {

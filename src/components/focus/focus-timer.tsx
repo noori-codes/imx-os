@@ -23,6 +23,7 @@ import {
   formatFocusClock,
   type FocusMode,
 } from "@/types/focus";
+import type { FocusLinkableTask } from "@/types/task";
 
 const MODES: FocusMode[] = ["focus", "short_break", "long_break"];
 
@@ -54,7 +55,11 @@ function filledDots(count: number, mode: FocusMode) {
   return inRound;
 }
 
-export function FocusTimer() {
+export function FocusTimer({
+  tasks = [],
+}: {
+  tasks?: FocusLinkableTask[];
+}) {
   const router = useRouter();
   const {
     mode,
@@ -65,9 +70,11 @@ export function FocusTimer() {
     completedFocusCount,
     autoStartNext,
     intention,
+    linkedTaskId,
     setMode,
     setDuration,
     setIntention,
+    setLinkedTaskId,
     setAutoStartNext,
     start,
     pause,
@@ -76,6 +83,15 @@ export function FocusTimer() {
     advance,
     tick,
   } = useFocusTimer();
+
+  const linkedTask =
+    tasks.find((task) => task.id === linkedTaskId) ?? null;
+
+  useEffect(() => {
+    if (linkedTaskId && !tasks.some((task) => task.id === linkedTaskId)) {
+      setLinkedTaskId(null);
+    }
+  }, [linkedTaskId, tasks, setLinkedTaskId]);
 
   const [, startTransition] = useTransition();
   const loggedRef = useRef(false);
@@ -124,6 +140,7 @@ export function FocusTimer() {
       const planned = durationSeconds;
       const currentMode = mode;
       const note = currentMode === "focus" ? intention : "";
+      const taskId = currentMode === "focus" ? linkedTaskId : null;
       const nextLabel =
         FOCUS_PRESETS[nextFocusMode(currentMode, completedFocusCount, "complete")]
           .label;
@@ -135,6 +152,7 @@ export function FocusTimer() {
           actual_seconds: planned,
           completed: true,
           note,
+          task_id: taskId,
         });
         router.refresh();
       });
@@ -156,6 +174,7 @@ export function FocusTimer() {
     mode,
     durationSeconds,
     intention,
+    linkedTaskId,
     completedFocusCount,
     advance,
     router,
@@ -214,6 +233,7 @@ export function FocusTimer() {
     const currentMode = mode;
     const planned = durationSeconds;
     const note = currentMode === "focus" ? intention : "";
+    const taskId = currentMode === "focus" ? linkedTaskId : null;
     startTransition(async () => {
       if (actual >= 5) {
         await logFocusSession({
@@ -222,6 +242,7 @@ export function FocusTimer() {
           actual_seconds: actual,
           completed: false,
           note,
+          task_id: taskId,
         });
         router.refresh();
       }
@@ -234,6 +255,7 @@ export function FocusTimer() {
     const currentMode = mode;
     const planned = durationSeconds;
     const note = currentMode === "focus" ? intention : "";
+    const taskId = currentMode === "focus" ? linkedTaskId : null;
 
     stopFocusSound();
 
@@ -245,6 +267,7 @@ export function FocusTimer() {
           actual_seconds: actual,
           completed: false,
           note,
+          task_id: taskId,
         });
         router.refresh();
       });
@@ -402,13 +425,42 @@ export function FocusTimer() {
       </div>
 
       {mode === "focus" ? (
-        <Input
-          value={intention}
-          onChange={(e) => setIntention(e.target.value)}
-          placeholder="Working on…"
-          aria-label="What are you focusing on"
-          className="mt-4 h-9 w-full max-w-sm text-center"
-        />
+        <div className="mt-4 flex w-full max-w-sm flex-col gap-2">
+          {tasks.length > 0 ? (
+            <select
+              value={linkedTaskId ?? ""}
+              disabled={isRunning}
+              onChange={(e) => {
+                const nextId = e.target.value || null;
+                setLinkedTaskId(nextId);
+                if (nextId && !intention.trim()) {
+                  const task = tasks.find((item) => item.id === nextId);
+                  if (task) setIntention(task.title);
+                }
+              }}
+              aria-label="Link a task"
+              className="h-9 w-full rounded-md border border-border/60 bg-background px-3 text-sm text-foreground disabled:opacity-60"
+            >
+              <option value="">No linked task</option>
+              {tasks.map((task) => (
+                <option key={task.id} value={task.id}>
+                  {task.context
+                    ? `${task.title} · ${task.context}`
+                    : task.title}
+                </option>
+              ))}
+            </select>
+          ) : null}
+          <Input
+            value={intention}
+            onChange={(e) => setIntention(e.target.value)}
+            placeholder={
+              linkedTask ? `Working on ${linkedTask.title}` : "Working on…"
+            }
+            aria-label="What are you focusing on"
+            className="h-9 w-full text-center"
+          />
+        </div>
       ) : null}
 
       {!isRunning ? (

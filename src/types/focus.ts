@@ -8,6 +8,8 @@ export type FocusSession = {
   actual_seconds: number;
   completed: boolean;
   note: string | null;
+  task_id: string | null;
+  task_title: string | null;
   started_at: string;
   ended_at: string | null;
   created_at: string;

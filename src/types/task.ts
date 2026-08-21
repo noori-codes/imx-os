@@ -27,3 +27,9 @@ export type TaskProjectOption = {
   id: string;
   label: string;
 };
+
+export type FocusLinkableTask = {
+  id: string;
+  title: string;
+  context: string | null;
+};

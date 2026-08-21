@@ -12,8 +12,31 @@ export type FocusActionState = {
   error?: string;
 };
 
+type FocusSessionRow = Omit<FocusSession, "task_title"> & {
+  tasks: { id: string; title: string } | null;
+};
+
+function mapFocusSession(row: FocusSessionRow): FocusSession {
+  const task = row.tasks;
+  return {
+    id: row.id,
+    user_id: row.user_id,
+    mode: row.mode,
+    planned_seconds: row.planned_seconds,
+    actual_seconds: row.actual_seconds,
+    completed: row.completed,
+    note: row.note,
+    task_id: row.task_id ?? task?.id ?? null,
+    task_title: task?.title ?? null,
+    started_at: row.started_at,
+    ended_at: row.ended_at,
+    created_at: row.created_at,
+  };
+}
+
 async function revalidateFocus() {
   revalidatePath("/focus");
+  revalidatePath("/tasks");
   revalidatePath("/review");
   revalidatePath("/analytics");
   const user = await getCurrentUser();
@@ -31,7 +54,22 @@ export async function getRecentFocusSessions(
 
   const { data, error } = await supabase
     .from("focus_sessions")
-    .select("*")
+    .select(
+      `
+      id,
+      user_id,
+      mode,
+      planned_seconds,
+      actual_seconds,
+      completed,
+      note,
+      task_id,
+      started_at,
+      ended_at,
+      created_at,
+      tasks ( id, title )
+    `,
+    )
     .order("started_at", { ascending: false })
     .limit(limit);
 
@@ -40,7 +78,7 @@ export async function getRecentFocusSessions(
     return [];
   }
 
-  return data ?? [];
+  return ((data ?? []) as unknown as FocusSessionRow[]).map(mapFocusSession);
 }
 
 export async function getTodayFocusStats() {
@@ -74,6 +112,7 @@ export async function logFocusSession(input: {
   actual_seconds: number;
   completed: boolean;
   note?: string;
+  task_id?: string | null;
 }) {
   const supabase = await createClient();
   const {
@@ -94,6 +133,20 @@ export async function logFocusSession(input: {
 
   const ended = new Date();
   const started = new Date(ended.getTime() - input.actual_seconds * 1000);
+  const taskId =
+    input.mode === "focus" && input.task_id ? input.task_id : null;
+
+  if (taskId) {
+    const { data: task, error: taskError } = await supabase
+      .from("tasks")
+      .select("id")
+      .eq("id", taskId)
+      .maybeSingle();
+
+    if (taskError || !task) {
+      return { error: "Linked task was not found." };
+    }
+  }
 
   const { error } = await supabase.from("focus_sessions").insert({
     user_id: user.id,
@@ -102,6 +155,7 @@ export async function logFocusSession(input: {
     actual_seconds: input.actual_seconds,
     completed: input.completed,
     note: input.note?.trim() || null,
+    task_id: taskId,
     started_at: started.toISOString(),
     ended_at: ended.toISOString(),
   });
@@ -121,6 +175,8 @@ export async function logManualFocusSession(
   const hours = Number(formData.get("hours") ?? 0);
   const minutes = Number(formData.get("minutes") ?? 0);
   const note = (formData.get("note") as string | null)?.trim() || undefined;
+  const taskRaw = (formData.get("task_id") as string | null)?.trim() || "";
+  const task_id = taskRaw.length ? taskRaw : null;
 
   if (!Number.isFinite(hours) || !Number.isFinite(minutes)) {
     return { error: "Enter a valid duration." };
@@ -142,6 +198,7 @@ export async function logManualFocusSession(
     actual_seconds,
     completed: true,
     note,
+    task_id,
   });
 }
 

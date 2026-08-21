@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useOptimistic, useTransition } from "react";
 import { Clock, Trash2 } from "lucide-react";
 
@@ -148,6 +149,17 @@ export function FocusSessionList({ sessions }: FocusSessionListProps) {
                     {session.note ? (
                       <p className="mt-0.5 truncate text-xs text-muted-foreground">
                         {session.note}
+                      </p>
+                    ) : null}
+                    {session.task_title ? (
+                      <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                        Task{" "}
+                        <Link
+                          href="/tasks"
+                          className="text-foreground/80 underline-offset-2 hover:underline"
+                        >
+                          {session.task_title}
+                        </Link>
                       </p>
                     ) : null}
                   </div>

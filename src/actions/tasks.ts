@@ -5,7 +5,12 @@ import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
 import { revalidateUserCaches } from "@/lib/cache";
 import { createClient } from "@/lib/supabase/server";
-import type { Task, TaskProjectOption, TaskWithContext } from "@/types/task";
+import type {
+  FocusLinkableTask,
+  Task,
+  TaskProjectOption,
+  TaskWithContext,
+} from "@/types/task";
 
 export type TaskActionState = {
   error?: string;
@@ -155,6 +160,35 @@ export async function getTaskProjectOptions(): Promise<TaskProjectOption[]> {
     return {
       id: row.id,
       label: goalTitle ? `${goalTitle} · ${row.title}` : row.title,
+    };
+  });
+}
+
+/** Open tasks for linking from the Focus timer (newest first). */
+export async function getFocusLinkableTasks(
+  limit = 40,
+): Promise<FocusLinkableTask[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("tasks")
+    .select(TASK_SELECT)
+    .eq("completed", false)
+    .order("due_date", { ascending: true, nullsFirst: false })
+    .order("updated_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error("[tasks] getFocusLinkableTasks:", error.message);
+    return [];
+  }
+
+  return ((data ?? []) as unknown as TaskRow[]).map((row) => {
+    const mapped = mapTask(row);
+    return {
+      id: mapped.id,
+      title: mapped.title,
+      context: mapped.context,
     };
   });
 }
