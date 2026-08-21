@@ -36,7 +36,7 @@ export function FocusWorkspace({ timer, rail, sessions }: FocusWorkspaceProps) {
         <aside
           aria-hidden={isRunning}
           className={cn(
-            "flex min-w-0 flex-col gap-8 overflow-hidden transition-all duration-500 ease-out lg:sticky lg:top-20",
+            "flex min-w-0 flex-col gap-10 overflow-hidden transition-all duration-500 ease-out lg:sticky lg:top-20",
             isRunning
               ? "pointer-events-none max-h-0 opacity-0 lg:max-h-none lg:w-0 lg:min-w-0 lg:opacity-0 lg:translate-x-3"
               : "max-h-[2000px] opacity-100 lg:translate-x-0",

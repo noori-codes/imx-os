@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ChevronDown } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { parseDateString, toDateString } from "@/lib/date-utils";
@@ -13,12 +14,12 @@ import {
   type FocusWeekDay,
 } from "@/types/focus";
 
-const LEVEL_HEIGHT: Record<FocusWeekDay["level"], string> = {
-  0: "h-1.5",
-  1: "h-3",
-  2: "h-5",
-  3: "h-7",
-  4: "h-9",
+const DOT_SIZE: Record<FocusWeekDay["level"], string> = {
+  0: "size-1.5 opacity-30",
+  1: "size-2 opacity-55",
+  2: "size-2.5 opacity-75",
+  3: "size-3 opacity-90",
+  4: "size-3.5",
 };
 
 type FocusStatsProps = {
@@ -38,6 +39,7 @@ function readGoalMinutes() {
 export function FocusStats({ stats }: FocusStatsProps) {
   const [goalMinutes, setGoalMinutes] = useState(FOCUS_DAILY_GOAL_DEFAULT);
   const [ready, setReady] = useState(false);
+  const [goalOpen, setGoalOpen] = useState(false);
 
   useEffect(() => {
     setGoalMinutes(readGoalMinutes());
@@ -47,6 +49,7 @@ export function FocusStats({ stats }: FocusStatsProps) {
   function updateGoal(minutes: number) {
     setGoalMinutes(minutes);
     window.localStorage.setItem(FOCUS_DAILY_GOAL_KEY, String(minutes));
+    setGoalOpen(false);
   }
 
   const progress = Math.min(
@@ -57,6 +60,13 @@ export function FocusStats({ stats }: FocusStatsProps) {
   const met = stats.focus_minutes >= goalMinutes;
   const todayKey = toDateString(new Date());
 
+  const streakLine = [
+    `${stats.current_streak}d streak`,
+    stats.longest_streak > 0 ? `best ${stats.longest_streak}d` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
   return (
     <section className="space-y-5">
       <div>
@@ -66,58 +76,62 @@ export function FocusStats({ stats }: FocusStatsProps) {
         <p className="focus-clock mt-2 text-[2rem] text-foreground">
           {formatFocusMinutes(stats.focus_minutes)}
         </p>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="mt-1.5 text-sm text-muted-foreground">
           Focused today
           {stats.sessions > 0
             ? ` · ${stats.sessions} session${stats.sessions === 1 ? "" : "s"}`
             : ""}
         </p>
+        <p className="mt-1 text-xs tabular-nums text-muted-foreground/80">
+          {streakLine}
+        </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-2xl border border-border/40 px-3 py-2.5">
-          <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-            Streak
-          </p>
-          <p className="mt-1 text-lg font-medium tabular-nums tracking-tight">
-            {stats.current_streak}
-            <span className="text-sm font-normal text-muted-foreground">d</span>
-          </p>
-          {stats.longest_streak > 0 ? (
-            <p className="mt-0.5 text-[11px] text-muted-foreground">
-              Best {stats.longest_streak}d
-            </p>
-          ) : null}
-        </div>
-        <div className="rounded-2xl border border-border/40 px-3 py-2.5">
-          <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-            Goal
-          </p>
-          <p className="mt-1 text-lg font-medium tabular-nums tracking-tight">
-            {ready ? `${progress}%` : "—"}
-          </p>
-          <p className="mt-0.5 text-[11px] text-muted-foreground">
-            {ready
-              ? met
-                ? "Met"
-                : `${formatFocusMinutes(remaining)} left`
-              : "Loading"}
-          </p>
-        </div>
-      </div>
-
-      <div className="space-y-2.5">
-        <div className="flex items-center justify-between gap-2">
+      <div className="space-y-2">
+        <div className="flex items-center justify-between gap-3">
           <p className="text-xs text-muted-foreground">
-            Daily ·{" "}
-            <span className="tabular-nums text-foreground">
-              {formatFocusMinutes(stats.focus_minutes)} /{" "}
-              {formatFocusMinutes(goalMinutes)}
-            </span>
+            {ready ? (
+              met ? (
+                <>
+                  Goal met ·{" "}
+                  <span className="tabular-nums text-foreground">
+                    {formatFocusMinutes(goalMinutes)}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="tabular-nums text-foreground">
+                    {formatFocusMinutes(remaining)}
+                  </span>{" "}
+                  to{" "}
+                  <span className="tabular-nums">
+                    {formatFocusMinutes(goalMinutes)}
+                  </span>{" "}
+                  goal
+                </>
+              )
+            ) : (
+              "Daily goal"
+            )}
           </p>
+          <button
+            type="button"
+            onClick={() => setGoalOpen((value) => !value)}
+            className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+            aria-expanded={goalOpen}
+          >
+            Change
+            <ChevronDown
+              className={cn(
+                "size-3.5 transition-transform duration-200",
+                goalOpen && "rotate-180",
+              )}
+            />
+          </button>
         </div>
+
         <div
-          className="h-1.5 overflow-hidden rounded-full bg-muted/80"
+          className="h-1 overflow-hidden rounded-full bg-muted/70"
           role="progressbar"
           aria-valuemin={0}
           aria-valuemax={goalMinutes}
@@ -127,84 +141,85 @@ export function FocusStats({ stats }: FocusStatsProps) {
           <div
             className={cn(
               "h-full rounded-full transition-[width] duration-500",
-              met ? "bg-foreground" : "bg-foreground/75",
+              met ? "bg-foreground" : "bg-foreground/70",
             )}
             style={{ width: `${ready ? progress : 0}%` }}
           />
         </div>
-        <div className="flex flex-wrap gap-1.5">
-          {FOCUS_DAILY_GOAL_PRESETS.map((preset) => {
-            const active = goalMinutes === preset.minutes;
-            return (
-              <button
-                key={preset.minutes}
-                type="button"
-                onClick={() => updateGoal(preset.minutes)}
-                className={cn(
-                  "rounded-full px-2.5 py-1 text-[11px] tabular-nums transition-colors",
-                  active
-                    ? "bg-foreground text-background"
-                    : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground",
-                )}
-              >
-                {preset.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
 
-      <div>
-        <p className="mb-3 text-xs text-muted-foreground">Last 7 days</p>
-        <div
-          className="flex items-end justify-between gap-1.5"
-          aria-label="Focus week heatmap"
-        >
-          {stats.week.map((day) => {
-            const label = parseDateString(day.date).toLocaleDateString("en-US", {
-              weekday: "short",
-              month: "short",
-              day: "numeric",
-            });
-            const title =
-              day.minutes <= 0
-                ? `No focus on ${label}`
-                : `${formatFocusMinutes(day.minutes)} on ${label}`;
-            const isToday = day.date === todayKey;
-            return (
-              <div
-                key={day.date}
-                className="flex min-w-0 flex-1 flex-col items-center gap-1.5"
-                title={title}
-              >
-                <div className="flex h-9 w-full items-end justify-center">
-                  <span
-                    className={cn(
-                      "w-full max-w-3 rounded-sm transition-colors",
-                      LEVEL_HEIGHT[day.level],
-                      day.level === 0
-                        ? "bg-muted"
-                        : isToday
-                          ? "bg-foreground"
-                          : "bg-foreground/65",
-                    )}
-                    aria-label={title}
-                  />
-                </div>
-                <span
+        {goalOpen ? (
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            {FOCUS_DAILY_GOAL_PRESETS.map((preset) => {
+              const active = goalMinutes === preset.minutes;
+              return (
+                <button
+                  key={preset.minutes}
+                  type="button"
+                  onClick={() => updateGoal(preset.minutes)}
                   className={cn(
-                    "text-[10px] tabular-nums",
-                    isToday ? "text-foreground" : "text-muted-foreground",
+                    "rounded-full px-2.5 py-1 text-[11px] tabular-nums transition-colors",
+                    active
+                      ? "bg-foreground text-background"
+                      : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
                   )}
                 >
-                  {parseDateString(day.date).toLocaleDateString("en-US", {
-                    weekday: "narrow",
-                  })}
-                </span>
-              </div>
-            );
-          })}
-        </div>
+                  {preset.label}
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
+      </div>
+
+      <div
+        className="flex items-center justify-between gap-2"
+        aria-label="Focus week"
+      >
+        {stats.week.map((day) => {
+          const label = parseDateString(day.date).toLocaleDateString("en-US", {
+            weekday: "short",
+            month: "short",
+            day: "numeric",
+          });
+          const title =
+            day.minutes <= 0
+              ? `No focus on ${label}`
+              : `${formatFocusMinutes(day.minutes)} on ${label}`;
+          const isToday = day.date === todayKey;
+
+          return (
+            <div
+              key={day.date}
+              className="flex flex-col items-center gap-1.5"
+              title={title}
+            >
+              <span
+                className={cn(
+                  "rounded-full transition-colors",
+                  DOT_SIZE[day.level],
+                  day.level === 0
+                    ? "bg-muted-foreground"
+                    : isToday
+                      ? "bg-foreground"
+                      : "bg-foreground/70",
+                )}
+                aria-label={title}
+              />
+              <span
+                className={cn(
+                  "text-[10px] tabular-nums",
+                  isToday
+                    ? "text-foreground"
+                    : "text-muted-foreground/70",
+                )}
+              >
+                {parseDateString(day.date).toLocaleDateString("en-US", {
+                  weekday: "narrow",
+                })}
+              </span>
+            </div>
+          );
+        })}
       </div>
     </section>
   );

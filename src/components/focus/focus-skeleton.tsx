@@ -25,36 +25,30 @@ export function FocusSkeleton() {
               <Bone className="size-12 rounded-full" />
             </div>
             <Bone className="mt-3 h-3 w-28" />
-            <div className="mt-8 flex w-full max-w-xl gap-2">
-              <Bone className="h-12 flex-1 rounded-2xl" />
-              <Bone className="h-12 flex-1 rounded-2xl" />
-              <Bone className="h-12 flex-1 rounded-2xl" />
-              <Bone className="h-12 flex-1 rounded-2xl" />
+            <div className="mt-auto flex w-full max-w-xl flex-col pt-10">
+              <Bone className="h-3 w-24" />
+              <Bone className="mt-2 h-3 w-40 opacity-60" />
+              <div className="mt-5 grid grid-cols-4 gap-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="flex flex-col items-center gap-2">
+                    <Bone className="size-12 rounded-full" />
+                    <Bone className="h-2.5 w-10" />
+                  </div>
+                ))}
+              </div>
             </div>
           </section>
 
-          <aside className="flex flex-col gap-6">
+          <aside className="flex flex-col gap-8">
             <section className="space-y-4">
               <Bone className="h-3 w-20" />
               <Bone className="h-8 w-24" />
-              <Bone className="h-4 w-32 opacity-60" />
-              <div className="grid grid-cols-2 gap-3">
-                <Bone className="h-16 rounded-2xl border border-border/40" />
-                <Bone className="h-16 rounded-2xl border border-border/40" />
-              </div>
-              <Bone className="h-1.5 w-full rounded-full" />
-              <div className="flex items-end justify-between gap-1.5 pt-2">
+              <Bone className="h-4 w-40 opacity-60" />
+              <Bone className="h-3 w-32 opacity-50" />
+              <Bone className="mt-2 h-1 w-full rounded-full" />
+              <div className="flex items-center justify-between gap-2 pt-1">
                 {Array.from({ length: 7 }).map((_, i) => (
-                  <Bone key={i} className="h-8 w-full max-w-3 rounded-sm" />
-                ))}
-              </div>
-            </section>
-            <section className="space-y-3">
-              <Bone className="h-3 w-24" />
-              <Bone className="h-4 w-40" />
-              <div className="flex gap-1.5">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Bone key={i} className="h-6 w-10 rounded-full" />
+                  <Bone key={i} className="size-2 rounded-full" />
                 ))}
               </div>
             </section>
@@ -79,6 +73,7 @@ export function FocusSkeleton() {
               </div>
             ))}
           </div>
+          <Bone className="mt-8 h-4 w-52 opacity-60" />
         </section>
       </AppPageFrame>
     </div>

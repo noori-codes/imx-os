@@ -21,7 +21,7 @@ export const FOCUS_TRACKS = [
     id: "third",
     label: "Sound 3",
     hint: "Soft",
-    tone: "from-violet-500/25 to-fuchsia-500/5",
+    tone: "from-stone-400/30 to-zinc-500/10",
     src: "/third-audio.mp3",
   },
   {

@@ -29,13 +29,15 @@ export default async function FocusPage() {
               focusMinutesToday={stats.focus_minutes}
             />
           }
-          rail={
-            <>
-              <FocusStats stats={stats} />
-              <LogFocusForm tasks={tasks} />
-            </>
+          rail={<FocusStats stats={stats} />}
+          sessions={
+            <div className="space-y-8">
+              <FocusSessionList sessions={sessions} />
+              <div className="border-t border-border/40 pt-6">
+                <LogFocusForm tasks={tasks} />
+              </div>
+            </div>
           }
-          sessions={<FocusSessionList sessions={sessions} />}
         />
       </AppPageFrame>
     </>

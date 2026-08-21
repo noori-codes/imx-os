@@ -49,53 +49,45 @@ export function LogFocusForm({
       : null;
 
   return (
-    <section>
+    <section className="opacity-80">
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="flex w-full items-start justify-between gap-3 text-left"
+        className="group flex w-full items-center justify-between gap-3 text-left"
         aria-expanded={open}
       >
-        <div className="min-w-0">
-          <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-            Log manually
-          </p>
-          <p className="mt-1.5 text-sm text-foreground/90">
-            {summary ? `Ready · ${summary}` : "Add focus you already did"}
-          </p>
-        </div>
-        <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
-          <ChevronDown
-            className={cn(
-              "size-4 transition-transform duration-200",
-              open && "rotate-180",
-            )}
-          />
-        </span>
+        <p className="text-sm text-muted-foreground transition-colors group-hover:text-foreground">
+          {summary
+            ? `Log manually · ${summary}`
+            : "Log manually · add past focus"}
+        </p>
+        <ChevronDown
+          className={cn(
+            "size-3.5 shrink-0 text-muted-foreground transition-transform duration-200",
+            open && "rotate-180",
+          )}
+        />
       </button>
-
-      <div className="mt-4 flex flex-wrap gap-1.5">
-        {PRESETS.map((preset) => (
-          <button
-            key={preset}
-            type="button"
-            onClick={() => {
-              applyMinutes(preset);
-              setOpen(true);
-            }}
-            className="rounded-full bg-muted/50 px-2.5 py-1 text-[11px] tabular-nums text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
-            {preset >= 120 ? `${preset / 60}h` : `${preset}m`}
-          </button>
-        ))}
-      </div>
 
       {open ? (
         <form
           ref={formRef}
           action={formAction}
-          className="mt-4 space-y-3 border-t border-border/50 pt-4"
+          className="mt-4 space-y-3 opacity-100"
         >
+          <div className="flex flex-wrap gap-1.5">
+            {PRESETS.map((preset) => (
+              <button
+                key={preset}
+                type="button"
+                onClick={() => applyMinutes(preset)}
+                className="rounded-full px-2.5 py-1 text-[11px] tabular-nums text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+              >
+                {preset >= 120 ? `${preset / 60}h` : `${preset}m`}
+              </button>
+            ))}
+          </div>
+
           <div className="flex items-end gap-2">
             <div className="min-w-0 flex-1 space-y-1.5">
               <label
@@ -115,7 +107,7 @@ export function LogFocusForm({
                 inputMode="numeric"
                 value={hours}
                 onChange={(e) => setHours(e.target.value)}
-                className="h-10 rounded-xl border-border/50 bg-transparent"
+                className="h-10 rounded-xl border-border/40 bg-transparent"
               />
             </div>
             <span className="mb-2.5 text-muted-foreground">:</span>
@@ -137,7 +129,7 @@ export function LogFocusForm({
                 inputMode="numeric"
                 value={minutes}
                 onChange={(e) => setMinutes(e.target.value)}
-                className="h-10 rounded-xl border-border/50 bg-transparent"
+                className="h-10 rounded-xl border-border/40 bg-transparent"
               />
             </div>
           </div>
@@ -147,7 +139,7 @@ export function LogFocusForm({
               name="task_id"
               defaultValue=""
               aria-label="Link a task"
-              className="h-10 w-full rounded-xl border border-border/50 bg-transparent px-3 text-sm text-foreground"
+              className="h-10 w-full rounded-xl border border-border/40 bg-transparent px-3 text-sm text-foreground"
             >
               <option value="">Optional · link a task</option>
               {tasks.map((task) => (
@@ -163,12 +155,13 @@ export function LogFocusForm({
           <Input
             name="note"
             placeholder="What did you work on?"
-            className="h-10 rounded-xl border-border/50 bg-transparent"
+            className="h-10 rounded-xl border-border/40 bg-transparent"
           />
 
           <Button
             type="submit"
             disabled={pending}
+            variant="outline"
             className="h-10 w-full rounded-xl"
           >
             {pending ? "Saving…" : "Seal session"}

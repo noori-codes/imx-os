@@ -370,7 +370,7 @@ export function FocusTimer({
     <section
       data-mode={mode}
       data-running={isRunning ? "true" : "false"}
-      className="focus-stage group relative flex h-full min-h-[28rem] flex-col items-center justify-center overflow-hidden px-2 py-6 sm:min-h-[32rem] sm:px-4 sm:py-8"
+      className="focus-stage group relative flex h-full min-h-[34rem] flex-col overflow-hidden px-2 py-6 sm:min-h-[40rem] sm:px-4 sm:py-8"
     >
       <div className="focus-stage-glow" aria-hidden />
       {seal ? (
@@ -403,7 +403,9 @@ export function FocusTimer({
           </span>
         </button>
       ) : null}
-      <div className="relative z-[1] flex w-full max-w-xl flex-col items-center">
+
+      <div className="relative z-[1] flex w-full flex-1 flex-col">
+        <div className="mx-auto flex w-full max-w-xl flex-1 flex-col items-center justify-center">
         {!isRunning ? (
           <div className="w-full max-w-md text-center">
             <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
@@ -605,30 +607,21 @@ export function FocusTimer({
               <SkipForward className="size-5" />
             </button>
           </div>
-          {!isRunning ? (
-            <p className="text-xs text-muted-foreground">
-              {mode === "focus" ? "Begin session" : "Start break"} · Space
-            </p>
-          ) : null}
-        </div>
-
-        <div
-          className={cn(
-            "mt-8 w-full transition-opacity duration-500",
-            isRunning && "opacity-80",
-          )}
-        >
-          <FocusSounds />
+        {!isRunning ? (
+          <p className="text-xs text-muted-foreground">
+            {mode === "focus" ? "Begin session" : "Start break"} · Space
+          </p>
+        ) : null}
         </div>
 
         {!isRunning ? (
-          <details className="group/setup mt-5 w-full max-w-md">
-            <summary className="flex cursor-pointer list-none items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground [&::-webkit-details-marker]:hidden">
+          <details className="group/setup mt-6 w-full max-w-md">
+            <summary className="flex cursor-pointer list-none items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground [&::-webkit-details-marker]:hidden">
               <span className="tabular-nums">Setup · {setupSummary}</span>
               <ChevronDown className="size-3.5 shrink-0 transition-transform duration-200 group-open/setup:rotate-180" />
             </summary>
 
-            <div className="mt-4 space-y-4 rounded-2xl border border-border/50 bg-background/40 p-4">
+            <div className="mt-4 space-y-4 p-1">
               <div className="grid grid-cols-3 gap-2">
                 {FOCUS_PROFILES.map((profile) => {
                   const active = profileId === profile.id;
@@ -645,7 +638,7 @@ export function FocusTimer({
                         "rounded-xl px-2.5 py-2 text-left transition-colors",
                         active
                           ? "bg-foreground text-background"
-                          : "bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground",
+                          : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
                       )}
                       aria-pressed={active}
                     >
@@ -668,7 +661,7 @@ export function FocusTimer({
               </div>
 
               <div
-                className="flex w-full justify-center gap-1 rounded-full bg-muted/35 p-1"
+                className="flex w-full justify-center gap-1 rounded-full bg-muted/30 p-1"
                 role="tablist"
                 aria-label="Timer mode"
               >
@@ -718,7 +711,7 @@ export function FocusTimer({
                           "rounded-full px-3 py-1 text-sm tabular-nums transition-colors",
                           active
                             ? "bg-foreground text-background"
-                            : "bg-muted/50 text-muted-foreground hover:text-foreground",
+                            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
                         )}
                       >
                         {preset.label}
@@ -737,7 +730,7 @@ export function FocusTimer({
                       aria-label="Custom hours"
                       value={customHours}
                       onChange={(e) => setCustomHours(e.target.value)}
-                      className="h-9 w-16 rounded-xl border-border/50 bg-transparent text-center"
+                      className="h-9 w-16 rounded-xl border-border/40 bg-transparent text-center"
                     />
                     <span className="text-muted-foreground">:</span>
                     <Input
@@ -749,7 +742,7 @@ export function FocusTimer({
                       aria-label="Custom minutes"
                       value={customMinutes}
                       onChange={(e) => setCustomMinutes(e.target.value)}
-                      className="h-9 w-16 rounded-xl border-border/50 bg-transparent text-center"
+                      className="h-9 w-16 rounded-xl border-border/40 bg-transparent text-center"
                     />
                     {!presetMatch && !customHours && !customMinutes ? (
                       <span className="text-xs tabular-nums text-muted-foreground">
@@ -768,7 +761,7 @@ export function FocusTimer({
                     "rounded-full px-3 py-1 text-xs transition-colors",
                     autoStartNext
                       ? "bg-foreground text-background"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                      : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
                   )}
                 >
                   Auto-start {autoStartNext ? "on" : "off"}
@@ -777,6 +770,16 @@ export function FocusTimer({
             </div>
           </details>
         ) : null}
+        </div>
+
+        <div
+          className={cn(
+            "mx-auto mt-auto w-full max-w-xl pt-10 transition-opacity duration-500",
+            isRunning && "opacity-85",
+          )}
+        >
+          <FocusSounds />
+        </div>
       </div>
     </section>
   );
