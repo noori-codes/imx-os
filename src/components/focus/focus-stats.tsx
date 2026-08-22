@@ -11,6 +11,7 @@ import {
   FOCUS_DAILY_GOAL_KEY,
   FOCUS_DAILY_GOAL_PRESETS,
   formatFocusClock,
+  formatFocusDuration,
   formatFocusMinutes,
   type FocusOverviewStats,
 } from "@/types/focus";
@@ -112,6 +113,8 @@ export function FocusStats({ stats }: FocusStatsProps) {
   const clock = useFocusTimer((s) => s.clock);
   const remainingSeconds = useFocusTimer((s) => s.remainingSeconds);
   const durationSeconds = useFocusTimer((s) => s.durationSeconds);
+  const sessionStartedAt = useFocusTimer((s) => s.sessionStartedAt);
+  const endsAt = useFocusTimer((s) => s.endsAt);
   const liveElapsedSeconds = useFocusTimer((s) => {
     void s.tickMs;
     return s.liveElapsedSeconds();
@@ -137,33 +140,43 @@ export function FocusStats({ stats }: FocusStatsProps) {
     mode === "focus" &&
     durationSeconds > remainingSeconds;
   const liveFocus = stopwatchLive || countdownLive;
-  const liveExtraMinutes = liveFocus
+  const stopwatchSession = stopwatchLive;
+  const liveSessionSeconds = liveFocus
     ? clock === "up"
-      ? Math.max(0, Math.floor(liveElapsedSeconds / 60))
-      : Math.max(0, Math.floor((durationSeconds - remainingSeconds) / 60))
+      ? liveElapsedSeconds
+      : Math.max(0, durationSeconds - remainingSeconds)
     : 0;
-  const focusMinutes = stats.focus_minutes + liveExtraMinutes;
+  const todayTotalSeconds = stats.focus_minutes * 60 + liveSessionSeconds;
+  const goalTotalSeconds = goalMinutes * 60;
+  const focusMinutes = Math.floor(todayTotalSeconds / 60);
 
   const progress = Math.min(
     100,
-    (focusMinutes / Math.max(goalMinutes, 1)) * 100,
+    (todayTotalSeconds / Math.max(goalTotalSeconds, 1)) * 100,
   );
-  const remaining = Math.max(0, goalMinutes - focusMinutes);
-  const met = focusMinutes >= goalMinutes;
+  const goalRemainingSeconds = Math.max(
+    0,
+    goalTotalSeconds - todayTotalSeconds,
+  );
+  const met = todayTotalSeconds >= goalTotalSeconds;
   const blockMinutes = Math.max(1, Math.round(lastFocusSeconds / 60));
   const honestBlock = ready
-    ? liveFocus
-      ? !isRunning && stopwatchLive
-        ? "Paused · seal to save this block"
-        : remaining <= 0
-          ? "Sealing the goal · stay with it"
-          : `${formatFocusMinutes(remaining)} still open · keep going`
-      : nextHonestBlock({
-          remaining,
-          met,
-          blockMinutes,
-          todayMinutes: focusMinutes,
-        })
+    ? stopwatchSession
+      ? isRunning
+        ? "Open focus · R seals when done"
+        : "Paused · R to seal this session"
+      : liveFocus
+        ? !isRunning && stopwatchLive
+          ? "Paused · seal to save this block"
+          : goalRemainingSeconds <= 0
+            ? "Sealing the goal · stay with it"
+            : `${formatFocusDuration(goalRemainingSeconds)} still open · keep going`
+        : nextHonestBlock({
+            remaining: Math.ceil(goalRemainingSeconds / 60),
+            met,
+            blockMinutes,
+            todayMinutes: focusMinutes,
+          })
     : null;
   const yesterdayDate = new Date();
   yesterdayDate.setDate(yesterdayDate.getDate() - 1);
@@ -172,16 +185,54 @@ export function FocusStats({ stats }: FocusStatsProps) {
     stats.week.find((day) => day.date === yesterdayKey)?.minutes ?? 0;
   const vsYesterday = yesterdayWhisper(focusMinutes, yesterdayMinutes);
   const marks = stats.today_marks ?? [];
+  const liveMarkIso =
+    liveFocus && stopwatchLive && sessionStartedAt
+      ? new Date(sessionStartedAt).toISOString()
+      : liveFocus && countdownLive && endsAt
+        ? new Date(endsAt - durationSeconds * 1000).toISOString()
+        : null;
+  const constellationLitLabel =
+    marks.length === 0 && !liveFocus
+      ? "Clear sky"
+      : liveFocus
+        ? marks.length === 0
+          ? "Star forming"
+          : `${marks.length} lit · live`
+        : `${marks.length} lit`;
+  const constellationFooterLabel =
+    marks.length === 0 && !liveFocus
+      ? "Plot the first star"
+      : liveFocus
+        ? "Day taking shape · live"
+        : "Day taking shape";
+  const liveMark = liveMarkIso
+    ? {
+        point: constellationPoint(liveMarkIso),
+        radius: markRadius(
+          Math.max(1, Math.round(liveSessionSeconds / 60)),
+        ),
+        title: ready
+          ? `${formatMarkTime(liveMarkIso)} · ${formatFocusDuration(liveSessionSeconds)} · live`
+          : "Live session",
+      }
+    : null;
 
   const ringRadius = 42;
   const ringCircumference = 2 * Math.PI * ringRadius;
   const ringOffset = ringCircumference * (1 - (ready ? progress : 0) / 100);
 
-  const weekday = new Date().toLocaleDateString("en-US", { weekday: "long" });
+  const weekday = ready
+    ? new Date().toLocaleDateString("en-US", { weekday: "long" })
+    : null;
+
+  const todayTotalLabel = formatFocusDuration(todayTotalSeconds);
+  const goalLabel = formatFocusMinutes(goalMinutes);
+  const remainingLabel = formatFocusDuration(goalRemainingSeconds);
 
   return (
     <section
       data-live={liveFocus ? "true" : "false"}
+      data-stopwatch={stopwatchSession ? "true" : "false"}
       className="focus-progress relative flex min-h-[34rem] flex-col overflow-hidden sm:min-h-[40rem]"
     >
       <div className="focus-progress-glow" aria-hidden />
@@ -189,14 +240,18 @@ export function FocusStats({ stats }: FocusStatsProps) {
       <div className="relative z-[1] flex flex-1 flex-col">
         <div className="text-center lg:text-left">
           <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-            Today
+            {stopwatchSession ? "Open session" : "Today"}
           </p>
           <p className="mt-1.5 text-sm text-muted-foreground">
-            {liveFocus
+            {stopwatchSession
               ? isRunning
-                ? "Session live"
-                : "Session paused"
-              : weekday}
+                ? "Counting up"
+                : "Paused"
+              : liveFocus
+                ? isRunning
+                  ? "Session live"
+                  : "Session paused"
+                : (weekday ?? "Today")}
           </p>
         </div>
 
@@ -230,7 +285,12 @@ export function FocusStats({ stats }: FocusStatsProps) {
                 cy="50"
                 r={ringRadius}
                 fill="none"
-                className="focus-progress-arc stroke-foreground transition-[stroke-dashoffset] duration-700 ease-out"
+                className={cn(
+                  "focus-progress-arc stroke-foreground ease-out",
+                  stopwatchSession
+                    ? "opacity-40 transition-[stroke-dashoffset] duration-500"
+                    : "transition-[stroke-dashoffset] duration-700",
+                )}
                 strokeWidth="2.5"
                 strokeLinecap="round"
                 strokeDasharray={ringCircumference}
@@ -242,32 +302,54 @@ export function FocusStats({ stats }: FocusStatsProps) {
               className="relative px-4 text-center"
               role="progressbar"
               aria-valuemin={0}
-              aria-valuemax={goalMinutes}
-              aria-valuenow={Math.min(focusMinutes, goalMinutes)}
-              aria-label="Daily focus goal progress"
+              aria-valuemax={goalTotalSeconds}
+              aria-valuenow={Math.min(todayTotalSeconds, goalTotalSeconds)}
+              aria-label={
+                stopwatchSession
+                  ? "Daily focus goal progress with open session"
+                  : "Daily focus goal progress"
+              }
             >
-              <p className="focus-clock text-[2.35rem] text-foreground sm:text-[2.75rem]">
-                {formatFocusMinutes(focusMinutes)}
-              </p>
-              <p className="mt-2 text-xs text-muted-foreground">
-                {liveFocus
-                  ? clock === "up"
-                    ? liveElapsedSeconds >= 60
-                      ? `Live · +${formatFocusMinutes(Math.round(liveElapsedSeconds / 60))}`
-                      : `Live · +${formatFocusClock(liveElapsedSeconds)}`
-                    : liveExtraMinutes > 0
-                      ? `Live · +${formatFocusMinutes(liveExtraMinutes)}`
-                      : "Live · just started"
-                  : stats.sessions === 0
-                    ? "No sessions yet"
-                    : `${stats.sessions} session${stats.sessions === 1 ? "" : "s"}`}
-              </p>
+              {stopwatchSession ? (
+                <>
+                  <p
+                    className={cn(
+                      "focus-clock text-foreground",
+                      liveElapsedSeconds >= 3600
+                        ? "text-[2rem] sm:text-[2.35rem]"
+                        : "text-[2.35rem] sm:text-[2.75rem]",
+                    )}
+                  >
+                    {formatFocusClock(liveElapsedSeconds)}
+                  </p>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {todayTotalLabel} today · {goalLabel} goal
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="focus-clock text-[2.35rem] text-foreground sm:text-[2.75rem]">
+                    {todayTotalLabel}
+                  </p>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {liveFocus
+                      ? isRunning
+                        ? "Session live"
+                        : "Session paused"
+                      : stats.sessions === 0
+                        ? "No sessions yet"
+                        : `${stats.sessions} session${stats.sessions === 1 ? "" : "s"}`}
+                  </p>
+                </>
+              )}
             </div>
           </div>
 
-          <p className="mt-5 max-w-[16rem] text-center text-sm text-muted-foreground">
-            {vsYesterday}
-          </p>
+          {!stopwatchSession ? (
+            <p className="mt-5 max-w-[16rem] text-center text-sm text-muted-foreground">
+              {vsYesterday}
+            </p>
+          ) : null}
 
           <div className="mt-4 max-w-[16rem] text-center">
             <p className="text-sm text-foreground/85">
@@ -277,13 +359,11 @@ export function FocusStats({ stats }: FocusStatsProps) {
               {ready ? (
                 met ? (
                   <>
-                    {formatFocusMinutes(focusMinutes)} /{" "}
-                    {formatFocusMinutes(goalMinutes)}
+                    {todayTotalLabel} / {goalLabel}
                   </>
                 ) : (
                   <>
-                    {formatFocusMinutes(remaining)} left ·{" "}
-                    {formatFocusMinutes(goalMinutes)} goal
+                    {remainingLabel} left · {goalLabel} goal
                   </>
                 )
               ) : null}
@@ -335,9 +415,7 @@ export function FocusStats({ stats }: FocusStatsProps) {
                 Constellation
               </p>
               <p className="text-xs tabular-nums text-muted-foreground">
-                {marks.length === 0
-                  ? "Clear sky"
-                  : `${marks.length} lit`}
+                {constellationLitLabel}
               </p>
             </div>
 
@@ -380,39 +458,64 @@ export function FocusStats({ stats }: FocusStatsProps) {
                   Night
                 </text>
 
-                {marks.length === 0 ? (
+                {marks.length === 0 && !liveFocus ? (
                   <circle
                     cx="50"
                     cy="40"
                     r="0.9"
                     className="fill-muted-foreground/35"
                   />
-                ) : (
-                  marks.map((mark) => {
-                    const point = constellationPoint(mark.started_at);
-                    const r = markRadius(mark.minutes);
-                    return (
-                      <g key={mark.started_at + mark.minutes}>
-                        <title>
-                          {formatMarkTime(mark.started_at)} ·{" "}
-                          {formatFocusMinutes(mark.minutes)}
-                        </title>
-                        <circle
-                          cx={point.x}
-                          cy={point.y}
-                          r={r + 1.1}
-                          className="fill-foreground/10"
-                        />
-                        <circle
-                          cx={point.x}
-                          cy={point.y}
-                          r={r}
-                          className="fill-foreground"
-                        />
-                      </g>
-                    );
-                  })
-                )}
+                ) : null}
+
+                {marks.map((mark) => {
+                  const point = constellationPoint(mark.started_at);
+                  const r = markRadius(mark.minutes);
+                  return (
+                    <g key={mark.started_at + mark.minutes}>
+                      <title>
+                        {ready
+                          ? `${formatMarkTime(mark.started_at)} · ${formatFocusMinutes(mark.minutes)}`
+                          : formatFocusMinutes(mark.minutes)}
+                      </title>
+                      <circle
+                        cx={point.x}
+                        cy={point.y}
+                        r={r + 1.1}
+                        className="fill-foreground/10"
+                      />
+                      <circle
+                        cx={point.x}
+                        cy={point.y}
+                        r={r}
+                        className="fill-foreground"
+                      />
+                    </g>
+                  );
+                })}
+
+                {liveMark ? (
+                  <g className="focus-constellation-live">
+                    <title>{liveMark.title}</title>
+                    <circle
+                      cx={liveMark.point.x}
+                      cy={liveMark.point.y}
+                      r={liveMark.radius + 2.2}
+                      className="focus-constellation-live-halo fill-foreground/10"
+                    />
+                    <circle
+                      cx={liveMark.point.x}
+                      cy={liveMark.point.y}
+                      r={liveMark.radius + 1.1}
+                      className="focus-constellation-live-glow fill-foreground/20"
+                    />
+                    <circle
+                      cx={liveMark.point.x}
+                      cy={liveMark.point.y}
+                      r={liveMark.radius}
+                      className="fill-foreground"
+                    />
+                  </g>
+                ) : null}
               </svg>
             </div>
           </div>
@@ -428,9 +531,7 @@ export function FocusStats({ stats }: FocusStatsProps) {
                 : ""}
             </span>
             <span className="tabular-nums">
-              {marks.length === 0
-                ? "Plot the first star"
-                : "Day taking shape"}
+              {constellationFooterLabel}
             </span>
           </div>
         </div>

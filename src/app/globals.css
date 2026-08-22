@@ -435,6 +435,23 @@
   animation: focus-progress-arc 3.2s ease-in-out infinite;
 }
 
+@keyframes focus-constellation-live {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
 
+.focus-constellation-live-halo {
+  animation: focus-constellation-live 2.4s ease-in-out infinite;
+}
+
+.focus-constellation-live-glow {
+  animation: focus-constellation-live 2.4s ease-in-out infinite;
+  animation-delay: 0.35s;
+}
 
 

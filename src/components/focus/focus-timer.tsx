@@ -93,7 +93,6 @@ export function FocusTimer({
     intention,
     linkedTaskId,
     profileId,
-    lastFocusSeconds,
     setMode,
     setClock,
     setDuration,
@@ -456,12 +455,8 @@ export function FocusTimer({
     return () => window.removeEventListener("keydown", onKey);
   });
 
-  const progress = isStopwatch
-    ? Math.min(
-        100,
-        (shownSeconds / Math.max(lastFocusSeconds, 60)) * 100,
-      )
-    : durationSeconds > 0
+  const progress =
+    !isStopwatch && durationSeconds > 0
       ? ((durationSeconds - remainingSeconds) / durationSeconds) * 100
       : 0;
   const dots = filledDots(completedFocusCount, mode);
@@ -635,17 +630,19 @@ export function FocusTimer({
                 strokeDasharray="1.2 2.4"
                 opacity={0.35}
               />
-              <circle
-                cx="50"
-                cy="50"
-                r={ringRadius}
-                fill="none"
-                className="stroke-foreground transition-[stroke-dashoffset] duration-500 ease-linear"
-                strokeWidth="2.75"
-                strokeLinecap="round"
-                strokeDasharray={ringCircumference}
-                strokeDashoffset={ringCircumference * (1 - progress / 100)}
-              />
+              {!isStopwatch ? (
+                <circle
+                  cx="50"
+                  cy="50"
+                  r={ringRadius}
+                  fill="none"
+                  className="stroke-foreground transition-[stroke-dashoffset] duration-500 ease-linear"
+                  strokeWidth="2.75"
+                  strokeLinecap="round"
+                  strokeDasharray={ringCircumference}
+                  strokeDashoffset={ringCircumference * (1 - progress / 100)}
+                />
+              ) : null}
             </svg>
 
             <div className="relative px-8 text-center">
