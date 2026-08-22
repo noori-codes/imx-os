@@ -597,3 +597,33 @@
   animation: focus-constellation-seal-pop 1.15s ease-out;
 }
 
+/* Battery-friendly: pause decorative motion when tab is hidden */
+.focus-progress[data-visible="false"][data-live="true"] .focus-progress-glow::before,
+.focus-progress[data-visible="false"][data-live="true"] .focus-horizon-sun,
+.focus-progress[data-visible="false"][data-live="true"] .focus-constellation-comet,
+.focus-progress[data-visible="false"][data-live="true"] .focus-constellation-live-halo,
+.focus-progress[data-visible="false"][data-live="true"] .focus-constellation-live-glow {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .focus-progress[data-live="true"] .focus-progress-glow::before,
+  .focus-progress[data-live="true"] .focus-horizon-sun,
+  .focus-constellation-comet,
+  .focus-constellation-live-halo,
+  .focus-constellation-live-glow,
+  .focus-eq-bar,
+  .focus-stage[data-running="true"] .focus-stage-glow {
+    animation: none !important;
+  }
+
+  .focus-progress[data-sealed="true"] .focus-progress-hero,
+  .focus-constellation-seal,
+  .focus-constellation-meteor,
+  .focus-constellation-seal-flash,
+  .focus-seal,
+  .focus-seal-flash {
+    animation: none !important;
+  }
+}
+

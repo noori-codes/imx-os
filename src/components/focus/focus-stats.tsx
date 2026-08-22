@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
 
+import { useDocumentVisible } from "@/hooks/use-document-visible";
 import { cn } from "@/lib/utils";
 import { toDateString } from "@/lib/date-utils";
 import { useFocusTimer } from "@/stores/focus-timer";
@@ -423,11 +424,14 @@ export function FocusStats({ stats }: FocusStatsProps) {
   const sessionStartedAt = useFocusTimer((s) => s.sessionStartedAt);
   const endsAt = useFocusTimer((s) => s.endsAt);
   const liveElapsedSeconds = useFocusTimer((s) => {
+    if (s.clock !== "up") return 0;
+    if (!s.isRunning) return s.elapsedSeconds;
     void s.tickMs;
     return s.liveElapsedSeconds();
   });
   const sealPulse = useFocusTimer((s) => s.sealPulse);
   const clearSealPulse = useFocusTimer((s) => s.clearSealPulse);
+  const pageVisible = useDocumentVisible();
   const [goalMinutes, setGoalMinutes] = useState(FOCUS_DAILY_GOAL_DEFAULT);
   const [ready, setReady] = useState(false);
   const [goalOpen, setGoalOpen] = useState(false);
@@ -462,19 +466,21 @@ export function FocusStats({ stats }: FocusStatsProps) {
     setGoalOpen(false);
   }
 
-  const stopwatchLive = clock === "up" && liveElapsedSeconds > 0;
-  const countdownLive =
+  const stopwatchSession =
+    clock === "up" && liveElapsedSeconds > 0 ? liveElapsedSeconds : 0;
+  const countdownSession =
+    mode === "focus" && durationSeconds > remainingSeconds
+      ? durationSeconds - remainingSeconds
+      : 0;
+  const sessionSeconds = stopwatchSession || countdownSession;
+  const liveFocus =
     isRunning &&
-    mode === "focus" &&
-    durationSeconds > remainingSeconds;
-  const liveFocus = stopwatchLive || countdownLive;
-  const compact = liveFocus && isRunning;
-  const liveSessionSeconds = liveFocus
-    ? clock === "up"
-      ? liveElapsedSeconds
-      : Math.max(0, durationSeconds - remainingSeconds)
-    : 0;
+    pageVisible &&
+    (clock === "up" || (mode === "focus" && durationSeconds > remainingSeconds));
+  const compact = liveFocus;
+  const liveSessionSeconds = liveFocus ? sessionSeconds : 0;
   const marks = stats.today_marks ?? [];
+  const sessionActive = sessionSeconds > 0;
   const sealAlreadyInStats =
     sealPulse &&
     marks.some(
@@ -487,7 +493,9 @@ export function FocusStats({ stats }: FocusStatsProps) {
   const optimisticSealSeconds =
     sealPulse && !sealAlreadyInStats ? sealPulse.seconds : 0;
   const todayTotalSeconds =
-    stats.focus_minutes * 60 + liveSessionSeconds + optimisticSealSeconds;
+    stats.focus_minutes * 60 +
+    (liveFocus ? liveSessionSeconds : sessionSeconds) +
+    optimisticSealSeconds;
   const goalTotalSeconds = goalMinutes * 60;
   const focusMinutes = Math.floor(todayTotalSeconds / 60);
 
@@ -533,9 +541,9 @@ export function FocusStats({ stats }: FocusStatsProps) {
     : null;
 
   const liveMarkIso =
-    liveFocus && stopwatchLive && sessionStartedAt
+    liveFocus && clock === "up" && sessionStartedAt
       ? new Date(sessionStartedAt).toISOString()
-      : liveFocus && countdownLive && endsAt
+      : liveFocus && mode === "focus" && endsAt
         ? new Date(endsAt - durationSeconds * 1000).toISOString()
         : null;
 
@@ -583,6 +591,7 @@ export function FocusStats({ stats }: FocusStatsProps) {
   return (
     <section
       data-live={liveFocus ? "true" : "false"}
+      data-visible={pageVisible ? "true" : "false"}
       data-compact={compact ? "true" : "false"}
       data-sealed={sealPulse ? "true" : "false"}
       data-mode={mode}
@@ -598,10 +607,10 @@ export function FocusStats({ stats }: FocusStatsProps) {
           </p>
           <p className="mt-1.5 text-sm text-muted-foreground">
             {liveFocus
-              ? isRunning
-                ? "Session in flight"
-                : "Session paused"
-              : (weekday ?? "Today")}
+              ? "Session in flight"
+              : sessionActive && !isRunning
+                ? "Session paused"
+                : (weekday ?? "Today")}
           </p>
         </div>
 
@@ -754,7 +763,11 @@ export function FocusStats({ stats }: FocusStatsProps) {
             {stats.longest_streak > 0 ? ` · best ${stats.longest_streak}d` : ""}
           </span>
           <span className="tabular-nums">
-            {liveFocus ? "Sky live" : "Day taking shape"}
+            {liveFocus
+              ? "Sky live"
+              : sessionActive && !isRunning
+                ? "Paused"
+                : "Day taking shape"}
           </span>
         </div>
       </div>

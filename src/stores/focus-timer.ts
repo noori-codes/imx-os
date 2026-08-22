@@ -27,6 +27,7 @@ type FocusTimerState = {
   sessionStartedAt: number | null;
   endsAt: number | null;
   tickMs: number;
+  lastDisplaySecond: number;
   sealPulse: { startedAt: string; seconds: number } | null;
   completedFocusCount: number;
   autoStartNext: boolean;
@@ -128,6 +129,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
   sessionStartedAt: null,
   endsAt: null,
   tickMs: 0,
+  lastDisplaySecond: 0,
   sealPulse: null,
   completedFocusCount: 0,
   autoStartNext: false,
@@ -189,6 +191,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
         startedAt: null,
         sessionStartedAt: null,
         endsAt: null,
+        lastDisplaySecond: 0,
       });
       return;
     }
@@ -310,6 +313,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
         startedAt: now,
         endsAt: null,
         sessionStartedAt: current.sessionStartedAt ?? now,
+        lastDisplaySecond: current.elapsedSeconds,
       });
       return;
     }
@@ -358,14 +362,16 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
     if (!current.isRunning) return;
 
     if (current.clock === "up") {
+      const elapsed = elapsedFromStartedAt(
+        current.startedAt,
+        current.elapsedSeconds,
+      );
       set({
         isRunning: false,
-        elapsedSeconds: elapsedFromStartedAt(
-          current.startedAt,
-          current.elapsedSeconds,
-        ),
+        elapsedSeconds: elapsed,
         startedAt: null,
         endsAt: null,
+        lastDisplaySecond: elapsed,
       });
       return;
     }
@@ -390,6 +396,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
         startedAt: null,
         sessionStartedAt: null,
         endsAt: null,
+        lastDisplaySecond: 0,
       });
       return;
     }
@@ -431,11 +438,13 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
           startedAt: null,
           sessionStartedAt: null,
           endsAt: null,
+          lastDisplaySecond: FOCUS_MAX_SECONDS,
         });
         return true;
       }
-      // Bump tickMs so UI re-renders; elapsed is derived live from startedAt + base.
-      set({ tickMs: Date.now() });
+      if (elapsed !== current.lastDisplaySecond) {
+        set({ tickMs: Date.now(), lastDisplaySecond: elapsed });
+      }
       return false;
     }
 

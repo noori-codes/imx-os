@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
+
+import { useDocumentVisible } from "@/hooks/use-document-visible";
 import { useRouter } from "next/navigation";
 import { ChevronDown, CircleCheck, Pause, Play, RotateCcw, SkipForward } from "lucide-react";
 
@@ -78,6 +80,7 @@ export function FocusTimer({
   focusMinutesToday?: number;
 }) {
   const router = useRouter();
+  const pageVisible = useDocumentVisible();
   const {
     mode,
     clock,
@@ -137,8 +140,16 @@ export function FocusTimer({
 
   useEffect(() => {
     if (!isRunning) return;
-    const id = window.setInterval(() => tick(), 500);
-    return () => window.clearInterval(id);
+
+    let timeoutId: number;
+    const schedule = () => {
+      tick();
+      const delay = 1000 - (Date.now() % 1000);
+      timeoutId = window.setTimeout(schedule, delay);
+    };
+
+    schedule();
+    return () => window.clearTimeout(timeoutId);
   }, [isRunning, tick]);
 
   useEffect(() => {
@@ -504,7 +515,8 @@ export function FocusTimer({
   return (
     <section
       data-mode={mode}
-      data-running={isRunning ? "true" : "false"}
+      data-running={isRunning && pageVisible ? "true" : "false"}
+      data-visible={pageVisible ? "true" : "false"}
       className="focus-stage group relative flex h-full min-h-[34rem] flex-col overflow-hidden px-2 py-6 sm:min-h-[40rem] sm:px-4 sm:py-8"
     >
       <div className="focus-stage-glow" aria-hidden />
