@@ -371,76 +371,72 @@
   font-synthesis: none;
 }
 
-/* Progress companion stage */
+/* Progress companion */
 .focus-progress {
-  --companion-glow: oklch(0.55 0.035 245 / 0.14);
   --companion-wash: oklch(0.55 0.035 245 / 0.06);
 }
 
 .focus-progress[data-mode="focus"] {
-  --companion-glow: oklch(0.52 0.045 245 / 0.18);
   --companion-wash: oklch(0.5 0.035 245 / 0.08);
 }
 
 .focus-progress[data-mode="short_break"] {
-  --companion-glow: oklch(0.72 0.06 75 / 0.2);
   --companion-wash: oklch(0.78 0.05 70 / 0.09);
 }
 
 .focus-progress[data-mode="long_break"] {
-  --companion-glow: oklch(0.7 0.055 55 / 0.22);
   --companion-wash: oklch(0.76 0.045 50 / 0.1);
 }
 
-.focus-progress-glow {
-  pointer-events: none;
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
+/* Celestial sky dome */
+.focus-sky-dome {
+  --sky-dawn: oklch(0.84 0.11 58 / 0.28);
+  --sky-noon: oklch(0.78 0.05 235 / 0.12);
+  --sky-night: oklch(0.58 0.14 285 / 0.32);
 }
 
-.focus-progress-glow::before {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 22%;
-  width: min(18rem, 100%);
-  height: min(14rem, 80%);
-  translate: -50% -50%;
-  border-radius: 9999px;
-  background: radial-gradient(
-    circle at center,
-    var(--companion-glow) 0%,
-    transparent 70%
-  );
-  opacity: 0.45;
-  transition:
-    opacity 700ms ease,
-    width 700ms ease,
-    height 700ms ease,
-    background 700ms ease;
+.dark .focus-sky-dome {
+  --sky-dawn: oklch(0.72 0.09 58 / 0.22);
+  --sky-noon: oklch(0.62 0.04 235 / 0.1);
+  --sky-night: oklch(0.48 0.12 285 / 0.28);
 }
 
-.dark .focus-progress-glow::before {
-  background: radial-gradient(
-    circle at center,
-    oklch(0.42 0.045 245 / 0.26) 0%,
-    transparent 68%
-  );
+.focus-sky-fill {
+  transition: opacity 600ms ease;
 }
 
-.focus-progress[data-streak="mid"] .focus-progress-glow::before {
-  opacity: 0.95;
+.dark .focus-sky-fill {
+  opacity: 0.85;
 }
 
-.focus-progress[data-streak="high"] .focus-progress-glow::before {
-  opacity: 1;
-  width: min(24rem, 105%);
-  height: min(24rem, 105%);
+.focus-sky-arc {
+  filter: drop-shadow(0 0 3px oklch(0.85 0.06 240 / 0.15));
 }
 
-.focus-progress[data-live="true"] .focus-progress-glow::before {
-  animation: focus-progress-breathe 3.2s ease-in-out infinite;
+.dark .focus-sky-arc {
+  filter: drop-shadow(0 0 4px oklch(0.55 0.08 240 / 0.2));
+}
+
+.focus-sky-star {
+  opacity: 0.55;
+}
+
+.dark .focus-sky-star {
+  opacity: 0.75;
+}
+
+.focus-progress[data-live="true"] .focus-sky-now circle:last-child {
+  animation: focus-sky-now 2.8s ease-in-out infinite;
+}
+
+@keyframes focus-sky-now {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.85;
+  }
 }
 
 .focus-progress-hero {
@@ -528,41 +524,8 @@
   overflow: visible;
 }
 
-@keyframes focus-progress-breathe {
-  0%,
-  100% {
-    opacity: 0.65;
-    width: min(20rem, 90%);
-    height: min(20rem, 90%);
-  }
-  50% {
-    opacity: 1;
-    width: min(24rem, 108%);
-    height: min(24rem, 108%);
-  }
-}
-
 .focus-progress[data-sealed="true"] .focus-progress-hero {
   animation: focus-progress-seal-bump 0.9s ease-out;
-}
-
-@keyframes focus-constellation-live {
-  0%,
-  100% {
-    opacity: 0.35;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
-.focus-constellation-live-halo {
-  animation: focus-constellation-live 2.4s ease-in-out infinite;
-}
-
-.focus-constellation-live-glow {
-  animation: focus-constellation-live 2.4s ease-in-out infinite;
-  animation-delay: 0.35s;
 }
 
 @keyframes focus-progress-seal-bump {
@@ -578,6 +541,20 @@
     opacity: 1;
     transform: scale(1);
   }
+}
+
+@keyframes focus-constellation-live {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.focus-constellation-live-halo {
+  animation: focus-constellation-live 2.4s ease-in-out infinite;
 }
 
 @keyframes focus-constellation-seal-pop {
@@ -602,20 +579,16 @@
 }
 
 /* Battery-friendly: pause decorative motion when tab is hidden */
-.focus-progress[data-visible="false"][data-live="true"] .focus-progress-glow::before,
 .focus-progress[data-visible="false"][data-live="true"] .focus-horizon-sun,
-.focus-progress[data-visible="false"][data-live="true"] .focus-constellation-comet,
 .focus-progress[data-visible="false"][data-live="true"] .focus-constellation-live-halo,
-.focus-progress[data-visible="false"][data-live="true"] .focus-constellation-live-glow {
+.focus-progress[data-visible="false"][data-live="true"] .focus-sky-now circle:last-child {
   animation-play-state: paused;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .focus-progress[data-live="true"] .focus-progress-glow::before,
   .focus-progress[data-live="true"] .focus-horizon-sun,
-  .focus-constellation-comet,
   .focus-constellation-live-halo,
-  .focus-constellation-live-glow,
+  .focus-progress[data-live="true"] .focus-sky-now circle:last-child,
   .focus-eq-bar,
   .focus-stage[data-running="true"] .focus-stage-glow {
     animation: none !important;

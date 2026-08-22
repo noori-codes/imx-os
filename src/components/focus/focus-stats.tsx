@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Moon, Sun, Sunrise } from "lucide-react";
 
 import { useDocumentVisible } from "@/hooks/use-document-visible";
 import { cn } from "@/lib/utils";
@@ -155,6 +155,63 @@ function streakTier(streak: number) {
   return "low";
 }
 
+const NIGHT_STARS = [
+  { x: 68, y: 32, r: 0.3 },
+  { x: 74, y: 26, r: 0.22 },
+  { x: 80, y: 34, r: 0.28 },
+  { x: 76, y: 40, r: 0.18 },
+  { x: 84, y: 28, r: 0.24 },
+] as const;
+
+function skyPhaseNow(): "dawn" | "noon" | "night" {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 11) return "dawn";
+  if (hour >= 11 && hour < 17) return "noon";
+  return "night";
+}
+
+function SkyPhaseLabel({
+  label,
+  icon: Icon,
+  active,
+}: {
+  label: string;
+  icon: typeof Sunrise;
+  active: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex flex-col items-center gap-1.5 transition-colors duration-500",
+        active ? "text-foreground" : "text-muted-foreground/55",
+      )}
+    >
+      <span
+        className={cn(
+          "flex size-7 items-center justify-center rounded-full border transition-all duration-500",
+          active
+            ? "border-foreground/20 bg-foreground/[0.07] shadow-[0_0_20px_oklch(1_0_0/0.06)]"
+            : "border-transparent bg-transparent",
+        )}
+      >
+        <Icon
+          className={cn("size-3.5", active && "opacity-100")}
+          strokeWidth={active ? 2 : 1.5}
+          aria-hidden
+        />
+      </span>
+      <span
+        className={cn(
+          "text-[10px] font-medium tracking-[0.14em] uppercase",
+          active && "tracking-[0.18em]",
+        )}
+      >
+        {label}
+      </span>
+    </div>
+  );
+}
+
 function ConstellationSky({
   marks,
   liveMark,
@@ -180,119 +237,200 @@ function ConstellationSky({
     (a, b) =>
       new Date(a.started_at).getTime() - new Date(b.started_at).getTime(),
   );
+  const phase = ready ? skyPhaseNow() : null;
+  const nowPoint = ready ? constellationPoint(new Date().toISOString()) : null;
 
   return (
-    <svg
-      viewBox="0 0 100 80"
-      className="focus-constellation-sky h-auto w-full"
-      aria-label="Today's focus sessions by time of day"
-    >
-      <path
-        d="M 14 58 A 36 36 0 0 1 86 58"
-        fill="none"
-        className="stroke-border/50"
-        strokeWidth="0.75"
-        strokeDasharray="1.2 2.2"
-      />
-
-      {sorted.length >= 2
-        ? sorted.slice(0, -1).map((mark, i) => {
-            const a = constellationPoint(mark.started_at);
-            const b = constellationPoint(sorted[i + 1]!.started_at);
-            return (
-              <line
-                key={`${mark.started_at}-link`}
-                x1={a.x}
-                y1={a.y}
-                x2={b.x}
-                y2={b.y}
-                className="stroke-foreground/15"
-                strokeWidth="0.45"
-              />
-            );
-          })
-        : null}
-
-      <text x="12" y="72" className="fill-muted-foreground" fontSize="3.2">
-        Dawn
-      </text>
-      <text
-        x="50"
-        y="72"
-        className="fill-muted-foreground"
-        fontSize="3.2"
-        textAnchor="middle"
+    <div className="focus-sky-dome w-full">
+      <svg
+        viewBox="0 0 100 68"
+        className="focus-constellation-sky h-auto w-full"
+        aria-label="Today's focus sessions by time of day"
       >
-        Noon
-      </text>
-      <text
-        x="88"
-        y="72"
-        className="fill-muted-foreground"
-        fontSize="3.2"
-        textAnchor="end"
-      >
-        Night
-      </text>
+        <defs>
+          <linearGradient id="focus-sky-dome" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="oklch(0.84 0.11 58)" stopOpacity="0.28" />
+            <stop offset="45%" stopColor="oklch(0.78 0.05 235)" stopOpacity="0.12" />
+            <stop offset="100%" stopColor="oklch(0.58 0.14 285)" stopOpacity="0.32" />
+          </linearGradient>
+          <linearGradient id="focus-sky-vignette" x1="0.5" y1="0" x2="0.5" y2="1">
+            <stop offset="0%" stopColor="white" stopOpacity="0.95" />
+            <stop offset="55%" stopColor="white" stopOpacity="0.45" />
+            <stop offset="100%" stopColor="white" stopOpacity="0" />
+          </linearGradient>
+          <mask id="focus-sky-vignette-mask">
+            <rect x="0" y="0" width="100" height="68" fill="url(#focus-sky-vignette)" />
+          </mask>
+          <linearGradient id="focus-arc-shimmer" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="oklch(0.88 0.1 62)" stopOpacity="0.55" />
+            <stop offset="48%" stopColor="oklch(0.95 0.02 240)" stopOpacity="0.75" />
+            <stop offset="100%" stopColor="oklch(0.72 0.12 290)" stopOpacity="0.6" />
+          </linearGradient>
+        </defs>
 
-      {marks.length === 0 && !liveFocus ? (
-        <circle cx="50" cy="42" r="0.9" className="fill-muted-foreground/30" />
-      ) : null}
+        <path
+          d="M 14 58 A 36 36 0 0 1 86 58 Z"
+          fill="url(#focus-sky-dome)"
+          mask="url(#focus-sky-vignette-mask)"
+          className="focus-sky-fill"
+        />
 
-      {sorted.map((mark) => {
-        const point = constellationPoint(mark.started_at);
-        const r = markRadius(mark.minutes);
-        return (
-          <g key={mark.started_at + mark.minutes}>
-            <title>
-              {ready
-                ? `${formatMarkTime(mark.started_at)} · ${formatFocusMinutes(mark.minutes)}`
-                : formatFocusMinutes(mark.minutes)}
-            </title>
+        {NIGHT_STARS.map((star, i) => (
+          <circle
+            key={i}
+            cx={star.x}
+            cy={star.y}
+            r={star.r}
+            className="focus-sky-star fill-foreground/35"
+          />
+        ))}
+
+        <line
+          x1="6"
+          y1="58.75"
+          x2="94"
+          y2="58.75"
+          className="stroke-border/25"
+          strokeWidth="0.5"
+        />
+
+        <path
+          d="M 14 58 A 36 36 0 0 1 86 58"
+          fill="none"
+          stroke="url(#focus-arc-shimmer)"
+          strokeWidth="0.85"
+          strokeLinecap="round"
+          className="focus-sky-arc"
+        />
+
+        <path
+          d="M 14 58 A 36 36 0 0 1 86 58"
+          fill="none"
+          className="stroke-foreground/[0.07]"
+          strokeWidth="0.35"
+          strokeDasharray="0.6 2.8"
+        />
+
+        {[0, 0.5, 1].map((t) => {
+          const p = arcPoint(t);
+          return (
             <circle
-              cx={point.x}
-              cy={point.y}
-              r={r}
-              className="fill-foreground/90"
+              key={t}
+              cx={p.x}
+              cy={p.y}
+              r="0.65"
+              className="fill-background stroke-foreground/20"
+              strokeWidth="0.35"
+            />
+          );
+        })}
+
+        {sorted.length >= 2
+          ? sorted.slice(0, -1).map((mark, i) => {
+              const a = constellationPoint(mark.started_at);
+              const b = constellationPoint(sorted[i + 1]!.started_at);
+              return (
+                <line
+                  key={`${mark.started_at}-link`}
+                  x1={a.x}
+                  y1={a.y}
+                  x2={b.x}
+                  y2={b.y}
+                  className="stroke-foreground/12"
+                  strokeWidth="0.4"
+                />
+              );
+            })
+          : null}
+
+        {marks.length === 0 && !liveFocus ? (
+          <circle cx="50" cy="40" r="0.75" className="fill-foreground/20" />
+        ) : null}
+
+        {nowPoint && !liveMark ? (
+          <g className="focus-sky-now">
+            <circle
+              cx={nowPoint.x}
+              cy={nowPoint.y}
+              r="1.35"
+              className="fill-foreground/10"
+            />
+            <circle
+              cx={nowPoint.x}
+              cy={nowPoint.y}
+              r="0.5"
+              className="fill-foreground/45"
             />
           </g>
-        );
-      })}
+        ) : null}
 
-      {liveMark ? (
-        <g className="focus-constellation-live text-foreground">
-          <title>{liveMark.title}</title>
-          <circle
-            cx={liveMark.point.x}
-            cy={liveMark.point.y}
-            r={liveMark.radius + 1.1}
-            className="focus-constellation-live-halo fill-foreground/10"
-          />
-          <circle
-            cx={liveMark.point.x}
-            cy={liveMark.point.y}
-            r={liveMark.radius}
-            className="fill-foreground"
-          />
-        </g>
-      ) : null}
+        {sorted.map((mark) => {
+          const point = constellationPoint(mark.started_at);
+          const r = markRadius(mark.minutes);
+          return (
+            <g key={mark.started_at + mark.minutes}>
+              <title>
+                {ready
+                  ? `${formatMarkTime(mark.started_at)} · ${formatFocusMinutes(mark.minutes)}`
+                  : formatFocusMinutes(mark.minutes)}
+              </title>
+              <circle
+                cx={point.x}
+                cy={point.y}
+                r={r + 0.55}
+                className="fill-foreground/8"
+              />
+              <circle
+                cx={point.x}
+                cy={point.y}
+                r={r}
+                className="fill-foreground"
+              />
+            </g>
+          );
+        })}
 
-      {sealMark ? (
-        <g
-          className="focus-constellation-seal text-foreground"
-          transform={`translate(${sealMark.point.x} ${sealMark.point.y})`}
-        >
-          <title>{sealMark.title}</title>
-          <circle cx={0} cy={0} r={sealMark.radius + 1.1} className="fill-foreground/12" />
-          <circle
-            cx={0}
-            cy={0}
-            r={sealMark.radius}
-            className="focus-constellation-seal-core fill-foreground"
-          />
-        </g>
-      ) : null}
-    </svg>
+        {liveMark ? (
+          <g className="focus-constellation-live text-foreground">
+            <title>{liveMark.title}</title>
+            <circle
+              cx={liveMark.point.x}
+              cy={liveMark.point.y}
+              r={liveMark.radius + 1.1}
+              className="focus-constellation-live-halo fill-foreground/10"
+            />
+            <circle
+              cx={liveMark.point.x}
+              cy={liveMark.point.y}
+              r={liveMark.radius}
+              className="fill-foreground"
+            />
+          </g>
+        ) : null}
+
+        {sealMark ? (
+          <g
+            className="focus-constellation-seal text-foreground"
+            transform={`translate(${sealMark.point.x} ${sealMark.point.y})`}
+          >
+            <title>{sealMark.title}</title>
+            <circle cx={0} cy={0} r={sealMark.radius + 1.1} className="fill-foreground/12" />
+            <circle
+              cx={0}
+              cy={0}
+              r={sealMark.radius}
+              className="focus-constellation-seal-core fill-foreground"
+            />
+          </g>
+        ) : null}
+      </svg>
+
+      <div className="focus-sky-labels mt-3 grid grid-cols-3 items-start px-0.5">
+        <SkyPhaseLabel label="Dawn" icon={Sunrise} active={phase === "dawn"} />
+        <SkyPhaseLabel label="Noon" icon={Sun} active={phase === "noon"} />
+        <SkyPhaseLabel label="Night" icon={Moon} active={phase === "night"} />
+      </div>
+    </div>
   );
 }
 
@@ -597,7 +735,6 @@ export function FocusStats({ stats }: FocusStatsProps) {
           aria-valuenow={Math.min(todayTotalSeconds, goalTotalSeconds)}
           aria-label="Daily focus goal progress"
         >
-          <div className="focus-progress-glow pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden />
           <HorizonTrack
             progress={ready ? progress : 0}
             ready={ready}
