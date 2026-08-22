@@ -24,7 +24,9 @@ type FocusTimerState = {
   elapsedSeconds: number;
   isRunning: boolean;
   startedAt: number | null;
+  sessionStartedAt: number | null;
   endsAt: number | null;
+  tickMs: number;
   completedFocusCount: number;
   autoStartNext: boolean;
   intention: string;
@@ -50,6 +52,7 @@ type FocusTimerState = {
   tick: () => boolean;
   complete: () => void;
   displaySeconds: () => number;
+  liveElapsedSeconds: () => number;
 };
 
 function remainingFromEndsAt(endsAt: number | null, fallback: number) {
@@ -61,7 +64,7 @@ function elapsedFromStartedAt(startedAt: number | null, base: number) {
   if (!startedAt) return base;
   return Math.min(
     FOCUS_MAX_SECONDS,
-    base + Math.max(0, Math.round((Date.now() - startedAt) / 1000)),
+    base + Math.max(0, Math.floor((Date.now() - startedAt) / 1000)),
   );
 }
 
@@ -119,7 +122,9 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
   elapsedSeconds: 0,
   isRunning: false,
   startedAt: null,
+  sessionStartedAt: null,
   endsAt: null,
+  tickMs: 0,
   completedFocusCount: 0,
   autoStartNext: false,
   intention: "",
@@ -137,6 +142,12 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
     return remainingFromEndsAt(current.endsAt, current.remainingSeconds);
   },
 
+  liveElapsedSeconds: () => {
+    const current = get();
+    if (current.clock !== "up") return 0;
+    return elapsedFromStartedAt(current.startedAt, current.elapsedSeconds);
+  },
+
   setMode: (mode) => {
     const current = get();
     if (current.isRunning) return;
@@ -148,6 +159,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
       elapsedSeconds: 0,
       isRunning: false,
       startedAt: null,
+      sessionStartedAt: null,
       endsAt: null,
     });
   },
@@ -167,6 +179,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
         durationSeconds: current.lastFocusSeconds,
         isRunning: false,
         startedAt: null,
+        sessionStartedAt: null,
         endsAt: null,
       });
       return;
@@ -179,6 +192,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
       elapsedSeconds: 0,
       isRunning: false,
       startedAt: null,
+      sessionStartedAt: null,
       endsAt: null,
     });
   },
@@ -250,6 +264,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
       remainingSeconds: durationSeconds,
       elapsedSeconds: 0,
       startedAt: null,
+      sessionStartedAt: null,
       endsAt: null,
       isRunning: false,
     });
@@ -286,6 +301,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
         isRunning: true,
         startedAt: now,
         endsAt: null,
+        sessionStartedAt: current.sessionStartedAt ?? now,
       });
       return;
     }
@@ -364,6 +380,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
         elapsedSeconds: 0,
         isRunning: false,
         startedAt: null,
+        sessionStartedAt: null,
         endsAt: null,
       });
       return;
@@ -373,6 +390,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
       elapsedSeconds: 0,
       isRunning: false,
       startedAt: null,
+      sessionStartedAt: null,
       endsAt: null,
     });
   },
@@ -403,15 +421,13 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
           elapsedSeconds: FOCUS_MAX_SECONDS,
           isRunning: false,
           startedAt: null,
+          sessionStartedAt: null,
           endsAt: null,
         });
         return true;
       }
-      // Re-anchor so the next tick doesn't double-count.
-      set({
-        elapsedSeconds: elapsed,
-        startedAt: Date.now(),
-      });
+      // Bump tickMs so UI re-renders; elapsed is derived live from startedAt + base.
+      set({ tickMs: Date.now() });
       return false;
     }
 

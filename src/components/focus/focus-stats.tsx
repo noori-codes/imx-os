@@ -10,6 +10,7 @@ import {
   FOCUS_DAILY_GOAL_DEFAULT,
   FOCUS_DAILY_GOAL_KEY,
   FOCUS_DAILY_GOAL_PRESETS,
+  formatFocusClock,
   formatFocusMinutes,
   type FocusOverviewStats,
 } from "@/types/focus";
@@ -111,7 +112,10 @@ export function FocusStats({ stats }: FocusStatsProps) {
   const clock = useFocusTimer((s) => s.clock);
   const remainingSeconds = useFocusTimer((s) => s.remainingSeconds);
   const durationSeconds = useFocusTimer((s) => s.durationSeconds);
-  const elapsedSeconds = useFocusTimer((s) => s.elapsedSeconds);
+  const liveElapsedSeconds = useFocusTimer((s) => {
+    void s.tickMs;
+    return s.liveElapsedSeconds();
+  });
   const [goalMinutes, setGoalMinutes] = useState(FOCUS_DAILY_GOAL_DEFAULT);
   const [ready, setReady] = useState(false);
   const [goalOpen, setGoalOpen] = useState(false);
@@ -127,13 +131,15 @@ export function FocusStats({ stats }: FocusStatsProps) {
     setGoalOpen(false);
   }
 
-  const liveFocus =
+  const stopwatchLive = clock === "up" && liveElapsedSeconds > 0;
+  const countdownLive =
     isRunning &&
-    (clock === "up" ||
-      (mode === "focus" && durationSeconds > remainingSeconds));
+    mode === "focus" &&
+    durationSeconds > remainingSeconds;
+  const liveFocus = stopwatchLive || countdownLive;
   const liveExtraMinutes = liveFocus
     ? clock === "up"
-      ? Math.max(0, Math.floor(elapsedSeconds / 60))
+      ? Math.max(0, Math.floor(liveElapsedSeconds / 60))
       : Math.max(0, Math.floor((durationSeconds - remainingSeconds) / 60))
     : 0;
   const focusMinutes = stats.focus_minutes + liveExtraMinutes;
@@ -147,9 +153,11 @@ export function FocusStats({ stats }: FocusStatsProps) {
   const blockMinutes = Math.max(1, Math.round(lastFocusSeconds / 60));
   const honestBlock = ready
     ? liveFocus
-      ? remaining <= 0
-        ? "Sealing the goal · stay with it"
-        : `${formatFocusMinutes(remaining)} still open · keep going`
+      ? !isRunning && stopwatchLive
+        ? "Paused · seal to save this block"
+        : remaining <= 0
+          ? "Sealing the goal · stay with it"
+          : `${formatFocusMinutes(remaining)} still open · keep going`
       : nextHonestBlock({
           remaining,
           met,
@@ -184,7 +192,11 @@ export function FocusStats({ stats }: FocusStatsProps) {
             Today
           </p>
           <p className="mt-1.5 text-sm text-muted-foreground">
-            {liveFocus ? "Session live" : weekday}
+            {liveFocus
+              ? isRunning
+                ? "Session live"
+                : "Session paused"
+              : weekday}
           </p>
         </div>
 
@@ -239,9 +251,13 @@ export function FocusStats({ stats }: FocusStatsProps) {
               </p>
               <p className="mt-2 text-xs text-muted-foreground">
                 {liveFocus
-                  ? liveExtraMinutes > 0
-                    ? `Live · +${formatFocusMinutes(liveExtraMinutes)}`
-                    : "Live · just started"
+                  ? clock === "up"
+                    ? liveElapsedSeconds >= 60
+                      ? `Live · +${formatFocusMinutes(Math.round(liveElapsedSeconds / 60))}`
+                      : `Live · +${formatFocusClock(liveElapsedSeconds)}`
+                    : liveExtraMinutes > 0
+                      ? `Live · +${formatFocusMinutes(liveExtraMinutes)}`
+                      : "Live · just started"
                   : stats.sessions === 0
                     ? "No sessions yet"
                     : `${stats.sessions} session${stats.sessions === 1 ? "" : "s"}`}

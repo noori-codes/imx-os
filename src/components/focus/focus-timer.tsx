@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Pause, Play, RotateCcw, SkipForward } from "lucide-react";
+import { ChevronDown, CircleCheck, Pause, Play, RotateCcw, SkipForward } from "lucide-react";
 
 import { logFocusSession } from "@/actions/focus";
 import { FocusSounds } from "@/components/focus/focus-sounds";
@@ -87,11 +87,13 @@ export function FocusTimer({
     isRunning,
     endsAt,
     startedAt,
+    sessionStartedAt,
     completedFocusCount,
     autoStartNext,
     intention,
     linkedTaskId,
     profileId,
+    lastFocusSeconds,
     setMode,
     setClock,
     setDuration,
@@ -107,6 +109,7 @@ export function FocusTimer({
     advance,
     tick,
     displaySeconds,
+    tickMs,
   } = useFocusTimer();
 
   const linkedTask =
@@ -230,10 +233,14 @@ export function FocusTimer({
   }, [seal]);
 
   useEffect(() => {
-    if (remainingSeconds > 0) {
+    if (!isStopwatch) {
+      if (remainingSeconds > 0) loggedRef.current = false;
+      return;
+    }
+    if (elapsedSeconds === 0 && !isRunning) {
       loggedRef.current = false;
     }
-  }, [remainingSeconds, mode]);
+  }, [isStopwatch, remainingSeconds, mode, elapsedSeconds, isRunning]);
 
   const durationMinutes = Math.round(durationSeconds / 60);
   const durationPresets =
@@ -259,6 +266,7 @@ export function FocusTimer({
 
     const note = intention;
     const taskId = linkedTaskId;
+    const addedMinutes = Math.max(1, Math.round(actual / 60));
     startTransition(async () => {
       await logFocusSession({
         mode: "focus",
@@ -277,21 +285,56 @@ export function FocusTimer({
     setSeal({
       mode: "focus",
       seconds: actual,
-      todayMinutes: focusMinutesToday + Math.max(1, Math.round(actual / 60)),
+      todayMinutes: focusMinutesToday + addedMinutes,
       nextLabel: "Open",
     });
+    loggedRef.current = false;
     reset();
+  }
+
+  function handleSealStopwatch() {
+    stopFocusSound();
+    if (isRunning) pause();
+    sealStopwatch(displaySeconds());
+  }
+
+  function handleDiscardStopwatch() {
+    const actual = displaySeconds();
+    if (
+      actual >= 5 &&
+      !window.confirm("Discard this session without saving?")
+    ) {
+      return;
+    }
+    stopFocusSound();
+    reset();
+  }
+
+  function handleClockChange(next: FocusClock) {
+    if (next === clock || isRunning) return;
+
+    if (clock === "up") {
+      const actual = displaySeconds();
+      if (actual >= 5) {
+        sealStopwatch(actual);
+      } else if (actual > 0) {
+        reset();
+      }
+    }
+
+    setClock(next);
   }
 
   useEffect(() => {
     if (!isStopwatch) return;
-    if (elapsedSeconds < FOCUS_MAX_SECONDS) return;
+    const actual = displaySeconds();
+    if (actual < FOCUS_MAX_SECONDS) return;
     if (loggedRef.current) return;
     loggedRef.current = true;
     sealStopwatch(FOCUS_MAX_SECONDS);
     // sealStopwatch closes over latest intention/task
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [elapsedSeconds, isStopwatch]);
+  }, [isStopwatch, tickMs, elapsedSeconds]);
 
   function handleStart() {
     const custom = isStopwatch ? undefined : secondsFromCustom();
@@ -319,12 +362,7 @@ export function FocusTimer({
     stopFocusSound();
 
     if (isStopwatch) {
-      const actual = displaySeconds();
-      if (actual >= 5) {
-        sealStopwatch(actual);
-        return;
-      }
-      reset();
+      handleDiscardStopwatch();
       return;
     }
 
@@ -406,6 +444,10 @@ export function FocusTimer({
 
       if ((e.key === "r" || e.key === "R") && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
+        if (isStopwatch) {
+          handleSealStopwatch();
+          return;
+        }
         handleReset();
       }
     }
@@ -415,7 +457,10 @@ export function FocusTimer({
   });
 
   const progress = isStopwatch
-    ? Math.min(100, (shownSeconds / (2 * 60 * 60)) * 100)
+    ? Math.min(
+        100,
+        (shownSeconds / Math.max(lastFocusSeconds, 60)) * 100,
+      )
     : durationSeconds > 0
       ? ((durationSeconds - remainingSeconds) / durationSeconds) * 100
       : 0;
@@ -426,11 +471,12 @@ export function FocusTimer({
       ? `Ends ${formatClockTime(endsAt)}`
       : null;
   const runningHint =
-    isStopwatch && isRunning && startedAt
-      ? `Since ${formatClockTime(startedAt)}`
+    isStopwatch && sessionStartedAt && (isRunning || shownSeconds > 0)
+      ? `Since ${formatClockTime(sessionStartedAt)}`
       : isStopwatch && !isRunning && shownSeconds > 0
-        ? "Paused · R seals"
+        ? "Paused · R to seal"
         : null;
+  const canSealStopwatch = isStopwatch && shownSeconds >= 5;
 
   const activeProfile =
     FOCUS_PROFILES.find((profile) => profile.id === profileId) ?? null;
@@ -627,7 +673,7 @@ export function FocusTimer({
                     <p className="text-xs text-muted-foreground">{endedHint}</p>
                   ) : runningHint ? (
                     <p className="text-xs text-muted-foreground">{runningHint}</p>
-                  ) : (
+                  ) : isStopwatch ? null : (
                     <p className="text-xs text-muted-foreground">
                       Up next: {FOCUS_PRESETS[upcoming].label}
                     </p>
@@ -669,9 +715,9 @@ export function FocusTimer({
         ) : (
           <p className="mt-5 text-xs text-muted-foreground">
             {isRunning
-              ? "Pause anytime · R seals the session"
+              ? "Pause anytime · R seals · ↺ discards"
               : shownSeconds > 0
-                ? "R seals · Space resumes"
+                ? "R seals · Space resumes · ↺ discards"
                 : "Open focus · no timer limit"}
           </p>
         )}
@@ -688,7 +734,7 @@ export function FocusTimer({
               )}
               aria-label={
                 isStopwatch && shownSeconds >= 5
-                  ? "Seal open session"
+                  ? "Discard open session"
                   : "Reset timer"
               }
             >
@@ -729,7 +775,23 @@ export function FocusTimer({
                 <SkipForward className="size-5" />
               </button>
             ) : (
-              <span className="size-12" aria-hidden />
+              <button
+                type="button"
+                onClick={handleSealStopwatch}
+                disabled={!canSealStopwatch}
+                className={cn(
+                  "flex size-12 items-center justify-center rounded-full text-muted-foreground transition-all hover:bg-muted hover:text-foreground",
+                  !canSealStopwatch && "pointer-events-none opacity-30",
+                  isRunning &&
+                    "opacity-0 group-hover:opacity-100 focus-visible:opacity-100 max-sm:opacity-100",
+                  canSealStopwatch &&
+                    isRunning &&
+                    "group-hover:opacity-100 max-sm:opacity-100",
+                )}
+                aria-label="Seal open session"
+              >
+                <CircleCheck className="size-5" />
+              </button>
             )}
           </div>
           {!isRunning ? (
@@ -767,7 +829,7 @@ export function FocusTimer({
                       type="button"
                       role="tab"
                       aria-selected={active}
-                      onClick={() => setClock(item.id)}
+                      onClick={() => handleClockChange(item.id)}
                       className={cn(
                         "min-w-0 flex-1 rounded-full px-3 py-2 text-left transition-colors sm:text-center",
                         active
@@ -793,7 +855,7 @@ export function FocusTimer({
 
               {isStopwatch ? (
                 <p className="text-center text-xs text-muted-foreground">
-                  Starts at 00:00 and climbs until you pause and seal with R.
+                  Starts at 00:00 · R seals when done · ↺ discards
                 </p>
               ) : (
                 <>
