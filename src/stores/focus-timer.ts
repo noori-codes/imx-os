@@ -27,6 +27,7 @@ type FocusTimerState = {
   sessionStartedAt: number | null;
   endsAt: number | null;
   tickMs: number;
+  sealPulse: { startedAt: string; seconds: number } | null;
   completedFocusCount: number;
   autoStartNext: boolean;
   intention: string;
@@ -53,6 +54,8 @@ type FocusTimerState = {
   complete: () => void;
   displaySeconds: () => number;
   liveElapsedSeconds: () => number;
+  pulseSeal: (mark: { startedAt: string; seconds: number }) => void;
+  clearSealPulse: () => void;
 };
 
 function remainingFromEndsAt(endsAt: number | null, fallback: number) {
@@ -125,6 +128,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
   sessionStartedAt: null,
   endsAt: null,
   tickMs: 0,
+  sealPulse: null,
   completedFocusCount: 0,
   autoStartNext: false,
   intention: "",
@@ -147,6 +151,10 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
     if (current.clock !== "up") return 0;
     return elapsedFromStartedAt(current.startedAt, current.elapsedSeconds);
   },
+
+  pulseSeal: (mark) => set({ sealPulse: mark }),
+
+  clearSealPulse: () => set({ sealPulse: null }),
 
   setMode: (mode) => {
     const current = get();

@@ -196,6 +196,12 @@ export function FocusTimer({
 
       const addedMinutes =
         currentMode === "focus" ? Math.max(1, Math.round(planned / 60)) : 0;
+      if (currentMode === "focus") {
+        useFocusTimer.getState().pulseSeal({
+          startedAt: new Date(Date.now() - planned * 1000).toISOString(),
+          seconds: planned,
+        });
+      }
       setSeal({
         mode: currentMode,
         seconds: planned,
@@ -281,6 +287,10 @@ export function FocusTimer({
     stopFocusSound();
     playFocusChime();
     notifyFocusPhase("Open session sealed", formatFocusClock(actual));
+    useFocusTimer.getState().pulseSeal({
+      startedAt: new Date(Date.now() - actual * 1000).toISOString(),
+      seconds: actual,
+    });
     setSeal({
       mode: "focus",
       seconds: actual,

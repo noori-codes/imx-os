@@ -371,36 +371,157 @@
   font-synthesis: none;
 }
 
-/* Progress companion stage (mirrors timer room) */
+/* Progress companion stage */
 .focus-progress {
-  isolation: isolate;
-  border-radius: 1.5rem;
+  --companion-glow: oklch(0.55 0.035 245 / 0.14);
+  --companion-wash: oklch(0.55 0.035 245 / 0.06);
+}
+
+.focus-progress[data-mode="focus"] {
+  --companion-glow: oklch(0.52 0.045 245 / 0.18);
+  --companion-wash: oklch(0.5 0.035 245 / 0.08);
+}
+
+.focus-progress[data-mode="short_break"] {
+  --companion-glow: oklch(0.72 0.06 75 / 0.2);
+  --companion-wash: oklch(0.78 0.05 70 / 0.09);
+}
+
+.focus-progress[data-mode="long_break"] {
+  --companion-glow: oklch(0.7 0.055 55 / 0.22);
+  --companion-wash: oklch(0.76 0.045 50 / 0.1);
 }
 
 .focus-progress-glow {
   pointer-events: none;
   position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.focus-progress-glow::before {
+  content: "";
+  position: absolute;
   left: 50%;
-  top: 38%;
-  width: min(22rem, 100%);
-  height: min(22rem, 100%);
+  top: 58%;
+  width: min(20rem, 95%);
+  height: min(20rem, 95%);
   translate: -50% -50%;
   border-radius: 9999px;
   background: radial-gradient(
     circle at center,
-    oklch(0.55 0.035 245 / 0.14) 0%,
+    var(--companion-glow) 0%,
     transparent 68%
   );
-  opacity: 0.85;
-  transition: opacity 700ms ease, transform 700ms ease;
+  opacity: 0.65;
+  transition:
+    opacity 700ms ease,
+    width 700ms ease,
+    height 700ms ease,
+    background 700ms ease;
 }
 
-.dark .focus-progress-glow {
+.dark .focus-progress-glow::before {
   background: radial-gradient(
     circle at center,
     oklch(0.42 0.045 245 / 0.26) 0%,
     transparent 68%
   );
+}
+
+.focus-progress[data-streak="mid"] .focus-progress-glow::before {
+  opacity: 0.95;
+}
+
+.focus-progress[data-streak="high"] .focus-progress-glow::before {
+  opacity: 1;
+  width: min(24rem, 105%);
+  height: min(24rem, 105%);
+}
+
+.focus-progress[data-live="true"] .focus-progress-glow::before {
+  animation: focus-progress-breathe 3.2s ease-in-out infinite;
+}
+
+.focus-progress[data-compact="true"] .focus-constellation-stage {
+  transform: scale(1.02);
+  transition: transform 500ms ease;
+}
+
+.focus-progress[data-compact="true"] .focus-progress-hero {
+  opacity: 0.95;
+}
+
+.focus-horizon-sun {
+  transition:
+    cx 700ms ease,
+    opacity 500ms ease;
+}
+
+.focus-progress[data-live="true"] .focus-horizon-sun {
+  animation: focus-horizon-sun 3s ease-in-out infinite;
+}
+
+@keyframes focus-horizon-sun {
+  0%,
+  100% {
+    opacity: 0.82;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.focus-constellation-comet {
+  animation: focus-comet-pulse 2.2s ease-in-out infinite;
+}
+
+@keyframes focus-comet-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.focus-constellation-meteor {
+  animation: focus-meteor-streak 1.1s ease-out forwards;
+}
+
+@keyframes focus-meteor-streak {
+  0% {
+    opacity: 0;
+    transform: translate(8px, 4px);
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(0, 0);
+  }
+}
+
+.focus-constellation-seal-flash {
+  animation: focus-seal-flash 1.2s ease-out forwards;
+  transform-origin: center;
+}
+
+@keyframes focus-seal-flash {
+  0% {
+    opacity: 0.5;
+    r: 18;
+  }
+  100% {
+    opacity: 0;
+    r: 32;
+  }
+}
+
+.focus-constellation-sky {
+  overflow: visible;
 }
 
 @keyframes focus-progress-breathe {
@@ -417,22 +538,8 @@
   }
 }
 
-@keyframes focus-progress-arc {
-  0%,
-  100% {
-    opacity: 0.78;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
-.focus-progress[data-live="true"] .focus-progress-glow {
-  animation: focus-progress-breathe 3.2s ease-in-out infinite;
-}
-
-.focus-progress[data-live="true"] .focus-progress-arc {
-  animation: focus-progress-arc 3.2s ease-in-out infinite;
+.focus-progress[data-sealed="true"] .focus-progress-hero {
+  animation: focus-progress-seal-bump 0.9s ease-out;
 }
 
 @keyframes focus-constellation-live {
@@ -454,4 +561,39 @@
   animation-delay: 0.35s;
 }
 
+@keyframes focus-progress-seal-bump {
+  0% {
+    opacity: 0.72;
+    transform: scale(0.96);
+  }
+  45% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes focus-constellation-seal-pop {
+  0% {
+    opacity: 0.35;
+    transform: scale(0.55);
+  }
+  55% {
+    opacity: 1;
+    transform: scale(1.28);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.focus-constellation-seal {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: focus-constellation-seal-pop 1.15s ease-out;
+}
 

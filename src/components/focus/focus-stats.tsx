@@ -10,9 +10,9 @@ import {
   FOCUS_DAILY_GOAL_DEFAULT,
   FOCUS_DAILY_GOAL_KEY,
   FOCUS_DAILY_GOAL_PRESETS,
-  formatFocusClock,
   formatFocusDuration,
   formatFocusMinutes,
+  type FocusTodayMark,
   type FocusOverviewStats,
 } from "@/types/focus";
 
@@ -20,39 +20,25 @@ type FocusStatsProps = {
   stats: FocusOverviewStats;
 };
 
-function yesterdayWhisper(todayMinutes: number, yesterdayMinutes: number) {
-  if (todayMinutes === 0 && yesterdayMinutes === 0) {
-    return "Even with yesterday · still early";
-  }
-  if (todayMinutes === 0 && yesterdayMinutes > 0) {
-    return `Yesterday held ${formatFocusMinutes(yesterdayMinutes)}`;
-  }
-  if (yesterdayMinutes === 0 && todayMinutes > 0) {
-    return "Ahead of a quiet yesterday";
-  }
+const ARC = { cx: 50, cy: 58, r: 36 };
 
-  const delta = todayMinutes - yesterdayMinutes;
-  if (delta === 0) return "Matched yesterday";
-  if (delta > 0) return `+${formatFocusMinutes(delta)} vs yesterday`;
-  return `${formatFocusMinutes(Math.abs(delta))} quieter than yesterday`;
+function arcPoint(t: number) {
+  const clamped = Math.min(1, Math.max(0, t));
+  const angle = Math.PI - clamped * Math.PI;
+  return {
+    x: ARC.cx + ARC.r * Math.cos(angle),
+    y: ARC.cy - ARC.r * Math.sin(angle),
+    t: clamped,
+  };
 }
 
-/** Map clock time onto a sky arc (dawn left → night right). */
 function constellationPoint(startedAt: string) {
   const date = new Date(startedAt);
   const hours = date.getHours() + date.getMinutes() / 60;
   const dayStart = 5;
   const dayEnd = 23;
   const t = Math.min(1, Math.max(0, (hours - dayStart) / (dayEnd - dayStart)));
-  const angle = Math.PI - t * Math.PI;
-  const cx = 50;
-  const cy = 58;
-  const r = 36;
-  return {
-    x: cx + r * Math.cos(angle),
-    y: cy - r * Math.sin(angle),
-    t,
-  };
+  return arcPoint(t);
 }
 
 function markRadius(minutes: number) {
@@ -69,33 +55,6 @@ function formatMarkTime(iso: string) {
   });
 }
 
-function nextHonestBlock({
-  remaining,
-  met,
-  blockMinutes,
-  todayMinutes,
-}: {
-  remaining: number;
-  met: boolean;
-  blockMinutes: number;
-  todayMinutes: number;
-}) {
-  const block = Math.max(1, blockMinutes);
-
-  if (met) {
-    return "Goal sealed · another block is bonus";
-  }
-  if (todayMinutes <= 0) {
-    return "Goal is open — begin when ready";
-  }
-  if (remaining <= block) {
-    return `One more ${formatFocusMinutes(block)} seals the goal`;
-  }
-
-  const blocks = Math.ceil(remaining / block);
-  return `${blocks} honest blocks to goal · begin when ready`;
-}
-
 function readGoalMinutes() {
   if (typeof window === "undefined") return FOCUS_DAILY_GOAL_DEFAULT;
   const raw = window.localStorage.getItem(FOCUS_DAILY_GOAL_KEY);
@@ -104,6 +63,354 @@ function readGoalMinutes() {
     return FOCUS_DAILY_GOAL_DEFAULT;
   }
   return Math.round(value);
+}
+
+function heroMotivator({
+  met,
+  goalRemainingSeconds,
+  focusMinutes,
+  yesterdayMinutes,
+  weekMinutes,
+  goalLabel,
+}: {
+  met: boolean;
+  goalRemainingSeconds: number;
+  focusMinutes: number;
+  yesterdayMinutes: number;
+  weekMinutes: number[];
+  goalLabel: string;
+}) {
+  if (met) {
+    return { headline: "Goal sealed", sub: "Room for more if you want it" };
+  }
+  if (focusMinutes === 0) {
+    return { headline: goalLabel, sub: "ahead today" };
+  }
+  const weekBest = Math.max(0, ...weekMinutes);
+  if (weekBest > 0 && focusMinutes >= weekBest) {
+    return { headline: "Best day", sub: "this week so far" };
+  }
+  if (yesterdayMinutes > 0 && focusMinutes < yesterdayMinutes) {
+    const gap = yesterdayMinutes - focusMinutes;
+    return {
+      headline: formatFocusMinutes(Math.max(1, gap)),
+      sub: "to beat yesterday",
+    };
+  }
+  return {
+    headline: formatFocusDuration(goalRemainingSeconds),
+    sub: "to goal",
+  };
+}
+
+function smartWhisper({
+  marks,
+  focusMinutes,
+  goalMinutes,
+  yesterdayMinutes,
+  blockMinutes,
+  met,
+  goalLabel,
+}: {
+  marks: FocusTodayMark[];
+  focusMinutes: number;
+  goalMinutes: number;
+  yesterdayMinutes: number;
+  blockMinutes: number;
+  met: boolean;
+  goalLabel: string;
+}) {
+  if (met) return "Another honest block is pure bonus";
+  if (marks.length >= 2) {
+    return `${marks.length} stars lit · pacing toward ${goalLabel}`;
+  }
+  if (
+    yesterdayMinutes > 0 &&
+    focusMinutes > 0 &&
+    focusMinutes + blockMinutes > yesterdayMinutes
+  ) {
+    return `One more ${formatFocusMinutes(blockMinutes)} beats yesterday`;
+  }
+  if (focusMinutes === 0) return "First star is one session away";
+  const remaining = Math.max(0, goalMinutes - focusMinutes);
+  if (remaining <= blockMinutes) {
+    return `One ${formatFocusMinutes(blockMinutes)} block seals the goal`;
+  }
+  return `${Math.ceil(remaining / blockMinutes)} blocks stand between you and ${goalLabel}`;
+}
+
+function weekDayInitial(dateStr: string) {
+  return new Date(dateStr + "T12:00:00").toLocaleDateString("en-US", {
+    weekday: "narrow",
+  });
+}
+
+function isToday(dateStr: string) {
+  return dateStr === toDateString(new Date());
+}
+
+function streakTier(streak: number) {
+  if (streak >= 7) return "high";
+  if (streak >= 3) return "mid";
+  return "low";
+}
+
+function ConstellationSky({
+  marks,
+  liveMark,
+  sealMark,
+  liveFocus,
+  ready,
+  sealPulse,
+}: {
+  marks: FocusTodayMark[];
+  liveMark: {
+    point: { x: number; y: number; t: number };
+    radius: number;
+    title: string;
+  } | null;
+  sealMark: {
+    point: { x: number; y: number };
+    radius: number;
+    title: string;
+  } | null;
+  liveFocus: boolean;
+  ready: boolean;
+  sealPulse: boolean;
+}) {
+  const sorted = [...marks].sort(
+    (a, b) =>
+      new Date(a.started_at).getTime() - new Date(b.started_at).getTime(),
+  );
+
+  return (
+    <svg
+      viewBox="0 0 100 80"
+      className="focus-constellation-sky h-auto w-full"
+      aria-label="Today's focus sessions by time of day"
+    >
+      <defs>
+        <linearGradient id="focus-comet-tail" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="currentColor" stopOpacity="0" />
+          <stop offset="100%" stopColor="currentColor" stopOpacity="0.55" />
+        </linearGradient>
+      </defs>
+
+      <path
+        d="M 14 58 A 36 36 0 0 1 86 58"
+        fill="none"
+        className="stroke-border/50"
+        strokeWidth="0.75"
+        strokeDasharray="1.2 2.2"
+      />
+
+      {sorted.length >= 2
+        ? sorted.slice(0, -1).map((mark, i) => {
+            const a = constellationPoint(mark.started_at);
+            const b = constellationPoint(sorted[i + 1]!.started_at);
+            return (
+              <line
+                key={`${mark.started_at}-link`}
+                x1={a.x}
+                y1={a.y}
+                x2={b.x}
+                y2={b.y}
+                className="stroke-foreground/15"
+                strokeWidth="0.45"
+              />
+            );
+          })
+        : null}
+
+      <text x="12" y="72" className="fill-muted-foreground" fontSize="3.2">
+        Dawn
+      </text>
+      <text
+        x="50"
+        y="72"
+        className="fill-muted-foreground"
+        fontSize="3.2"
+        textAnchor="middle"
+      >
+        Noon
+      </text>
+      <text
+        x="88"
+        y="72"
+        className="fill-muted-foreground"
+        fontSize="3.2"
+        textAnchor="end"
+      >
+        Night
+      </text>
+
+      {marks.length === 0 && !liveFocus ? (
+        <circle cx="50" cy="42" r="0.9" className="fill-muted-foreground/30" />
+      ) : null}
+
+      {sorted.map((mark) => {
+        const point = constellationPoint(mark.started_at);
+        const r = markRadius(mark.minutes);
+        return (
+          <g key={mark.started_at + mark.minutes}>
+            <title>
+              {ready
+                ? `${formatMarkTime(mark.started_at)} · ${formatFocusMinutes(mark.minutes)}`
+                : formatFocusMinutes(mark.minutes)}
+            </title>
+            <circle
+              cx={point.x}
+              cy={point.y}
+              r={r}
+              className="fill-foreground/90"
+            />
+          </g>
+        );
+      })}
+
+      {liveMark ? (
+        <g className="focus-constellation-live text-foreground">
+          <title>{liveMark.title}</title>
+          {(() => {
+            const tail = arcPoint(Math.max(0, liveMark.point.t - 0.1));
+            return (
+              <line
+                x1={tail.x}
+                y1={tail.y}
+                x2={liveMark.point.x}
+                y2={liveMark.point.y}
+                stroke="url(#focus-comet-tail)"
+                strokeWidth="1.1"
+                strokeLinecap="round"
+                className="focus-constellation-comet"
+              />
+            );
+          })()}
+          <circle
+            cx={liveMark.point.x}
+            cy={liveMark.point.y}
+            r={liveMark.radius + 2.6}
+            className="focus-constellation-live-halo fill-foreground/10"
+          />
+          <circle
+            cx={liveMark.point.x}
+            cy={liveMark.point.y}
+            r={liveMark.radius + 1.2}
+            className="focus-constellation-live-glow fill-foreground/25"
+          />
+          <circle
+            cx={liveMark.point.x}
+            cy={liveMark.point.y}
+            r={liveMark.radius}
+            className="fill-foreground"
+          />
+        </g>
+      ) : null}
+
+      {sealMark ? (
+        <g
+          className="focus-constellation-seal text-foreground"
+          transform={`translate(${sealMark.point.x} ${sealMark.point.y})`}
+        >
+          <title>{sealMark.title}</title>
+          <line
+            x1="-14"
+            y1="-6"
+            x2="0"
+            y2="0"
+            className="focus-constellation-meteor stroke-foreground/70"
+            strokeWidth="0.65"
+            strokeLinecap="round"
+          />
+          <circle cx={0} cy={0} r={sealMark.radius + 2.6} className="fill-foreground/15" />
+          <circle cx={0} cy={0} r={sealMark.radius + 1.2} className="fill-foreground/30" />
+          <circle
+            cx={0}
+            cy={0}
+            r={sealMark.radius}
+            className="focus-constellation-seal-core fill-foreground"
+          />
+        </g>
+      ) : null}
+
+      {sealPulse ? (
+        <circle
+          cx="50"
+          cy="42"
+          r="28"
+          fill="none"
+          className="focus-constellation-seal-flash stroke-foreground/20"
+          strokeWidth="0.5"
+        />
+      ) : null}
+    </svg>
+  );
+}
+
+function HorizonTrack({
+  progress,
+  ready,
+  todayLabel,
+  goalLabel,
+  compact,
+}: {
+  progress: number;
+  ready: boolean;
+  todayLabel: string;
+  goalLabel: string;
+  compact: boolean;
+}) {
+  const sunX = 8 + (progress / 100) * 84;
+
+  return (
+    <div className={cn("focus-horizon space-y-2", compact && "opacity-90")}>
+      {!compact ? (
+        <div className="flex items-baseline justify-between gap-3 text-xs tabular-nums text-muted-foreground">
+          <span>{todayLabel}</span>
+          <span>{goalLabel}</span>
+        </div>
+      ) : null}
+      <svg viewBox="0 0 100 22" className="h-6 w-full" aria-hidden>
+        <defs>
+          <linearGradient id="focus-horizon-grad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="oklch(0.78 0.11 65 / 0.55)" />
+            <stop offset="48%" stopColor="oklch(0.68 0.07 245 / 0.5)" />
+            <stop offset="100%" stopColor="oklch(0.62 0.09 295 / 0.55)" />
+          </linearGradient>
+        </defs>
+        <rect
+          x="4"
+          y="14"
+          width="92"
+          height="2.5"
+          rx="1.25"
+          fill="url(#focus-horizon-grad)"
+          opacity="0.65"
+        />
+        {ready && progress > 0 ? (
+          <>
+            <circle
+              cx={sunX}
+              cy="11"
+              r="4.5"
+              className="fill-foreground/12"
+            />
+            <circle
+              cx={sunX}
+              cy="11"
+              r="2.6"
+              className="focus-horizon-sun fill-foreground"
+            />
+          </>
+        ) : null}
+      </svg>
+      {!compact ? (
+        <p className="text-center text-[11px] tabular-nums text-muted-foreground lg:text-left">
+          {Math.round(progress)}% across today&apos;s horizon
+        </p>
+      ) : null}
+    </div>
+  );
 }
 
 export function FocusStats({ stats }: FocusStatsProps) {
@@ -119,6 +426,8 @@ export function FocusStats({ stats }: FocusStatsProps) {
     void s.tickMs;
     return s.liveElapsedSeconds();
   });
+  const sealPulse = useFocusTimer((s) => s.sealPulse);
+  const clearSealPulse = useFocusTimer((s) => s.clearSealPulse);
   const [goalMinutes, setGoalMinutes] = useState(FOCUS_DAILY_GOAL_DEFAULT);
   const [ready, setReady] = useState(false);
   const [goalOpen, setGoalOpen] = useState(false);
@@ -127,6 +436,25 @@ export function FocusStats({ stats }: FocusStatsProps) {
     setGoalMinutes(readGoalMinutes());
     setReady(true);
   }, []);
+
+  useEffect(() => {
+    if (!sealPulse) return;
+    const id = window.setTimeout(() => clearSealPulse(), 3200);
+    return () => window.clearTimeout(id);
+  }, [sealPulse, clearSealPulse]);
+
+  useEffect(() => {
+    if (!sealPulse) return;
+    const inStats =
+      stats.today_marks?.some(
+        (mark) =>
+          Math.abs(
+            new Date(mark.started_at).getTime() -
+              new Date(sealPulse.startedAt).getTime(),
+          ) < 10_000,
+      ) ?? false;
+    if (inStats) clearSealPulse();
+  }, [sealPulse, stats.today_marks, clearSealPulse]);
 
   function updateGoal(minutes: number) {
     setGoalMinutes(minutes);
@@ -140,13 +468,26 @@ export function FocusStats({ stats }: FocusStatsProps) {
     mode === "focus" &&
     durationSeconds > remainingSeconds;
   const liveFocus = stopwatchLive || countdownLive;
-  const stopwatchSession = stopwatchLive;
+  const compact = liveFocus && isRunning;
   const liveSessionSeconds = liveFocus
     ? clock === "up"
       ? liveElapsedSeconds
       : Math.max(0, durationSeconds - remainingSeconds)
     : 0;
-  const todayTotalSeconds = stats.focus_minutes * 60 + liveSessionSeconds;
+  const marks = stats.today_marks ?? [];
+  const sealAlreadyInStats =
+    sealPulse &&
+    marks.some(
+      (mark) =>
+        Math.abs(
+          new Date(mark.started_at).getTime() -
+            new Date(sealPulse.startedAt).getTime(),
+        ) < 10_000,
+    );
+  const optimisticSealSeconds =
+    sealPulse && !sealAlreadyInStats ? sealPulse.seconds : 0;
+  const todayTotalSeconds =
+    stats.focus_minutes * 60 + liveSessionSeconds + optimisticSealSeconds;
   const goalTotalSeconds = goalMinutes * 60;
   const focusMinutes = Math.floor(todayTotalSeconds / 60);
 
@@ -154,57 +495,60 @@ export function FocusStats({ stats }: FocusStatsProps) {
     100,
     (todayTotalSeconds / Math.max(goalTotalSeconds, 1)) * 100,
   );
+  const met = todayTotalSeconds >= goalTotalSeconds;
   const goalRemainingSeconds = Math.max(
     0,
     goalTotalSeconds - todayTotalSeconds,
   );
-  const met = todayTotalSeconds >= goalTotalSeconds;
   const blockMinutes = Math.max(1, Math.round(lastFocusSeconds / 60));
-  const honestBlock = ready
-    ? stopwatchSession
-      ? isRunning
-        ? "Open focus · R seals when done"
-        : "Paused · R to seal this session"
-      : liveFocus
-        ? !isRunning && stopwatchLive
-          ? "Paused · seal to save this block"
-          : goalRemainingSeconds <= 0
-            ? "Sealing the goal · stay with it"
-            : `${formatFocusDuration(goalRemainingSeconds)} still open · keep going`
-        : nextHonestBlock({
-            remaining: Math.ceil(goalRemainingSeconds / 60),
-            met,
-            blockMinutes,
-            todayMinutes: focusMinutes,
-          })
-    : null;
+
   const yesterdayDate = new Date();
   yesterdayDate.setDate(yesterdayDate.getDate() - 1);
   const yesterdayKey = toDateString(yesterdayDate);
   const yesterdayMinutes =
     stats.week.find((day) => day.date === yesterdayKey)?.minutes ?? 0;
-  const vsYesterday = yesterdayWhisper(focusMinutes, yesterdayMinutes);
-  const marks = stats.today_marks ?? [];
+
+  const todayTotalLabel = formatFocusDuration(todayTotalSeconds);
+  const goalLabel = formatFocusMinutes(goalMinutes);
+  const whisper = ready
+    ? smartWhisper({
+        marks,
+        focusMinutes,
+        goalMinutes,
+        yesterdayMinutes,
+        blockMinutes,
+        met,
+        goalLabel,
+      })
+    : null;
+  const motivator = ready
+    ? heroMotivator({
+        met,
+        goalRemainingSeconds,
+        focusMinutes,
+        yesterdayMinutes,
+        weekMinutes: stats.week.map((d) => d.minutes),
+        goalLabel,
+      })
+    : null;
+
   const liveMarkIso =
     liveFocus && stopwatchLive && sessionStartedAt
       ? new Date(sessionStartedAt).toISOString()
       : liveFocus && countdownLive && endsAt
         ? new Date(endsAt - durationSeconds * 1000).toISOString()
         : null;
-  const constellationLitLabel =
-    marks.length === 0 && !liveFocus
+
+  const constellationLitLabel = sealPulse
+    ? "Star sealed"
+    : marks.length === 0 && !liveFocus
       ? "Clear sky"
       : liveFocus
         ? marks.length === 0
           ? "Star forming"
           : `${marks.length} lit · live`
         : `${marks.length} lit`;
-  const constellationFooterLabel =
-    marks.length === 0 && !liveFocus
-      ? "Plot the first star"
-      : liveFocus
-        ? "Day taking shape · live"
-        : "Day taking shape";
+
   const liveMark = liveMarkIso
     ? {
         point: constellationPoint(liveMarkIso),
@@ -217,323 +561,201 @@ export function FocusStats({ stats }: FocusStatsProps) {
       }
     : null;
 
-  const ringRadius = 42;
-  const ringCircumference = 2 * Math.PI * ringRadius;
-  const ringOffset = ringCircumference * (1 - (ready ? progress : 0) / 100);
+  const sealMark =
+    sealPulse && !sealAlreadyInStats
+      ? {
+          point: constellationPoint(sealPulse.startedAt),
+          radius: markRadius(
+            Math.max(1, Math.round(sealPulse.seconds / 60)),
+          ),
+          title: ready
+            ? `${formatMarkTime(sealPulse.startedAt)} · ${formatFocusDuration(sealPulse.seconds)} · sealed`
+            : "Session sealed",
+        }
+      : null;
 
   const weekday = ready
     ? new Date().toLocaleDateString("en-US", { weekday: "long" })
     : null;
 
-  const todayTotalLabel = formatFocusDuration(todayTotalSeconds);
-  const goalLabel = formatFocusMinutes(goalMinutes);
-  const remainingLabel = formatFocusDuration(goalRemainingSeconds);
+  const weekMaxMinutes = Math.max(1, ...stats.week.map((d) => d.minutes));
 
   return (
     <section
       data-live={liveFocus ? "true" : "false"}
-      data-stopwatch={stopwatchSession ? "true" : "false"}
-      className="focus-progress relative flex min-h-[34rem] flex-col overflow-hidden sm:min-h-[40rem]"
+      data-compact={compact ? "true" : "false"}
+      data-sealed={sealPulse ? "true" : "false"}
+      data-mode={mode}
+      data-streak={streakTier(stats.current_streak)}
+      className="focus-progress focus-companion relative flex min-h-0 flex-col lg:min-h-[30rem]"
     >
       <div className="focus-progress-glow" aria-hidden />
 
-      <div className="relative z-[1] flex flex-1 flex-col">
+      <div className="relative z-[1] flex flex-1 flex-col gap-6">
         <div className="text-center lg:text-left">
-          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-            {stopwatchSession ? "Open session" : "Today"}
+          <p className="text-xs font-medium tracking-wide text-muted-foreground">
+            Your sky
           </p>
           <p className="mt-1.5 text-sm text-muted-foreground">
-            {stopwatchSession
+            {liveFocus
               ? isRunning
-                ? "Counting up"
-                : "Paused"
-              : liveFocus
-                ? isRunning
-                  ? "Session live"
-                  : "Session paused"
-                : (weekday ?? "Today")}
+                ? "Session in flight"
+                : "Session paused"
+              : (weekday ?? "Today")}
           </p>
         </div>
 
-        <div className="flex flex-1 flex-col items-center justify-center py-8">
-          <div className="relative flex size-[13.5rem] items-center justify-center sm:size-[15rem]">
-            <svg
-              className="focus-progress-ring absolute inset-0 size-full -rotate-90"
-              viewBox="0 0 100 100"
-              aria-hidden
-            >
-              <circle
-                cx="50"
-                cy="50"
-                r={ringRadius}
-                fill="none"
-                className="stroke-muted/45"
-                strokeWidth="1"
-              />
-              <circle
-                cx="50"
-                cy="50"
-                r={ringRadius}
-                fill="none"
-                className="stroke-muted/70"
-                strokeWidth="2.5"
-                strokeDasharray="1.1 2.2"
-                opacity={0.35}
-              />
-              <circle
-                cx="50"
-                cy="50"
-                r={ringRadius}
-                fill="none"
-                className={cn(
-                  "focus-progress-arc stroke-foreground ease-out",
-                  stopwatchSession
-                    ? "opacity-40 transition-[stroke-dashoffset] duration-500"
-                    : "transition-[stroke-dashoffset] duration-700",
-                )}
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeDasharray={ringCircumference}
-                strokeDashoffset={ringOffset}
-              />
-            </svg>
-
-            <div
-              className="relative px-4 text-center"
-              role="progressbar"
-              aria-valuemin={0}
-              aria-valuemax={goalTotalSeconds}
-              aria-valuenow={Math.min(todayTotalSeconds, goalTotalSeconds)}
-              aria-label={
-                stopwatchSession
-                  ? "Daily focus goal progress with open session"
-                  : "Daily focus goal progress"
-              }
-            >
-              {stopwatchSession ? (
-                <>
-                  <p
-                    className={cn(
-                      "focus-clock text-foreground",
-                      liveElapsedSeconds >= 3600
-                        ? "text-[2rem] sm:text-[2.35rem]"
-                        : "text-[2.35rem] sm:text-[2.75rem]",
-                    )}
-                  >
-                    {formatFocusClock(liveElapsedSeconds)}
-                  </p>
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    {todayTotalLabel} today · {goalLabel} goal
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p className="focus-clock text-[2.35rem] text-foreground sm:text-[2.75rem]">
-                    {todayTotalLabel}
-                  </p>
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    {liveFocus
-                      ? isRunning
-                        ? "Session live"
-                        : "Session paused"
-                      : stats.sessions === 0
-                        ? "No sessions yet"
-                        : `${stats.sessions} session${stats.sessions === 1 ? "" : "s"}`}
-                  </p>
-                </>
-              )}
-            </div>
+        <div className="focus-constellation-stage mx-auto w-full max-w-[22rem]">
+          <div className="mb-2 flex items-baseline justify-between gap-3">
+            <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+              Constellation
+            </p>
+            <p className="text-xs tabular-nums text-muted-foreground">
+              {constellationLitLabel}
+            </p>
           </div>
-
-          {!stopwatchSession ? (
-            <p className="mt-5 max-w-[16rem] text-center text-sm text-muted-foreground">
-              {vsYesterday}
-            </p>
-          ) : null}
-
-          <div className="mt-4 max-w-[16rem] text-center">
-            <p className="text-sm text-foreground/85">
-              {honestBlock ?? "Loading goal…"}
-            </p>
-            <p className="mt-1.5 text-xs tabular-nums text-muted-foreground">
-              {ready ? (
-                met ? (
-                  <>
-                    {todayTotalLabel} / {goalLabel}
-                  </>
-                ) : (
-                  <>
-                    {remainingLabel} left · {goalLabel} goal
-                  </>
-                )
-              ) : null}
-            </p>
-            <button
-              type="button"
-              onClick={() => setGoalOpen((value) => !value)}
-              className="mt-2 inline-flex items-center gap-1 text-xs text-muted-foreground/80 transition-colors hover:text-foreground"
-              aria-expanded={goalOpen}
-            >
-              Change goal
-              <ChevronDown
-                className={cn(
-                  "size-3.5 transition-transform duration-200",
-                  goalOpen && "rotate-180",
-                )}
-              />
-            </button>
-
-            {goalOpen ? (
-              <div className="mt-3 flex flex-wrap justify-center gap-1.5">
-                {FOCUS_DAILY_GOAL_PRESETS.map((preset) => {
-                  const active = goalMinutes === preset.minutes;
-                  return (
-                    <button
-                      key={preset.minutes}
-                      type="button"
-                      onClick={() => updateGoal(preset.minutes)}
-                      className={cn(
-                        "rounded-full px-2.5 py-1 text-[11px] tabular-nums transition-colors",
-                        active
-                          ? "bg-foreground text-background"
-                          : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
-                      )}
-                    >
-                      {preset.label}
-                    </button>
-                  );
-                })}
-              </div>
-            ) : null}
-          </div>
+          <ConstellationSky
+            marks={marks}
+            liveMark={liveMark}
+            sealMark={sealMark}
+            liveFocus={liveFocus}
+            ready={ready}
+            sealPulse={Boolean(sealPulse)}
+          />
         </div>
 
-        <div className="mt-auto space-y-4">
-          <div>
-            <div className="mb-2 flex items-baseline justify-between gap-3">
-              <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-                Constellation
-              </p>
-              <p className="text-xs tabular-nums text-muted-foreground">
-                {constellationLitLabel}
-              </p>
-            </div>
+        <div
+          className={cn(
+            "focus-progress-hero space-y-4 transition-all duration-500",
+            compact && "space-y-2",
+          )}
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={goalTotalSeconds}
+          aria-valuenow={Math.min(todayTotalSeconds, goalTotalSeconds)}
+          aria-label="Daily focus goal progress"
+        >
+          <HorizonTrack
+            progress={ready ? progress : 0}
+            ready={ready}
+            todayLabel={todayTotalLabel}
+            goalLabel={goalLabel}
+            compact={compact}
+          />
 
-            <div
-              className="relative mx-auto w-full max-w-[17rem]"
-              aria-label="Today's focus sessions by time of day"
-            >
-              <svg viewBox="0 0 100 72" className="h-auto w-full">
-                <path
-                  d="M 14 58 A 36 36 0 0 1 86 58"
-                  fill="none"
-                  className="stroke-border/60"
-                  strokeWidth="0.7"
-                  strokeDasharray="1.2 1.8"
-                />
-                <text
-                  x="12"
-                  y="68"
-                  className="fill-muted-foreground"
-                  fontSize="3.2"
-                >
-                  Dawn
-                </text>
-                <text
-                  x="44"
-                  y="68"
-                  className="fill-muted-foreground"
-                  fontSize="3.2"
-                  textAnchor="middle"
-                >
-                  Noon
-                </text>
-                <text
-                  x="88"
-                  y="68"
-                  className="fill-muted-foreground"
-                  fontSize="3.2"
-                  textAnchor="end"
-                >
-                  Night
-                </text>
+          {!compact ? (
+            <>
+              {motivator ? (
+                <div className="text-center lg:text-left">
+                  <p className="text-[2rem] font-medium leading-none tracking-tight text-foreground sm:text-[2.35rem]">
+                    {motivator.headline}
+                  </p>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {motivator.sub}
+                  </p>
+                </div>
+              ) : null}
 
-                {marks.length === 0 && !liveFocus ? (
-                  <circle
-                    cx="50"
-                    cy="40"
-                    r="0.9"
-                    className="fill-muted-foreground/35"
+              {whisper ? (
+                <p className="text-center text-sm text-foreground/85 lg:text-left">
+                  {whisper}
+                </p>
+              ) : null}
+
+              <div className="text-center lg:text-left">
+                <button
+                  type="button"
+                  onClick={() => setGoalOpen((value) => !value)}
+                  className="inline-flex items-center gap-1 text-xs text-muted-foreground/80 transition-colors hover:text-foreground"
+                  aria-expanded={goalOpen}
+                >
+                  Goal · {goalLabel}
+                  <ChevronDown
+                    className={cn(
+                      "size-3.5 transition-transform duration-200",
+                      goalOpen && "rotate-180",
+                    )}
                   />
+                </button>
+                {goalOpen ? (
+                  <div className="mt-3 flex flex-wrap justify-center gap-1.5 lg:justify-start">
+                    {FOCUS_DAILY_GOAL_PRESETS.map((preset) => {
+                      const active = goalMinutes === preset.minutes;
+                      return (
+                        <button
+                          key={preset.minutes}
+                          type="button"
+                          onClick={() => updateGoal(preset.minutes)}
+                          className={cn(
+                            "rounded-full px-2.5 py-1 text-[11px] tabular-nums transition-colors",
+                            active
+                              ? "bg-foreground text-background"
+                              : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                          )}
+                        >
+                          {preset.label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 ) : null}
+              </div>
 
-                {marks.map((mark) => {
-                  const point = constellationPoint(mark.started_at);
-                  const r = markRadius(mark.minutes);
-                  return (
-                    <g key={mark.started_at + mark.minutes}>
-                      <title>
-                        {ready
-                          ? `${formatMarkTime(mark.started_at)} · ${formatFocusMinutes(mark.minutes)}`
-                          : formatFocusMinutes(mark.minutes)}
-                      </title>
-                      <circle
-                        cx={point.x}
-                        cy={point.y}
-                        r={r + 1.1}
-                        className="fill-foreground/10"
-                      />
-                      <circle
-                        cx={point.x}
-                        cy={point.y}
-                        r={r}
-                        className="fill-foreground"
-                      />
-                    </g>
-                  );
-                })}
+              <div>
+                <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                  This week
+                </p>
+                <div className="flex items-end gap-1.5">
+                  {stats.week.map((day) => {
+                    const height = Math.max(
+                      8,
+                      Math.round((day.minutes / weekMaxMinutes) * 100),
+                    );
+                    const today = isToday(day.date);
+                    return (
+                      <div
+                        key={day.date}
+                        className="flex min-w-0 flex-1 flex-col items-center gap-1.5"
+                        title={`${formatFocusMinutes(day.minutes)} focused`}
+                      >
+                        <div className="flex h-10 w-full items-end rounded-md bg-muted/35 px-0.5 pb-0.5">
+                          <div
+                            className={cn(
+                              "w-full rounded-sm bg-foreground/75 transition-all duration-500",
+                              today && "bg-foreground",
+                              liveFocus && today && "opacity-90",
+                            )}
+                            style={{ height: `${height}%` }}
+                          />
+                        </div>
+                        <span
+                          className={cn(
+                            "text-[10px] tabular-nums text-muted-foreground",
+                            today && "font-medium text-foreground",
+                          )}
+                        >
+                          {weekDayInitial(day.date)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
+          ) : null}
+        </div>
 
-                {liveMark ? (
-                  <g className="focus-constellation-live">
-                    <title>{liveMark.title}</title>
-                    <circle
-                      cx={liveMark.point.x}
-                      cy={liveMark.point.y}
-                      r={liveMark.radius + 2.2}
-                      className="focus-constellation-live-halo fill-foreground/10"
-                    />
-                    <circle
-                      cx={liveMark.point.x}
-                      cy={liveMark.point.y}
-                      r={liveMark.radius + 1.1}
-                      className="focus-constellation-live-glow fill-foreground/20"
-                    />
-                    <circle
-                      cx={liveMark.point.x}
-                      cy={liveMark.point.y}
-                      r={liveMark.radius}
-                      className="fill-foreground"
-                    />
-                  </g>
-                ) : null}
-              </svg>
-            </div>
-          </div>
-
-          <div className="flex items-baseline justify-between gap-3 text-xs text-muted-foreground">
-            <span>
-              Streak{" "}
-              <span className="tabular-nums text-foreground">
-                {stats.current_streak}d
-              </span>
-              {stats.longest_streak > 0
-                ? ` · best ${stats.longest_streak}d`
-                : ""}
+        <div className="mt-auto flex items-baseline justify-between gap-3 border-t border-border/40 pt-4 text-xs text-muted-foreground">
+          <span>
+            Streak{" "}
+            <span className="tabular-nums text-foreground">
+              {stats.current_streak}d
             </span>
-            <span className="tabular-nums">
-              {constellationFooterLabel}
-            </span>
-          </div>
+            {stats.longest_streak > 0 ? ` · best ${stats.longest_streak}d` : ""}
+          </span>
+          <span className="tabular-nums">
+            {liveFocus ? "Sky live" : "Day taking shape"}
+          </span>
         </div>
       </div>
     </section>
