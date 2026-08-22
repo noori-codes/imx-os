@@ -140,10 +140,9 @@ function smartWhisper({
   return `${Math.ceil(remaining / blockMinutes)} blocks stand between you and ${goalLabel}`;
 }
 
-function weekDayInitial(dateStr: string) {
-  return new Date(dateStr + "T12:00:00").toLocaleDateString("en-US", {
-    weekday: "narrow",
-  });
+function weekDayLabel(dateStr: string) {
+  const labels = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"] as const;
+  return labels[new Date(`${dateStr}T12:00:00`).getDay()];
 }
 
 function isToday(dateStr: string) {
@@ -162,7 +161,6 @@ function ConstellationSky({
   sealMark,
   liveFocus,
   ready,
-  sealPulse,
 }: {
   marks: FocusTodayMark[];
   liveMark: {
@@ -177,7 +175,6 @@ function ConstellationSky({
   } | null;
   liveFocus: boolean;
   ready: boolean;
-  sealPulse: boolean;
 }) {
   const sorted = [...marks].sort(
     (a, b) =>
@@ -190,13 +187,6 @@ function ConstellationSky({
       className="focus-constellation-sky h-auto w-full"
       aria-label="Today's focus sessions by time of day"
     >
-      <defs>
-        <linearGradient id="focus-comet-tail" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="currentColor" stopOpacity="0" />
-          <stop offset="100%" stopColor="currentColor" stopOpacity="0.55" />
-        </linearGradient>
-      </defs>
-
       <path
         d="M 14 58 A 36 36 0 0 1 86 58"
         fill="none"
@@ -272,32 +262,11 @@ function ConstellationSky({
       {liveMark ? (
         <g className="focus-constellation-live text-foreground">
           <title>{liveMark.title}</title>
-          {(() => {
-            const tail = arcPoint(Math.max(0, liveMark.point.t - 0.1));
-            return (
-              <line
-                x1={tail.x}
-                y1={tail.y}
-                x2={liveMark.point.x}
-                y2={liveMark.point.y}
-                stroke="url(#focus-comet-tail)"
-                strokeWidth="1.1"
-                strokeLinecap="round"
-                className="focus-constellation-comet"
-              />
-            );
-          })()}
           <circle
             cx={liveMark.point.x}
             cy={liveMark.point.y}
-            r={liveMark.radius + 2.6}
+            r={liveMark.radius + 1.1}
             className="focus-constellation-live-halo fill-foreground/10"
-          />
-          <circle
-            cx={liveMark.point.x}
-            cy={liveMark.point.y}
-            r={liveMark.radius + 1.2}
-            className="focus-constellation-live-glow fill-foreground/25"
           />
           <circle
             cx={liveMark.point.x}
@@ -314,17 +283,7 @@ function ConstellationSky({
           transform={`translate(${sealMark.point.x} ${sealMark.point.y})`}
         >
           <title>{sealMark.title}</title>
-          <line
-            x1="-14"
-            y1="-6"
-            x2="0"
-            y2="0"
-            className="focus-constellation-meteor stroke-foreground/70"
-            strokeWidth="0.65"
-            strokeLinecap="round"
-          />
-          <circle cx={0} cy={0} r={sealMark.radius + 2.6} className="fill-foreground/15" />
-          <circle cx={0} cy={0} r={sealMark.radius + 1.2} className="fill-foreground/30" />
+          <circle cx={0} cy={0} r={sealMark.radius + 1.1} className="fill-foreground/12" />
           <circle
             cx={0}
             cy={0}
@@ -332,17 +291,6 @@ function ConstellationSky({
             className="focus-constellation-seal-core fill-foreground"
           />
         </g>
-      ) : null}
-
-      {sealPulse ? (
-        <circle
-          cx="50"
-          cy="42"
-          r="28"
-          fill="none"
-          className="focus-constellation-seal-flash stroke-foreground/20"
-          strokeWidth="0.5"
-        />
       ) : null}
     </svg>
   );
@@ -586,7 +534,16 @@ export function FocusStats({ stats }: FocusStatsProps) {
     ? new Date().toLocaleDateString("en-US", { weekday: "long" })
     : null;
 
-  const weekMaxMinutes = Math.max(1, ...stats.week.map((d) => d.minutes));
+  const todayDisplayMinutes = Math.floor(todayTotalSeconds / 60);
+  const weekDays = stats.week.map((day) => ({
+    ...day,
+    minutes: isToday(day.date) ? todayDisplayMinutes : day.minutes,
+  }));
+
+  const weekMaxMinutes = Math.max(
+    1,
+    ...weekDays.map((d) => d.minutes),
+  );
 
   return (
     <section
@@ -596,46 +553,42 @@ export function FocusStats({ stats }: FocusStatsProps) {
       data-sealed={sealPulse ? "true" : "false"}
       data-mode={mode}
       data-streak={streakTier(stats.current_streak)}
-      className="focus-progress focus-companion relative flex min-h-0 flex-col lg:min-h-[30rem]"
+      className="focus-progress focus-companion relative flex min-h-0 w-full flex-col lg:min-h-[30rem]"
     >
-      <div className="focus-progress-glow" aria-hidden />
-
-      <div className="relative z-[1] flex flex-1 flex-col gap-6">
+      <div className="relative z-[1] flex flex-1 flex-col gap-5">
         <div className="text-center lg:text-left">
           <p className="text-xs font-medium tracking-wide text-muted-foreground">
             Your sky
           </p>
-          <p className="mt-1.5 text-sm text-muted-foreground">
-            {liveFocus
-              ? "Session in flight"
-              : sessionActive && !isRunning
-                ? "Session paused"
-                : (weekday ?? "Today")}
+          <p className="mt-1.5 flex items-baseline justify-center gap-2 text-sm text-muted-foreground lg:justify-start">
+            <span>
+              {liveFocus
+                ? "Session in flight"
+                : sessionActive && !isRunning
+                  ? "Session paused"
+                  : (weekday ?? "Today")}
+            </span>
+            {marks.length > 0 || liveFocus ? (
+              <span className="text-xs tabular-nums text-muted-foreground/70">
+                · {constellationLitLabel}
+              </span>
+            ) : null}
           </p>
         </div>
 
-        <div className="focus-constellation-stage mx-auto w-full max-w-[22rem]">
-          <div className="mb-2 flex items-baseline justify-between gap-3">
-            <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-              Constellation
-            </p>
-            <p className="text-xs tabular-nums text-muted-foreground">
-              {constellationLitLabel}
-            </p>
-          </div>
+        <div className="focus-constellation-stage w-full">
           <ConstellationSky
             marks={marks}
             liveMark={liveMark}
             sealMark={sealMark}
             liveFocus={liveFocus}
             ready={ready}
-            sealPulse={Boolean(sealPulse)}
           />
         </div>
 
         <div
           className={cn(
-            "focus-progress-hero space-y-4 transition-all duration-500",
+            "focus-progress-hero relative space-y-4 transition-all duration-500",
             compact && "space-y-2",
           )}
           role="progressbar"
@@ -644,6 +597,7 @@ export function FocusStats({ stats }: FocusStatsProps) {
           aria-valuenow={Math.min(todayTotalSeconds, goalTotalSeconds)}
           aria-label="Daily focus goal progress"
         >
+          <div className="focus-progress-glow pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden />
           <HorizonTrack
             progress={ready ? progress : 0}
             ready={ready}
@@ -710,28 +664,29 @@ export function FocusStats({ stats }: FocusStatsProps) {
                 ) : null}
               </div>
 
-              <div>
-                <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+              <div className="w-full">
+                <p className="mb-2.5 text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
                   This week
                 </p>
-                <div className="flex items-end gap-1.5">
-                  {stats.week.map((day) => {
+                <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
+                  {weekDays.map((day) => {
                     const height = Math.max(
-                      8,
+                      6,
                       Math.round((day.minutes / weekMaxMinutes) * 100),
                     );
                     const today = isToday(day.date);
                     return (
                       <div
                         key={day.date}
-                        className="flex min-w-0 flex-1 flex-col items-center gap-1.5"
+                        className="flex min-w-0 flex-col items-center gap-2"
                         title={`${formatFocusMinutes(day.minutes)} focused`}
                       >
-                        <div className="flex h-10 w-full items-end rounded-md bg-muted/35 px-0.5 pb-0.5">
+                        <div className="flex h-16 w-full items-end rounded-lg bg-muted/30 px-1 pb-1 sm:h-[4.5rem]">
                           <div
                             className={cn(
-                              "w-full rounded-sm bg-foreground/75 transition-all duration-500",
+                              "w-full min-h-[3px] rounded-[3px] bg-foreground/70 transition-all duration-500",
                               today && "bg-foreground",
+                              day.minutes === 0 && "bg-foreground/25",
                               liveFocus && today && "opacity-90",
                             )}
                             style={{ height: `${height}%` }}
@@ -739,11 +694,11 @@ export function FocusStats({ stats }: FocusStatsProps) {
                         </div>
                         <span
                           className={cn(
-                            "text-[10px] tabular-nums text-muted-foreground",
+                            "text-[11px] tabular-nums text-muted-foreground",
                             today && "font-medium text-foreground",
                           )}
                         >
-                          {weekDayInitial(day.date)}
+                          {weekDayLabel(day.date)}
                         </span>
                       </div>
                     );
