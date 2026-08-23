@@ -2,12 +2,17 @@
 
 import Link from "next/link";
 import { useOptimistic, useTransition } from "react";
-import { Clock, Trash2 } from "lucide-react";
+import { Clock, Play, Trash2 } from "lucide-react";
 
 import { deleteFocusSession } from "@/actions/focus";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
+import {
+  buildPickupHint,
+  continueSubject,
+} from "@/lib/focus-continue";
 import { cn } from "@/lib/utils";
+import { useFocusTimer } from "@/stores/focus-timer";
 import {
   formatFocusDuration,
   FOCUS_PRESETS,
@@ -71,8 +76,15 @@ function modeTone(mode: FocusSession["mode"]) {
   return "bg-emerald-700/60 dark:bg-emerald-400/60";
 }
 
+function scrollToTimer() {
+  document
+    .getElementById("focus-timer")
+    ?.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
 export function FocusSessionList({ sessions }: FocusSessionListProps) {
   const [, startTransition] = useTransition();
+  const isRunning = useFocusTimer((s) => s.isRunning);
   const [optimisticSessions, removeOptimistic] = useOptimistic(
     sessions,
     (current: FocusSession[], id: string) =>
@@ -97,7 +109,8 @@ export function FocusSessionList({ sessions }: FocusSessionListProps) {
 
   const groups = groupSessions(optimisticSessions);
 
-  function handleDelete(session: FocusSession) {
+  function handleDelete(session: FocusSession, event: React.MouseEvent) {
+    event.stopPropagation();
     if (
       !window.confirm(
         `Delete this ${FOCUS_PRESETS[session.mode].label.toLowerCase()} session?`,
@@ -109,6 +122,13 @@ export function FocusSessionList({ sessions }: FocusSessionListProps) {
       removeOptimistic(session.id);
       await deleteFocusSession(session.id);
     });
+  }
+
+  function handleContinue(session: FocusSession) {
+    if (isRunning) return;
+    if (session.mode !== "focus") return;
+    useFocusTimer.getState().continueFromLoggedSession(session);
+    scrollToTimer();
   }
 
   return (
@@ -137,64 +157,127 @@ export function FocusSessionList({ sessions }: FocusSessionListProps) {
             </div>
 
             <ul className="space-y-1">
-              {group.sessions.map((session) => (
-                <li
-                  key={session.id}
-                  className="group flex items-center gap-3 rounded-2xl px-2.5 py-2.5 transition-colors hover:bg-muted/40"
-                >
-                  <span
-                    className={cn(
-                      "size-2 shrink-0 rounded-full",
-                      modeTone(session.mode),
-                    )}
-                    aria-hidden
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">
-                      {FOCUS_PRESETS[session.mode].label}
-                      {!session.completed ? (
-                        <span className="ml-2 text-xs font-normal text-muted-foreground">
-                          stopped early
-                        </span>
-                      ) : null}
-                    </p>
-                    {session.note ? (
-                      <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                        {session.note}
-                      </p>
-                    ) : null}
-                    {session.task_title ? (
-                      <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                        Task{" "}
-                        <Link
-                          href="/tasks"
-                          className="text-foreground/80 underline-offset-2 hover:underline"
+              {group.sessions.map((session) => {
+                const canContinue =
+                  session.mode === "focus" &&
+                  session.actual_seconds > 0 &&
+                  !isRunning;
+                const subject = continueSubject(
+                  session.note,
+                  session.task_title,
+                );
+                const pickupHint = canContinue
+                  ? buildPickupHint(session.actual_seconds, subject)
+                  : null;
+
+                return (
+                  <li key={session.id}>
+                    <div
+                      role={canContinue ? "button" : undefined}
+                      tabIndex={canContinue ? 0 : undefined}
+                      onClick={
+                        canContinue ? () => handleContinue(session) : undefined
+                      }
+                      onKeyDown={
+                        canContinue
+                          ? (event) => {
+                              if (
+                                event.key === "Enter" ||
+                                event.key === " "
+                              ) {
+                                event.preventDefault();
+                                handleContinue(session);
+                              }
+                            }
+                          : undefined
+                      }
+                      className={cn(
+                        "group flex items-center gap-3 rounded-2xl px-2.5 py-2.5 transition-colors",
+                        canContinue &&
+                          "cursor-pointer hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                        !canContinue && "hover:bg-muted/20",
+                      )}
+                      aria-label={
+                        canContinue
+                          ? `Continue session · ${pickupHint ?? formatFocusDuration(session.actual_seconds)}`
+                          : undefined
+                      }
+                    >
+                      <span
+                        className={cn(
+                          "size-2 shrink-0 rounded-full",
+                          modeTone(session.mode),
+                        )}
+                        aria-hidden
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium">
+                          {FOCUS_PRESETS[session.mode].label}
+                          {!session.completed ? (
+                            <span className="ml-2 text-xs font-normal text-muted-foreground">
+                              stopped early
+                            </span>
+                          ) : null}
+                        </p>
+                        {pickupHint ? (
+                          <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                            {pickupHint}
+                          </p>
+                        ) : session.note ? (
+                          <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                            {session.note}
+                          </p>
+                        ) : null}
+                        {session.task_title ? (
+                          <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                            Task{" "}
+                            <Link
+                              href="/tasks"
+                              className="text-foreground/80 underline-offset-2 hover:underline"
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              {session.task_title}
+                            </Link>
+                          </p>
+                        ) : null}
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="focus-clock text-sm text-foreground">
+                          {formatFocusDuration(session.actual_seconds)}
+                        </p>
+                        <p className="mt-0.5 text-[11px] tabular-nums text-muted-foreground">
+                          {formatTime(session.started_at)}
+                        </p>
+                      </div>
+                      {canContinue ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="size-8 shrink-0 text-foreground"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleContinue(session);
+                          }}
+                          aria-label="Continue session"
                         >
-                          {session.task_title}
-                        </Link>
-                      </p>
-                    ) : null}
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <p className="focus-clock text-sm text-foreground">
-                      {formatFocusDuration(session.actual_seconds)}
-                    </p>
-                    <p className="mt-0.5 text-[11px] tabular-nums text-muted-foreground">
-                      {formatTime(session.started_at)}
-                    </p>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="size-8 shrink-0 text-muted-foreground opacity-100 hover:text-destructive sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
-                    onClick={() => handleDelete(session)}
-                    aria-label="Delete session"
-                  >
-                    <Trash2 className="size-3.5" />
-                  </Button>
-                </li>
-              ))}
+                          <Play className="size-3.5 fill-current" />
+                        </Button>
+                      ) : null}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="size-8 shrink-0 text-muted-foreground opacity-100 hover:text-destructive sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
+                        onClick={(event) => handleDelete(session, event)}
+                        aria-label="Delete session"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </Button>
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         ))}

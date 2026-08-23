@@ -1,12 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChevronDown, Moon, Sun, Sunrise } from "lucide-react";
+import { ChevronDown, Moon, Play, Sun, Sunrise } from "lucide-react";
 
 import { useDocumentVisible } from "@/hooks/use-document-visible";
+import {
+  buildPickupHint,
+  continueSubject,
+} from "@/lib/focus-continue";
 import { cn } from "@/lib/utils";
 import { toDateString } from "@/lib/date-utils";
-import { useFocusTimer } from "@/stores/focus-timer";
+import { canContinueFocusSession, useFocusTimer } from "@/stores/focus-timer";
 import {
   FOCUS_DAILY_GOAL_DEFAULT,
   FOCUS_DAILY_GOAL_KEY,
@@ -507,6 +511,10 @@ export function FocusStats({ stats }: FocusStatsProps) {
   const clock = useFocusTimer((s) => s.clock);
   const remainingSeconds = useFocusTimer((s) => s.remainingSeconds);
   const durationSeconds = useFocusTimer((s) => s.durationSeconds);
+  const elapsedSeconds = useFocusTimer((s) => s.elapsedSeconds);
+  const progressBaseSeconds = useFocusTimer((s) => s.progressBaseSeconds);
+  const intention = useFocusTimer((s) => s.intention);
+  const start = useFocusTimer((s) => s.start);
   const sessionStartedAt = useFocusTimer((s) => s.sessionStartedAt);
   const endsAt = useFocusTimer((s) => s.endsAt);
   const liveElapsedSeconds = useFocusTimer((s) => {
@@ -559,6 +567,21 @@ export function FocusStats({ stats }: FocusStatsProps) {
       ? durationSeconds - remainingSeconds
       : 0;
   const sessionSeconds = stopwatchSession || countdownSession;
+  const canContinue = canContinueFocusSession({
+    clock,
+    mode,
+    elapsedSeconds,
+    isRunning,
+    sessionStartedAt,
+    durationSeconds,
+    remainingSeconds,
+    progressBaseSeconds,
+  });
+  const pickupHint =
+    progressBaseSeconds > 0
+      ? buildPickupHint(sessionSeconds, continueSubject(intention, null))
+      : null;
+  const sessionContribution = Math.max(0, sessionSeconds - progressBaseSeconds);
   const liveFocus =
     isRunning &&
     pageVisible &&
@@ -579,9 +602,7 @@ export function FocusStats({ stats }: FocusStatsProps) {
   const optimisticSealSeconds =
     sealPulse && !sealAlreadyInStats ? sealPulse.seconds : 0;
   const todayTotalSeconds =
-    stats.focus_minutes * 60 +
-    (liveFocus ? liveSessionSeconds : sessionSeconds) +
-    optimisticSealSeconds;
+    stats.focus_minutes * 60 + sessionContribution + optimisticSealSeconds;
   const goalTotalSeconds = goalMinutes * 60;
   const focusMinutes = Math.floor(todayTotalSeconds / 60);
 
@@ -702,8 +723,8 @@ export function FocusStats({ stats }: FocusStatsProps) {
             <span>
               {liveFocus
                 ? "Session in flight"
-                : sessionActive && !isRunning
-                  ? "Session paused"
+                : canContinue
+                  ? "Continue session"
                   : (weekday ?? "Today")}
             </span>
             {marks.length > 0 || liveFocus ? (
@@ -760,6 +781,24 @@ export function FocusStats({ stats }: FocusStatsProps) {
                 <p className="text-center text-sm text-foreground/85 lg:text-left">
                   {whisper}
                 </p>
+              ) : null}
+
+              {canContinue ? (
+                <div className="text-center lg:text-left">
+                  <button
+                    type="button"
+                    onClick={() => start()}
+                    className="inline-flex items-center gap-2 rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-90"
+                  >
+                    <Play className="size-3.5 fill-current" />
+                    Continue · {formatFocusDuration(sessionSeconds)}
+                  </button>
+                  {pickupHint ? (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      {pickupHint}
+                    </p>
+                  ) : null}
+                </div>
               ) : null}
 
               <div className="text-center lg:text-left">
@@ -857,8 +896,8 @@ export function FocusStats({ stats }: FocusStatsProps) {
           <span className="tabular-nums">
             {liveFocus
               ? "Sky live"
-              : sessionActive && !isRunning
-                ? "Paused"
+              : canContinue
+                ? "Continue ready"
                 : "Day taking shape"}
           </span>
         </div>

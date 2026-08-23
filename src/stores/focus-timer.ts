@@ -2,7 +2,16 @@
 
 import { create } from "zustand";
 
-import type { FocusClock, FocusMode, FocusProfileId } from "@/types/focus";
+import type {
+  FocusClock,
+  FocusMode,
+  FocusProfileId,
+  FocusSession,
+} from "@/types/focus";
+import {
+  canContinueFocusSession as canContinueFocusSessionFrom,
+  sessionInProgress as sessionInProgressFrom,
+} from "@/lib/focus-continue";
 import {
   FOCUS_CLOCK_DEFAULT,
   FOCUS_CLOCK_KEY,
@@ -37,6 +46,7 @@ type FocusTimerState = {
   lastFocusSeconds: number;
   lastShortBreakSeconds: number;
   lastLongBreakSeconds: number;
+  progressBaseSeconds: number;
   setMode: (mode: FocusMode) => void;
   setClock: (clock: FocusClock) => void;
   setDuration: (seconds: number) => void;
@@ -57,7 +67,45 @@ type FocusTimerState = {
   liveElapsedSeconds: () => number;
   pulseSeal: (mark: { startedAt: string; seconds: number }) => void;
   clearSealPulse: () => void;
+  continueFromLoggedSession: (
+    session: Pick<
+      FocusSession,
+      "actual_seconds" | "note" | "task_id" | "mode" | "started_at"
+    >,
+  ) => void;
 };
+
+export function sessionInProgress(
+  state: Pick<
+    FocusTimerState,
+    | "clock"
+    | "mode"
+    | "elapsedSeconds"
+    | "isRunning"
+    | "sessionStartedAt"
+    | "durationSeconds"
+    | "remainingSeconds"
+    | "progressBaseSeconds"
+  >,
+) {
+  return sessionInProgressFrom(state);
+}
+
+export function canContinueFocusSession(
+  state: Pick<
+    FocusTimerState,
+    | "clock"
+    | "mode"
+    | "elapsedSeconds"
+    | "isRunning"
+    | "sessionStartedAt"
+    | "durationSeconds"
+    | "remainingSeconds"
+    | "progressBaseSeconds"
+  >,
+) {
+  return canContinueFocusSessionFrom(state);
+}
 
 function remainingFromEndsAt(endsAt: number | null, fallback: number) {
   if (!endsAt) return fallback;
@@ -139,6 +187,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
   lastFocusSeconds: classic.focus * 60,
   lastShortBreakSeconds: classic.short_break * 60,
   lastLongBreakSeconds: classic.long_break * 60,
+  progressBaseSeconds: 0,
 
   displaySeconds: () => {
     const current = get();
@@ -167,6 +216,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
       durationSeconds,
       remainingSeconds: durationSeconds,
       elapsedSeconds: 0,
+      progressBaseSeconds: 0,
       isRunning: false,
       startedAt: null,
       sessionStartedAt: null,
@@ -185,6 +235,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
         clock,
         mode: "focus",
         elapsedSeconds: 0,
+        progressBaseSeconds: 0,
         remainingSeconds: current.lastFocusSeconds,
         durationSeconds: current.lastFocusSeconds,
         isRunning: false,
@@ -201,6 +252,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
       durationSeconds,
       remainingSeconds: durationSeconds,
       elapsedSeconds: 0,
+      progressBaseSeconds: 0,
       isRunning: false,
       startedAt: null,
       sessionStartedAt: null,
@@ -392,6 +444,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
     if (current.clock === "up") {
       set({
         elapsedSeconds: 0,
+        progressBaseSeconds: 0,
         isRunning: false,
         startedAt: null,
         sessionStartedAt: null,
@@ -403,11 +456,48 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
     set({
       remainingSeconds: current.durationSeconds,
       elapsedSeconds: 0,
+      progressBaseSeconds: 0,
       isRunning: false,
       startedAt: null,
       sessionStartedAt: null,
       endsAt: null,
     });
+  },
+
+  continueFromLoggedSession: (session) => {
+    const current = get();
+    if (current.isRunning) return;
+    if (session.mode !== "focus") return;
+
+    const carried = Math.max(
+      0,
+      Math.min(FOCUS_MAX_SECONDS, session.actual_seconds),
+    );
+    if (carried <= 0) return;
+
+    const sessionStart = new Date(session.started_at).getTime();
+
+    set({
+      clock: "up",
+      mode: "focus",
+      elapsedSeconds: carried,
+      progressBaseSeconds: carried,
+      isRunning: false,
+      startedAt: null,
+      sessionStartedAt: sessionStart,
+      endsAt: null,
+      lastDisplaySecond: carried,
+      intention: session.note ?? "",
+      linkedTaskId: session.task_id ?? null,
+      remainingSeconds: current.lastFocusSeconds,
+      durationSeconds: current.lastFocusSeconds,
+    });
+
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(FOCUS_CLOCK_KEY, "up");
+    }
+
+    get().start();
   },
 
   skip: () => {
