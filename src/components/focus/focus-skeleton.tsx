@@ -13,8 +13,8 @@ export function FocusSkeleton() {
       aria-label="Loading focus"
     >
       <AppPageFrame className="max-w-6xl gap-8 md:py-10">
-        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)] lg:gap-8">
-          <section className="flex min-h-[34rem] flex-col px-2 py-6 sm:min-h-[40rem] sm:px-4 sm:py-8">
+        <div className="flex flex-col gap-4 sm:gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)] lg:items-start lg:gap-8">
+          <section className="order-1 flex min-h-[28rem] flex-col px-2 py-5 sm:min-h-[34rem] sm:px-4 sm:py-8">
             <Bone className="mx-auto h-3 w-28" />
             <Bone className="mx-auto mt-4 h-12 w-full max-w-md rounded-2xl" />
             <Bone className="mx-auto mt-3 h-9 w-56 rounded-xl" />
@@ -39,7 +39,7 @@ export function FocusSkeleton() {
             </div>
           </section>
 
-          <aside className="flex min-h-[34rem] flex-col sm:min-h-[40rem]">
+          <aside className="order-2 flex min-h-0 flex-col lg:min-h-[30rem]">
             <Bone className="h-3 w-16" />
             <Bone className="mt-2 h-4 w-28 opacity-60" />
             <Bone className="mx-auto mt-10 size-[13.5rem] rounded-full sm:size-[15rem]" />

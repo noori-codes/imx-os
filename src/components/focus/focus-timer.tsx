@@ -569,7 +569,7 @@ export function FocusTimer({
       data-mode={mode}
       data-running={isRunning && pageVisible ? "true" : "false"}
       data-visible={pageVisible ? "true" : "false"}
-      className="focus-stage group relative flex h-full min-h-[34rem] flex-col overflow-hidden px-2 py-6 sm:min-h-[40rem] sm:px-4 sm:py-8"
+      className="focus-stage group relative flex h-full min-h-[28rem] flex-col overflow-hidden px-2 py-5 sm:min-h-[34rem] sm:px-4 sm:py-8 lg:min-h-[40rem]"
       id="focus-timer"
     >
       <div className="focus-stage-glow" aria-hidden />
@@ -681,15 +681,15 @@ export function FocusTimer({
         <div
           className={cn(
             "relative mx-auto flex items-center justify-center",
-            isRunning ? "mt-4 sm:mt-6" : "mt-8",
+            isRunning ? "mt-3 sm:mt-4 lg:mt-6" : "mt-6 sm:mt-8",
           )}
         >
           <div
             className={cn(
               "relative flex items-center justify-center",
               isRunning
-                ? "size-[min(88vw,22rem)] sm:size-[24rem]"
-                : "size-[17.5rem] sm:size-[19.5rem]",
+                ? "size-[min(82vw,19rem)] sm:size-[min(88vw,22rem)] lg:size-[24rem]"
+                : "size-[15.5rem] sm:size-[17.5rem] lg:size-[19.5rem]",
             )}
           >
             <svg
@@ -902,9 +902,9 @@ export function FocusTimer({
         </div>
 
         {!isRunning ? (
-          <details className="group/setup mt-6 w-full max-w-md">
+          <details className="group/setup mt-5 w-full max-w-md sm:mt-6">
             <summary className="flex cursor-pointer list-none items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground [&::-webkit-details-marker]:hidden">
-              <span className="tabular-nums">Setup · {setupSummary}</span>
+              <span className="tabular-nums max-sm:text-xs">Setup · {setupSummary}</span>
               <ChevronDown className="size-3.5 shrink-0 transition-transform duration-200 group-open/setup:rotate-180" />
             </summary>
 

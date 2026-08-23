@@ -529,10 +529,19 @@ export function FocusStats({ stats }: FocusStatsProps) {
   const [goalMinutes, setGoalMinutes] = useState(FOCUS_DAILY_GOAL_DEFAULT);
   const [ready, setReady] = useState(false);
   const [goalOpen, setGoalOpen] = useState(false);
+  const [mobileLayout, setMobileLayout] = useState(false);
 
   useEffect(() => {
     setGoalMinutes(readGoalMinutes());
     setReady(true);
+  }, []);
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 1023px)");
+    const sync = () => setMobileLayout(media.matches);
+    sync();
+    media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
   }, []);
 
   useEffect(() => {
@@ -586,7 +595,7 @@ export function FocusStats({ stats }: FocusStatsProps) {
     isRunning &&
     pageVisible &&
     (clock === "up" || (mode === "focus" && durationSeconds > remainingSeconds));
-  const compact = liveFocus;
+  const compact = liveFocus || (mobileLayout && canContinue);
   const liveSessionSeconds = liveFocus ? sessionSeconds : 0;
   const marks = stats.today_marks ?? [];
   const sealAlreadyInStats =
@@ -711,9 +720,9 @@ export function FocusStats({ stats }: FocusStatsProps) {
       data-sealed={sealPulse ? "true" : "false"}
       data-mode={mode}
       data-streak={streakTier(stats.current_streak)}
-      className="focus-progress focus-companion relative flex min-h-0 w-full flex-col lg:min-h-[30rem]"
+      className="focus-progress focus-companion relative flex min-h-0 w-full flex-col max-lg:gap-4 lg:min-h-[30rem]"
     >
-      <div className="relative z-[1] flex flex-1 flex-col gap-5">
+      <div className="relative z-[1] flex flex-1 flex-col gap-4 max-lg:gap-3 lg:gap-5">
         <div className="text-center lg:text-left">
           <p className="text-xs font-medium tracking-wide text-muted-foreground">
             Your sky
@@ -783,7 +792,7 @@ export function FocusStats({ stats }: FocusStatsProps) {
               ) : null}
 
               {canContinue ? (
-                <div className="text-center lg:text-left">
+                <div className="hidden text-center lg:block lg:text-left">
                   <button
                     type="button"
                     onClick={() => start()}

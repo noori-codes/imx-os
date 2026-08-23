@@ -452,6 +452,21 @@
   opacity: 0.95;
 }
 
+@media (max-width: 1023px) {
+  .focus-progress[data-compact="true"] .focus-constellation-stage {
+    transform: scale(0.94);
+    transform-origin: top center;
+  }
+
+  .focus-continue-bar {
+    box-shadow: 0 -8px 24px oklch(0 0 0 / 0.06);
+  }
+
+  .dark .focus-continue-bar {
+    box-shadow: 0 -8px 28px oklch(0 0 0 / 0.35);
+  }
+}
+
 .focus-horizon-sun {
   transition:
     cx 700ms ease,

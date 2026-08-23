@@ -2,6 +2,10 @@
 
 import type { ReactNode } from "react";
 
+import {
+  FocusContinueBar,
+  useFocusContinueBarVisible,
+} from "@/components/focus/focus-continue-bar";
 import { cn } from "@/lib/utils";
 import { useFocusTimer } from "@/stores/focus-timer";
 
@@ -13,24 +17,33 @@ type FocusWorkspaceProps = {
 
 export function FocusWorkspace({ timer, rail, sessions }: FocusWorkspaceProps) {
   const isRunning = useFocusTimer((s) => s.isRunning);
+  const continueBarVisible = useFocusContinueBarVisible();
 
   return (
     <>
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)] lg:gap-8">
-        <div className="min-w-0">{timer}</div>
+      <div
+        className={cn(
+          "flex flex-col gap-4 sm:gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)] lg:items-start lg:gap-8",
+          continueBarVisible && "pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:pb-0",
+        )}
+      >
+        <div className="min-w-0 order-1">{timer}</div>
 
-        <aside className="min-w-0 lg:sticky lg:top-20">{rail}</aside>
+        <aside className="min-w-0 order-2 lg:sticky lg:top-20">{rail}</aside>
       </div>
 
       <div
         className={cn(
-          "transition-opacity duration-500 ease-out",
-          isRunning && "pointer-events-none opacity-35",
+          "mt-6 transition-opacity duration-500 ease-out sm:mt-8",
+          isRunning && "max-lg:hidden",
+          isRunning && "lg:pointer-events-none lg:opacity-35",
         )}
         aria-hidden={isRunning}
       >
         {sessions}
       </div>
+
+      <FocusContinueBar />
     </>
   );
 }
