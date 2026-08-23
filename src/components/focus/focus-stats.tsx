@@ -589,7 +589,6 @@ export function FocusStats({ stats }: FocusStatsProps) {
   const compact = liveFocus;
   const liveSessionSeconds = liveFocus ? sessionSeconds : 0;
   const marks = stats.today_marks ?? [];
-  const sessionActive = sessionSeconds > 0;
   const sealAlreadyInStats =
     sealPulse &&
     marks.some(

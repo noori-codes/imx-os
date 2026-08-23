@@ -1,5 +1,6 @@
-import type { FocusClock, FocusMode } from "@/types/focus";
+import type { FocusClock, FocusMode, FocusSession } from "@/types/focus";
 import { formatFocusDuration } from "@/types/focus";
+import { isToday, toDateString } from "@/lib/date-utils";
 
 type SessionSnapshot = {
   clock: FocusClock;
@@ -43,4 +44,14 @@ export function buildPickupHint(
   return subject
     ? `Picking up from ${time} · ${subject}`
     : `Picking up from ${time}`;
+}
+
+export function canContinueLoggedSession(
+  session: Pick<FocusSession, "mode" | "actual_seconds" | "started_at">,
+  isRunning: boolean,
+): boolean {
+  if (isRunning) return false;
+  if (session.mode !== "focus") return false;
+  if (session.actual_seconds <= 0) return false;
+  return isToday(toDateString(new Date(session.started_at)));
 }

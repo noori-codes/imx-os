@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
 import {
   buildPickupHint,
+  canContinueLoggedSession,
   continueSubject,
 } from "@/lib/focus-continue";
 import { cn } from "@/lib/utils";
@@ -125,8 +126,7 @@ export function FocusSessionList({ sessions }: FocusSessionListProps) {
   }
 
   function handleContinue(session: FocusSession) {
-    if (isRunning) return;
-    if (session.mode !== "focus") return;
+    if (!canContinueLoggedSession(session, isRunning)) return;
     useFocusTimer.getState().continueFromLoggedSession(session);
     scrollToTimer();
   }
@@ -158,10 +158,7 @@ export function FocusSessionList({ sessions }: FocusSessionListProps) {
 
             <ul className="space-y-1">
               {group.sessions.map((session) => {
-                const canContinue =
-                  session.mode === "focus" &&
-                  session.actual_seconds > 0 &&
-                  !isRunning;
+                const canContinue = canContinueLoggedSession(session, isRunning);
                 const subject = continueSubject(
                   session.note,
                   session.task_title,

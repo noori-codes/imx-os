@@ -10,6 +10,7 @@ import type {
 } from "@/types/focus";
 import {
   canContinueFocusSession as canContinueFocusSessionFrom,
+  canContinueLoggedSession as canContinueLoggedSessionFrom,
   sessionInProgress as sessionInProgressFrom,
 } from "@/lib/focus-continue";
 import {
@@ -466,14 +467,12 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
 
   continueFromLoggedSession: (session) => {
     const current = get();
-    if (current.isRunning) return;
-    if (session.mode !== "focus") return;
+    if (!canContinueLoggedSessionFrom(session, current.isRunning)) return;
 
     const carried = Math.max(
       0,
       Math.min(FOCUS_MAX_SECONDS, session.actual_seconds),
     );
-    if (carried <= 0) return;
 
     const sessionStart = new Date(session.started_at).getTime();
 
