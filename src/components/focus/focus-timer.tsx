@@ -6,7 +6,7 @@ import { useDocumentVisible } from "@/hooks/use-document-visible";
 import { useRouter } from "next/navigation";
 import { ChevronDown, CircleCheck, Pause, Play, RotateCcw, SkipForward } from "lucide-react";
 
-import { logFocusSession } from "@/actions/focus";
+import { logFocusSession, updateFocusSession } from "@/actions/focus";
 import { FocusSounds } from "@/components/focus/focus-sounds";
 import { Input } from "@/components/ui/input";
 import {
@@ -295,27 +295,55 @@ export function FocusTimer({
   }
 
   function sealStopwatch(actual: number) {
-    const baseSeconds = useFocusTimer.getState().progressBaseSeconds;
-    const incremental = Math.max(0, actual - baseSeconds);
-    const logSeconds = baseSeconds > 0 ? incremental : actual;
+    const {
+      progressBaseSeconds,
+      continuedSessionId,
+      sessionStartedAt: continuedStartedAt,
+    } = useFocusTimer.getState();
+    const incremental = Math.max(0, actual - progressBaseSeconds);
+    const isContinuation = continuedSessionId !== null;
 
-    if (logSeconds < 5) {
-      reset();
-      return;
+    if (isContinuation) {
+      if (incremental < 5) {
+        reset();
+        return;
+      }
+    } else {
+      if (actual < 5) {
+        reset();
+        return;
+      }
     }
 
     const note = intention;
     const taskId = linkedTaskId;
-    const addedMinutes = Math.max(1, Math.round(logSeconds / 60));
+    const addedMinutes = Math.max(1, Math.round(incremental / 60));
+    const sealStartedAt =
+      isContinuation && continuedStartedAt
+        ? new Date(continuedStartedAt).toISOString()
+        : new Date(Date.now() - actual * 1000).toISOString();
+
     startTransition(async () => {
-      await logFocusSession({
-        mode: "focus",
-        planned_seconds: logSeconds,
-        actual_seconds: logSeconds,
-        completed: true,
-        note,
-        task_id: taskId,
-      });
+      if (isContinuation && continuedSessionId) {
+        await updateFocusSession({
+          sessionId: continuedSessionId,
+          actual_seconds: actual,
+          planned_seconds: Math.max(actual, progressBaseSeconds),
+          completed: true,
+          note,
+          task_id: taskId,
+          ended_at: new Date().toISOString(),
+        });
+      } else {
+        await logFocusSession({
+          mode: "focus",
+          planned_seconds: actual,
+          actual_seconds: actual,
+          completed: true,
+          note,
+          task_id: taskId,
+        });
+      }
       router.refresh();
     });
 
@@ -323,8 +351,8 @@ export function FocusTimer({
     playFocusChime();
     notifyFocusPhase("Session sealed", formatFocusClock(actual));
     useFocusTimer.getState().pulseSeal({
-      startedAt: new Date(Date.now() - logSeconds * 1000).toISOString(),
-      seconds: logSeconds,
+      startedAt: sealStartedAt,
+      seconds: isContinuation ? incremental : actual,
     });
     setSeal({
       mode: "focus",

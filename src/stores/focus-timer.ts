@@ -48,6 +48,7 @@ type FocusTimerState = {
   lastShortBreakSeconds: number;
   lastLongBreakSeconds: number;
   progressBaseSeconds: number;
+  continuedSessionId: string | null;
   setMode: (mode: FocusMode) => void;
   setClock: (clock: FocusClock) => void;
   setDuration: (seconds: number) => void;
@@ -71,7 +72,12 @@ type FocusTimerState = {
   continueFromLoggedSession: (
     session: Pick<
       FocusSession,
-      "actual_seconds" | "note" | "task_id" | "mode" | "started_at"
+      | "id"
+      | "actual_seconds"
+      | "note"
+      | "task_id"
+      | "mode"
+      | "started_at"
     >,
   ) => void;
 };
@@ -189,6 +195,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
   lastShortBreakSeconds: classic.short_break * 60,
   lastLongBreakSeconds: classic.long_break * 60,
   progressBaseSeconds: 0,
+  continuedSessionId: null,
 
   displaySeconds: () => {
     const current = get();
@@ -218,6 +225,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
       remainingSeconds: durationSeconds,
       elapsedSeconds: 0,
       progressBaseSeconds: 0,
+      continuedSessionId: null,
       isRunning: false,
       startedAt: null,
       sessionStartedAt: null,
@@ -254,6 +262,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
       remainingSeconds: durationSeconds,
       elapsedSeconds: 0,
       progressBaseSeconds: 0,
+      continuedSessionId: null,
       isRunning: false,
       startedAt: null,
       sessionStartedAt: null,
@@ -446,6 +455,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
       set({
         elapsedSeconds: 0,
         progressBaseSeconds: 0,
+        continuedSessionId: null,
         isRunning: false,
         startedAt: null,
         sessionStartedAt: null,
@@ -458,6 +468,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
       remainingSeconds: current.durationSeconds,
       elapsedSeconds: 0,
       progressBaseSeconds: 0,
+      continuedSessionId: null,
       isRunning: false,
       startedAt: null,
       sessionStartedAt: null,
@@ -481,6 +492,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
       mode: "focus",
       elapsedSeconds: carried,
       progressBaseSeconds: carried,
+      continuedSessionId: session.id,
       isRunning: false,
       startedAt: null,
       sessionStartedAt: sessionStart,

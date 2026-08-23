@@ -269,6 +269,68 @@ export async function logManualFocusSession(
   });
 }
 
+export async function updateFocusSession(input: {
+  sessionId: string;
+  actual_seconds: number;
+  planned_seconds: number;
+  completed: boolean;
+  note?: string;
+  task_id?: string | null;
+  ended_at: string;
+}) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "You must be signed in." };
+  }
+
+  if (input.actual_seconds < 5) {
+    return { error: "Session too short to log." };
+  }
+
+  if (input.actual_seconds > FOCUS_MAX_SECONDS) {
+    return { error: "Sessions can be at most 12 hours." };
+  }
+
+  const taskId =
+    input.task_id && input.task_id.length > 0 ? input.task_id : null;
+
+  if (taskId) {
+    const { data: task, error: taskError } = await supabase
+      .from("tasks")
+      .select("id")
+      .eq("id", taskId)
+      .maybeSingle();
+
+    if (taskError || !task) {
+      return { error: "Linked task was not found." };
+    }
+  }
+
+  const { error } = await supabase
+    .from("focus_sessions")
+    .update({
+      actual_seconds: input.actual_seconds,
+      planned_seconds: input.planned_seconds,
+      completed: input.completed,
+      note: input.note?.trim() || null,
+      task_id: taskId,
+      ended_at: input.ended_at,
+    })
+    .eq("id", input.sessionId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  await revalidateFocus();
+  return {};
+}
+
 export async function deleteFocusSession(sessionId: string) {
   const supabase = await createClient();
 
