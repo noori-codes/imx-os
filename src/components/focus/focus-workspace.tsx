@@ -36,9 +36,9 @@ export function FocusWorkspace({ timer, rail, sessions }: FocusWorkspaceProps) {
         className={cn(
           "mt-6 transition-opacity duration-500 ease-out sm:mt-8",
           isRunning && "max-lg:hidden",
-          isRunning && "lg:pointer-events-none lg:opacity-35",
+          isRunning && "lg:opacity-55",
         )}
-        aria-hidden={isRunning}
+        aria-hidden={isRunning ? true : undefined}
       >
         {sessions}
       </div>

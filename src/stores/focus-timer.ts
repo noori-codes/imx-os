@@ -70,6 +70,9 @@ type FocusTimerState = {
   liveElapsedSeconds: () => number;
   pulseSeal: (mark: { startedAt: string; seconds: number }) => void;
   clearSealPulse: () => void;
+  optimisticLog: FocusSession | null;
+  pushOptimisticLog: (session: FocusSession) => void;
+  clearOptimisticLog: () => void;
   continueFromLoggedSession: (
     session: Pick<
       FocusSession,
@@ -188,6 +191,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
   tickMs: 0,
   lastDisplaySecond: 0,
   sealPulse: null,
+  optimisticLog: null,
   completedFocusCount: 0,
   autoStartNext: false,
   intention: "",
@@ -217,6 +221,10 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
   pulseSeal: (mark) => set({ sealPulse: mark }),
 
   clearSealPulse: () => set({ sealPulse: null }),
+
+  pushOptimisticLog: (session) => set({ optimisticLog: session }),
+
+  clearOptimisticLog: () => set({ optimisticLog: null }),
 
   setMode: (mode) => {
     const current = get();

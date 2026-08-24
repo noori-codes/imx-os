@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 
 import { useDocumentVisible } from "@/hooks/use-document-visible";
 import { useRouter } from "next/navigation";
-import { ChevronDown, CircleCheck, Pause, Play, RotateCcw, SkipForward } from "lucide-react";
+import { ChevronDown, CircleCheck, CircleHelp, Pause, Play, RotateCcw, SkipForward } from "lucide-react";
 
 import { logFocusSession, updateFocusSession } from "@/actions/focus";
 import { toggleTaskComplete } from "@/actions/tasks";
@@ -31,6 +31,7 @@ import {
   FOCUS_PROFILES,
   formatFocusClock,
   formatFocusMinutes,
+  buildOptimisticFocusSession,
   type FocusClock,
   type FocusMode,
 } from "@/types/focus";
@@ -90,43 +91,44 @@ export function FocusTimer({
 }) {
   const router = useRouter();
   const pageVisible = useDocumentVisible();
-  const {
-    mode,
-    clock,
-    durationSeconds,
-    remainingSeconds,
-    elapsedSeconds,
-    isRunning,
-    endsAt,
-    startedAt,
-    sessionStartedAt,
-    completedFocusCount,
-    autoStartNext,
-    intention,
-    linkedTaskId,
-    profileId,
-    setMode,
-    setClock,
-    setDuration,
-    setIntention,
-    setLinkedTaskId,
-    setAutoStartNext,
-    applyProfile,
-    hydrateProfile,
-    start,
-    pause,
-    reset,
-    skip,
-    advance,
-    tick,
-    displaySeconds,
-    tickMs,
-    progressBaseSeconds,
-  } = useFocusTimer();
+  const mode = useFocusTimer((s) => s.mode);
+  const clock = useFocusTimer((s) => s.clock);
+  const durationSeconds = useFocusTimer((s) => s.durationSeconds);
+  const remainingSeconds = useFocusTimer((s) => s.remainingSeconds);
+  const elapsedSeconds = useFocusTimer((s) => s.elapsedSeconds);
+  const isRunning = useFocusTimer((s) => s.isRunning);
+  const endsAt = useFocusTimer((s) => s.endsAt);
+  const sessionStartedAt = useFocusTimer((s) => s.sessionStartedAt);
+  const completedFocusCount = useFocusTimer((s) => s.completedFocusCount);
+  const autoStartNext = useFocusTimer((s) => s.autoStartNext);
+  const intention = useFocusTimer((s) => s.intention);
+  const linkedTaskId = useFocusTimer((s) => s.linkedTaskId);
+  const profileId = useFocusTimer((s) => s.profileId);
+  const progressBaseSeconds = useFocusTimer((s) => s.progressBaseSeconds);
+  const shownSeconds = useFocusTimer((s) => {
+    void s.tickMs;
+    void s.lastDisplaySecond;
+    void s.remainingSeconds;
+    void s.elapsedSeconds;
+    return s.displaySeconds();
+  });
+  const setMode = useFocusTimer((s) => s.setMode);
+  const setClock = useFocusTimer((s) => s.setClock);
+  const setDuration = useFocusTimer((s) => s.setDuration);
+  const setIntention = useFocusTimer((s) => s.setIntention);
+  const setLinkedTaskId = useFocusTimer((s) => s.setLinkedTaskId);
+  const setAutoStartNext = useFocusTimer((s) => s.setAutoStartNext);
+  const applyProfile = useFocusTimer((s) => s.applyProfile);
+  const hydrateProfile = useFocusTimer((s) => s.hydrateProfile);
+  const start = useFocusTimer((s) => s.start);
+  const pause = useFocusTimer((s) => s.pause);
+  const reset = useFocusTimer((s) => s.reset);
+  const skip = useFocusTimer((s) => s.skip);
+  const advance = useFocusTimer((s) => s.advance);
+  const tick = useFocusTimer((s) => s.tick);
 
   const linkedTask =
     tasks.find((task) => task.id === linkedTaskId) ?? null;
-  const shownSeconds = displaySeconds();
   const isStopwatch = clock === "up";
   const canContinue = canContinueFocusSession({
     clock,
@@ -165,10 +167,12 @@ export function FocusTimer({
 
   const [, startTransition] = useTransition();
   const loggedRef = useRef(false);
+  const flowNudgeRef = useRef(false);
   const prevRemaining = useRef(remainingSeconds);
   const [customHours, setCustomHours] = useState("");
   const [customMinutes, setCustomMinutes] = useState("");
   const [seal, setSeal] = useState<SealMoment | null>(null);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
   useEffect(() => {
     const stored = window.localStorage.getItem("imx-focus-auto-start") === "1";
@@ -203,6 +207,16 @@ export function FocusTimer({
   }, [tick]);
 
   useEffect(() => {
+    if (!isStopwatch || !isRunning) {
+      if (!isRunning && shownSeconds < 60) flowNudgeRef.current = false;
+      return;
+    }
+    if (shownSeconds < 90 * 60 || flowNudgeRef.current) return;
+    flowNudgeRef.current = true;
+    notifyFocusPhase("Still in flow?", "90 minutes in · seal whenever you’re ready");
+  }, [isStopwatch, isRunning, shownSeconds]);
+
+  useEffect(() => {
     const previous = document.title;
     const label = isStopwatch ? "Focus" : FOCUS_PRESETS[mode].label;
     document.title = `${formatFocusClock(shownSeconds)} · ${label}`;
@@ -228,6 +242,20 @@ export function FocusTimer({
           .label;
 
       startTransition(async () => {
+        if (currentMode === "focus") {
+          useFocusTimer.getState().pushOptimisticLog(
+            buildOptimisticFocusSession({
+              mode: currentMode,
+              planned_seconds: planned,
+              actual_seconds: planned,
+              completed: true,
+              note,
+              task_id: taskId,
+              task_title: linkedTask?.title ?? null,
+              started_at: new Date(Date.now() - planned * 1000).toISOString(),
+            }),
+          );
+        }
         await logFocusSession({
           mode: currentMode,
           planned_seconds: planned,
@@ -351,6 +379,22 @@ export function FocusTimer({
         ? new Date(continuedStartedAt).toISOString()
         : new Date(Date.now() - actual * 1000).toISOString();
 
+    useFocusTimer.getState().pushOptimisticLog(
+      buildOptimisticFocusSession({
+        id: isContinuation && continuedSessionId ? continuedSessionId : undefined,
+        mode: "focus",
+        planned_seconds: isContinuation
+          ? Math.max(actual, progressBaseSeconds)
+          : actual,
+        actual_seconds: actual,
+        completed: true,
+        note,
+        task_id: taskId,
+        task_title: linkedTask?.title ?? null,
+        started_at: sealStartedAt,
+      }),
+    );
+
     startTransition(async () => {
       if (isContinuation && continuedSessionId) {
         await updateFocusSession({
@@ -419,11 +463,11 @@ export function FocusTimer({
   function handleSealStopwatch() {
     stopFocusSound();
     if (isRunning) pause();
-    sealStopwatch(displaySeconds());
+    sealStopwatch(useFocusTimer.getState().displaySeconds());
   }
 
   function handleDiscardStopwatch() {
-    const actual = displaySeconds();
+    const actual = useFocusTimer.getState().displaySeconds();
     if (
       actual >= 5 &&
       !window.confirm("Discard this session without saving?")
@@ -438,7 +482,7 @@ export function FocusTimer({
     if (next === clock || isRunning) return;
 
     if (clock === "up") {
-      const actual = displaySeconds();
+      const actual = useFocusTimer.getState().displaySeconds();
       if (actual >= 5) {
         sealStopwatch(actual);
       } else if (actual > 0) {
@@ -451,14 +495,14 @@ export function FocusTimer({
 
   useEffect(() => {
     if (!isStopwatch) return;
-    const actual = displaySeconds();
+    const actual = useFocusTimer.getState().displaySeconds();
     if (actual < FOCUS_MAX_SECONDS) return;
     if (loggedRef.current) return;
     loggedRef.current = true;
     sealStopwatch(FOCUS_MAX_SECONDS);
     // sealStopwatch closes over latest intention/task
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isStopwatch, tickMs, elapsedSeconds]);
+  }, [isStopwatch, shownSeconds, elapsedSeconds]);
 
   function handleStart() {
     const custom = isStopwatch ? undefined : secondsFromCustom();
@@ -502,6 +546,20 @@ export function FocusTimer({
     const taskId = currentMode === "focus" ? linkedTaskId : null;
     startTransition(async () => {
       if (actual >= 5) {
+        if (currentMode === "focus") {
+          useFocusTimer.getState().pushOptimisticLog(
+            buildOptimisticFocusSession({
+              mode: currentMode,
+              planned_seconds: planned,
+              actual_seconds: actual,
+              completed: false,
+              note,
+              task_id: taskId,
+              task_title: linkedTask?.title ?? null,
+              started_at: new Date(Date.now() - actual * 1000).toISOString(),
+            }),
+          );
+        }
         await logFocusSession({
           mode: currentMode,
           planned_seconds: planned,
@@ -529,6 +587,20 @@ export function FocusTimer({
 
     if (actual >= 5) {
       startTransition(async () => {
+        if (currentMode === "focus") {
+          useFocusTimer.getState().pushOptimisticLog(
+            buildOptimisticFocusSession({
+              mode: currentMode,
+              planned_seconds: planned,
+              actual_seconds: actual,
+              completed: false,
+              note,
+              task_id: taskId,
+              task_title: linkedTask?.title ?? null,
+              started_at: new Date(Date.now() - actual * 1000).toISOString(),
+            }),
+          );
+        }
         await logFocusSession({
           mode: currentMode,
           planned_seconds: planned,
@@ -552,6 +624,12 @@ export function FocusTimer({
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (isTypingTarget(e.target)) return;
+
+      if (e.key === "?" && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        setShortcutsOpen((open) => !open);
+        return;
+      }
 
       if (e.code === "Space") {
         e.preventDefault();
@@ -824,6 +902,11 @@ export function FocusTimer({
               >
                 {formatFocusClock(shownSeconds)}
               </p>
+              <p className="mt-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                {isStopwatch
+                  ? "Count up · Open"
+                  : `Countdown · ${formatFocusMinutes(Math.round(durationSeconds / 60))} ${FOCUS_PRESETS[mode].label}`}
+              </p>
               {isRunning ? (
                 <div className="mt-4 space-y-1">
                   <p className="mx-auto max-w-[14rem] truncate text-sm text-foreground/85">
@@ -980,6 +1063,22 @@ export function FocusTimer({
                     ? "Begin session"
                     : "Start break"}{" "}
               {!isStopwatch ? "· Space" : null}
+            </p>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => setShortcutsOpen((open) => !open)}
+            className="mt-2 inline-flex items-center gap-1 text-[11px] text-muted-foreground/80 transition-colors hover:text-foreground"
+            aria-expanded={shortcutsOpen}
+          >
+            <CircleHelp className="size-3.5" />
+            Shortcuts
+          </button>
+          {shortcutsOpen ? (
+            <p className="mt-1.5 text-center text-[11px] leading-relaxed text-muted-foreground">
+              Space · play/pause
+              <br />
+              {isStopwatch ? "R · seal · ↺ discard" : "S · skip · R · reset"}
             </p>
           ) : null}
         </div>

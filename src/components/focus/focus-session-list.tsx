@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useOptimistic, useState, useTransition } from "react";
+import { useEffect, useOptimistic, useState, useTransition } from "react";
 import { ChevronDown, Clock, Play, Trash2 } from "lucide-react";
 
 import { deleteFocusSessions } from "@/actions/focus";
@@ -98,9 +98,50 @@ function threadTimeRange(sessions: FocusSession[]) {
 export function FocusSessionList({ sessions }: FocusSessionListProps) {
   const [, startTransition] = useTransition();
   const isRunning = useFocusTimer((s) => s.isRunning);
+  const optimisticLog = useFocusTimer((s) => s.optimisticLog);
+  const clearOptimisticLog = useFocusTimer((s) => s.clearOptimisticLog);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    if (!optimisticLog) return;
+    const matched = sessions.some((session) => {
+      if (optimisticLog.id && !optimisticLog.id.startsWith("optimistic-")) {
+        return session.id === optimisticLog.id;
+      }
+      return (
+        session.mode === optimisticLog.mode &&
+        Math.abs(
+          new Date(session.started_at).getTime() -
+            new Date(optimisticLog.started_at).getTime(),
+        ) < 15_000 &&
+        Math.abs(session.actual_seconds - optimisticLog.actual_seconds) < 30
+      );
+    });
+    if (matched) clearOptimisticLog();
+  }, [sessions, optimisticLog, clearOptimisticLog]);
+
+  const mergedSessions = (() => {
+    if (!optimisticLog) return sessions;
+    const existing = sessions.findIndex((session) => session.id === optimisticLog.id);
+    if (existing >= 0) {
+      return sessions.map((session, index) =>
+        index === existing ? { ...session, ...optimisticLog, id: session.id } : session,
+      );
+    }
+    const already = sessions.some(
+      (session) =>
+        session.mode === optimisticLog.mode &&
+        Math.abs(
+          new Date(session.started_at).getTime() -
+            new Date(optimisticLog.started_at).getTime(),
+        ) < 15_000,
+    );
+    if (already) return sessions;
+    return [optimisticLog, ...sessions];
+  })();
+
   const [optimisticSessions, removeOptimistic] = useOptimistic(
-    sessions,
+    mergedSessions,
     (current: FocusSession[], ids: string[]) =>
       current.filter((s) => !ids.includes(s.id)),
   );

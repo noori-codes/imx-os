@@ -20,6 +20,35 @@ export type FocusSession = {
   created_at: string;
 };
 
+export function buildOptimisticFocusSession(input: {
+  id?: string;
+  mode: FocusMode;
+  planned_seconds: number;
+  actual_seconds: number;
+  completed: boolean;
+  note?: string | null;
+  task_id?: string | null;
+  task_title?: string | null;
+  started_at: string;
+  ended_at?: string | null;
+}): FocusSession {
+  const now = new Date().toISOString();
+  return {
+    id: input.id ?? `optimistic-${Date.now()}`,
+    user_id: "",
+    mode: input.mode,
+    planned_seconds: input.planned_seconds,
+    actual_seconds: input.actual_seconds,
+    completed: input.completed,
+    note: input.note?.trim() || null,
+    task_id: input.task_id ?? null,
+    task_title: input.task_title ?? null,
+    started_at: input.started_at,
+    ended_at: input.ended_at ?? now,
+    created_at: now,
+  };
+}
+
 export type FocusWeekDay = {
   date: string;
   minutes: number;

@@ -58,8 +58,8 @@ export function LogFocusForm({
       >
         <p className="text-sm text-muted-foreground transition-colors group-hover:text-foreground">
           {summary
-            ? `Log manually · ${summary}`
-            : "Log manually · add past focus"}
+            ? `Add past focus · ${summary}`
+            : "Add past focus · forgot to start the timer?"}
         </p>
         <ChevronDown
           className={cn(
@@ -164,7 +164,7 @@ export function LogFocusForm({
             variant="outline"
             className="h-10 w-full rounded-xl"
           >
-            {pending ? "Saving…" : "Seal session"}
+            {pending ? "Saving…" : "Add past focus"}
           </Button>
 
           {state?.error ? (
