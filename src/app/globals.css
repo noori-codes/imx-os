@@ -443,6 +443,17 @@
   isolation: isolate;
 }
 
+@media (max-width: 1023px) {
+  .focus-progress:not([data-compact="true"]) .focus-constellation-stage {
+    max-width: 22rem;
+    margin-inline: auto;
+  }
+
+  .focus-progress:not([data-compact="true"]) .focus-sky-labels {
+    margin-top: 0.5rem;
+  }
+}
+
 .focus-progress[data-compact="true"] .focus-constellation-stage {
   transform: scale(1.02);
   transition: transform 500ms ease;

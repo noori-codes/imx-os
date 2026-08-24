@@ -74,78 +74,57 @@ function readGoalMinutes() {
   return clampDailyFocusGoal(value);
 }
 
-function heroMotivator({
+function companionStory({
   met,
-  goalRemainingSeconds,
   focusMinutes,
   yesterdayMinutes,
   weekMinutes,
+  blockMinutes,
+  goalMinutes,
   goalLabel,
+  marks,
+  goalRemainingSeconds,
 }: {
   met: boolean;
-  goalRemainingSeconds: number;
   focusMinutes: number;
   yesterdayMinutes: number;
   weekMinutes: number[];
-  goalLabel: string;
-}) {
-  if (met) {
-    return { headline: "Goal sealed", sub: "Room for more if you want it" };
-  }
-  if (focusMinutes === 0) {
-    return { headline: goalLabel, sub: "ahead today" };
-  }
-  const weekBest = Math.max(0, ...weekMinutes);
-  if (weekBest > 0 && focusMinutes >= weekBest) {
-    return { headline: "Best day", sub: "this week so far" };
-  }
-  if (yesterdayMinutes > 0 && focusMinutes < yesterdayMinutes) {
-    const gap = yesterdayMinutes - focusMinutes;
-    return {
-      headline: formatFocusMinutes(Math.max(1, gap)),
-      sub: "to beat yesterday",
-    };
-  }
-  return {
-    headline: formatFocusDuration(goalRemainingSeconds),
-    sub: "to goal",
-  };
-}
-
-function smartWhisper({
-  marks,
-  focusMinutes,
-  goalMinutes,
-  yesterdayMinutes,
-  blockMinutes,
-  met,
-  goalLabel,
-}: {
-  marks: FocusTodayMark[];
-  focusMinutes: number;
-  goalMinutes: number;
-  yesterdayMinutes: number;
   blockMinutes: number;
-  met: boolean;
+  goalMinutes: number;
   goalLabel: string;
+  marks: FocusTodayMark[];
+  goalRemainingSeconds: number;
 }) {
-  if (met) return "Another honest block is pure bonus";
-  if (marks.length >= 2) {
-    return `${marks.length} stars lit · pacing toward ${goalLabel}`;
-  }
+  if (met) return "Goal sealed · room for more if you want it";
+  if (focusMinutes === 0) return "First star is one session away";
+
   if (
     yesterdayMinutes > 0 &&
-    focusMinutes > 0 &&
     focusMinutes + blockMinutes > yesterdayMinutes
   ) {
     return `One more ${formatFocusMinutes(blockMinutes)} beats yesterday`;
   }
-  if (focusMinutes === 0) return "First star is one session away";
+
+  if (yesterdayMinutes > 0 && focusMinutes < yesterdayMinutes) {
+    const gap = yesterdayMinutes - focusMinutes;
+    return `${formatFocusMinutes(Math.max(1, gap))} to beat yesterday`;
+  }
+
+  const weekBest = Math.max(0, ...weekMinutes);
+  if (weekBest > 0 && focusMinutes >= weekBest && marks.length > 0) {
+    return "Best day this week so far";
+  }
+
   const remaining = Math.max(0, goalMinutes - focusMinutes);
   if (remaining <= blockMinutes) {
     return `One ${formatFocusMinutes(blockMinutes)} block seals the goal`;
   }
-  return `${Math.ceil(remaining / blockMinutes)} blocks stand between you and ${goalLabel}`;
+
+  if (marks.length >= 2) {
+    return `${marks.length} stars lit · ${formatFocusDuration(goalRemainingSeconds)} to goal`;
+  }
+
+  return `${Math.ceil(remaining / blockMinutes)} blocks to ${goalLabel}`;
 }
 
 function weekDayLabel(dateStr: string) {
@@ -520,11 +499,6 @@ function HorizonTrack({
           </>
         ) : null}
       </svg>
-      {!compact ? (
-        <p className="text-center text-[11px] tabular-nums text-muted-foreground lg:text-left">
-          {Math.round(progress)}% across today&apos;s horizon
-        </p>
-      ) : null}
     </div>
   );
 }
@@ -676,25 +650,17 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
 
   const todayTotalLabel = formatFocusDuration(todayTotalSeconds);
   const goalLabel = formatFocusMinutes(goalMinutes);
-  const whisper = ready
-    ? smartWhisper({
-        marks,
-        focusMinutes,
-        goalMinutes,
-        yesterdayMinutes,
-        blockMinutes,
+  const story = ready
+    ? companionStory({
         met,
-        goalLabel,
-      })
-    : null;
-  const motivator = ready
-    ? heroMotivator({
-        met,
-        goalRemainingSeconds,
         focusMinutes,
         yesterdayMinutes,
         weekMinutes: stats.week.map((d) => d.minutes),
+        blockMinutes,
+        goalMinutes,
         goalLabel,
+        marks,
+        goalRemainingSeconds,
       })
     : null;
 
@@ -770,14 +736,14 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
       data-sealed={sealPulse ? "true" : "false"}
       data-mode={mode}
       data-streak={streakTier(stats.current_streak)}
-      className="focus-progress focus-companion relative flex min-h-0 w-full flex-col max-lg:gap-4 lg:min-h-[30rem]"
+      className="focus-progress focus-companion relative flex min-h-0 w-full flex-col lg:min-h-[30rem]"
     >
-      <div className="relative z-[1] flex flex-1 flex-col gap-4 max-lg:gap-3 lg:gap-5">
+      <div className="relative z-[1] flex flex-1 flex-col gap-5 max-lg:gap-4 lg:gap-6">
         <div className="text-center lg:text-left">
           <p className="text-xs font-medium tracking-wide text-muted-foreground">
             Your sky
           </p>
-          <p className="mt-1.5 flex items-baseline justify-center gap-2 text-sm text-muted-foreground lg:justify-start">
+          <p className="mt-1 flex items-baseline justify-center gap-2 text-sm text-muted-foreground lg:justify-start">
             <span>
               {liveFocus
                 ? "Session in flight"
@@ -805,8 +771,8 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
 
         <div
           className={cn(
-            "focus-progress-hero relative space-y-4 transition-all duration-500",
-            compact && "space-y-2",
+            "focus-progress-hero relative transition-all duration-500",
+            compact ? "space-y-2" : "space-y-5",
           )}
           role="progressbar"
           aria-valuemin={0}
@@ -824,20 +790,9 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
 
           {!compact ? (
             <>
-              {motivator ? (
-                <div className="text-center lg:text-left">
-                  <p className="text-[2rem] font-medium leading-none tracking-tight text-foreground sm:text-[2.35rem]">
-                    {motivator.headline}
-                  </p>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    {motivator.sub}
-                  </p>
-                </div>
-              ) : null}
-
-              {whisper ? (
-                <p className="text-center text-sm text-foreground/85 lg:text-left">
-                  {whisper}
+              {story ? (
+                <p className="text-center text-sm leading-snug text-foreground/90 lg:text-left">
+                  {story}
                 </p>
               ) : null}
 
@@ -898,16 +853,11 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
                 ) : null}
               </div>
 
-              <div className="w-full">
+              <div className="w-full border-t border-border/40 pt-5">
                 <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
                   This week
                 </p>
-                {pace ? (
-                  <p className="mt-1 text-[11px] text-muted-foreground">
-                    {pace}
-                  </p>
-                ) : null}
-                <div className="mt-2.5 grid grid-cols-7 gap-1 sm:gap-1.5">
+                <div className="mt-3 grid grid-cols-7 gap-1 sm:gap-1.5">
                   {weekDays.map((day) => {
                     const height =
                       day.minutes <= 0
@@ -929,7 +879,7 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
                         className="flex min-w-0 flex-col items-center gap-1.5"
                         title={`${formatFocusMinutes(day.minutes)} focused`}
                       >
-                        <div className="relative flex h-16 w-full items-end rounded-lg bg-muted/30 px-1 pb-1 sm:h-[4.5rem]">
+                        <div className="relative flex h-14 w-full items-end rounded-lg bg-muted/30 px-1 pb-1 sm:h-16">
                           {goalLinePct > 8 && goalLinePct < 96 ? (
                             <span
                               aria-hidden
@@ -968,6 +918,11 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
                     );
                   })}
                 </div>
+                {pace ? (
+                  <p className="mt-3 text-center text-[11px] text-muted-foreground lg:text-left">
+                    {pace}
+                  </p>
+                ) : null}
               </div>
             </>
           ) : null}
