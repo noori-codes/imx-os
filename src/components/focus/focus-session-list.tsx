@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useOptimistic, useTransition } from "react";
-import { Clock, Play, Trash2 } from "lucide-react";
+import { useOptimistic, useState, useTransition } from "react";
+import { ChevronDown, Clock, Play, Trash2 } from "lucide-react";
 
-import { deleteFocusSession } from "@/actions/focus";
+import { deleteFocusSessions } from "@/actions/focus";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +12,7 @@ import {
   canContinueLoggedSession,
   continueSubject,
 } from "@/lib/focus-continue";
+import { groupDaySessionsIntoThreads } from "@/lib/focus-threads";
 import { cn } from "@/lib/utils";
 import { useFocusTimer } from "@/stores/focus-timer";
 import {
@@ -83,13 +84,25 @@ function scrollToTimer() {
     ?.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
+function threadTimeRange(sessions: FocusSession[]) {
+  const times = sessions
+    .map((session) => new Date(session.started_at).getTime())
+    .sort((a, b) => a - b);
+  const first = times[0];
+  const last = times[times.length - 1];
+  if (first == null || last == null) return "";
+  if (first === last) return formatTime(new Date(first).toISOString());
+  return `${formatTime(new Date(first).toISOString())} – ${formatTime(new Date(last).toISOString())}`;
+}
+
 export function FocusSessionList({ sessions }: FocusSessionListProps) {
   const [, startTransition] = useTransition();
   const isRunning = useFocusTimer((s) => s.isRunning);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [optimisticSessions, removeOptimistic] = useOptimistic(
     sessions,
-    (current: FocusSession[], id: string) =>
-      current.filter((s) => s.id !== id),
+    (current: FocusSession[], ids: string[]) =>
+      current.filter((s) => !ids.includes(s.id)),
   );
 
   if (optimisticSessions.length === 0) {
@@ -110,24 +123,29 @@ export function FocusSessionList({ sessions }: FocusSessionListProps) {
 
   const groups = groupSessions(optimisticSessions);
 
-  function handleDelete(session: FocusSession, event: React.MouseEvent) {
+  function handleDelete(sessionsToDelete: FocusSession[], event: React.MouseEvent) {
     event.stopPropagation();
-    if (
-      !window.confirm(
-        `Delete this ${FOCUS_PRESETS[session.mode].label.toLowerCase()} session?`,
-      )
-    ) {
+    const count = sessionsToDelete.length;
+    const label =
+      count === 1
+        ? `${FOCUS_PRESETS[sessionsToDelete[0].mode].label.toLowerCase()} session`
+        : `${count} sessions in this thread`;
+    if (!window.confirm(`Delete this ${label}?`)) {
       return;
     }
+    const ids = sessionsToDelete.map((session) => session.id);
     startTransition(async () => {
-      removeOptimistic(session.id);
-      await deleteFocusSession(session.id);
+      removeOptimistic(ids);
+      await deleteFocusSessions(ids);
     });
   }
 
-  function handleContinue(session: FocusSession) {
-    if (!canContinueLoggedSession(session, isRunning)) return;
-    useFocusTimer.getState().continueFromLoggedSession(session);
+  function handleContinue(threadSessions: FocusSession[]) {
+    const latest = threadSessions[0];
+    if (!latest || !canContinueLoggedSession(latest, isRunning)) return;
+    useFocusTimer
+      .getState()
+      .continueFromLoggedSession(latest, threadSessions.slice(1));
     scrollToTimer();
   }
 
@@ -145,139 +163,213 @@ export function FocusSessionList({ sessions }: FocusSessionListProps) {
       </div>
 
       <div className="space-y-7">
-        {groups.map((group) => (
-          <div key={group.key}>
-            <div className="mb-3 flex items-baseline justify-between gap-3">
-              <h3 className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-                {group.label}
-              </h3>
-              <span className="text-xs tabular-nums text-muted-foreground">
-                {group.sessions.length}
-              </span>
-            </div>
+        {groups.map((group) => {
+          const threads = groupDaySessionsIntoThreads(group.sessions);
+          return (
+            <div key={group.key}>
+              <div className="mb-3 flex items-baseline justify-between gap-3">
+                <h3 className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                  {group.label}
+                </h3>
+                <span className="text-xs tabular-nums text-muted-foreground">
+                  {threads.length}
+                </span>
+              </div>
 
-            <ul className="space-y-1">
-              {group.sessions.map((session) => {
-                const canContinue = canContinueLoggedSession(session, isRunning);
-                const subject = continueSubject(
-                  session.note,
-                  session.task_title,
-                );
-                const pickupHint = canContinue
-                  ? buildPickupHint(session.actual_seconds, subject)
-                  : null;
+              <ul className="space-y-1">
+                {threads.map((thread) => {
+                  const latest = thread.sessions[0];
+                  const isThread = thread.sessions.length > 1;
+                  const open = expanded[thread.key] === true;
+                  const canContinue = canContinueLoggedSession(
+                    latest,
+                    isRunning,
+                  );
+                  const subject = continueSubject(
+                    latest.note,
+                    latest.task_title,
+                  );
+                  const pickupHint = canContinue
+                    ? buildPickupHint(thread.totalSeconds, subject)
+                    : null;
 
-                return (
-                  <li key={session.id}>
-                    <div
-                      role={canContinue ? "button" : undefined}
-                      tabIndex={canContinue ? 0 : undefined}
-                      onClick={
-                        canContinue ? () => handleContinue(session) : undefined
-                      }
-                      onKeyDown={
-                        canContinue
-                          ? (event) => {
-                              if (
-                                event.key === "Enter" ||
-                                event.key === " "
-                              ) {
-                                event.preventDefault();
-                                handleContinue(session);
+                  return (
+                    <li key={thread.key}>
+                      <div
+                        role={canContinue ? "button" : undefined}
+                        tabIndex={canContinue ? 0 : undefined}
+                        onClick={
+                          canContinue
+                            ? () => handleContinue(thread.sessions)
+                            : undefined
+                        }
+                        onKeyDown={
+                          canContinue
+                            ? (event) => {
+                                if (
+                                  event.key === "Enter" ||
+                                  event.key === " "
+                                ) {
+                                  event.preventDefault();
+                                  handleContinue(thread.sessions);
+                                }
                               }
-                            }
-                          : undefined
-                      }
-                      className={cn(
-                        "group flex items-center gap-3 rounded-2xl px-2.5 py-2.5 transition-colors",
-                        canContinue &&
-                          "cursor-pointer hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                        !canContinue && "hover:bg-muted/20",
-                      )}
-                      aria-label={
-                        canContinue
-                          ? `Continue session · ${pickupHint ?? formatFocusDuration(session.actual_seconds)}`
-                          : undefined
-                      }
-                    >
-                      <span
+                            : undefined
+                        }
                         className={cn(
-                          "size-2 shrink-0 rounded-full",
-                          modeTone(session.mode),
+                          "group rounded-2xl px-2.5 py-2.5 transition-colors",
+                          canContinue &&
+                            "cursor-pointer hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                          !canContinue && "hover:bg-muted/20",
                         )}
-                        aria-hidden
-                      />
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium">
-                          {FOCUS_PRESETS[session.mode].label}
-                          {!session.completed ? (
-                            <span className="ml-2 text-xs font-normal text-muted-foreground">
-                              stopped early
-                            </span>
-                          ) : null}
-                        </p>
-                        {pickupHint ? (
-                          <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                            {pickupHint}
-                          </p>
-                        ) : session.note ? (
-                          <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                            {session.note}
-                          </p>
-                        ) : null}
-                        {session.task_title ? (
-                          <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                            Task{" "}
-                            <Link
-                              href="/tasks"
-                              className="text-foreground/80 underline-offset-2 hover:underline"
-                              onClick={(event) => event.stopPropagation()}
-                            >
-                              {session.task_title}
-                            </Link>
-                          </p>
-                        ) : null}
-                      </div>
-                      <div className="shrink-0 text-right">
-                        <p className="focus-clock text-sm text-foreground">
-                          {formatFocusDuration(session.actual_seconds)}
-                        </p>
-                        <p className="mt-0.5 text-[11px] tabular-nums text-muted-foreground">
-                          {formatTime(session.started_at)}
-                        </p>
-                      </div>
-                      {canContinue ? (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="size-8 shrink-0 text-foreground"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            handleContinue(session);
-                          }}
-                          aria-label="Continue session"
-                        >
-                          <Play className="size-3.5 fill-current" />
-                        </Button>
-                      ) : null}
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="size-8 shrink-0 text-muted-foreground opacity-100 hover:text-destructive sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
-                        onClick={(event) => handleDelete(session, event)}
-                        aria-label="Delete session"
+                        aria-label={
+                          canContinue
+                            ? `Continue session · ${pickupHint ?? formatFocusDuration(thread.totalSeconds)}`
+                            : undefined
+                        }
                       >
-                        <Trash2 className="size-3.5" />
-                      </Button>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        ))}
+                        <div className="flex items-center gap-3">
+                          <span
+                            className={cn(
+                              "size-2 shrink-0 rounded-full",
+                              modeTone(latest.mode),
+                            )}
+                            aria-hidden
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium">
+                              {isThread
+                                ? thread.title
+                                : FOCUS_PRESETS[latest.mode].label}
+                              {!latest.completed && !isThread ? (
+                                <span className="ml-2 text-xs font-normal text-muted-foreground">
+                                  stopped early
+                                </span>
+                              ) : null}
+                            </p>
+                            {pickupHint ? (
+                              <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                                {pickupHint}
+                              </p>
+                            ) : isThread ? (
+                              <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                                {thread.sessions.length} blocks ·{" "}
+                                {threadTimeRange(thread.sessions)}
+                              </p>
+                            ) : latest.note ? (
+                              <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                                {latest.note}
+                              </p>
+                            ) : null}
+                            {!isThread && latest.task_title ? (
+                              <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                                Task{" "}
+                                <Link
+                                  href="/tasks"
+                                  className="text-foreground/80 underline-offset-2 hover:underline"
+                                  onClick={(event) => event.stopPropagation()}
+                                >
+                                  {latest.task_title}
+                                </Link>
+                              </p>
+                            ) : null}
+                          </div>
+                          <div className="shrink-0 text-right">
+                            <p className="focus-clock text-sm text-foreground">
+                              {formatFocusDuration(thread.totalSeconds)}
+                            </p>
+                            <p className="mt-0.5 text-[11px] tabular-nums text-muted-foreground">
+                              {isThread
+                                ? `${thread.sessions.length} blocks`
+                                : formatTime(latest.started_at)}
+                            </p>
+                          </div>
+                          {isThread ? (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="size-8 shrink-0 text-muted-foreground"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                setExpanded((current) => ({
+                                  ...current,
+                                  [thread.key]: !open,
+                                }));
+                              }}
+                              aria-expanded={open}
+                              aria-label={
+                                open ? "Hide blocks" : "Show blocks"
+                              }
+                            >
+                              <ChevronDown
+                                className={cn(
+                                  "size-3.5 transition-transform",
+                                  open && "rotate-180",
+                                )}
+                              />
+                            </Button>
+                          ) : null}
+                          {canContinue ? (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="size-8 shrink-0 text-foreground"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleContinue(thread.sessions);
+                              }}
+                              aria-label="Continue session"
+                            >
+                              <Play className="size-3.5 fill-current" />
+                            </Button>
+                          ) : null}
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="size-8 shrink-0 text-muted-foreground opacity-100 hover:text-destructive sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
+                            onClick={(event) =>
+                              handleDelete(thread.sessions, event)
+                            }
+                            aria-label={
+                              isThread ? "Delete thread" : "Delete session"
+                            }
+                          >
+                            <Trash2 className="size-3.5" />
+                          </Button>
+                        </div>
+
+                        {isThread && open ? (
+                          <ul className="mt-2 space-y-1 border-l border-border/50 pl-4">
+                            {thread.sessions.map((session) => (
+                              <li
+                                key={session.id}
+                                className="flex items-center justify-between gap-3 py-1 text-xs text-muted-foreground"
+                              >
+                                <span className="truncate">
+                                  {formatTime(session.started_at)}
+                                  {session.note &&
+                                  session.note !== thread.title
+                                    ? ` · ${session.note}`
+                                    : ""}
+                                </span>
+                                <span className="focus-clock shrink-0 tabular-nums">
+                                  {formatFocusDuration(session.actual_seconds)}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : null}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          );
+        })}
       </div>
     </section>
   );

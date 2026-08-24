@@ -298,6 +298,7 @@ export function FocusTimer({
     const {
       progressBaseSeconds,
       continuedSessionId,
+      continuedMergeIds,
       sessionStartedAt: continuedStartedAt,
     } = useFocusTimer.getState();
     const incremental = Math.max(0, actual - progressBaseSeconds);
@@ -333,6 +334,11 @@ export function FocusTimer({
           note,
           task_id: taskId,
           ended_at: new Date().toISOString(),
+          started_at:
+            continuedStartedAt != null
+              ? new Date(continuedStartedAt).toISOString()
+              : undefined,
+          absorbIds: continuedMergeIds,
         });
       } else {
         await logFocusSession({

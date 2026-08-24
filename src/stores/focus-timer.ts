@@ -49,6 +49,7 @@ type FocusTimerState = {
   lastLongBreakSeconds: number;
   progressBaseSeconds: number;
   continuedSessionId: string | null;
+  continuedMergeIds: string[];
   setMode: (mode: FocusMode) => void;
   setClock: (clock: FocusClock) => void;
   setDuration: (seconds: number) => void;
@@ -79,6 +80,7 @@ type FocusTimerState = {
       | "mode"
       | "started_at"
     >,
+    absorb?: Pick<FocusSession, "id" | "actual_seconds" | "started_at">[],
   ) => void;
 };
 
@@ -196,6 +198,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
   lastLongBreakSeconds: classic.long_break * 60,
   progressBaseSeconds: 0,
   continuedSessionId: null,
+  continuedMergeIds: [],
 
   displaySeconds: () => {
     const current = get();
@@ -226,6 +229,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
       elapsedSeconds: 0,
       progressBaseSeconds: 0,
       continuedSessionId: null,
+      continuedMergeIds: [],
       isRunning: false,
       startedAt: null,
       sessionStartedAt: null,
@@ -245,6 +249,8 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
         mode: "focus",
         elapsedSeconds: 0,
         progressBaseSeconds: 0,
+        continuedSessionId: null,
+        continuedMergeIds: [],
         remainingSeconds: current.lastFocusSeconds,
         durationSeconds: current.lastFocusSeconds,
         isRunning: false,
@@ -263,6 +269,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
       elapsedSeconds: 0,
       progressBaseSeconds: 0,
       continuedSessionId: null,
+      continuedMergeIds: [],
       isRunning: false,
       startedAt: null,
       sessionStartedAt: null,
@@ -456,6 +463,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
         elapsedSeconds: 0,
         progressBaseSeconds: 0,
         continuedSessionId: null,
+        continuedMergeIds: [],
         isRunning: false,
         startedAt: null,
         sessionStartedAt: null,
@@ -469,6 +477,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
       elapsedSeconds: 0,
       progressBaseSeconds: 0,
       continuedSessionId: null,
+      continuedMergeIds: [],
       isRunning: false,
       startedAt: null,
       sessionStartedAt: null,
@@ -476,16 +485,24 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
     });
   },
 
-  continueFromLoggedSession: (session) => {
+  continueFromLoggedSession: (session, absorb = []) => {
     const current = get();
     if (!canContinueLoggedSessionFrom(session, current.isRunning)) return;
 
+    const extras = absorb.filter((item) => item.id !== session.id);
     const carried = Math.max(
       0,
-      Math.min(FOCUS_MAX_SECONDS, session.actual_seconds),
+      Math.min(
+        FOCUS_MAX_SECONDS,
+        session.actual_seconds +
+          extras.reduce((sum, item) => sum + item.actual_seconds, 0),
+      ),
     );
 
-    const sessionStart = new Date(session.started_at).getTime();
+    const earliestStart = [session, ...extras].reduce((earliest, item) => {
+      const time = new Date(item.started_at).getTime();
+      return time < earliest ? time : earliest;
+    }, new Date(session.started_at).getTime());
 
     set({
       clock: "up",
@@ -493,9 +510,10 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
       elapsedSeconds: carried,
       progressBaseSeconds: carried,
       continuedSessionId: session.id,
+      continuedMergeIds: extras.map((item) => item.id),
       isRunning: false,
       startedAt: null,
-      sessionStartedAt: sessionStart,
+      sessionStartedAt: earliestStart,
       endsAt: null,
       lastDisplaySecond: carried,
       intention: session.note ?? "",

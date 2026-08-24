@@ -5,7 +5,8 @@ import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
 import { revalidateUserCaches } from "@/lib/cache";
 import { createClient } from "@/lib/supabase/server";
-import { computeStreaks, getWeekDays, startOfWeekSaturday, toDateString } from "@/lib/date-utils";
+import { computeStreaks, getWeekDays, startOfDay, startOfWeekSaturday, toDateString } from "@/lib/date-utils";
+import { sameFocusThread } from "@/lib/focus-threads";
 import type { FocusMode, FocusSession, FocusWeekDay } from "@/types/focus";
 import { FOCUS_MAX_SECONDS } from "@/types/focus";
 
@@ -180,6 +181,7 @@ export async function logFocusSession(input: {
   completed: boolean;
   note?: string;
   task_id?: string | null;
+  appendToThread?: boolean;
 }) {
   const supabase = await createClient();
   const {
@@ -202,6 +204,7 @@ export async function logFocusSession(input: {
   const started = new Date(ended.getTime() - input.actual_seconds * 1000);
   const taskId =
     input.mode === "focus" && input.task_id ? input.task_id : null;
+  const note = input.note?.trim() || null;
 
   if (taskId) {
     const { data: task, error: taskError } = await supabase
@@ -215,13 +218,67 @@ export async function logFocusSession(input: {
     }
   }
 
+  const shouldAppend =
+    input.appendToThread !== false && input.mode === "focus";
+
+  if (shouldAppend) {
+    const { data: todayRows } = await supabase
+      .from("focus_sessions")
+      .select(
+        "id, mode, planned_seconds, actual_seconds, note, task_id, started_at",
+      )
+      .eq("user_id", user.id)
+      .eq("mode", "focus")
+      .gte("started_at", startOfDay(new Date()).toISOString())
+      .order("started_at", { ascending: false })
+      .limit(20);
+
+    const incoming = {
+      id: "incoming",
+      mode: "focus" as const,
+      started_at: started.toISOString(),
+      task_id: taskId,
+      note,
+    };
+
+    const match = (todayRows ?? []).find((row) =>
+      sameFocusThread(row, incoming),
+    );
+
+    if (match) {
+      const nextActual = Math.min(
+        FOCUS_MAX_SECONDS,
+        match.actual_seconds + input.actual_seconds,
+      );
+      const { error: appendError } = await supabase
+        .from("focus_sessions")
+        .update({
+          actual_seconds: nextActual,
+          planned_seconds: Math.max(match.planned_seconds, nextActual),
+          completed: input.completed,
+          note: note ?? match.note,
+          task_id: taskId ?? match.task_id,
+          ended_at: ended.toISOString(),
+        })
+        .eq("id", match.id)
+        .eq("user_id", user.id);
+
+      if (appendError) {
+        return { error: appendError.message };
+      }
+
+      await revalidateFocus();
+      return {};
+    }
+  }
+
   const { error } = await supabase.from("focus_sessions").insert({
     user_id: user.id,
     mode: input.mode,
     planned_seconds: input.planned_seconds,
     actual_seconds: input.actual_seconds,
     completed: input.completed,
-    note: input.note?.trim() || null,
+    note,
     task_id: taskId,
     started_at: started.toISOString(),
     ended_at: ended.toISOString(),
@@ -266,6 +323,7 @@ export async function logManualFocusSession(
     completed: true,
     note,
     task_id,
+    appendToThread: false,
   });
 }
 
@@ -277,6 +335,8 @@ export async function updateFocusSession(input: {
   note?: string;
   task_id?: string | null;
   ended_at: string;
+  started_at?: string;
+  absorbIds?: string[];
 }) {
   const supabase = await createClient();
   const {
@@ -319,6 +379,7 @@ export async function updateFocusSession(input: {
       note: input.note?.trim() || null,
       task_id: taskId,
       ended_at: input.ended_at,
+      ...(input.started_at ? { started_at: input.started_at } : {}),
     })
     .eq("id", input.sessionId)
     .eq("user_id", user.id);
@@ -327,20 +388,41 @@ export async function updateFocusSession(input: {
     return { error: error.message };
   }
 
+  const absorbIds = (input.absorbIds ?? []).filter(
+    (id) => id && id !== input.sessionId,
+  );
+  if (absorbIds.length > 0) {
+    const { error: absorbError } = await supabase
+      .from("focus_sessions")
+      .delete()
+      .in("id", absorbIds)
+      .eq("user_id", user.id);
+
+    if (absorbError) {
+      return { error: absorbError.message };
+    }
+  }
+
   await revalidateFocus();
   return {};
 }
 
 export async function deleteFocusSession(sessionId: string) {
+  return deleteFocusSessions([sessionId]);
+}
+
+export async function deleteFocusSessions(sessionIds: string[]) {
+  if (sessionIds.length === 0) return;
+
   const supabase = await createClient();
 
   const { error } = await supabase
     .from("focus_sessions")
     .delete()
-    .eq("id", sessionId);
+    .in("id", sessionIds);
 
   if (error) {
-    console.error("[focus] deleteFocusSession:", error.message);
+    console.error("[focus] deleteFocusSessions:", error.message);
     return;
   }
 
