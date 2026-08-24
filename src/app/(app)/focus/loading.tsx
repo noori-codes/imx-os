@@ -4,7 +4,7 @@ import { Header } from "@/components/layout/header";
 export default function FocusLoading() {
   return (
     <>
-      <Header title="Focus" description="Timer, sound, one session" />
+      <Header title="Focus" description="One session at a time" />
       <FocusSkeleton />
     </>
   );
