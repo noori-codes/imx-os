@@ -409,6 +409,20 @@
   opacity: 0.85;
 }
 
+.focus-progress[data-live="false"] .focus-sky-fill {
+  animation: focus-sky-breathe 9s ease-in-out infinite;
+}
+
+@keyframes focus-sky-breathe {
+  0%,
+  100% {
+    opacity: 0.82;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
 .focus-sky-arc {
   filter: drop-shadow(0 0 3px oklch(0.85 0.06 240 / 0.15));
 }
@@ -417,12 +431,51 @@
   filter: drop-shadow(0 0 4px oklch(0.55 0.08 240 / 0.2));
 }
 
+.focus-progress[data-live="false"] .focus-sky-arc {
+  animation: focus-arc-shimmer 14s ease-in-out infinite;
+}
+
+@keyframes focus-arc-shimmer {
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
 .focus-sky-star {
   opacity: 0.55;
+  animation: focus-star-twinkle 5.6s ease-in-out infinite;
 }
 
 .dark .focus-sky-star {
   opacity: 0.75;
+}
+
+@keyframes focus-star-twinkle {
+  0%,
+  100% {
+    opacity: 0.28;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+.focus-sky-phase-active {
+  animation: focus-phase-glow 4.8s ease-in-out infinite;
+}
+
+@keyframes focus-phase-glow {
+  0%,
+  100% {
+    opacity: 0.78;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 .focus-progress[data-live="true"] .focus-sky-now circle:last-child {
@@ -444,13 +497,17 @@
 }
 
 @media (max-width: 1023px) {
-  .focus-progress:not([data-compact="true"]) .focus-constellation-stage {
-    max-width: 22rem;
+  .focus-progress:not([data-live="true"]) .focus-constellation-stage {
+    max-width: 17.5rem;
     margin-inline: auto;
   }
 
-  .focus-progress:not([data-compact="true"]) .focus-sky-labels {
-    margin-top: 0.5rem;
+  .focus-progress:not([data-live="true"]) .focus-sky-labels {
+    margin-top: 0.25rem;
+  }
+
+  .focus-progress:not([data-live="true"]) .focus-sky-caption {
+    min-height: 1.1rem;
   }
 }
 
@@ -583,6 +640,52 @@
   animation: focus-constellation-live 2.4s ease-in-out infinite;
 }
 
+.focus-sky-continue-ring {
+  animation: focus-continue-ring 1.8s ease-out 2;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes focus-continue-ring {
+  0% {
+    opacity: 0.85;
+    stroke-width: 0.7;
+  }
+  100% {
+    opacity: 0;
+    stroke-width: 0.2;
+  }
+}
+
+.focus-progress[data-live="true"] .focus-week-today {
+  animation: focus-week-live 2.8s ease-in-out infinite;
+}
+
+@keyframes focus-week-live {
+  0%,
+  100% {
+    opacity: 0.82;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.focus-progress[data-sealed="true"] .focus-week-today {
+  animation: focus-week-seal 0.85s ease-out;
+}
+
+@keyframes focus-week-seal {
+  0% {
+    opacity: 0.45;
+    filter: brightness(1.4);
+  }
+  100% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+}
+
 @keyframes focus-constellation-seal-pop {
   0% {
     opacity: 0.35;
@@ -604,9 +707,13 @@
   animation: focus-constellation-seal-pop 1.15s ease-out;
 }
 
-/* Battery-friendly: pause decorative motion when tab is hidden */
+.focus-progress[data-visible="false"] .focus-sky-fill,
+.focus-progress[data-visible="false"] .focus-sky-arc,
+.focus-progress[data-visible="false"] .focus-sky-star,
+.focus-progress[data-visible="false"] .focus-sky-phase-active,
 .focus-progress[data-visible="false"][data-live="true"] .focus-horizon-sun,
 .focus-progress[data-visible="false"][data-live="true"] .focus-constellation-live-halo,
+.focus-progress[data-visible="false"][data-live="true"] .focus-week-today,
 .focus-progress[data-visible="false"][data-live="true"] .focus-sky-now circle:last-child {
   animation-play-state: paused;
 }
@@ -614,13 +721,20 @@
 @media (prefers-reduced-motion: reduce) {
   .focus-progress[data-live="true"] .focus-horizon-sun,
   .focus-constellation-live-halo,
+  .focus-sky-continue-ring,
   .focus-progress[data-live="true"] .focus-sky-now circle:last-child,
+  .focus-progress[data-live="false"] .focus-sky-fill,
+  .focus-progress[data-live="false"] .focus-sky-arc,
+  .focus-sky-star,
+  .focus-sky-phase-active,
+  .focus-week-today,
   .focus-eq-bar,
   .focus-stage[data-running="true"] .focus-stage-glow {
     animation: none !important;
   }
 
   .focus-progress[data-sealed="true"] .focus-progress-hero,
+  .focus-progress[data-sealed="true"] .focus-week-today,
   .focus-constellation-seal,
   .focus-constellation-meteor,
   .focus-constellation-seal-flash,

@@ -171,52 +171,72 @@ const NIGHT_STARS = [
   { x: 84, y: 28, r: 0.24 },
 ] as const;
 
-function skyPhaseNow(): "dawn" | "noon" | "night" {
-  const hour = new Date().getHours();
+type SkyPhase = "dawn" | "noon" | "night";
+
+function skyPhaseAt(date: Date): SkyPhase {
+  const hour = date.getHours();
   if (hour >= 5 && hour < 11) return "dawn";
   if (hour >= 11 && hour < 17) return "noon";
   return "night";
+}
+
+function skyPhaseNow(): SkyPhase {
+  return skyPhaseAt(new Date());
 }
 
 function SkyPhaseLabel({
   label,
   icon: Icon,
   active,
+  filtered,
+  onClick,
 }: {
   label: string;
   icon: typeof Sunrise;
   active: boolean;
+  filtered: boolean;
+  onClick: () => void;
 }) {
   return (
-    <div
+    <button
+      type="button"
+      onClick={onClick}
       className={cn(
-        "flex flex-col items-center gap-1.5 transition-colors duration-500",
-        active ? "text-foreground" : "text-muted-foreground/55",
+        "flex flex-col items-center gap-1.5 rounded-xl px-1 py-1 transition-colors duration-300",
+          filtered
+            ? "text-foreground"
+            : active
+              ? "focus-sky-phase-active text-foreground/80"
+              : "text-muted-foreground/45 hover:text-muted-foreground",
       )}
+      aria-pressed={filtered}
+      aria-label={`Show ${label.toLowerCase()} sessions`}
     >
       <span
         className={cn(
-          "flex size-7 items-center justify-center rounded-full border transition-all duration-500",
-          active
-            ? "border-foreground/20 bg-foreground/[0.07] shadow-[0_0_20px_oklch(1_0_0/0.06)]"
-            : "border-transparent bg-transparent",
+          "flex size-7 items-center justify-center rounded-full border transition-all duration-300",
+          filtered
+            ? "border-foreground/25 bg-foreground/[0.08]"
+            : active
+              ? "border-foreground/15 bg-foreground/[0.04]"
+              : "border-transparent bg-transparent",
         )}
       >
         <Icon
-          className={cn("size-3.5", active && "opacity-100")}
-          strokeWidth={active ? 2 : 1.5}
+          className="size-3.5"
+          strokeWidth={filtered || active ? 2 : 1.5}
           aria-hidden
         />
       </span>
       <span
         className={cn(
           "text-[10px] font-medium tracking-[0.14em] uppercase",
-          active && "tracking-[0.18em]",
+          (filtered || active) && "tracking-[0.18em]",
         )}
       >
         {label}
       </span>
-    </div>
+    </button>
   );
 }
 
@@ -225,6 +245,7 @@ function ConstellationSky({
   liveMark,
   sealMark,
   liveFocus,
+  continuing,
   ready,
 }: {
   marks: FocusTodayMark[];
@@ -239,21 +260,46 @@ function ConstellationSky({
     title: string;
   } | null;
   liveFocus: boolean;
+  continuing: boolean;
   ready: boolean;
 }) {
+  const [filter, setFilter] = useState<SkyPhase | null>(null);
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
+
   const sorted = [...marks].sort(
     (a, b) =>
       new Date(a.started_at).getTime() - new Date(b.started_at).getTime(),
   );
   const phase = ready ? skyPhaseNow() : null;
-  const nowPoint = ready ? constellationPoint(new Date().toISOString()) : null;
+  const empty = marks.length === 0 && !liveFocus;
+
+  const visible = filter
+    ? sorted.filter(
+        (mark) => skyPhaseAt(new Date(mark.started_at)) === filter,
+      )
+    : sorted;
+
+  const selected =
+    visible.find((mark) => mark.started_at + String(mark.minutes) === selectedKey) ??
+    null;
+
+  function toggleFilter(next: SkyPhase) {
+    setFilter((current) => (current === next ? null : next));
+    setSelectedKey(null);
+  }
+
+  function selectMark(mark: FocusTodayMark) {
+    const key = mark.started_at + String(mark.minutes);
+    setSelectedKey((current) => (current === key ? null : key));
+  }
 
   return (
     <div className="focus-sky-dome w-full">
       <svg
         viewBox="0 0 100 68"
         className="focus-constellation-sky h-auto w-full"
-        aria-label="Today's focus sessions by time of day"
+        aria-label="Today's focus sessions by time of day. Tap a star for details."
+        onClick={() => setSelectedKey(null)}
       >
         <defs>
           <linearGradient id="focus-sky-dome" x1="0" y1="0" x2="1" y2="0">
@@ -289,7 +335,11 @@ function ConstellationSky({
             cx={star.x}
             cy={star.y}
             r={star.r}
-            className="focus-sky-star fill-foreground/35"
+            className={cn(
+              "focus-sky-star fill-foreground/35",
+              filter && filter !== "night" && "opacity-20",
+            )}
+            style={{ animationDelay: `${i * 0.85}s` }}
           />
         ))}
 
@@ -333,10 +383,10 @@ function ConstellationSky({
           );
         })}
 
-        {sorted.length >= 2
-          ? sorted.slice(0, -1).map((mark, i) => {
+        {visible.length >= 2
+          ? visible.slice(0, -1).map((mark, i) => {
               const a = constellationPoint(mark.started_at);
-              const b = constellationPoint(sorted[i + 1]!.started_at);
+              const b = constellationPoint(visible[i + 1]!.started_at);
               return (
                 <line
                   key={`${mark.started_at}-link`}
@@ -351,42 +401,39 @@ function ConstellationSky({
             })
           : null}
 
-        {marks.length === 0 && !liveFocus ? (
-          <circle cx="50" cy="40" r="0.75" className="fill-foreground/20" />
-        ) : null}
-
-        {nowPoint && !liveMark ? (
-          <g className="focus-sky-now">
-            <circle
-              cx={nowPoint.x}
-              cy={nowPoint.y}
-              r="1.35"
-              className="fill-foreground/10"
-            />
-            <circle
-              cx={nowPoint.x}
-              cy={nowPoint.y}
-              r="0.5"
-              className="fill-foreground/45"
-            />
-          </g>
-        ) : null}
-
         {sorted.map((mark) => {
           const point = constellationPoint(mark.started_at);
           const r = markRadius(mark.minutes);
+          const key = mark.started_at + String(mark.minutes);
+          const inFilter = !filter || skyPhaseAt(new Date(mark.started_at)) === filter;
+          const isSelected = selectedKey === key;
           return (
-            <g key={mark.started_at + mark.minutes}>
-              <title>
-                {ready
-                  ? `${formatMarkTime(mark.started_at)} · ${formatFocusMinutes(mark.minutes)}`
-                  : formatFocusMinutes(mark.minutes)}
-              </title>
+            <g
+              key={key}
+              className={cn(
+                "focus-sky-session cursor-pointer",
+                !inFilter && "opacity-20",
+              )}
+              onClick={(event) => {
+                event.stopPropagation();
+                if (!inFilter) return;
+                selectMark(mark);
+              }}
+            >
               <circle
                 cx={point.x}
                 cy={point.y}
-                r={r + 0.55}
-                className="fill-foreground/8"
+                r="5.5"
+                className="fill-transparent"
+              />
+              <circle
+                cx={point.x}
+                cy={point.y}
+                r={r + (isSelected ? 1.1 : 0.55)}
+                className={cn(
+                  "fill-foreground/8",
+                  isSelected && "fill-foreground/20",
+                )}
               />
               <circle
                 cx={point.x}
@@ -399,8 +446,29 @@ function ConstellationSky({
         })}
 
         {liveMark ? (
-          <g className="focus-constellation-live text-foreground">
-            <title>{liveMark.title}</title>
+          <g className="focus-constellation-live pointer-events-none text-foreground">
+            {[0.07, 0.04, 0.02].map((back, i) => {
+              const trail = arcPoint(Math.max(0, liveMark.point.t - back));
+              return (
+                <circle
+                  key={back}
+                  cx={trail.x}
+                  cy={trail.y}
+                  r={Math.max(0.35, liveMark.radius - 0.35 - i * 0.2)}
+                  className="focus-sky-trail fill-foreground"
+                  opacity={0.22 - i * 0.06}
+                />
+              );
+            })}
+            {continuing ? (
+              <circle
+                cx={liveMark.point.x}
+                cy={liveMark.point.y}
+                r={liveMark.radius + 2.4}
+                className="focus-sky-continue-ring fill-none stroke-foreground/50"
+                strokeWidth="0.45"
+              />
+            ) : null}
             <circle
               cx={liveMark.point.x}
               cy={liveMark.point.y}
@@ -417,26 +485,76 @@ function ConstellationSky({
         ) : null}
 
         {sealMark ? (
-          <g
-            className="focus-constellation-seal text-foreground"
-            transform={`translate(${sealMark.point.x} ${sealMark.point.y})`}
-          >
-            <title>{sealMark.title}</title>
-            <circle cx={0} cy={0} r={sealMark.radius + 1.1} className="fill-foreground/12" />
-            <circle
-              cx={0}
-              cy={0}
-              r={sealMark.radius}
-              className="focus-constellation-seal-core fill-foreground"
+          <g className="pointer-events-none text-foreground">
+            <line
+              x1={sealMark.point.x + 9}
+              y1={sealMark.point.y - 5}
+              x2={sealMark.point.x}
+              y2={sealMark.point.y}
+              className="focus-constellation-meteor stroke-foreground/70"
+              strokeWidth="0.7"
+              strokeLinecap="round"
             />
+            <g
+              className="focus-constellation-seal"
+              transform={`translate(${sealMark.point.x} ${sealMark.point.y})`}
+            >
+              <circle
+                cx={0}
+                cy={0}
+                r={sealMark.radius + 2.2}
+                className="focus-constellation-seal-flash fill-foreground/15"
+              />
+              <circle cx={0} cy={0} r={sealMark.radius + 1.1} className="fill-foreground/12" />
+              <circle
+                cx={0}
+                cy={0}
+                r={sealMark.radius}
+                className="focus-constellation-seal-core fill-foreground"
+              />
+            </g>
           </g>
         ) : null}
       </svg>
 
-      <div className="focus-sky-labels mt-3 grid grid-cols-3 items-start px-0.5">
-        <SkyPhaseLabel label="Dawn" icon={Sunrise} active={phase === "dawn"} />
-        <SkyPhaseLabel label="Noon" icon={Sun} active={phase === "noon"} />
-        <SkyPhaseLabel label="Night" icon={Moon} active={phase === "night"} />
+      <p className="focus-sky-caption mt-2 min-h-5 text-center text-[11px] tabular-nums text-muted-foreground">
+        {!ready
+          ? ""
+          : selected
+            ? `${formatMarkTime(selected.started_at)} · ${formatFocusMinutes(selected.minutes)}`
+            : liveFocus
+              ? liveMark?.title ?? "Session in flight"
+              : empty
+                ? "No stars yet · start a block"
+                : filter
+                  ? visible.length === 0
+                    ? `No ${filter} sessions today`
+                    : `${visible.length} ${filter} star${visible.length === 1 ? "" : "s"}`
+                  : "Tap a star for time"}
+      </p>
+
+      <div className="focus-sky-labels mt-1 grid grid-cols-3 items-start px-0.5">
+        <SkyPhaseLabel
+          label="Dawn"
+          icon={Sunrise}
+          active={phase === "dawn"}
+          filtered={filter === "dawn"}
+          onClick={() => toggleFilter("dawn")}
+        />
+        <SkyPhaseLabel
+          label="Noon"
+          icon={Sun}
+          active={phase === "noon"}
+          filtered={filter === "noon"}
+          onClick={() => toggleFilter("noon")}
+        />
+        <SkyPhaseLabel
+          label="Night"
+          icon={Moon}
+          active={phase === "night"}
+          filtered={filter === "night"}
+          onClick={() => toggleFilter("night")}
+        />
       </div>
     </div>
   );
@@ -734,6 +852,7 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
       data-visible={pageVisible ? "true" : "false"}
       data-compact={compact ? "true" : "false"}
       data-sealed={sealPulse ? "true" : "false"}
+      data-continuing={progressBaseSeconds > 0 ? "true" : "false"}
       data-mode={mode}
       data-streak={streakTier(stats.current_streak)}
       className="focus-progress focus-companion relative flex min-h-0 w-full flex-col lg:min-h-[30rem]"
@@ -765,6 +884,7 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
             liveMark={liveMark}
             sealMark={sealMark}
             liveFocus={liveFocus}
+            continuing={progressBaseSeconds > 0}
             ready={ready}
           />
         </div>
@@ -890,7 +1010,7 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
                           <div
                             className={cn(
                               "relative w-full min-h-[3px] rounded-[3px] bg-foreground/70 transition-all duration-500",
-                              today && "bg-foreground",
+                              today && "focus-week-today bg-foreground",
                               day.minutes === 0 && "bg-foreground/25",
                               liveFocus && today && "opacity-90",
                             )}
