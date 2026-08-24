@@ -51,6 +51,30 @@ export const FOCUS_DAILY_GOAL_PRESETS = [
 
 export const FOCUS_DAILY_GOAL_DEFAULT = 120;
 export const FOCUS_DAILY_GOAL_KEY = "imx-focus-daily-goal";
+export const FOCUS_DAILY_GOAL_MIN = 15;
+export const FOCUS_DAILY_GOAL_MAX = 12 * 60;
+
+export type DailyFocusGoal = {
+  minutes: number;
+  saved: boolean;
+};
+
+export function clampDailyFocusGoal(minutes: number) {
+  if (!Number.isFinite(minutes)) return FOCUS_DAILY_GOAL_DEFAULT;
+  return Math.max(
+    FOCUS_DAILY_GOAL_MIN,
+    Math.min(FOCUS_DAILY_GOAL_MAX, Math.round(minutes)),
+  );
+}
+
+export function formatFocusMinutesCompact(totalMinutes: number) {
+  if (totalMinutes <= 0) return "";
+  if (totalMinutes < 60) return `${totalMinutes}m`;
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  if (m === 0) return `${h}h`;
+  return `${h}h${m}`;
+}
 
 export type FocusProfileId = "classic" | "deep" | "quick";
 

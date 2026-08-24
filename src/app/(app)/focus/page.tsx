@@ -1,4 +1,5 @@
 import {
+  getDailyFocusGoal,
   getFocusOverviewStats,
   getRecentFocusSessions,
 } from "@/actions/focus";
@@ -17,10 +18,11 @@ type FocusPageProps = {
 
 export default async function FocusPage({ searchParams }: FocusPageProps) {
   const { task: taskParam } = await searchParams;
-  const [sessions, stats, tasks] = await Promise.all([
+  const [sessions, stats, tasks, dailyGoal] = await Promise.all([
     getRecentFocusSessions(20),
     getFocusOverviewStats(),
     getFocusLinkableTasks(),
+    getDailyFocusGoal(),
   ]);
 
   return (
@@ -35,7 +37,7 @@ export default async function FocusPage({ searchParams }: FocusPageProps) {
               initialTaskId={taskParam ?? null}
             />
           }
-          rail={<FocusStats stats={stats} />}
+          rail={<FocusStats stats={stats} dailyGoal={dailyGoal} />}
           sessions={
             <div className="space-y-8">
               <FocusSessionList sessions={sessions} />

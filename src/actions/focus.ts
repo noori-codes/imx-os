@@ -8,12 +8,17 @@ import { createClient } from "@/lib/supabase/server";
 import { computeStreaks, getWeekDays, startOfDay, startOfWeekSaturday, toDateString } from "@/lib/date-utils";
 import { sameFocusThread } from "@/lib/focus-threads";
 import type {
+  DailyFocusGoal,
   FocusMode,
   FocusSession,
   FocusWeekDay,
   TaskFocusToday,
 } from "@/types/focus";
-import { FOCUS_MAX_SECONDS } from "@/types/focus";
+import {
+  clampDailyFocusGoal,
+  FOCUS_DAILY_GOAL_DEFAULT,
+  FOCUS_MAX_SECONDS,
+} from "@/types/focus";
 
 export type FocusActionState = {
   error?: string;
@@ -201,6 +206,65 @@ export async function getTodayTaskFocus(): Promise<TaskFocusToday> {
     totals[row.task_id] = (totals[row.task_id] ?? 0) + row.actual_seconds;
   }
   return totals;
+}
+
+export async function getDailyFocusGoal(): Promise<DailyFocusGoal> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { minutes: FOCUS_DAILY_GOAL_DEFAULT, saved: false };
+  }
+
+  const { data, error } = await supabase
+    .from("user_settings")
+    .select("daily_focus_goal_minutes")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[focus] getDailyFocusGoal:", error.message);
+    return { minutes: FOCUS_DAILY_GOAL_DEFAULT, saved: false };
+  }
+
+  if (!data) {
+    return { minutes: FOCUS_DAILY_GOAL_DEFAULT, saved: false };
+  }
+
+  return {
+    minutes: clampDailyFocusGoal(data.daily_focus_goal_minutes),
+    saved: true,
+  };
+}
+
+export async function updateDailyFocusGoal(minutes: number) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "You must be signed in." };
+  }
+
+  const value = clampDailyFocusGoal(minutes);
+  const { error } = await supabase.from("user_settings").upsert(
+    {
+      user_id: user.id,
+      daily_focus_goal_minutes: value,
+    },
+    { onConflict: "user_id" },
+  );
+
+  if (error) {
+    console.error("[focus] updateDailyFocusGoal:", error.message);
+    return { error: error.message };
+  }
+
+  revalidatePath("/focus");
+  return {};
 }
 
 export async function logFocusSession(input: {

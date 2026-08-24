@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { ChevronDown, Moon, Play, Sun, Sunrise } from "lucide-react";
 
+import { updateDailyFocusGoal } from "@/actions/focus";
 import { useDocumentVisible } from "@/hooks/use-document-visible";
 import {
   buildPickupHint,
@@ -12,17 +13,21 @@ import { cn } from "@/lib/utils";
 import { toDateString } from "@/lib/date-utils";
 import { canContinueFocusSession, useFocusTimer } from "@/stores/focus-timer";
 import {
+  clampDailyFocusGoal,
   FOCUS_DAILY_GOAL_DEFAULT,
   FOCUS_DAILY_GOAL_KEY,
   FOCUS_DAILY_GOAL_PRESETS,
   formatFocusDuration,
   formatFocusMinutes,
+  formatFocusMinutesCompact,
+  type DailyFocusGoal,
   type FocusTodayMark,
   type FocusOverviewStats,
 } from "@/types/focus";
 
 type FocusStatsProps = {
   stats: FocusOverviewStats;
+  dailyGoal: DailyFocusGoal;
 };
 
 const ARC = { cx: 50, cy: 58, r: 36 };
@@ -63,11 +68,10 @@ function formatMarkTime(iso: string) {
 function readGoalMinutes() {
   if (typeof window === "undefined") return FOCUS_DAILY_GOAL_DEFAULT;
   const raw = window.localStorage.getItem(FOCUS_DAILY_GOAL_KEY);
+  if (raw == null) return FOCUS_DAILY_GOAL_DEFAULT;
   const value = Number(raw);
-  if (!Number.isFinite(value) || value < 15 || value > 12 * 60) {
-    return FOCUS_DAILY_GOAL_DEFAULT;
-  }
-  return Math.round(value);
+  if (!Number.isFinite(value)) return FOCUS_DAILY_GOAL_DEFAULT;
+  return clampDailyFocusGoal(value);
 }
 
 function heroMotivator({
@@ -147,6 +151,27 @@ function smartWhisper({
 function weekDayLabel(dateStr: string) {
   const labels = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"] as const;
   return labels[new Date(`${dateStr}T12:00:00`).getDay()];
+}
+
+function weekPaceLabel(
+  weekDays: { date: string; minutes: number }[],
+  goalMinutes: number,
+  todayKey: string,
+) {
+  if (goalMinutes <= 0) return null;
+  const weekGoal = goalMinutes * 7;
+  const soFar = weekDays.reduce((sum, day) => sum + day.minutes, 0);
+  if (soFar >= weekGoal) return "Week goal sealed";
+
+  const todayIndex = weekDays.findIndex((day) => day.date === todayKey);
+  if (todayIndex < 0) return null;
+  const daysLeft = weekDays.length - todayIndex;
+  const remaining = Math.max(0, weekGoal - soFar);
+  if (daysLeft <= 1) {
+    return `${formatFocusMinutes(remaining)} left today`;
+  }
+  const perDay = Math.max(1, Math.ceil(remaining / daysLeft));
+  return `${formatFocusMinutes(perDay)} / day through Friday`;
 }
 
 function isToday(dateStr: string) {
@@ -504,7 +529,7 @@ function HorizonTrack({
   );
 }
 
-export function FocusStats({ stats }: FocusStatsProps) {
+export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
   const lastFocusSeconds = useFocusTimer((s) => s.lastFocusSeconds);
   const isRunning = useFocusTimer((s) => s.isRunning);
   const mode = useFocusTimer((s) => s.mode);
@@ -526,15 +551,29 @@ export function FocusStats({ stats }: FocusStatsProps) {
   const sealPulse = useFocusTimer((s) => s.sealPulse);
   const clearSealPulse = useFocusTimer((s) => s.clearSealPulse);
   const pageVisible = useDocumentVisible();
-  const [goalMinutes, setGoalMinutes] = useState(FOCUS_DAILY_GOAL_DEFAULT);
+  const [goalMinutes, setGoalMinutes] = useState(dailyGoal.minutes);
   const [ready, setReady] = useState(false);
   const [goalOpen, setGoalOpen] = useState(false);
   const [mobileLayout, setMobileLayout] = useState(false);
+  const [, startGoalTransition] = useTransition();
 
   useEffect(() => {
-    setGoalMinutes(readGoalMinutes());
+    const local = readGoalMinutes();
+    if (!dailyGoal.saved && local !== dailyGoal.minutes) {
+      setGoalMinutes(local);
+      window.localStorage.setItem(FOCUS_DAILY_GOAL_KEY, String(local));
+      startGoalTransition(async () => {
+        await updateDailyFocusGoal(local);
+      });
+    } else {
+      setGoalMinutes(dailyGoal.minutes);
+      window.localStorage.setItem(
+        FOCUS_DAILY_GOAL_KEY,
+        String(dailyGoal.minutes),
+      );
+    }
     setReady(true);
-  }, []);
+  }, [dailyGoal.minutes, dailyGoal.saved]);
 
   useEffect(() => {
     const media = window.matchMedia("(max-width: 1023px)");
@@ -564,9 +603,13 @@ export function FocusStats({ stats }: FocusStatsProps) {
   }, [sealPulse, stats.today_marks, clearSealPulse]);
 
   function updateGoal(minutes: number) {
-    setGoalMinutes(minutes);
-    window.localStorage.setItem(FOCUS_DAILY_GOAL_KEY, String(minutes));
+    const next = clampDailyFocusGoal(minutes);
+    setGoalMinutes(next);
+    window.localStorage.setItem(FOCUS_DAILY_GOAL_KEY, String(next));
     setGoalOpen(false);
+    startGoalTransition(async () => {
+      await updateDailyFocusGoal(next);
+    });
   }
 
   const stopwatchSession =
@@ -707,10 +750,17 @@ export function FocusStats({ stats }: FocusStatsProps) {
     minutes: isToday(day.date) ? todayDisplayMinutes : day.minutes,
   }));
 
-  const weekMaxMinutes = Math.max(
+  const weekScale = Math.max(
     1,
+    goalMinutes,
     ...weekDays.map((d) => d.minutes),
   );
+  const goalLinePct = Math.min(
+    100,
+    (goalMinutes / weekScale) * 100,
+  );
+  const todayKey = toDateString(new Date());
+  const pace = ready ? weekPaceLabel(weekDays, goalMinutes, todayKey) : null;
 
   return (
     <section
@@ -849,26 +899,47 @@ export function FocusStats({ stats }: FocusStatsProps) {
               </div>
 
               <div className="w-full">
-                <p className="mb-2.5 text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
                   This week
                 </p>
-                <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
+                {pace ? (
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    {pace}
+                  </p>
+                ) : null}
+                <div className="mt-2.5 grid grid-cols-7 gap-1 sm:gap-1.5">
                   {weekDays.map((day) => {
-                    const height = Math.max(
-                      6,
-                      Math.round((day.minutes / weekMaxMinutes) * 100),
-                    );
+                    const height =
+                      day.minutes <= 0
+                        ? 6
+                        : Math.max(
+                            6,
+                            Math.round((day.minutes / weekScale) * 100),
+                          );
                     const today = isToday(day.date);
+                    const minuteLabel =
+                      day.minutes > 0
+                        ? formatFocusMinutesCompact(day.minutes)
+                        : today
+                          ? "0m"
+                          : "";
                     return (
                       <div
                         key={day.date}
-                        className="flex min-w-0 flex-col items-center gap-2"
+                        className="flex min-w-0 flex-col items-center gap-1.5"
                         title={`${formatFocusMinutes(day.minutes)} focused`}
                       >
-                        <div className="flex h-16 w-full items-end rounded-lg bg-muted/30 px-1 pb-1 sm:h-[4.5rem]">
+                        <div className="relative flex h-16 w-full items-end rounded-lg bg-muted/30 px-1 pb-1 sm:h-[4.5rem]">
+                          {goalLinePct > 8 && goalLinePct < 96 ? (
+                            <span
+                              aria-hidden
+                              className="pointer-events-none absolute inset-x-1 border-t border-dashed border-foreground/25"
+                              style={{ bottom: `${goalLinePct}%` }}
+                            />
+                          ) : null}
                           <div
                             className={cn(
-                              "w-full min-h-[3px] rounded-[3px] bg-foreground/70 transition-all duration-500",
+                              "relative w-full min-h-[3px] rounded-[3px] bg-foreground/70 transition-all duration-500",
                               today && "bg-foreground",
                               day.minutes === 0 && "bg-foreground/25",
                               liveFocus && today && "opacity-90",
@@ -883,6 +954,15 @@ export function FocusStats({ stats }: FocusStatsProps) {
                           )}
                         >
                           {weekDayLabel(day.date)}
+                        </span>
+                        <span
+                          className={cn(
+                            "h-3 text-[10px] leading-none tabular-nums text-muted-foreground/80",
+                            today && "text-foreground/80",
+                            !minuteLabel && "opacity-0",
+                          )}
+                        >
+                          {minuteLabel || "0"}
                         </span>
                       </div>
                     );
