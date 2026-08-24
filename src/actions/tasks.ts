@@ -70,6 +70,7 @@ const TASK_SELECT = `
 
 async function revalidateTaskViews() {
   revalidatePath("/tasks");
+  revalidatePath("/focus");
   revalidatePath("/calendar");
   revalidatePath("/goals", "layout");
   revalidatePath("/review");

@@ -11,7 +11,12 @@ import { LogFocusForm } from "@/components/focus/log-focus-form";
 import { Header } from "@/components/layout/header";
 import { AppPageFrame } from "@/components/shared/app-page-frame";
 
-export default async function FocusPage() {
+type FocusPageProps = {
+  searchParams: Promise<{ task?: string }>;
+};
+
+export default async function FocusPage({ searchParams }: FocusPageProps) {
+  const { task: taskParam } = await searchParams;
   const [sessions, stats, tasks] = await Promise.all([
     getRecentFocusSessions(20),
     getFocusOverviewStats(),
@@ -27,6 +32,7 @@ export default async function FocusPage() {
             <FocusTimer
               tasks={tasks}
               focusMinutesToday={stats.focus_minutes}
+              initialTaskId={taskParam ?? null}
             />
           }
           rail={<FocusStats stats={stats} />}

@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { ChevronDown, CircleCheck, Pause, Play, RotateCcw, SkipForward } from "lucide-react";
 
 import { logFocusSession, updateFocusSession } from "@/actions/focus";
+import { toggleTaskComplete } from "@/actions/tasks";
 import { FocusSounds } from "@/components/focus/focus-sounds";
 import { Input } from "@/components/ui/input";
 import {
@@ -46,6 +47,8 @@ type SealMoment = {
   seconds: number;
   todayMinutes: number;
   nextLabel: string;
+  task?: { id: string; title: string } | null;
+  taskDone?: boolean;
 };
 
 function isTypingTarget(target: EventTarget | null) {
@@ -79,9 +82,11 @@ function filledDots(count: number, mode: FocusMode) {
 export function FocusTimer({
   tasks = [],
   focusMinutesToday = 0,
+  initialTaskId = null,
 }: {
   tasks?: FocusLinkableTask[];
   focusMinutesToday?: number;
+  initialTaskId?: string | null;
 }) {
   const router = useRouter();
   const pageVisible = useDocumentVisible();
@@ -138,6 +143,19 @@ export function FocusTimer({
     progressBaseSeconds > 0
       ? buildPickupHint(shownSeconds, subject)
       : null;
+
+  const appliedTaskParam = useRef(false);
+  useEffect(() => {
+    if (appliedTaskParam.current) return;
+    if (!initialTaskId || isRunning) return;
+    const task = tasks.find((item) => item.id === initialTaskId);
+    if (!task) return;
+    appliedTaskParam.current = true;
+    setLinkedTaskId(task.id);
+    if (!useFocusTimer.getState().intention.trim()) {
+      setIntention(task.title);
+    }
+  }, [initialTaskId, tasks, isRunning, setLinkedTaskId, setIntention]);
 
   useEffect(() => {
     if (linkedTaskId && !tasks.some((task) => task.id === linkedTaskId)) {
@@ -238,6 +256,13 @@ export function FocusTimer({
         seconds: planned,
         todayMinutes: focusMinutesToday + addedMinutes,
         nextLabel,
+        task:
+          currentMode === "focus" && taskId
+            ? {
+                id: taskId,
+                title: linkedTask?.title ?? (intention.trim() || "this task"),
+              }
+            : null,
       });
 
       advance("complete");
@@ -264,7 +289,9 @@ export function FocusTimer({
 
   useEffect(() => {
     if (!seal) return;
-    const id = window.setTimeout(() => setSeal(null), 3400);
+    if (seal.mode === "focus" && seal.task && !seal.taskDone) return;
+    const delay = seal.taskDone ? 1600 : 3400;
+    const id = window.setTimeout(() => setSeal(null), delay);
     return () => window.clearTimeout(id);
   }, [seal]);
 
@@ -365,9 +392,28 @@ export function FocusTimer({
       seconds: actual,
       todayMinutes: focusMinutesToday + addedMinutes,
       nextLabel: "Focus",
+      task: taskId
+        ? {
+            id: taskId,
+            title: linkedTask?.title ?? (note.trim() || "this task"),
+          }
+        : null,
     });
     loggedRef.current = false;
     reset();
+  }
+
+  function handleMarkTaskDone() {
+    const task = seal?.task;
+    if (!task) return;
+    setSeal((current) =>
+      current ? { ...current, taskDone: true } : current,
+    );
+    setLinkedTaskId(null);
+    startTransition(async () => {
+      await toggleTaskComplete(task.id, true);
+      router.refresh();
+    });
   }
 
   function handleSealStopwatch() {
@@ -580,16 +626,21 @@ export function FocusTimer({
     >
       <div className="focus-stage-glow" aria-hidden />
       {seal ? (
-        <button
-          type="button"
-          className="focus-seal absolute inset-0 z-20 flex items-center justify-center px-6 text-center"
-          onClick={() => setSeal(null)}
-          aria-label="Dismiss completion"
-        >
+        <div className="focus-seal absolute inset-0 z-20 flex items-center justify-center px-6 text-center">
+          <button
+            type="button"
+            className="absolute inset-0"
+            onClick={() => setSeal(null)}
+            aria-label="Dismiss completion"
+          />
           <span className="focus-seal-flash" aria-hidden />
           <span className="focus-seal-card relative z-[1] max-w-sm">
             <span className="block text-[11px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
-              {seal.mode === "focus" ? "Session sealed" : "Break complete"}
+              {seal.taskDone
+                ? "Task done"
+                : seal.mode === "focus"
+                  ? "Session sealed"
+                  : "Break complete"}
             </span>
             <span className="focus-clock mt-2 block text-3xl text-foreground sm:text-4xl">
               {formatFocusClock(seal.seconds)}
@@ -603,11 +654,37 @@ export function FocusTimer({
                 Nicely reset
               </span>
             )}
-            <span className="mt-3 block text-xs text-muted-foreground">
-              Up next · {seal.nextLabel}
-            </span>
+            {seal.mode === "focus" && seal.task && !seal.taskDone ? (
+              <span className="mt-4 block space-y-3">
+                <span className="block truncate text-sm text-muted-foreground">
+                  Still working on {seal.task.title}?
+                </span>
+                <span className="flex items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleMarkTaskDone}
+                    className="rounded-full bg-foreground px-3.5 py-1.5 text-xs font-medium text-background transition-opacity hover:opacity-90"
+                  >
+                    Mark done
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSeal(null)}
+                    className="rounded-full px-3.5 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  >
+                    Keep open
+                  </button>
+                </span>
+              </span>
+            ) : (
+              <span className="mt-3 block text-xs text-muted-foreground">
+                {seal.taskDone
+                  ? `${seal.task?.title ?? "Task"} marked done`
+                  : `Up next · ${seal.nextLabel}`}
+              </span>
+            )}
           </span>
-        </button>
+        </div>
       ) : null}
 
       <div className="relative z-[1] flex w-full flex-1 flex-col">

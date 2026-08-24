@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   Circle,
   Pencil,
+  Timer,
   Trash2,
   X,
 } from "lucide-react";
@@ -16,10 +17,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { isOverdue, isToday } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
+import { formatFocusDuration } from "@/types/focus";
 import type { TaskWithContext } from "@/types/task";
 
 type TaskItemProps = {
   task: TaskWithContext;
+  todayFocusSeconds?: number;
   onOptimisticToggle: (id: string, completed: boolean) => void;
   onOptimisticDelete: (id: string) => void;
   onOptimisticUpdate: (
@@ -45,6 +48,7 @@ function formatDueLabel(dueDate: string) {
 
 export function TaskItem({
   task,
+  todayFocusSeconds = 0,
   onOptimisticToggle,
   onOptimisticDelete,
   onOptimisticUpdate,
@@ -194,6 +198,14 @@ export function TaskItem({
             {task.context}
           </Link>
         ) : null}
+        {todayFocusSeconds >= 60 ? (
+          <Link
+            href={`/focus?task=${task.id}`}
+            className="mt-0.5 block truncate text-xs text-muted-foreground hover:text-foreground hover:underline"
+          >
+            Last focused · {formatFocusDuration(todayFocusSeconds)}
+          </Link>
+        ) : null}
       </div>
 
       {task.due_date ? (
@@ -211,6 +223,18 @@ export function TaskItem({
       ) : null}
 
       <div className="flex shrink-0 opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+        {!task.completed ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-8 text-muted-foreground"
+            asChild
+          >
+            <Link href={`/focus?task=${task.id}`} aria-label="Focus on this task">
+              <Timer className="size-3.5" />
+            </Link>
+          </Button>
+        ) : null}
         <Button
           type="button"
           variant="ghost"

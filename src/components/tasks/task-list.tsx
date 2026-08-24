@@ -9,6 +9,7 @@ import {
   groupActiveTasks,
   viewEmptyCopy,
 } from "@/lib/task-views";
+import type { TaskFocusToday } from "@/types/focus";
 import type { TaskView, TaskWithContext } from "@/types/task";
 
 type TaskListProps = {
@@ -16,12 +17,14 @@ type TaskListProps = {
   view?: TaskView;
   /** Project pages: flat active/completed, no smart groups */
   mode?: "smart" | "project";
+  todayFocus?: TaskFocusToday;
 };
 
 export function TaskList({
   tasks,
   view = "all",
   mode = "smart",
+  todayFocus,
 }: TaskListProps) {
   const {
     optimisticTasks,
@@ -85,6 +88,7 @@ export function TaskList({
               <TaskItem
                 key={task.id}
                 task={task}
+                todayFocusSeconds={todayFocus?.[task.id] ?? 0}
                 onOptimisticToggle={onOptimisticToggle}
                 onOptimisticDelete={onOptimisticDelete}
                 onOptimisticUpdate={onOptimisticUpdate}
@@ -115,6 +119,7 @@ export function TaskList({
                 <TaskItem
                   key={task.id}
                   task={task}
+                  todayFocusSeconds={todayFocus?.[task.id] ?? 0}
                   onOptimisticToggle={onOptimisticToggle}
                   onOptimisticDelete={onOptimisticDelete}
                   onOptimisticUpdate={onOptimisticUpdate}

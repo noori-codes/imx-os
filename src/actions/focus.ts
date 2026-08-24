@@ -7,7 +7,12 @@ import { revalidateUserCaches } from "@/lib/cache";
 import { createClient } from "@/lib/supabase/server";
 import { computeStreaks, getWeekDays, startOfDay, startOfWeekSaturday, toDateString } from "@/lib/date-utils";
 import { sameFocusThread } from "@/lib/focus-threads";
-import type { FocusMode, FocusSession, FocusWeekDay } from "@/types/focus";
+import type {
+  FocusMode,
+  FocusSession,
+  FocusWeekDay,
+  TaskFocusToday,
+} from "@/types/focus";
 import { FOCUS_MAX_SECONDS } from "@/types/focus";
 
 export type FocusActionState = {
@@ -172,6 +177,30 @@ export async function getFocusOverviewStats() {
     week,
     today_marks: todayMarks,
   };
+}
+
+/** Today's logged focus seconds keyed by task id. */
+export async function getTodayTaskFocus(): Promise<TaskFocusToday> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("focus_sessions")
+    .select("task_id, actual_seconds")
+    .eq("mode", "focus")
+    .not("task_id", "is", null)
+    .gte("started_at", startOfDay(new Date()).toISOString());
+
+  if (error) {
+    console.error("[focus] getTodayTaskFocus:", error.message);
+    return {};
+  }
+
+  const totals: TaskFocusToday = {};
+  for (const row of data ?? []) {
+    if (!row.task_id || row.actual_seconds <= 0) continue;
+    totals[row.task_id] = (totals[row.task_id] ?? 0) + row.actual_seconds;
+  }
+  return totals;
 }
 
 export async function logFocusSession(input: {

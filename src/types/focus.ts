@@ -31,6 +31,8 @@ export type FocusTodayMark = {
   minutes: number;
 };
 
+export type TaskFocusToday = Record<string, number>;
+
 export type FocusOverviewStats = {
   sessions: number;
   focus_minutes: number;
