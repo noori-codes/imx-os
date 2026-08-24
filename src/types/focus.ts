@@ -56,8 +56,11 @@ export type FocusWeekDay = {
 };
 
 export type FocusTodayMark = {
+  id: string;
   started_at: string;
   minutes: number;
+  task_id: string | null;
+  note: string | null;
 };
 
 export type TaskFocusToday = Record<string, number>;

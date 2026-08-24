@@ -11,6 +11,7 @@ import type {
   DailyFocusGoal,
   FocusMode,
   FocusSession,
+  FocusTodayMark,
   FocusWeekDay,
   TaskFocusToday,
 } from "@/types/focus";
@@ -121,7 +122,7 @@ export async function getFocusOverviewStats() {
 
   const { data, error } = await supabase
     .from("focus_sessions")
-    .select("actual_seconds, started_at")
+    .select("id, actual_seconds, started_at, task_id, note")
     .eq("mode", "focus")
     .gte("started_at", streakLookback.toISOString());
 
@@ -143,7 +144,7 @@ export async function getFocusOverviewStats() {
 
   const minutesByDay = new Map<string, number>();
   const activeDates: string[] = [];
-  const todayMarks: { started_at: string; minutes: number }[] = [];
+  const todayMarks: FocusTodayMark[] = [];
 
   for (const row of data ?? []) {
     const date = toDateString(new Date(row.started_at));
@@ -152,7 +153,13 @@ export async function getFocusOverviewStats() {
     minutesByDay.set(date, (minutesByDay.get(date) ?? 0) + minutes);
     activeDates.push(date);
     if (date === today) {
-      todayMarks.push({ started_at: row.started_at, minutes });
+      todayMarks.push({
+        id: row.id,
+        started_at: row.started_at,
+        minutes,
+        task_id: row.task_id ?? null,
+        note: row.note ?? null,
+      });
     }
   }
 

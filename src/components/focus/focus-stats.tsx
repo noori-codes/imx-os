@@ -9,6 +9,13 @@ import {
   buildPickupHint,
   continueSubject,
 } from "@/lib/focus-continue";
+import {
+  skyArcPath,
+  skyArcPoint,
+  skyTimeToT,
+  unstackSkyPoints,
+} from "@/lib/focus-sky";
+import { focusThreadKey } from "@/lib/focus-threads";
 import { cn } from "@/lib/utils";
 import { toDateString } from "@/lib/date-utils";
 import { canContinueFocusSession, useFocusTimer } from "@/stores/focus-timer";
@@ -30,25 +37,34 @@ type FocusStatsProps = {
   dailyGoal: DailyFocusGoal;
 };
 
-const ARC = { cx: 50, cy: 58, r: 36 };
-
-function arcPoint(t: number) {
-  const clamped = Math.min(1, Math.max(0, t));
-  const angle = Math.PI - clamped * Math.PI;
-  return {
-    x: ARC.cx + ARC.r * Math.cos(angle),
-    y: ARC.cy - ARC.r * Math.sin(angle),
-    t: clamped,
-  };
+function markThreadKey(mark: FocusTodayMark) {
+  return focusThreadKey({
+    id: mark.id,
+    mode: "focus",
+    started_at: mark.started_at,
+    task_id: mark.task_id,
+    note: mark.note,
+  });
 }
 
-function constellationPoint(startedAt: string) {
-  const date = new Date(startedAt);
-  const hours = date.getHours() + date.getMinutes() / 60;
-  const dayStart = 5;
-  const dayEnd = 23;
-  const t = Math.min(1, Math.max(0, (hours - dayStart) / (dayEnd - dayStart)));
-  return arcPoint(t);
+function liveThreadKey({
+  nowIso,
+  linkedTaskId,
+  intention,
+  continuedSessionId,
+}: {
+  nowIso: string;
+  linkedTaskId: string | null;
+  intention: string;
+  continuedSessionId: string | null;
+}) {
+  return focusThreadKey({
+    id: continuedSessionId ?? "live",
+    mode: "focus",
+    started_at: nowIso,
+    task_id: linkedTaskId,
+    note: intention,
+  });
 }
 
 function markRadius(minutes: number) {
@@ -240,6 +256,21 @@ function SkyPhaseLabel({
   );
 }
 
+type SkyLayoutItem =
+  | {
+      key: string;
+      t: number;
+      radius: number;
+      kind: "session";
+      mark: FocusTodayMark;
+    }
+  | {
+      key: string;
+      t: number;
+      radius: number;
+      kind: "live" | "seal";
+    };
+
 function ConstellationSky({
   marks,
   liveMark,
@@ -250,12 +281,14 @@ function ConstellationSky({
 }: {
   marks: FocusTodayMark[];
   liveMark: {
-    point: { x: number; y: number; t: number };
+    t: number;
+    trailFromT: number;
     radius: number;
     title: string;
+    threadKey: string;
   } | null;
   sealMark: {
-    point: { x: number; y: number };
+    t: number;
     radius: number;
     title: string;
   } | null;
@@ -279,9 +312,76 @@ function ConstellationSky({
       )
     : sorted;
 
-  const selected =
-    visible.find((mark) => mark.started_at + String(mark.minutes) === selectedKey) ??
-    null;
+  const selected = visible.find((mark) => mark.id === selectedKey) ?? null;
+
+  const sessionItems: SkyLayoutItem[] = sorted.map((mark) => ({
+    key: mark.id,
+    t: skyTimeToT(new Date(mark.started_at)),
+    radius: markRadius(mark.minutes),
+    kind: "session",
+    mark,
+  }));
+  const overlayItems: SkyLayoutItem[] = [];
+  if (sealMark) {
+    overlayItems.push({
+      key: "seal",
+      t: sealMark.t,
+      radius: sealMark.radius,
+      kind: "seal",
+    });
+  }
+  if (liveMark) {
+    overlayItems.push({
+      key: "live",
+      t: liveMark.t,
+      radius: liveMark.radius,
+      kind: "live",
+    });
+  }
+
+  const placed = unstackSkyPoints(sessionItems, overlayItems);
+  const sessionPlaced = placed.filter(
+    (
+      item,
+    ): item is Extract<SkyLayoutItem, { kind: "session" }> & {
+      x: number;
+      y: number;
+    } => item.kind === "session",
+  );
+  const livePlaced = placed.find((item) => item.kind === "live") ?? null;
+  const sealPlaced = placed.find((item) => item.kind === "seal") ?? null;
+  const placedById = new Map(
+    sessionPlaced.map((item) => [item.mark.id, item]),
+  );
+
+  const threadLinks: { key: string; x1: number; y1: number; x2: number; y2: number }[] =
+    [];
+  const visibleIds = new Set(visible.map((mark) => mark.id));
+  const byThread = new Map<string, typeof sessionPlaced>();
+  for (const item of sessionPlaced) {
+    if (!visibleIds.has(item.mark.id)) continue;
+    const key = markThreadKey(item.mark);
+    const group = byThread.get(key) ?? [];
+    group.push(item);
+    byThread.set(key, group);
+  }
+  for (const [threadKey, group] of byThread) {
+    if (group.length < 2) continue;
+    const ordered = [...group].sort((a, b) => a.t - b.t);
+    for (let i = 0; i < ordered.length - 1; i++) {
+      const a = ordered[i]!;
+      const b = ordered[i + 1]!;
+      threadLinks.push({
+        key: `${threadKey}:${a.mark.id}:${b.mark.id}`,
+        x1: a.x,
+        y1: a.y,
+        x2: b.x,
+        y2: b.y,
+      });
+    }
+  }
+
+  const runArc = liveMark ? skyArcPath(liveMark.trailFromT, liveMark.t) : null;
 
   function toggleFilter(next: SkyPhase) {
     setFilter((current) => (current === next ? null : next));
@@ -289,8 +389,7 @@ function ConstellationSky({
   }
 
   function selectMark(mark: FocusTodayMark) {
-    const key = mark.started_at + String(mark.minutes);
-    setSelectedKey((current) => (current === key ? null : key));
+    setSelectedKey((current) => (current === mark.id ? null : mark.id));
   }
 
   return (
@@ -370,7 +469,7 @@ function ConstellationSky({
         />
 
         {[0, 0.5, 1].map((t) => {
-          const p = arcPoint(t);
+          const p = skyArcPoint(t);
           return (
             <circle
               key={t}
@@ -383,36 +482,44 @@ function ConstellationSky({
           );
         })}
 
-        {visible.length >= 2
-          ? visible.slice(0, -1).map((mark, i) => {
-              const a = constellationPoint(mark.started_at);
-              const b = constellationPoint(visible[i + 1]!.started_at);
-              return (
-                <line
-                  key={`${mark.started_at}-link`}
-                  x1={a.x}
-                  y1={a.y}
-                  x2={b.x}
-                  y2={b.y}
-                  className="stroke-foreground/12"
-                  strokeWidth="0.4"
-                />
-              );
-            })
-          : null}
+        {runArc ? (
+          <path
+            d={runArc}
+            fill="none"
+            className="stroke-foreground/28"
+            strokeWidth="0.7"
+            strokeLinecap="round"
+          />
+        ) : null}
+
+        {threadLinks.map((link) => (
+          <line
+            key={link.key}
+            x1={link.x1}
+            y1={link.y1}
+            x2={link.x2}
+            y2={link.y2}
+            className="stroke-foreground/20"
+            strokeWidth="0.45"
+          />
+        ))}
 
         {sorted.map((mark) => {
-          const point = constellationPoint(mark.started_at);
-          const r = markRadius(mark.minutes);
-          const key = mark.started_at + String(mark.minutes);
-          const inFilter = !filter || skyPhaseAt(new Date(mark.started_at)) === filter;
-          const isSelected = selectedKey === key;
+          const point = placedById.get(mark.id);
+          if (!point) return null;
+          const r = point.radius;
+          const inFilter = visibleIds.has(mark.id);
+          const isSelected = selectedKey === mark.id;
           return (
             <g
-              key={key}
+              key={mark.id}
               className={cn(
                 "focus-sky-session cursor-pointer",
                 !inFilter && "opacity-20",
+                inFilter &&
+                  liveMark &&
+                  markThreadKey(mark) === liveMark.threadKey &&
+                  "opacity-100",
               )}
               onClick={(event) => {
                 event.stopPropagation();
@@ -445,10 +552,10 @@ function ConstellationSky({
           );
         })}
 
-        {liveMark ? (
+        {liveMark && livePlaced ? (
           <g className="focus-constellation-live pointer-events-none text-foreground">
-            {[0.07, 0.04, 0.02].map((back, i) => {
-              const trail = arcPoint(Math.max(0, liveMark.point.t - back));
+            {[0.028, 0.016, 0.007].map((back, i) => {
+              const trail = skyArcPoint(Math.max(liveMark.trailFromT, liveMark.t - back));
               return (
                 <circle
                   key={back}
@@ -462,42 +569,42 @@ function ConstellationSky({
             })}
             {continuing ? (
               <circle
-                cx={liveMark.point.x}
-                cy={liveMark.point.y}
+                cx={livePlaced.x}
+                cy={livePlaced.y}
                 r={liveMark.radius + 2.4}
                 className="focus-sky-continue-ring fill-none stroke-foreground/50"
                 strokeWidth="0.45"
               />
             ) : null}
             <circle
-              cx={liveMark.point.x}
-              cy={liveMark.point.y}
+              cx={livePlaced.x}
+              cy={livePlaced.y}
               r={liveMark.radius + 1.1}
               className="focus-constellation-live-halo fill-foreground/10"
             />
             <circle
-              cx={liveMark.point.x}
-              cy={liveMark.point.y}
+              cx={livePlaced.x}
+              cy={livePlaced.y}
               r={liveMark.radius}
               className="fill-foreground"
             />
           </g>
         ) : null}
 
-        {sealMark ? (
+        {sealMark && sealPlaced ? (
           <g className="pointer-events-none text-foreground">
             <line
-              x1={sealMark.point.x + 9}
-              y1={sealMark.point.y - 5}
-              x2={sealMark.point.x}
-              y2={sealMark.point.y}
+              x1={sealPlaced.x + 9}
+              y1={sealPlaced.y - 5}
+              x2={sealPlaced.x}
+              y2={sealPlaced.y}
               className="focus-constellation-meteor stroke-foreground/70"
               strokeWidth="0.7"
               strokeLinecap="round"
             />
             <g
               className="focus-constellation-seal"
-              transform={`translate(${sealMark.point.x} ${sealMark.point.y})`}
+              transform={`translate(${sealPlaced.x} ${sealPlaced.y})`}
             >
               <circle
                 cx={0}
@@ -631,9 +738,10 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
   const elapsedSeconds = useFocusTimer((s) => s.elapsedSeconds);
   const progressBaseSeconds = useFocusTimer((s) => s.progressBaseSeconds);
   const intention = useFocusTimer((s) => s.intention);
+  const linkedTaskId = useFocusTimer((s) => s.linkedTaskId);
+  const continuedSessionId = useFocusTimer((s) => s.continuedSessionId);
   const start = useFocusTimer((s) => s.start);
   const sessionStartedAt = useFocusTimer((s) => s.sessionStartedAt);
-  const endsAt = useFocusTimer((s) => s.endsAt);
   const liveElapsedSeconds = useFocusTimer((s) => {
     if (s.clock !== "up") return 0;
     if (!s.isRunning) return s.elapsedSeconds;
@@ -782,12 +890,14 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
       })
     : null;
 
-  const liveMarkIso =
-    liveFocus && clock === "up" && sessionStartedAt
-      ? new Date(sessionStartedAt).toISOString()
-      : liveFocus && mode === "focus" && endsAt
-        ? new Date(endsAt - durationSeconds * 1000).toISOString()
-        : null;
+  const liveNow = liveFocus ? new Date() : null;
+  const liveNowIso = liveNow?.toISOString() ?? null;
+  const liveSegmentStart = liveNow
+    ? new Date(
+        liveNow.getTime() -
+          Math.max(0, liveSessionSeconds - progressBaseSeconds) * 1000,
+      )
+    : null;
 
   const constellationLitLabel = sealPulse
     ? "Star sealed"
@@ -799,22 +909,30 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
           : `${marks.length} lit · live`
         : `${marks.length} lit`;
 
-  const liveMark = liveMarkIso
-    ? {
-        point: constellationPoint(liveMarkIso),
-        radius: markRadius(
-          Math.max(1, Math.round(liveSessionSeconds / 60)),
-        ),
-        title: ready
-          ? `${formatMarkTime(liveMarkIso)} · ${formatFocusDuration(liveSessionSeconds)} · live`
-          : "Live session",
-      }
-    : null;
+  const liveMark =
+    liveNow && liveNowIso
+      ? {
+          t: skyTimeToT(liveNow),
+          trailFromT: skyTimeToT(liveSegmentStart ?? liveNow),
+          radius: markRadius(
+            Math.max(1, Math.round(liveSessionSeconds / 60)),
+          ),
+          title: ready
+            ? `${formatMarkTime(liveNowIso)} · ${formatFocusDuration(liveSessionSeconds)} · live`
+            : "Live session",
+          threadKey: liveThreadKey({
+            nowIso: liveNowIso,
+            linkedTaskId,
+            intention,
+            continuedSessionId,
+          }),
+        }
+      : null;
 
   const sealMark =
     sealPulse && !sealAlreadyInStats
       ? {
-          point: constellationPoint(sealPulse.startedAt),
+          t: skyTimeToT(new Date(sealPulse.startedAt)),
           radius: markRadius(
             Math.max(1, Math.round(sealPulse.seconds / 60)),
           ),
