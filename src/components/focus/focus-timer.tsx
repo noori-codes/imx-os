@@ -180,10 +180,9 @@ export function FocusTimer({
   useEffect(() => {
     if (!isRunning) return;
 
-    // Hidden tab: no 1s React loop (battery). Wall-clock still advances;
-    // one shot fires when a countdown is due; catch-up on return.
+    // Hidden tab: no 1s React loop (battery). Ambient keeps playing;
+    // wall-clock still advances; one shot fires when a countdown is due.
     if (!pageVisible) {
-      stopFocusSound();
       const { clock, endsAt } = useFocusTimer.getState();
       if (clock !== "down" || !endsAt) return;
       const delay = Math.max(0, endsAt - Date.now()) + 40;
