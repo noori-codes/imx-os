@@ -28,7 +28,7 @@ export function FocusWorkspace({ timer, sky, sessions }: FocusWorkspaceProps) {
             "pb-[calc(5.5rem+env(safe-area-inset-bottom))]",
         )}
       >
-        <div className="mx-auto w-full max-w-xl">{timer}</div>
+        <div className="w-full">{timer}</div>
 
         <div
           className={cn(

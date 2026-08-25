@@ -23,6 +23,8 @@ type FocusClockFaceProps = {
   upcomingLabel: string;
   ringRadius: number;
   ringCircumference: number;
+  /** Hide secondary hints when the side panel already shows them. */
+  compactHints?: boolean;
 };
 
 /** Only this subtree subscribes to the 1 Hz tick — keeps FocusTimer calm. */
@@ -40,6 +42,7 @@ export function FocusClockFace({
   upcomingLabel,
   ringRadius,
   ringCircumference,
+  compactHints = false,
 }: FocusClockFaceProps) {
   const shownSeconds = useFocusTimer((s) => {
     void s.tickMs;
@@ -110,7 +113,7 @@ export function FocusClockFace({
             ? "Count up · Open"
             : `Countdown · ${formatFocusMinutes(Math.round(durationSeconds / 60))} ${FOCUS_PRESETS[mode].label}`}
         </p>
-        {isRunning ? (
+        {compactHints ? null : isRunning ? (
           <div className="mt-4 space-y-1">
             <p className="mx-auto max-w-[14rem] truncate text-sm text-foreground/85">
               {isStopwatch

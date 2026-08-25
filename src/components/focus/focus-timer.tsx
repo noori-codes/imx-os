@@ -37,6 +37,7 @@ import {
   FOCUS_PRESETS,
   FOCUS_PROFILES,
   formatFocusClock,
+  formatFocusMinutes,
   buildOptimisticFocusSession,
   type FocusClock,
   type FocusMode,
@@ -774,457 +775,521 @@ export function FocusTimer({
       data-mode={mode}
       data-running={isRunning && pageVisible ? "true" : "false"}
       data-visible={pageVisible ? "true" : "false"}
-      className="focus-stage group relative flex h-full min-h-[28rem] flex-col overflow-hidden px-2 py-6 sm:min-h-[32rem] sm:px-4 sm:py-8 lg:min-h-[34rem] lg:py-9"
+      className="focus-stage group relative flex w-full flex-col overflow-hidden px-1 py-4 sm:px-2 sm:py-6"
       id="focus-timer"
     >
       <div className="focus-stage-glow" aria-hidden />
 
-      <div className="relative z-[1] flex w-full flex-1 flex-col">
-        <div className="mx-auto flex w-full max-w-xl flex-1 flex-col items-center justify-center">
-        {!isRunning ? (
-          <div className="w-full max-w-md text-center">
-            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-              {isStopwatch
-                ? canContinue
-                  ? "Continue session"
-                  : "Focus session"
-                : mode === "focus"
-                  ? canContinue
-                    ? "Continue session"
-                    : "Set your intention"
-                  : FOCUS_PRESETS[mode].label}
-            </p>
+      <div className="relative z-[1] flex w-full flex-col gap-10">
+        <div className="grid w-full gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-center lg:gap-10 xl:gap-12">
+          <div className="flex min-w-0 flex-col gap-3">
+            <div className="text-center lg:text-left">
+              <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                Session
+              </p>
+              <p className="mt-1.5 flex min-h-5 items-baseline justify-center gap-2 text-sm text-muted-foreground lg:justify-start">
+                <span>
+                  {isStopwatch
+                    ? canContinue
+                      ? "Continue session"
+                      : isRunning
+                        ? "Counting up"
+                        : "Open focus"
+                    : isRunning
+                      ? mode === "focus"
+                        ? "Deep work"
+                        : FOCUS_PRESETS[mode].label
+                      : canContinue
+                        ? "Continue session"
+                        : FOCUS_PRESETS[mode].label}
+                </span>
+                {!isStopwatch ? (
+                  <span className="text-xs tabular-nums text-muted-foreground/70">
+                    · {formatFocusMinutes(Math.round(durationSeconds / 60))}
+                  </span>
+                ) : null}
+              </p>
+            </div>
 
-            {canContinue && pickupHint ? (
-              <p className="mt-2 text-sm text-muted-foreground">{pickupHint}</p>
-            ) : null}
-
-            {mode === "focus" || isStopwatch ? (
-              <div className="mt-4 space-y-3">
-                <Input
-                  value={intention}
-                  onChange={(e) => setIntention(e.target.value)}
-                  placeholder={
-                    linkedTask
-                      ? `Working on ${linkedTask.title}`
-                      : "What deserves your focus?"
-                  }
-                  aria-label="What are you focusing on"
-                  className="h-12 w-full rounded-2xl border-border/40 bg-transparent px-4 text-center text-lg font-medium tracking-tight shadow-none placeholder:font-normal placeholder:text-muted-foreground/70 focus-visible:ring-1"
+            <div className="flex flex-col items-center gap-3 lg:items-start">
+              <div
+                className={cn(
+                  "relative flex items-center justify-center",
+                  isRunning
+                    ? "size-[min(78vw,17.5rem)] sm:size-[min(70vw,20rem)] lg:size-[21rem]"
+                    : "size-[14.5rem] sm:size-[16.5rem] lg:size-[18.5rem]",
+                )}
+              >
+                <FocusClockFace
+                  isRunning={isRunning}
+                  isStopwatch={isStopwatch}
+                  canContinue={canContinue}
+                  mode={mode}
+                  durationSeconds={durationSeconds}
+                  subject={subject}
+                  sessionLine={sessionLine}
+                  pickupHint={pickupHint}
+                  endedHint={endedHint}
+                  runningHint={runningHint}
+                  upcomingLabel={FOCUS_PRESETS[upcoming].label}
+                  ringRadius={ringRadius}
+                  ringCircumference={ringCircumference}
+                  compactHints
                 />
-                {tasks.length > 0 ? (
-                  <select
-                    value={linkedTaskId ?? ""}
-                    onChange={(e) => {
-                      const nextId = e.target.value || null;
-                      setLinkedTaskId(nextId);
-                      if (nextId && !intention.trim()) {
-                        const task = tasks.find((item) => item.id === nextId);
-                        if (task) setIntention(task.title);
+              </div>
+
+              {!isStopwatch ? (
+                <div
+                  className={cn(
+                    "flex items-center gap-2",
+                    isRunning && "opacity-70",
+                  )}
+                  aria-label={`${dots} of ${FOCUS_POMODOROS_PER_LONG_BREAK} toward a long break`}
+                >
+                  {Array.from({ length: FOCUS_POMODOROS_PER_LONG_BREAK }).map(
+                    (_, i) => (
+                      <span
+                        key={i}
+                        className={cn(
+                          "size-1.5 rounded-full transition-colors",
+                          i < dots ? "bg-foreground" : "bg-muted-foreground/25",
+                        )}
+                      />
+                    ),
+                  )}
+                </div>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="flex min-w-0 flex-col gap-5">
+            <div className="text-center lg:text-left">
+              <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                {isRunning ? "Live" : canContinue ? "Paused" : "Ready"}
+              </p>
+              <p
+                className={cn(
+                  "mt-1.5 font-medium leading-none tracking-tight text-foreground",
+                  isStopwatch
+                    ? "text-2xl sm:text-3xl"
+                    : "text-2xl tabular-nums sm:text-3xl",
+                )}
+              >
+                {isStopwatch
+                  ? canContinue
+                    ? "Continue"
+                    : isRunning
+                      ? "In flight"
+                      : "Count up"
+                  : formatFocusMinutes(Math.round(durationSeconds / 60))}
+              </p>
+              <p className="mt-1.5 text-sm leading-snug text-muted-foreground">
+                {isStopwatch
+                  ? canContinue
+                    ? pickupHint ?? "Pick up where you left off"
+                    : isRunning
+                      ? "Seal when the block is done"
+                      : "No timer · seal when ready"
+                  : [
+                      mode === "focus" ? "Focus" : FOCUS_PRESETS[mode].label,
+                      activeProfile?.label ?? "Custom",
+                    ].join(" · ")}
+              </p>
+            </div>
+
+            {!isRunning ? (
+              <div className="space-y-3 text-center lg:text-left">
+                {mode === "focus" || isStopwatch ? (
+                  <>
+                    <Input
+                      value={intention}
+                      onChange={(e) => setIntention(e.target.value)}
+                      placeholder={
+                        linkedTask
+                          ? `Working on ${linkedTask.title}`
+                          : "What deserves your focus?"
                       }
-                    }}
-                    aria-label="Link a task"
-                    className="h-9 w-full rounded-xl border border-transparent bg-muted/30 px-3 text-center text-sm text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground focus:border-border/50 focus:outline-none"
-                  >
-                    <option value="">Optional · link an open task</option>
-                    {tasks.map((task) => (
-                      <option key={task.id} value={task.id}>
-                        {task.context
-                          ? `${task.title} · ${task.context}`
-                          : task.title}
-                      </option>
-                    ))}
-                  </select>
+                      aria-label="What are you focusing on"
+                      className="h-12 w-full rounded-2xl border-border/40 bg-transparent px-4 text-center text-lg font-medium tracking-tight shadow-none placeholder:font-normal placeholder:text-muted-foreground/70 focus-visible:ring-1 lg:text-left"
+                    />
+                    {tasks.length > 0 ? (
+                      <select
+                        value={linkedTaskId ?? ""}
+                        onChange={(e) => {
+                          const nextId = e.target.value || null;
+                          setLinkedTaskId(nextId);
+                          if (nextId && !intention.trim()) {
+                            const task = tasks.find(
+                              (item) => item.id === nextId,
+                            );
+                            if (task) setIntention(task.title);
+                          }
+                        }}
+                        aria-label="Link a task"
+                        className="h-9 w-full rounded-xl border border-transparent bg-muted/30 px-3 text-center text-sm text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground focus:border-border/50 focus:outline-none lg:text-left"
+                      >
+                        <option value="">Optional · link an open task</option>
+                        {tasks.map((task) => (
+                          <option key={task.id} value={task.id}>
+                            {task.context
+                              ? `${task.title} · ${task.context}`
+                              : task.title}
+                          </option>
+                        ))}
+                      </select>
+                    ) : null}
+                  </>
                 ) : (
-                  <p className="text-xs text-muted-foreground">
-                    {isStopwatch
-                      ? canContinue
-                        ? "Continue · Space"
-                        : "Counts up until you seal · Space"
-                      : `${activeProfile ? activeProfile.label : "Custom"} · Space to begin`}
+                  <p className="text-sm text-muted-foreground">
+                    {activeProfile ? activeProfile.label : "Custom"} · Space to
+                    begin
                   </p>
                 )}
               </div>
             ) : (
-              <p className="mt-2 text-sm text-muted-foreground">
-                {activeProfile ? activeProfile.label : "Custom"} · Space · S · R
-              </p>
-            )}
-          </div>
-        ) : null}
-
-        <div
-          className={cn(
-            "relative mx-auto flex items-center justify-center",
-            isRunning ? "mt-3 sm:mt-4 lg:mt-6" : "mt-6 sm:mt-8",
-          )}
-        >
-          <div
-            className={cn(
-              "relative flex items-center justify-center",
-              isRunning
-                ? "size-[min(82vw,19rem)] sm:size-[min(88vw,22rem)] lg:size-[24rem]"
-                : "size-[15.5rem] sm:size-[17.5rem] lg:size-[19.5rem]",
-            )}
-          >
-            <FocusClockFace
-              isRunning={isRunning}
-              isStopwatch={isStopwatch}
-              canContinue={canContinue}
-              mode={mode}
-              durationSeconds={durationSeconds}
-              subject={subject}
-              sessionLine={sessionLine}
-              pickupHint={pickupHint}
-              endedHint={endedHint}
-              runningHint={runningHint}
-              upcomingLabel={FOCUS_PRESETS[upcoming].label}
-              ringRadius={ringRadius}
-              ringCircumference={ringCircumference}
-            />
-          </div>
-        </div>
-
-        {!isStopwatch ? (
-          <div
-            className={cn(
-              "mt-5 flex items-center gap-2",
-              isRunning && "opacity-70",
-            )}
-            aria-label={`${dots} of ${FOCUS_POMODOROS_PER_LONG_BREAK} toward a long break`}
-          >
-            {Array.from({ length: FOCUS_POMODOROS_PER_LONG_BREAK }).map(
-              (_, i) => (
-                <span
-                  key={i}
-                  className={cn(
-                    "size-1.5 rounded-full transition-colors",
-                    i < dots ? "bg-foreground" : "bg-muted-foreground/25",
-                  )}
-                />
-              ),
-            )}
-          </div>
-        ) : (
-          <p className="mt-3 text-xs text-muted-foreground">
-            {isRunning
-              ? "Pause anytime · R seals · ↺ discards"
-              : canContinue
-                ? "Continue · R seals · Space · ↺ discards"
-                : elapsedSeconds > 0
-                  ? "R seals · Continue · Space · ↺ discards"
-                  : "Start focus · no timer limit"}
-          </p>
-        )}
-
-        <div className="mt-8 flex flex-col items-center gap-3">
-          <div className="flex items-center gap-3 sm:gap-4">
-            <button
-              type="button"
-              onClick={handleReset}
-              className={cn(
-                "flex size-12 items-center justify-center rounded-full text-muted-foreground transition-all hover:bg-muted hover:text-foreground",
-                isRunning &&
-                  "opacity-0 group-hover:opacity-100 focus-visible:opacity-100 max-sm:opacity-100",
-              )}
-              aria-label={
-                canSealStopwatch ? "Discard session" : "Reset timer"
-              }
-            >
-              <RotateCcw className="size-5" />
-            </button>
-            <button
-              type="button"
-              onClick={handleToggle}
-              className={cn(
-                "flex items-center justify-center rounded-full bg-foreground text-background transition-transform hover:scale-[1.03] active:scale-95",
-                isRunning ? "size-[4.25rem]" : "size-16",
-              )}
-              aria-label={
-                isRunning
-                  ? "Pause timer"
-                  : canContinue
-                    ? "Continue session"
-                    : isStopwatch
-                      ? "Start focus"
-                      : "Begin session"
-              }
-            >
-              {isRunning ? (
-                <Pause className="size-6 fill-current" />
-              ) : (
-                <Play className="size-6 fill-current pl-0.5" />
-              )}
-            </button>
-            {!isStopwatch ? (
-              <button
-                type="button"
-                onClick={handleSkip}
-                className={cn(
-                  "flex size-12 items-center justify-center rounded-full text-muted-foreground transition-all hover:bg-muted hover:text-foreground",
-                  isRunning &&
-                    "opacity-0 group-hover:opacity-100 focus-visible:opacity-100 max-sm:opacity-100",
+              <div className="space-y-1 text-center lg:text-left">
+                {(mode === "focus" || isStopwatch) && sessionLine ? (
+                  <p className="truncate text-base text-foreground/90">
+                    {sessionLine}
+                  </p>
+                ) : (
+                  <p className="truncate text-sm text-foreground/90">
+                    {isStopwatch
+                      ? subject ?? "Focus"
+                      : mode === "focus"
+                        ? "Deep work"
+                        : FOCUS_PRESETS[mode].label}
+                  </p>
                 )}
-                aria-label="Skip to next phase"
-              >
-                <SkipForward className="size-5" />
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handleSealStopwatch}
-                disabled={!canSealStopwatch}
-                className={cn(
-                  "flex size-12 items-center justify-center rounded-full text-muted-foreground transition-all hover:bg-muted hover:text-foreground",
-                  !canSealStopwatch && "pointer-events-none opacity-30",
-                  isRunning &&
-                    "opacity-0 group-hover:opacity-100 focus-visible:opacity-100 max-sm:opacity-100",
-                  canSealStopwatch &&
-                    isRunning &&
-                    "group-hover:opacity-100 max-sm:opacity-100",
-                )}
-                aria-label="Seal session"
-              >
-                <CircleCheck className="size-5" />
-              </button>
-            )}
-          </div>
-          {!isRunning ? (
-            <p className="text-xs text-muted-foreground">
-              {canContinue
-                ? "Continue · Space"
-                : isStopwatch
-                  ? "Start focus · Space"
-                  : mode === "focus"
-                    ? "Begin session"
-                    : "Start break"}{" "}
-              {!isStopwatch ? "· Space" : null}
-            </p>
-          ) : null}
-          <button
-            type="button"
-            onClick={() => setShortcutsOpen((open) => !open)}
-            className="mt-2 inline-flex items-center gap-1 text-[11px] text-muted-foreground/80 transition-colors hover:text-foreground"
-            aria-expanded={shortcutsOpen}
-          >
-            <CircleHelp className="size-3.5" />
-            Shortcuts
-          </button>
-          {shortcutsOpen ? (
-            <p className="mt-1.5 text-center text-[11px] leading-relaxed text-muted-foreground">
-              Space · play/pause
-              <br />
-              {isStopwatch ? "R · seal · ↺ discard" : "S · skip · R · reset"}
-            </p>
-          ) : null}
-        </div>
-
-        {!isRunning ? (
-          <details className="group/setup mt-5 w-full max-w-md sm:mt-6">
-            <summary className="flex cursor-pointer list-none items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground [&::-webkit-details-marker]:hidden">
-              <span className="tabular-nums max-sm:text-xs">Setup · {setupSummary}</span>
-              <ChevronDown className="size-3.5 shrink-0 transition-transform duration-200 group-open/setup:rotate-180" />
-            </summary>
-
-            <div className="mt-4 space-y-4 p-1">
-              <div
-                className="flex w-full justify-center gap-1 rounded-full bg-muted/30 p-1"
-                role="tablist"
-                aria-label="Clock style"
-              >
-                {CLOCKS.map((item) => {
-                  const active = clock === item.id;
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      role="tab"
-                      aria-selected={active}
-                      onClick={() => handleClockChange(item.id)}
-                      className={cn(
-                        "min-w-0 flex-1 rounded-full px-3 py-2 text-left transition-colors sm:text-center",
-                        active
-                          ? "bg-background font-medium text-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground",
-                      )}
-                    >
-                      <span className="block text-sm">{item.label}</span>
-                      <span
-                        className={cn(
-                          "block text-[11px]",
-                          active
-                            ? "text-foreground/60"
-                            : "text-muted-foreground",
-                        )}
-                      >
-                        {item.hint}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {isStopwatch ? (
-                <p className="text-center text-xs text-muted-foreground">
-                  Starts at 00:00 · R seals when done · ↺ discards
-                </p>
-              ) : (
-                <>
-              <div className="grid grid-cols-3 gap-2">
-                {FOCUS_PROFILES.map((profile) => {
-                  const active = profileId === profile.id;
-                  return (
-                    <button
-                      key={profile.id}
-                      type="button"
-                      onClick={() => {
-                        setCustomHours("");
-                        setCustomMinutes("");
-                        applyProfile(profile.id);
-                      }}
-                      className={cn(
-                        "rounded-xl px-2.5 py-2 text-left transition-colors",
-                        active
-                          ? "bg-foreground text-background"
-                          : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
-                      )}
-                      aria-pressed={active}
-                    >
-                      <span className="block text-sm font-medium">
-                        {profile.label}
-                      </span>
-                      <span
-                        className={cn(
-                          "mt-0.5 block text-[11px] tabular-nums",
-                          active
-                            ? "text-background/70"
-                            : "text-muted-foreground",
-                        )}
-                      >
-                        {profile.hint}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div
-                className="flex w-full justify-center gap-1 rounded-full bg-muted/30 p-1"
-                role="tablist"
-                aria-label="Timer mode"
-              >
-                {MODES.map((m) => {
-                  const isActive = mode === m;
-                  return (
-                    <button
-                      key={m}
-                      type="button"
-                      role="tab"
-                      aria-selected={isActive}
-                      onClick={() => {
-                        setCustomHours("");
-                        setCustomMinutes("");
-                        setMode(m);
-                      }}
-                      className={cn(
-                        "min-w-0 flex-1 rounded-full px-3 py-1.5 text-sm transition-colors",
-                        isActive
-                          ? "bg-background font-medium text-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground",
-                      )}
-                    >
-                      {FOCUS_PRESETS[m].label}
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="flex flex-col items-center gap-3">
-                <div className="flex flex-wrap items-center justify-center gap-2">
-                  {durationPresets.map((preset) => {
-                    const active =
-                      !customHours &&
-                      !customMinutes &&
-                      durationMinutes === preset.minutes;
-                    return (
-                      <button
-                        key={preset.minutes}
-                        type="button"
-                        onClick={() => {
-                          setCustomHours("");
-                          setCustomMinutes("");
-                          setDuration(preset.minutes * 60);
-                        }}
-                        className={cn(
-                          "rounded-full px-3 py-1 text-sm tabular-nums transition-colors",
-                          active
-                            ? "bg-foreground text-background"
-                            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
-                        )}
-                      >
-                        {preset.label}
-                      </button>
-                    );
-                  })}
-                </div>
-                {mode === "focus" ? (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Input
-                      type="number"
-                      min={0}
-                      max={12}
-                      inputMode="numeric"
-                      placeholder="hrs"
-                      aria-label="Custom hours"
-                      value={customHours}
-                      onChange={(e) => setCustomHours(e.target.value)}
-                      className="h-9 w-16 rounded-xl border-border/40 bg-transparent text-center"
-                    />
-                    <span className="text-muted-foreground">:</span>
-                    <Input
-                      type="number"
-                      min={0}
-                      max={59}
-                      inputMode="numeric"
-                      placeholder="min"
-                      aria-label="Custom minutes"
-                      value={customMinutes}
-                      onChange={(e) => setCustomMinutes(e.target.value)}
-                      className="h-9 w-16 rounded-xl border-border/40 bg-transparent text-center"
-                    />
-                    {!presetMatch && !customHours && !customMinutes ? (
-                      <span className="text-xs tabular-nums text-muted-foreground">
-                        {formatFocusClock(durationSeconds)}
-                      </span>
-                    ) : null}
-                  </div>
+                {pickupHint ? (
+                  <p className="text-xs text-muted-foreground">{pickupHint}</p>
+                ) : endedHint ? (
+                  <p className="text-xs text-muted-foreground">{endedHint}</p>
+                ) : runningHint ? (
+                  <p className="text-xs text-muted-foreground">{runningHint}</p>
+                ) : !isStopwatch ? (
+                  <p className="text-xs text-muted-foreground">
+                    Up next: {FOCUS_PRESETS[upcoming].label}
+                  </p>
                 ) : null}
               </div>
+            )}
 
-              <div className="flex justify-center">
+            <div className="flex flex-col items-center gap-3 lg:items-start">
+              <div className="flex items-center gap-3 sm:gap-4">
                 <button
                   type="button"
-                  onClick={() => setAutoStartNext(!autoStartNext)}
+                  onClick={handleReset}
                   className={cn(
-                    "rounded-full px-3 py-1 text-xs transition-colors",
-                    autoStartNext
-                      ? "bg-foreground text-background"
-                      : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                    "flex size-12 items-center justify-center rounded-full text-muted-foreground transition-all hover:bg-muted hover:text-foreground",
+                    isRunning &&
+                      "opacity-0 group-hover:opacity-100 focus-visible:opacity-100 max-sm:opacity-100",
                   )}
+                  aria-label={
+                    canSealStopwatch ? "Discard session" : "Reset timer"
+                  }
                 >
-                  Auto-start {autoStartNext ? "on" : "off"}
+                  <RotateCcw className="size-5" />
                 </button>
+                <button
+                  type="button"
+                  onClick={handleToggle}
+                  className={cn(
+                    "flex items-center justify-center rounded-full bg-foreground text-background transition-transform hover:scale-[1.03] active:scale-95",
+                    isRunning ? "size-[4.25rem]" : "size-16",
+                  )}
+                  aria-label={
+                    isRunning
+                      ? "Pause timer"
+                      : canContinue
+                        ? "Continue session"
+                        : isStopwatch
+                          ? "Start focus"
+                          : "Begin session"
+                  }
+                >
+                  {isRunning ? (
+                    <Pause className="size-6 fill-current" />
+                  ) : (
+                    <Play className="size-6 fill-current pl-0.5" />
+                  )}
+                </button>
+                {!isStopwatch ? (
+                  <button
+                    type="button"
+                    onClick={handleSkip}
+                    className={cn(
+                      "flex size-12 items-center justify-center rounded-full text-muted-foreground transition-all hover:bg-muted hover:text-foreground",
+                      isRunning &&
+                        "opacity-0 group-hover:opacity-100 focus-visible:opacity-100 max-sm:opacity-100",
+                    )}
+                    aria-label="Skip to next phase"
+                  >
+                    <SkipForward className="size-5" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleSealStopwatch}
+                    disabled={!canSealStopwatch}
+                    className={cn(
+                      "flex size-12 items-center justify-center rounded-full text-muted-foreground transition-all hover:bg-muted hover:text-foreground",
+                      !canSealStopwatch && "pointer-events-none opacity-30",
+                      isRunning &&
+                        "opacity-0 group-hover:opacity-100 focus-visible:opacity-100 max-sm:opacity-100",
+                      canSealStopwatch &&
+                        isRunning &&
+                        "group-hover:opacity-100 max-sm:opacity-100",
+                    )}
+                    aria-label="Seal session"
+                  >
+                    <CircleCheck className="size-5" />
+                  </button>
+                )}
               </div>
-                </>
-              )}
+              {!isRunning ? (
+                <p className="text-xs text-muted-foreground">
+                  {canContinue
+                    ? "Continue · Space"
+                    : isStopwatch
+                      ? "Start focus · Space"
+                      : mode === "focus"
+                        ? "Begin session"
+                        : "Start break"}{" "}
+                  {!isStopwatch ? "· Space" : null}
+                </p>
+              ) : isStopwatch ? (
+                <p className="text-xs text-muted-foreground">
+                  Pause anytime · R seals · ↺ discards
+                </p>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => setShortcutsOpen((open) => !open)}
+                className="inline-flex items-center gap-1 text-[11px] text-muted-foreground/80 transition-colors hover:text-foreground"
+                aria-expanded={shortcutsOpen}
+              >
+                <CircleHelp className="size-3.5" />
+                Shortcuts
+              </button>
+              {shortcutsOpen ? (
+                <p className="text-center text-[11px] leading-relaxed text-muted-foreground lg:text-left">
+                  Space · play/pause
+                  <br />
+                  {isStopwatch ? "R · seal · ↺ discard" : "S · skip · R · reset"}
+                </p>
+              ) : null}
             </div>
-          </details>
-        ) : null}
+
+            {!isRunning ? (
+              <details className="group/setup w-full">
+                <summary className="flex cursor-pointer list-none items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground lg:justify-start [&::-webkit-details-marker]:hidden">
+                  <span className="tabular-nums max-sm:text-xs">
+                    Setup · {setupSummary}
+                  </span>
+                  <ChevronDown className="size-3.5 shrink-0 transition-transform duration-200 group-open/setup:rotate-180" />
+                </summary>
+
+                <div className="mt-4 space-y-4 p-1">
+                  <div
+                    className="flex w-full justify-center gap-1 rounded-full bg-muted/30 p-1"
+                    role="tablist"
+                    aria-label="Clock style"
+                  >
+                    {CLOCKS.map((item) => {
+                      const active = clock === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          role="tab"
+                          aria-selected={active}
+                          onClick={() => handleClockChange(item.id)}
+                          className={cn(
+                            "min-w-0 flex-1 rounded-full px-3 py-2 text-left transition-colors sm:text-center",
+                            active
+                              ? "bg-background font-medium text-foreground shadow-sm"
+                              : "text-muted-foreground hover:text-foreground",
+                          )}
+                        >
+                          <span className="block text-sm">{item.label}</span>
+                          <span
+                            className={cn(
+                              "block text-[11px]",
+                              active
+                                ? "text-foreground/60"
+                                : "text-muted-foreground",
+                            )}
+                          >
+                            {item.hint}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {isStopwatch ? (
+                    <p className="text-center text-xs text-muted-foreground lg:text-left">
+                      Starts at 00:00 · R seals when done · ↺ discards
+                    </p>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-3 gap-2">
+                        {FOCUS_PROFILES.map((profile) => {
+                          const active = profileId === profile.id;
+                          return (
+                            <button
+                              key={profile.id}
+                              type="button"
+                              onClick={() => {
+                                setCustomHours("");
+                                setCustomMinutes("");
+                                applyProfile(profile.id);
+                              }}
+                              className={cn(
+                                "rounded-xl px-2.5 py-2 text-left transition-colors",
+                                active
+                                  ? "bg-foreground text-background"
+                                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                              )}
+                              aria-pressed={active}
+                            >
+                              <span className="block text-sm font-medium">
+                                {profile.label}
+                              </span>
+                              <span
+                                className={cn(
+                                  "mt-0.5 block text-[11px] tabular-nums",
+                                  active
+                                    ? "text-background/70"
+                                    : "text-muted-foreground",
+                                )}
+                              >
+                                {profile.hint}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <div
+                        className="flex w-full justify-center gap-1 rounded-full bg-muted/30 p-1"
+                        role="tablist"
+                        aria-label="Timer mode"
+                      >
+                        {MODES.map((m) => {
+                          const isActive = mode === m;
+                          return (
+                            <button
+                              key={m}
+                              type="button"
+                              role="tab"
+                              aria-selected={isActive}
+                              onClick={() => {
+                                setCustomHours("");
+                                setCustomMinutes("");
+                                setMode(m);
+                              }}
+                              className={cn(
+                                "min-w-0 flex-1 rounded-full px-3 py-1.5 text-sm transition-colors",
+                                isActive
+                                  ? "bg-background font-medium text-foreground shadow-sm"
+                                  : "text-muted-foreground hover:text-foreground",
+                              )}
+                            >
+                              {FOCUS_PRESETS[m].label}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <div className="flex flex-col items-center gap-3 lg:items-start">
+                        <div className="flex flex-wrap items-center justify-center gap-2 lg:justify-start">
+                          {durationPresets.map((preset) => {
+                            const active =
+                              !customHours &&
+                              !customMinutes &&
+                              durationMinutes === preset.minutes;
+                            return (
+                              <button
+                                key={preset.minutes}
+                                type="button"
+                                onClick={() => {
+                                  setCustomHours("");
+                                  setCustomMinutes("");
+                                  setDuration(preset.minutes * 60);
+                                }}
+                                className={cn(
+                                  "rounded-full px-3 py-1 text-sm tabular-nums transition-colors",
+                                  active
+                                    ? "bg-foreground text-background"
+                                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                                )}
+                              >
+                                {preset.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {mode === "focus" ? (
+                          <div className="flex items-center gap-2 text-sm">
+                            <Input
+                              type="number"
+                              min={0}
+                              max={12}
+                              inputMode="numeric"
+                              placeholder="hrs"
+                              aria-label="Custom hours"
+                              value={customHours}
+                              onChange={(e) => setCustomHours(e.target.value)}
+                              className="h-9 w-16 rounded-xl border-border/40 bg-transparent text-center"
+                            />
+                            <span className="text-muted-foreground">:</span>
+                            <Input
+                              type="number"
+                              min={0}
+                              max={59}
+                              inputMode="numeric"
+                              placeholder="min"
+                              aria-label="Custom minutes"
+                              value={customMinutes}
+                              onChange={(e) => setCustomMinutes(e.target.value)}
+                              className="h-9 w-16 rounded-xl border-border/40 bg-transparent text-center"
+                            />
+                            {!presetMatch && !customHours && !customMinutes ? (
+                              <span className="text-xs tabular-nums text-muted-foreground">
+                                {formatFocusClock(durationSeconds)}
+                              </span>
+                            ) : null}
+                          </div>
+                        ) : null}
+                      </div>
+
+                      <div className="flex justify-center lg:justify-start">
+                        <button
+                          type="button"
+                          onClick={() => setAutoStartNext(!autoStartNext)}
+                          className={cn(
+                            "rounded-full px-3 py-1 text-xs transition-colors",
+                            autoStartNext
+                              ? "bg-foreground text-background"
+                              : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                          )}
+                        >
+                          Auto-start {autoStartNext ? "on" : "off"}
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </details>
+            ) : null}
+          </div>
         </div>
 
         <div
           className={cn(
-            "mx-auto mt-auto w-full max-w-xl pt-10 transition-opacity duration-500",
+            "w-full transition-opacity duration-500",
             isRunning && "opacity-85",
           )}
         >

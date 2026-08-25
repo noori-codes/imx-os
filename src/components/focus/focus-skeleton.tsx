@@ -13,33 +13,51 @@ export function FocusSkeleton() {
       aria-label="Loading focus"
     >
       <AppPageFrame className="max-w-5xl gap-0 md:py-8">
-        <div className="mx-auto flex w-full max-w-xl flex-col px-2 py-6 sm:px-4 sm:py-8">
-          <Bone className="mx-auto h-3 w-28" />
-          <Bone className="mx-auto mt-4 h-12 w-full max-w-md rounded-2xl" />
-          <Bone className="mx-auto mt-3 h-9 w-56 rounded-xl" />
-          <Bone className="mx-auto mt-8 size-[15.5rem] rounded-full sm:size-[17.5rem] lg:size-[19.5rem]" />
-          <Bone className="mx-auto mt-3 h-3 w-36" />
-          <div className="mx-auto mt-8 flex items-center gap-4">
-            <Bone className="size-12 rounded-full" />
-            <Bone className="size-16 rounded-full" />
-            <Bone className="size-12 rounded-full" />
-          </div>
-          <div className="mx-auto mt-10 flex w-full flex-col">
-            <Bone className="mx-auto h-3 w-24" />
-            <Bone className="mx-auto mt-2 h-3 w-40 opacity-60" />
-            <div className="mt-5 grid grid-cols-4 gap-4">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="flex flex-col items-center gap-2">
-                  <Bone className="size-11 rounded-full sm:size-12" />
-                  <Bone className="h-2.5 w-10" />
-                </div>
-              ))}
+        <div className="grid w-full gap-8 px-1 py-4 sm:px-2 sm:py-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-center lg:gap-10">
+          <div className="flex flex-col gap-3">
+            <div className="text-center lg:text-left">
+              <Bone className="mx-auto h-2.5 w-14 lg:mx-0" />
+              <Bone className="mx-auto mt-2 h-4 w-28 opacity-60 lg:mx-0" />
             </div>
+            <Bone className="mx-auto size-[14.5rem] rounded-full sm:size-[16.5rem] lg:mx-0 lg:size-[18.5rem]" />
+            <div className="mx-auto flex gap-2 lg:mx-0">
+              <Bone className="size-1.5 rounded-full" />
+              <Bone className="size-1.5 rounded-full" />
+              <Bone className="size-1.5 rounded-full" />
+              <Bone className="size-1.5 rounded-full" />
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-5">
+            <div className="text-center lg:text-left">
+              <Bone className="mx-auto h-2.5 w-12 lg:mx-0" />
+              <Bone className="mx-auto mt-2 h-8 w-28 lg:mx-0" />
+            </div>
+            <Bone className="h-12 w-full rounded-2xl" />
+            <Bone className="h-9 w-full rounded-xl" />
+            <div className="mx-auto flex items-center gap-4 lg:mx-0">
+              <Bone className="size-12 rounded-full" />
+              <Bone className="size-16 rounded-full" />
+              <Bone className="size-12 rounded-full" />
+            </div>
+            <Bone className="mx-auto h-3 w-40 lg:mx-0" />
+          </div>
+        </div>
+
+        <div className="mt-10 w-full">
+          <Bone className="mx-auto h-3 w-24" />
+          <div className="mt-5 grid grid-cols-4 gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex flex-col items-center gap-2">
+                <Bone className="size-11 rounded-full sm:size-12" />
+                <Bone className="h-2.5 w-10" />
+              </div>
+            ))}
           </div>
         </div>
 
         <section className="mt-6 border-t border-border/30 pt-8 sm:mt-8 sm:pt-10">
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(16rem,22rem)] lg:gap-10">
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-10">
             <div className="space-y-4">
               <div className="text-center lg:text-left">
                 <Bone className="mx-auto h-2.5 w-16 lg:mx-0" />
@@ -54,14 +72,13 @@ export function FocusSkeleton() {
               </div>
             </div>
 
-            <div className="space-y-4">
-              <div className="flex items-baseline justify-between gap-3">
-                <Bone className="h-3 w-16" />
-                <Bone className="h-3 w-10" />
+            <div className="space-y-5">
+              <div className="text-center lg:text-left">
+                <Bone className="mx-auto h-2.5 w-12 lg:mx-0" />
+                <Bone className="mx-auto mt-2 h-8 w-36 lg:mx-0" />
               </div>
-              <Bone className="h-1.5 w-full rounded-full" />
-              <Bone className="h-4 w-3/4" />
-              <Bone className="h-3 w-20" />
+              <Bone className="mx-auto h-4 w-3/4 lg:mx-0" />
+              <Bone className="mx-auto h-3 w-20 lg:mx-0" />
               <div className="border-t border-border/30 pt-4">
                 <Bone className="h-3 w-20" />
                 <div className="mt-3 grid grid-cols-7 gap-1 sm:gap-1.5">
