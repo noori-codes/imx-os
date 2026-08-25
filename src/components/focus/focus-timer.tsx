@@ -975,7 +975,7 @@ export function FocusTimer({
               </div>
             )}
 
-            <div className="flex flex-col items-center gap-3 lg:items-start">
+            <div className="flex flex-col items-center gap-3">
               <div className="flex items-center gap-3 sm:gap-4">
                 <button
                   type="button"
@@ -1073,7 +1073,7 @@ export function FocusTimer({
                 Shortcuts
               </button>
               {shortcutsOpen ? (
-                <p className="text-center text-[11px] leading-relaxed text-muted-foreground lg:text-left">
+                <p className="text-center text-[11px] leading-relaxed text-muted-foreground">
                   Space · play/pause
                   <br />
                   {isStopwatch ? "R · seal · ↺ discard" : "S · skip · R · reset"}
