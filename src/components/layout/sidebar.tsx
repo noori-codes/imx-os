@@ -6,13 +6,17 @@ import { usePathname } from "next/navigation";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { NavLink } from "@/components/layout/nav-link";
 import { useUser } from "@/components/providers/user-provider";
-import { NAV_ITEMS } from "@/lib/constants";
+import { NAV_GROUPS, NAV_SETTINGS } from "@/lib/constants";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 
 type SidebarProps = {
   onNavigate?: () => void;
 };
+
+function isActivePath(pathname: string, href: string) {
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
 
 export function Sidebar({ onNavigate }: SidebarProps) {
   const pathname = usePathname();
@@ -37,24 +41,46 @@ export function Sidebar({ onNavigate }: SidebarProps) {
       <Separator />
 
       <ScrollArea className="flex-1 px-3 py-4">
-        <nav className="flex flex-col gap-1">
-          {NAV_ITEMS.map((item) => {
-            const isActive =
-              pathname === item.href || pathname.startsWith(`${item.href}/`);
-            const Icon = item.icon;
+        <nav className="flex flex-col gap-5">
+          {NAV_GROUPS.map((group) => (
+            <div key={group.label}>
+              <p className="mb-1.5 px-3 text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground/80">
+                {group.label}
+              </p>
+              <div className="flex flex-col gap-0.5">
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <NavLink
+                      key={item.href}
+                      href={item.href}
+                      isActive={isActivePath(pathname, item.href)}
+                      onNavigate={onNavigate}
+                    >
+                      <Icon className="size-4 shrink-0" />
+                      <span>{item.title}</span>
+                    </NavLink>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
 
-            return (
+          <div>
+            <p className="mb-1.5 px-3 text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground/80">
+              Account
+            </p>
+            <div className="flex flex-col gap-0.5">
               <NavLink
-                key={item.href}
-                href={item.href}
-                isActive={isActive}
+                href={NAV_SETTINGS.href}
+                isActive={isActivePath(pathname, NAV_SETTINGS.href)}
                 onNavigate={onNavigate}
               >
-                <Icon className="size-4 shrink-0" />
-                <span>{item.title}</span>
+                <NAV_SETTINGS.icon className="size-4 shrink-0" />
+                <span>{NAV_SETTINGS.title}</span>
               </NavLink>
-            );
-          })}
+            </div>
+          </div>
         </nav>
       </ScrollArea>
 

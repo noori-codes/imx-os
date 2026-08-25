@@ -12,7 +12,7 @@ function NavPendingDot() {
     <span
       aria-hidden
       className={cn(
-        "ml-auto size-1.5 shrink-0 rounded-full bg-primary transition-opacity duration-150",
+        "ml-auto size-1.5 shrink-0 rounded-full bg-foreground/50 transition-opacity duration-150",
         pending ? "animate-pulse opacity-100 delay-100" : "opacity-0",
       )}
     />
@@ -32,13 +32,21 @@ export function NavLink({ href, isActive, onNavigate, children }: NavLinkProps) 
       href={href}
       onClick={onNavigate}
       prefetch
+      aria-current={isActive ? "page" : undefined}
       className={cn(
-        "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+        "group/nav relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
         isActive
-          ? "bg-sidebar-accent text-sidebar-accent-foreground"
-          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
+          ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
+          : "font-normal text-sidebar-foreground/65 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
       )}
     >
+      <span
+        aria-hidden
+        className={cn(
+          "absolute left-0 top-1/2 h-4 w-[2px] -translate-y-1/2 rounded-full bg-foreground transition-opacity duration-150",
+          isActive ? "opacity-100" : "opacity-0 group-hover/nav:opacity-25",
+        )}
+      />
       {children}
       <NavPendingDot />
     </Link>
