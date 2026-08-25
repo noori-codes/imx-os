@@ -17,6 +17,7 @@ import {
   updateHabit,
 } from "@/actions/habits";
 import { Button } from "@/components/ui/button";
+import { confirm } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toDateString } from "@/lib/date-utils";
@@ -88,17 +89,19 @@ export function HabitItem({
   }
 
   function handleDelete() {
-    if (
-      !window.confirm(
-        `Delete “${optimistic.title}”?\n\nThis removes the habit and all of its check-in history.`,
-      )
-    ) {
-      return;
-    }
-    startTransition(async () => {
-      onOptimisticRemove(optimistic.id);
-      await deleteHabit(optimistic.id);
-    });
+    void (async () => {
+      const ok = await confirm({
+        title: `Delete “${optimistic.title}”?`,
+        description: "This removes the habit and all of its check-in history.",
+        confirmLabel: "Delete",
+        destructive: true,
+      });
+      if (!ok) return;
+      startTransition(async () => {
+        onOptimisticRemove(optimistic.id);
+        await deleteHabit(optimistic.id);
+      });
+    })();
   }
 
   function saveEdit() {

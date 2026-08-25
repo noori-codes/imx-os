@@ -7,6 +7,7 @@ import { ChevronDown, Clock, Play, Trash2 } from "lucide-react";
 import { deleteFocusSessions } from "@/actions/focus";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
+import { confirm } from "@/components/ui/confirm-dialog";
 import {
   buildPickupHint,
   canContinueLoggedSession,
@@ -171,14 +172,20 @@ export function FocusSessionList({ sessions }: FocusSessionListProps) {
       count === 1
         ? `${FOCUS_PRESETS[sessionsToDelete[0].mode].label.toLowerCase()} session`
         : `${count} sessions in this thread`;
-    if (!window.confirm(`Delete this ${label}?`)) {
-      return;
-    }
-    const ids = sessionsToDelete.map((session) => session.id);
-    startTransition(async () => {
-      removeOptimistic(ids);
-      await deleteFocusSessions(ids);
-    });
+    void (async () => {
+      const ok = await confirm({
+        title: `Delete this ${label}?`,
+        description: "This cannot be undone.",
+        confirmLabel: "Delete",
+        destructive: true,
+      });
+      if (!ok) return;
+      const ids = sessionsToDelete.map((session) => session.id);
+      startTransition(async () => {
+        removeOptimistic(ids);
+        await deleteFocusSessions(ids);
+      });
+    })();
   }
 
   function handleContinue(threadSessions: FocusSession[]) {

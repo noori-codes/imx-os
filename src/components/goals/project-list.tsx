@@ -6,6 +6,7 @@ import { FolderKanban, Pencil, Trash2, X } from "lucide-react";
 
 import { deleteProject, updateProject } from "@/actions/projects";
 import { Button } from "@/components/ui/button";
+import { confirm } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { ProjectWithCounts } from "@/types/project";
@@ -78,12 +79,19 @@ function ProjectRow({
       project.task_count > 0
         ? `This also deletes ${project.task_count} task${project.task_count === 1 ? "" : "s"}.`
         : "This cannot be undone.";
-    if (!window.confirm(`Delete “${project.title}”?\n\n${detail}`)) return;
-
-    startTransition(async () => {
-      onOptimisticDelete();
-      await deleteProject(goalId, project.id);
-    });
+    void (async () => {
+      const ok = await confirm({
+        title: `Delete “${project.title}”?`,
+        description: detail,
+        confirmLabel: "Delete",
+        destructive: true,
+      });
+      if (!ok) return;
+      startTransition(async () => {
+        onOptimisticDelete();
+        await deleteProject(goalId, project.id);
+      });
+    })();
   }
 
   function saveEdit() {

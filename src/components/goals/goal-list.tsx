@@ -6,6 +6,7 @@ import { Pencil, Target, Trash2, X } from "lucide-react";
 
 import { deleteGoal, updateGoal } from "@/actions/goals";
 import { Button } from "@/components/ui/button";
+import { confirm } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { GoalWithCounts } from "@/types/goal";
@@ -74,12 +75,19 @@ function GoalRow({
       goal.project_count > 0
         ? `This deletes ${goal.project_count} project${goal.project_count === 1 ? "" : "s"} and ${goal.task_count} task${goal.task_count === 1 ? "" : "s"}.`
         : "This cannot be undone.";
-    if (!window.confirm(`Delete “${goal.title}”?\n\n${detail}`)) return;
-
-    startTransition(async () => {
-      onOptimisticDelete();
-      await deleteGoal(goal.id);
-    });
+    void (async () => {
+      const ok = await confirm({
+        title: `Delete “${goal.title}”?`,
+        description: detail,
+        confirmLabel: "Delete",
+        destructive: true,
+      });
+      if (!ok) return;
+      startTransition(async () => {
+        onOptimisticDelete();
+        await deleteGoal(goal.id);
+      });
+    })();
   }
 
   function saveEdit() {

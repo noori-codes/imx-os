@@ -11,6 +11,7 @@ import { toggleTaskComplete } from "@/actions/tasks";
 import { FocusSounds } from "@/components/focus/focus-sounds";
 import { FocusClockFace } from "@/components/focus/focus-clock-face";
 import { showFocusSealToast } from "@/components/focus/focus-seal-toast";
+import { confirm } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import {
   notifyFocusPhase,
@@ -553,10 +554,18 @@ export function FocusTimer({
 
   function handleDiscardStopwatch() {
     const actual = useFocusTimer.getState().displaySeconds();
-    if (
-      actual >= 5 &&
-      !window.confirm("Discard this session without saving?")
-    ) {
+    if (actual >= 5) {
+      void (async () => {
+        const ok = await confirm({
+          title: "Discard this session?",
+          description: "Your time won’t be saved.",
+          confirmLabel: "Discard",
+          destructive: true,
+        });
+        if (!ok) return;
+        stopFocusSound();
+        reset();
+      })();
       return;
     }
     stopFocusSound();
