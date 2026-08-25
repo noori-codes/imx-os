@@ -18,6 +18,10 @@ import {
   requestFocusNotifyPermission,
 } from "@/lib/focus-alerts";
 import {
+  celebrateDailyGoalIfCrossed,
+  readFocusDailyGoalMinutes,
+} from "@/lib/focus-celebrate";
+import {
   buildPickupHint,
   continueSubject,
 } from "@/lib/focus-continue";
@@ -75,10 +79,12 @@ function filledDots(count: number, mode: FocusMode) {
 export function FocusTimer({
   tasks = [],
   focusMinutesToday = 0,
+  dailyGoalMinutes,
   initialTaskId = null,
 }: {
   tasks?: FocusLinkableTask[];
   focusMinutesToday?: number;
+  dailyGoalMinutes?: number;
   initialTaskId?: string | null;
 }) {
   const router = useRouter();
@@ -156,10 +162,15 @@ export function FocusTimer({
   const [, startTransition] = useTransition();
   const loggedRef = useRef(false);
   const flowNudgeRef = useRef(false);
+  const todayMinutesRef = useRef(focusMinutesToday);
   const prevRemaining = useRef(remainingSeconds);
   const [customHours, setCustomHours] = useState("");
   const [customMinutes, setCustomMinutes] = useState("");
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+
+  useEffect(() => {
+    todayMinutesRef.current = focusMinutesToday;
+  }, [focusMinutesToday]);
 
   useEffect(() => {
     const stored = window.localStorage.getItem("imx-focus-auto-start") === "1";
@@ -294,8 +305,10 @@ export function FocusTimer({
 
       const addedMinutes =
         currentMode === "focus" ? Math.max(1, Math.round(planned / 60)) : 0;
-      const todayMinutes = focusMinutesToday + addedMinutes;
+      const beforeMinutes = todayMinutesRef.current;
+      const todayMinutes = beforeMinutes + addedMinutes;
       if (currentMode === "focus") {
+        todayMinutesRef.current = todayMinutes;
         useFocusTimer.getState().pulseSeal({
           startedAt: new Date(Date.now() - planned * 1000).toISOString(),
           seconds: planned,
@@ -311,27 +324,38 @@ export function FocusTimer({
           : null;
 
       if (currentMode === "focus") {
-        showFocusSealToast({
-          kind: "focus",
-          title: "Session sealed",
-          seconds: planned,
-          todayMinutes,
-          nextLabel,
-          onMarkDone: linkedTaskForToast
-            ? () => {
-                setLinkedTaskId(null);
-                startTransition(async () => {
-                  await toggleTaskComplete(linkedTaskForToast.id, true);
-                  router.refresh();
-                });
-                showFocusSealToast({
-                  kind: "task",
-                  title: "Task done",
-                  taskTitle: linkedTaskForToast.title,
-                });
-              }
-            : undefined,
+        const markDone = linkedTaskForToast
+          ? () => {
+              setLinkedTaskId(null);
+              startTransition(async () => {
+                await toggleTaskComplete(linkedTaskForToast.id, true);
+                router.refresh();
+              });
+              showFocusSealToast({
+                kind: "task",
+                title: "Task done",
+                taskTitle: linkedTaskForToast.title,
+              });
+            }
+          : undefined;
+
+        const goalCrossed = celebrateDailyGoalIfCrossed({
+          beforeMinutes,
+          afterMinutes: todayMinutes,
+          goalMinutes: readFocusDailyGoalMinutes(dailyGoalMinutes),
+          onMarkDone: markDone,
         });
+
+        if (!goalCrossed) {
+          showFocusSealToast({
+            kind: "focus",
+            title: "Session sealed",
+            seconds: planned,
+            todayMinutes,
+            nextLabel,
+            onMarkDone: markDone,
+          });
+        }
       } else {
         showFocusSealToast({
           kind: "break",
@@ -358,6 +382,7 @@ export function FocusTimer({
     linkedTaskId,
     completedFocusCount,
     focusMinutesToday,
+    dailyGoalMinutes,
     advance,
     router,
     linkedTask?.title,
@@ -473,7 +498,10 @@ export function FocusTimer({
       seconds: isContinuation ? incremental : actual,
     });
 
-    const todayMinutes = focusMinutesToday + addedMinutes;
+    const beforeMinutes = todayMinutesRef.current;
+    const todayMinutes = beforeMinutes + addedMinutes;
+    todayMinutesRef.current = todayMinutes;
+
     const linkedTaskForToast = taskId
       ? {
           id: taskId,
@@ -481,26 +509,37 @@ export function FocusTimer({
         }
       : null;
 
-    showFocusSealToast({
-      kind: "focus",
-      title: "Session sealed",
-      seconds: actual,
-      todayMinutes,
-      onMarkDone: linkedTaskForToast
-        ? () => {
-            setLinkedTaskId(null);
-            startTransition(async () => {
-              await toggleTaskComplete(linkedTaskForToast.id, true);
-              router.refresh();
-            });
-            showFocusSealToast({
-              kind: "task",
-              title: "Task done",
-              taskTitle: linkedTaskForToast.title,
-            });
-          }
-        : undefined,
+    const markDone = linkedTaskForToast
+      ? () => {
+          setLinkedTaskId(null);
+          startTransition(async () => {
+            await toggleTaskComplete(linkedTaskForToast.id, true);
+            router.refresh();
+          });
+          showFocusSealToast({
+            kind: "task",
+            title: "Task done",
+            taskTitle: linkedTaskForToast.title,
+          });
+        }
+      : undefined;
+
+    const goalCrossed = celebrateDailyGoalIfCrossed({
+      beforeMinutes,
+      afterMinutes: todayMinutes,
+      goalMinutes: readFocusDailyGoalMinutes(dailyGoalMinutes),
+      onMarkDone: markDone,
     });
+
+    if (!goalCrossed) {
+      showFocusSealToast({
+        kind: "focus",
+        title: "Session sealed",
+        seconds: actual,
+        todayMinutes,
+        onMarkDone: markDone,
+      });
+    }
 
     loggedRef.current = false;
     reset();

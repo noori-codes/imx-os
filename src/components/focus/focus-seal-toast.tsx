@@ -7,10 +7,11 @@ import { formatFocusClock, formatFocusMinutes } from "@/types/focus";
 
 type FocusSealToastProps = {
   id: string | number;
-  kind: "focus" | "break" | "task";
+  kind: "focus" | "break" | "task" | "goal";
   title: string;
   seconds?: number;
   todayMinutes?: number;
+  goalMinutes?: number;
   nextLabel?: string;
   taskTitle?: string;
   onMarkDone?: () => void;
@@ -22,6 +23,7 @@ export function FocusSealToast({
   title,
   seconds,
   todayMinutes,
+  goalMinutes,
   nextLabel,
   taskTitle,
   onMarkDone,
@@ -32,6 +34,7 @@ export function FocusSealToast({
         "focus-seal-toast relative overflow-hidden rounded-2xl border border-border/50",
         "bg-background/90 shadow-[0_20px_50px_-24px_rgba(0,0,0,0.45)] backdrop-blur-xl",
         "dark:bg-card/90 dark:shadow-[0_24px_60px_-20px_rgba(0,0,0,0.75)]",
+        kind === "goal" && "border-foreground/20",
       )}
     >
       <div
@@ -58,7 +61,13 @@ export function FocusSealToast({
           </button>
         </div>
 
-        {kind !== "task" && seconds != null ? (
+        {kind === "goal" && goalMinutes != null ? (
+          <p className="focus-clock mt-2 text-[2rem] leading-none tracking-tight text-foreground sm:text-[2.15rem]">
+            {formatFocusMinutes(goalMinutes)}
+          </p>
+        ) : null}
+
+        {kind !== "task" && kind !== "goal" && seconds != null ? (
           <p className="focus-clock mt-2 text-[2rem] leading-none tracking-tight text-foreground sm:text-[2.15rem]">
             {formatFocusClock(seconds)}
           </p>
@@ -71,6 +80,9 @@ export function FocusSealToast({
         ) : null}
 
         <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+          {kind === "goal" && todayMinutes != null ? (
+            <span>Today · {formatFocusMinutes(todayMinutes)} · nicely done</span>
+          ) : null}
           {kind === "focus" && todayMinutes != null ? (
             <span>Today · {formatFocusMinutes(todayMinutes)}</span>
           ) : null}
@@ -111,10 +123,11 @@ export function FocusSealToast({
 }
 
 type ShowFocusSealToastArgs = {
-  kind: "focus" | "break" | "task";
+  kind: "focus" | "break" | "task" | "goal";
   title: string;
   seconds?: number;
   todayMinutes?: number;
+  goalMinutes?: number;
   nextLabel?: string;
   taskTitle?: string;
   onMarkDone?: () => void;
@@ -125,6 +138,7 @@ export function showFocusSealToast({
   title,
   seconds,
   todayMinutes,
+  goalMinutes,
   nextLabel,
   taskTitle,
   onMarkDone,
@@ -137,13 +151,14 @@ export function showFocusSealToast({
         title={title}
         seconds={seconds}
         todayMinutes={todayMinutes}
+        goalMinutes={goalMinutes}
         nextLabel={nextLabel}
         taskTitle={taskTitle}
         onMarkDone={onMarkDone}
       />
     ),
     {
-      duration: onMarkDone ? 8000 : 4200,
+      duration: kind === "goal" ? (onMarkDone ? 8000 : 5600) : onMarkDone ? 8000 : 4200,
     },
   );
 }

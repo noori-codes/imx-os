@@ -34,6 +34,7 @@ export default async function FocusPage({ searchParams }: FocusPageProps) {
             <FocusTimer
               tasks={tasks}
               focusMinutesToday={stats.focus_minutes}
+              dailyGoalMinutes={dailyGoal.minutes}
               initialTaskId={taskParam ?? null}
             />
           }
