@@ -150,7 +150,7 @@ function getAudio() {
   let el = window.__imxFocusAudio;
   if (!el) {
     el = document.createElement("audio");
-    el.preload = "auto";
+    el.preload = "none";
     enableLoop(el);
     window.__imxFocusAudio = el;
   }

@@ -18,7 +18,7 @@ export function FocusAudioHost() {
       ref={ref}
       id={AUDIO_ID}
       loop
-      preload="auto"
+      preload="none"
       className="hidden"
     />
   );

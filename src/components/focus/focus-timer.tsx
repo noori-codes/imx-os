@@ -20,7 +20,7 @@ import {
   continueSubject,
 } from "@/lib/focus-continue";
 import { cn } from "@/lib/utils";
-import { playDefaultFocusSound, stopFocusSound } from "@/stores/focus-sound";
+import { stopFocusSound } from "@/stores/focus-sound";
 import { nextFocusMode, useFocusTimer, canContinueFocusSession } from "@/stores/focus-timer";
 import {
   BREAK_DURATION_PRESETS,
@@ -183,6 +183,18 @@ export function FocusTimer({
   useEffect(() => {
     if (!isRunning) return;
 
+    // Hidden tab: no 1s React loop (battery). Wall-clock still advances;
+    // one shot fires when a countdown is due; catch-up on return.
+    if (!pageVisible) {
+      const { clock, endsAt } = useFocusTimer.getState();
+      if (clock !== "down" || !endsAt) return;
+      const delay = Math.max(0, endsAt - Date.now()) + 40;
+      const id = window.setTimeout(() => {
+        tick();
+      }, delay);
+      return () => window.clearTimeout(id);
+    }
+
     let timeoutId: number;
     const schedule = () => {
       tick();
@@ -192,10 +204,11 @@ export function FocusTimer({
 
     schedule();
     return () => window.clearTimeout(timeoutId);
-  }, [isRunning, tick]);
+  }, [isRunning, tick, pageVisible]);
 
   useEffect(() => {
     function catchUp() {
+      if (document.visibilityState !== "visible") return;
       tick();
     }
     document.addEventListener("visibilitychange", catchUp);
@@ -215,15 +228,6 @@ export function FocusTimer({
     flowNudgeRef.current = true;
     notifyFocusPhase("Still in flow?", "90 minutes in · seal whenever you’re ready");
   }, [isStopwatch, isRunning, shownSeconds]);
-
-  useEffect(() => {
-    const previous = document.title;
-    const label = isStopwatch ? "Focus" : FOCUS_PRESETS[mode].label;
-    document.title = `${formatFocusClock(shownSeconds)} · ${label}`;
-    return () => {
-      document.title = previous;
-    };
-  }, [shownSeconds, mode, isStopwatch]);
 
   useEffect(() => {
     if (isStopwatch) return;
@@ -298,7 +302,6 @@ export function FocusTimer({
       const next = useFocusTimer.getState();
       if (next.autoStartNext) {
         next.start();
-        if (next.mode === "focus") playDefaultFocusSound();
       }
     }
     prevRemaining.current = remainingSeconds;
@@ -508,9 +511,6 @@ export function FocusTimer({
     const custom = isStopwatch ? undefined : secondsFromCustom();
     void requestFocusNotifyPermission();
     start(custom ?? undefined);
-    if (useFocusTimer.getState().mode === "focus" || isStopwatch) {
-      playDefaultFocusSound();
-    }
   }
 
   function handlePause() {
@@ -617,7 +617,6 @@ export function FocusTimer({
     const next = useFocusTimer.getState();
     if (next.autoStartNext) {
       next.start();
-      if (next.mode === "focus") playDefaultFocusSound();
     }
   }
 
