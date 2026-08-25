@@ -83,14 +83,13 @@ export function FocusSounds() {
         aria-label="Ambient tracks"
       >
         {FOCUS_TRACKS.map((track) => {
-          const isActive = activeId === track.id;
-          const isLive = isActive && playing;
+          const isLive = playing && activeId === track.id;
           return (
             <button
               key={track.id}
               type="button"
               role="option"
-              aria-selected={isActive}
+              aria-selected={isLive}
               onClick={() => void toggle(track.id)}
               className="group/orb flex flex-col items-center gap-2.5 text-center"
             >
@@ -105,7 +104,7 @@ export function FocusSounds() {
                   className={cn(
                     "relative size-11 rounded-full bg-linear-to-br shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] transition-all duration-300 sm:size-12",
                     track.tone,
-                    isActive
+                    isLive
                       ? "scale-110 ring-2 ring-foreground/35"
                       : "opacity-70 group-hover/orb:scale-105 group-hover/orb:opacity-100",
                   )}
@@ -115,13 +114,13 @@ export function FocusSounds() {
                 <span
                   className={cn(
                     "block text-[11px] font-medium tracking-wide",
-                    isActive ? "text-foreground" : "text-muted-foreground",
+                    isLive ? "text-foreground" : "text-muted-foreground",
                   )}
                 >
                   {track.hint}
                 </span>
                 <span className="block text-[10px] text-muted-foreground/70">
-                  {isLive ? "Playing" : isActive ? "Selected" : "Cue"}
+                  {isLive ? "Playing" : "Cue"}
                 </span>
               </span>
             </button>
