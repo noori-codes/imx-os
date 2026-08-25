@@ -393,9 +393,9 @@ function ConstellationSky({
   }
 
   return (
-    <div className="focus-sky-dome w-full">
+    <div className="focus-sky-dome flex w-full flex-col">
       <svg
-        viewBox="0 0 100 68"
+        viewBox="6 14 88 52"
         className="focus-constellation-sky h-auto w-full"
         aria-label="Today's focus sessions by time of day. Tap a star for details."
         onClick={() => setSelectedKey(null)}
@@ -667,67 +667,6 @@ function ConstellationSky({
   );
 }
 
-function HorizonTrack({
-  progress,
-  ready,
-  todayLabel,
-  goalLabel,
-  compact,
-}: {
-  progress: number;
-  ready: boolean;
-  todayLabel: string;
-  goalLabel: string;
-  compact: boolean;
-}) {
-  const sunX = 8 + (progress / 100) * 84;
-
-  return (
-    <div className={cn("focus-horizon space-y-2", compact && "opacity-90")}>
-      {!compact ? (
-        <div className="flex items-baseline justify-between gap-3 text-xs tabular-nums text-muted-foreground">
-          <span>{todayLabel}</span>
-          <span>{goalLabel}</span>
-        </div>
-      ) : null}
-      <svg viewBox="0 0 100 22" className="h-6 w-full" aria-hidden>
-        <defs>
-          <linearGradient id="focus-horizon-grad" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="oklch(0.78 0.11 65 / 0.55)" />
-            <stop offset="48%" stopColor="oklch(0.68 0.07 245 / 0.5)" />
-            <stop offset="100%" stopColor="oklch(0.62 0.09 295 / 0.55)" />
-          </linearGradient>
-        </defs>
-        <rect
-          x="4"
-          y="14"
-          width="92"
-          height="2.5"
-          rx="1.25"
-          fill="url(#focus-horizon-grad)"
-          opacity="0.65"
-        />
-        {ready && progress > 0 ? (
-          <>
-            <circle
-              cx={sunX}
-              cy="11"
-              r="4.5"
-              className="fill-foreground/12"
-            />
-            <circle
-              cx={sunX}
-              cy="11"
-              r="2.6"
-              className="focus-horizon-sun fill-foreground"
-            />
-          </>
-        ) : null}
-      </svg>
-    </div>
-  );
-}
-
 export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
   const lastFocusSeconds = useFocusTimer((s) => s.lastFocusSeconds);
   const isRunning = useFocusTimer((s) => s.isRunning);
@@ -892,10 +831,6 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
   const goalTotalSeconds = goalMinutes * 60;
   const focusMinutes = Math.floor(todayTotalSeconds / 60);
 
-  const progress = Math.min(
-    100,
-    (todayTotalSeconds / Math.max(goalTotalSeconds, 1)) * 100,
-  );
   const met = todayTotalSeconds >= goalTotalSeconds;
   const goalRemainingSeconds = Math.max(
     0,
@@ -1011,13 +946,13 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
       data-streak={streakTier(stats.current_streak)}
       className="focus-progress focus-companion relative flex min-h-0 w-full flex-col"
     >
-      <div className="relative z-[1] grid w-full gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(16rem,22rem)] lg:items-start lg:gap-10 xl:gap-12">
-        <div className="min-w-0 space-y-4">
+      <div className="relative z-[1] grid w-full gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-start lg:gap-10 xl:gap-12">
+        <div className="flex min-w-0 flex-col gap-3">
           <div className="text-center lg:text-left">
             <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
               Your sky
             </p>
-            <p className="mt-1.5 flex items-baseline justify-center gap-2 text-sm text-muted-foreground lg:justify-start">
+            <p className="mt-1.5 flex min-h-5 items-baseline justify-center gap-2 text-sm text-muted-foreground lg:justify-start">
               <span>
                 {liveFocus
                   ? "Session in flight"
@@ -1033,7 +968,7 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
             </p>
           </div>
 
-          <div className="focus-constellation-stage mx-auto w-full max-w-xl lg:mx-0 lg:max-w-none">
+          <div className="focus-constellation-stage w-full">
             <ConstellationSky
               marks={marks}
               liveMark={liveMark}
@@ -1047,8 +982,8 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
 
         <div
           className={cn(
-            "focus-progress-hero relative min-w-0 transition-all duration-500",
-            compact ? "space-y-3" : "space-y-5",
+            "focus-progress-hero relative flex min-w-0 flex-col transition-all duration-500",
+            compact ? "gap-4" : "gap-5",
           )}
           role="progressbar"
           aria-valuemin={0}
@@ -1056,13 +991,19 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
           aria-valuenow={Math.min(todayTotalSeconds, goalTotalSeconds)}
           aria-label="Daily focus goal progress"
         >
-          <HorizonTrack
-            progress={ready ? progress : 0}
-            ready={ready}
-            todayLabel={todayTotalLabel}
-            goalLabel={goalLabel}
-            compact={compact}
-          />
+          <div className="text-center lg:text-left">
+            <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+              Today
+            </p>
+            <p className="mt-1.5 flex min-h-5 items-baseline justify-center gap-2 lg:justify-start">
+              <span className="text-2xl font-medium tracking-tight tabular-nums text-foreground sm:text-3xl">
+                {ready ? todayTotalLabel : "—"}
+              </span>
+              <span className="text-sm tabular-nums text-muted-foreground">
+                / {goalLabel}
+              </span>
+            </p>
+          </div>
 
           {!compact ? (
             <>

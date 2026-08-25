@@ -575,26 +575,6 @@
   }
 }
 
-.focus-horizon-sun {
-  transition:
-    cx 700ms ease,
-    opacity 500ms ease;
-}
-
-.focus-progress[data-live="true"] .focus-horizon-sun {
-  animation: focus-horizon-sun 3s ease-in-out infinite;
-}
-
-@keyframes focus-horizon-sun {
-  0%,
-  100% {
-    opacity: 0.82;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
 .focus-constellation-comet {
   animation: focus-comet-pulse 2.2s ease-in-out infinite;
 }
@@ -751,7 +731,6 @@
 .focus-progress[data-calm="true"] .focus-sky-arc,
 .focus-progress[data-calm="true"] .focus-sky-star,
 .focus-progress[data-calm="true"] .focus-sky-phase-active,
-.focus-progress[data-calm="true"] .focus-horizon-sun,
 .focus-progress[data-calm="true"] .focus-constellation-live-halo,
 .focus-progress[data-calm="true"] .focus-sky-continue-ring,
 .focus-progress[data-calm="true"] .focus-week-today,
@@ -764,7 +743,6 @@
 .focus-progress[data-visible="false"] .focus-sky-arc,
 .focus-progress[data-visible="false"] .focus-sky-star,
 .focus-progress[data-visible="false"] .focus-sky-phase-active,
-.focus-progress[data-visible="false"][data-live="true"] .focus-horizon-sun,
 .focus-progress[data-visible="false"][data-live="true"] .focus-constellation-live-halo,
 .focus-progress[data-visible="false"][data-live="true"] .focus-week-today,
 .focus-progress[data-visible="false"][data-live="true"] .focus-sky-now circle:last-child {
@@ -772,7 +750,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .focus-progress[data-live="true"] .focus-horizon-sun,
   .focus-constellation-live-halo,
   .focus-sky-continue-ring,
   .focus-progress[data-live="true"] .focus-sky-now circle:last-child,
