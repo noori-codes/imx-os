@@ -1,7 +1,5 @@
 "use client";
 
-import confetti from "canvas-confetti";
-
 import { showFocusSealToast } from "@/components/focus/focus-seal-toast";
 import { toDateString } from "@/lib/date-utils";
 import {
@@ -36,57 +34,76 @@ export function readFocusDailyGoalMinutes(fallback = FOCUS_DAILY_GOAL_DEFAULT) {
   return clampDailyFocusGoal(value);
 }
 
-function readThemeColors() {
-  if (typeof window === "undefined") {
-    return ["#18181b", "#71717a", "#a1a1aa", "#d4d4d8"];
+type ConfettiFn = (options?: Record<string, unknown>) => Promise<null> | null;
+
+async function loadConfetti(): Promise<ConfettiFn | null> {
+  try {
+    const mod = await import("canvas-confetti");
+    const candidate = (mod as { default?: unknown }).default ?? mod;
+    if (typeof candidate === "function") return candidate as ConfettiFn;
+    console.error("[focus] canvas-confetti export is not a function", mod);
+    return null;
+  } catch (error) {
+    console.error("[focus] failed to load canvas-confetti", error);
+    return null;
   }
-  const dark = document.documentElement.classList.contains("dark");
-  return dark
-    ? ["#fafafa", "#a1a1aa", "#71717a", "#3f3f46"]
-    : ["#18181b", "#52525b", "#a1a1aa", "#d4d4d8"];
 }
 
+function themeColors() {
+  const dark = document.documentElement.classList.contains("dark");
+  return dark
+    ? ["#fafafa", "#a1a1aa", "#71717a", "#52525b"]
+    : ["#18181b", "#3f3f46", "#71717a", "#a1a1aa"];
+}
+
+/** Always try to fire — used on every focus finish/seal. */
 export function fireFocusGoalConfetti() {
   if (typeof window === "undefined") return;
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-  const colors = readThemeColors();
-  const base = {
-    colors,
-    disableForReducedMotion: true as const,
-    scalar: 0.9,
-    ticks: 220,
-  };
+  void (async () => {
+    const confetti = await loadConfetti();
+    if (!confetti) return;
 
-  void confetti({
-    ...base,
-    particleCount: 55,
-    spread: 62,
-    startVelocity: 32,
-    origin: { x: 0.5, y: 0.62 },
-  });
+    const colors = themeColors();
+    const base = {
+      colors,
+      zIndex: 2147483647,
+      disableForReducedMotion: false,
+      scalar: 1,
+      ticks: 280,
+    };
 
-  window.setTimeout(() => {
-    void confetti({
-      ...base,
-      particleCount: 28,
-      angle: 60,
-      spread: 48,
-      origin: { x: 0.12, y: 0.72 },
-    });
-    void confetti({
-      ...base,
-      particleCount: 28,
-      angle: 120,
-      spread: 48,
-      origin: { x: 0.88, y: 0.72 },
-    });
-  }, 160);
+    try {
+      await confetti({
+        ...base,
+        particleCount: 120,
+        spread: 86,
+        startVelocity: 45,
+        origin: { x: 0.5, y: 0.55 },
+      });
+      await confetti({
+        ...base,
+        particleCount: 60,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0.1, y: 0.7 },
+      });
+      await confetti({
+        ...base,
+        particleCount: 60,
+        angle: 120,
+        spread: 55,
+        origin: { x: 0.9, y: 0.7 },
+      });
+    } catch (error) {
+      console.error("[focus] confetti failed", error);
+    }
+  })();
 }
 
 /**
  * On finish/seal: use the user's chosen daily goal + today's total after this
- * session. Congrats once per day when today >= goal; otherwise nothing.
+ * session. Congrats toast once per day when today >= goal.
  */
 export function celebrateDailyGoalIfCrossed({
   afterMinutes,
