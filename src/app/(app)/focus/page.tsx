@@ -28,7 +28,7 @@ export default async function FocusPage({ searchParams }: FocusPageProps) {
   return (
     <>
       <Header title="Focus" description="One session at a time" />
-      <AppPageFrame className="max-w-6xl gap-8 md:py-10">
+      <AppPageFrame className="max-w-5xl gap-0 md:py-8">
         <FocusWorkspace
           timer={
             <FocusTimer
@@ -38,7 +38,7 @@ export default async function FocusPage({ searchParams }: FocusPageProps) {
               initialTaskId={taskParam ?? null}
             />
           }
-          rail={<FocusStats stats={stats} dailyGoal={dailyGoal} />}
+          sky={<FocusStats stats={stats} dailyGoal={dailyGoal} />}
           sessions={
             <div className="space-y-8">
               <FocusSessionList sessions={sessions} />

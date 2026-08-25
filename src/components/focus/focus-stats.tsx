@@ -1009,44 +1009,46 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
       data-continuing={progressBaseSeconds > 0 ? "true" : "false"}
       data-mode={mode}
       data-streak={streakTier(stats.current_streak)}
-      className="focus-progress focus-companion relative flex min-h-0 w-full flex-col lg:min-h-[30rem]"
+      className="focus-progress focus-companion relative flex min-h-0 w-full flex-col"
     >
-      <div className="relative z-[1] flex flex-1 flex-col gap-5 max-lg:gap-4 lg:gap-6">
-        <div className="text-center lg:text-left">
-          <p className="text-xs font-medium tracking-wide text-muted-foreground">
-            Your sky
-          </p>
-          <p className="mt-1 flex items-baseline justify-center gap-2 text-sm text-muted-foreground lg:justify-start">
-            <span>
-              {liveFocus
-                ? "Session in flight"
-                : canContinue
-                  ? "Continue session"
-                  : (weekday ?? "Today")}
-            </span>
-            {marks.length > 0 || liveFocus ? (
-              <span className="text-xs tabular-nums text-muted-foreground/70">
-                · {constellationLitLabel}
+      <div className="relative z-[1] grid w-full gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(16rem,22rem)] lg:items-start lg:gap-10 xl:gap-12">
+        <div className="min-w-0 space-y-4">
+          <div className="text-center lg:text-left">
+            <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+              Your sky
+            </p>
+            <p className="mt-1.5 flex items-baseline justify-center gap-2 text-sm text-muted-foreground lg:justify-start">
+              <span>
+                {liveFocus
+                  ? "Session in flight"
+                  : canContinue
+                    ? "Continue session"
+                    : (weekday ?? "Today")}
               </span>
-            ) : null}
-          </p>
-        </div>
+              {marks.length > 0 || liveFocus ? (
+                <span className="text-xs tabular-nums text-muted-foreground/70">
+                  · {constellationLitLabel}
+                </span>
+              ) : null}
+            </p>
+          </div>
 
-        <div className="focus-constellation-stage w-full">
-          <ConstellationSky
-            marks={marks}
-            liveMark={liveMark}
-            sealMark={sealMark}
-            liveFocus={liveFocus}
-            continuing={progressBaseSeconds > 0}
-            ready={ready}
-          />
+          <div className="focus-constellation-stage mx-auto w-full max-w-xl lg:mx-0 lg:max-w-none">
+            <ConstellationSky
+              marks={marks}
+              liveMark={liveMark}
+              sealMark={sealMark}
+              liveFocus={liveFocus}
+              continuing={progressBaseSeconds > 0}
+              ready={ready}
+            />
+          </div>
         </div>
 
         <div
           className={cn(
-            "focus-progress-hero relative transition-all duration-500",
-            compact ? "space-y-2" : "space-y-5",
+            "focus-progress-hero relative min-w-0 transition-all duration-500",
+            compact ? "space-y-3" : "space-y-5",
           )}
           role="progressbar"
           aria-valuemin={0}
@@ -1071,7 +1073,7 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
               ) : null}
 
               {canContinue ? (
-                <div className="hidden text-center lg:block lg:text-left">
+                <div className="text-center lg:text-left">
                   <button
                     type="button"
                     onClick={() => start()}
@@ -1127,8 +1129,8 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
                 ) : null}
               </div>
 
-              <div className="w-full border-t border-border/40 pt-5">
-                <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+              <div className="w-full border-t border-border/30 pt-5">
+                <p className="text-center text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground lg:text-left">
                   This week
                 </p>
                 <div className="mt-3 grid grid-cols-7 gap-1 sm:gap-1.5">
@@ -1200,23 +1202,25 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
               </div>
             </>
           ) : null}
-        </div>
 
-        <div className="mt-auto flex items-baseline justify-between gap-3 border-t border-border/40 pt-4 text-xs text-muted-foreground">
-          <span>
-            Streak{" "}
-            <span className="tabular-nums text-foreground">
-              {stats.current_streak}d
+          <div className="flex items-baseline justify-between gap-3 border-t border-border/30 pt-3.5 text-xs text-muted-foreground">
+            <span>
+              Streak{" "}
+              <span className="tabular-nums text-foreground">
+                {stats.current_streak}d
+              </span>
+              {stats.longest_streak > 0
+                ? ` · best ${stats.longest_streak}d`
+                : ""}
             </span>
-            {stats.longest_streak > 0 ? ` · best ${stats.longest_streak}d` : ""}
-          </span>
-          <span className="tabular-nums">
-            {liveFocus
-              ? "Sky live"
-              : canContinue
-                ? "Continue ready"
-                : "Day taking shape"}
-          </span>
+            <span className="tabular-nums">
+              {liveFocus
+                ? "Sky live"
+                : canContinue
+                  ? "Continue ready"
+                  : "Day taking shape"}
+            </span>
+          </div>
         </div>
       </div>
     </section>

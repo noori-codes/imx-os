@@ -11,11 +11,11 @@ import { useFocusTimer } from "@/stores/focus-timer";
 
 type FocusWorkspaceProps = {
   timer: ReactNode;
-  rail: ReactNode;
+  sky: ReactNode;
   sessions: ReactNode;
 };
 
-export function FocusWorkspace({ timer, rail, sessions }: FocusWorkspaceProps) {
+export function FocusWorkspace({ timer, sky, sessions }: FocusWorkspaceProps) {
   const isRunning = useFocusTimer((s) => s.isRunning);
   const continueBarVisible = useFocusContinueBarVisible();
 
@@ -23,20 +23,27 @@ export function FocusWorkspace({ timer, rail, sessions }: FocusWorkspaceProps) {
     <>
       <div
         className={cn(
-          "flex flex-col gap-4 sm:gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)] lg:items-start lg:gap-8",
-          continueBarVisible && "pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:pb-0",
+          "flex w-full flex-col",
+          continueBarVisible &&
+            "pb-[calc(5.5rem+env(safe-area-inset-bottom))]",
         )}
       >
-        <div className="min-w-0 order-1">{timer}</div>
+        <div className="mx-auto w-full max-w-xl">{timer}</div>
 
-        <aside className="min-w-0 order-2 lg:sticky lg:top-20">{rail}</aside>
+        <div
+          className={cn(
+            "mt-6 border-t border-border/30 pt-8 transition-opacity duration-500 sm:mt-8 sm:pt-10",
+            isRunning && "opacity-60",
+          )}
+        >
+          {sky}
+        </div>
       </div>
 
       <div
         className={cn(
-          "mt-6 transition-opacity duration-500 ease-out sm:mt-8",
-          isRunning && "max-lg:hidden",
-          isRunning && "lg:opacity-55",
+          "mt-12 w-full transition-opacity duration-500 sm:mt-14",
+          isRunning && "max-sm:hidden sm:opacity-40",
         )}
         aria-hidden={isRunning ? true : undefined}
       >

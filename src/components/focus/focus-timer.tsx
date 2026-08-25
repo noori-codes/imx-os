@@ -774,7 +774,7 @@ export function FocusTimer({
       data-mode={mode}
       data-running={isRunning && pageVisible ? "true" : "false"}
       data-visible={pageVisible ? "true" : "false"}
-      className="focus-stage group relative flex h-full min-h-[28rem] flex-col overflow-hidden px-2 py-5 sm:min-h-[34rem] sm:px-4 sm:py-8 lg:min-h-[40rem]"
+      className="focus-stage group relative flex h-full min-h-[28rem] flex-col overflow-hidden px-2 py-6 sm:min-h-[32rem] sm:px-4 sm:py-8 lg:min-h-[34rem] lg:py-9"
       id="focus-timer"
     >
       <div className="focus-stage-glow" aria-hidden />
