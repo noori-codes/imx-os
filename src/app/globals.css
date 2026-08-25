@@ -707,6 +707,19 @@
   animation: focus-constellation-seal-pop 1.15s ease-out;
 }
 
+.focus-progress[data-calm="true"] .focus-sky-fill,
+.focus-progress[data-calm="true"] .focus-sky-arc,
+.focus-progress[data-calm="true"] .focus-sky-star,
+.focus-progress[data-calm="true"] .focus-sky-phase-active,
+.focus-progress[data-calm="true"] .focus-horizon-sun,
+.focus-progress[data-calm="true"] .focus-constellation-live-halo,
+.focus-progress[data-calm="true"] .focus-sky-continue-ring,
+.focus-progress[data-calm="true"] .focus-week-today,
+.focus-progress[data-calm="true"] .focus-sky-now circle:last-child,
+.focus-progress[data-calm="true"] .focus-constellation-comet {
+  animation: none !important;
+}
+
 .focus-progress[data-visible="false"] .focus-sky-fill,
 .focus-progress[data-visible="false"] .focus-sky-arc,
 .focus-progress[data-visible="false"] .focus-sky-star,

@@ -742,12 +742,7 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
   const continuedSessionId = useFocusTimer((s) => s.continuedSessionId);
   const start = useFocusTimer((s) => s.start);
   const sessionStartedAt = useFocusTimer((s) => s.sessionStartedAt);
-  const liveElapsedSeconds = useFocusTimer((s) => {
-    if (s.clock !== "up") return 0;
-    if (!s.isRunning) return s.elapsedSeconds;
-    void s.tickMs;
-    return s.liveElapsedSeconds();
-  });
+  const endsAt = useFocusTimer((s) => s.endsAt);
   const sealPulse = useFocusTimer((s) => s.sealPulse);
   const clearSealPulse = useFocusTimer((s) => s.clearSealPulse);
   const pageVisible = useDocumentVisible();
@@ -755,6 +750,7 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
   const [ready, setReady] = useState(false);
   const [goalOpen, setGoalOpen] = useState(false);
   const [mobileLayout, setMobileLayout] = useState(false);
+  const [skySessionSeconds, setSkySessionSeconds] = useState(0);
   const [, startGoalTransition] = useTransition();
 
   useEffect(() => {
@@ -782,6 +778,47 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
     media.addEventListener("change", sync);
     return () => media.removeEventListener("change", sync);
   }, []);
+
+  // Sky progress: sync on pause / visibility, otherwise every 30s — not 1 Hz.
+  useEffect(() => {
+    function readSessionSeconds() {
+      const s = useFocusTimer.getState();
+      if (s.clock === "up") {
+        return s.isRunning ? s.liveElapsedSeconds() : s.elapsedSeconds;
+      }
+      if (s.mode !== "focus") return 0;
+      if (s.isRunning && s.endsAt) {
+        return Math.max(
+          0,
+          s.durationSeconds -
+            Math.max(0, Math.round((s.endsAt - Date.now()) / 1000)),
+        );
+      }
+      return Math.max(0, s.durationSeconds - s.remainingSeconds);
+    }
+
+    setSkySessionSeconds(readSessionSeconds());
+
+    const live =
+      isRunning &&
+      pageVisible &&
+      (clock === "up" || mode === "focus");
+    if (!live) return;
+
+    const id = window.setInterval(() => {
+      setSkySessionSeconds(readSessionSeconds());
+    }, 30_000);
+    return () => window.clearInterval(id);
+  }, [
+    isRunning,
+    pageVisible,
+    clock,
+    mode,
+    elapsedSeconds,
+    remainingSeconds,
+    durationSeconds,
+    endsAt,
+  ]);
 
   useEffect(() => {
     if (!sealPulse) return;
@@ -813,11 +850,9 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
   }
 
   const stopwatchSession =
-    clock === "up" && liveElapsedSeconds > 0 ? liveElapsedSeconds : 0;
+    clock === "up" && skySessionSeconds > 0 ? skySessionSeconds : 0;
   const countdownSession =
-    mode === "focus" && durationSeconds > remainingSeconds
-      ? durationSeconds - remainingSeconds
-      : 0;
+    mode === "focus" && skySessionSeconds > 0 ? skySessionSeconds : 0;
   const sessionSeconds = stopwatchSession || countdownSession;
   const canContinue = canContinueFocusSession({
     clock,
@@ -837,7 +872,7 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
   const liveFocus =
     isRunning &&
     pageVisible &&
-    (clock === "up" || (mode === "focus" && durationSeconds > remainingSeconds));
+    (clock === "up" || mode === "focus");
   const compact = liveFocus || (mobileLayout && canContinue);
   const liveSessionSeconds = liveFocus ? sessionSeconds : 0;
   const marks = stats.today_marks ?? [];
@@ -968,6 +1003,7 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
     <section
       data-live={liveFocus ? "true" : "false"}
       data-visible={pageVisible ? "true" : "false"}
+      data-calm="true"
       data-compact={compact ? "true" : "false"}
       data-sealed={sealPulse ? "true" : "false"}
       data-continuing={progressBaseSeconds > 0 ? "true" : "false"}

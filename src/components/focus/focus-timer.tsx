@@ -9,6 +9,7 @@ import { ChevronDown, CircleCheck, CircleHelp, Pause, Play, RotateCcw, SkipForwa
 import { logFocusSession, updateFocusSession } from "@/actions/focus";
 import { toggleTaskComplete } from "@/actions/tasks";
 import { FocusSounds } from "@/components/focus/focus-sounds";
+import { FocusClockFace } from "@/components/focus/focus-clock-face";
 import { Input } from "@/components/ui/input";
 import {
   notifyFocusPhase,
@@ -105,13 +106,6 @@ export function FocusTimer({
   const linkedTaskId = useFocusTimer((s) => s.linkedTaskId);
   const profileId = useFocusTimer((s) => s.profileId);
   const progressBaseSeconds = useFocusTimer((s) => s.progressBaseSeconds);
-  const shownSeconds = useFocusTimer((s) => {
-    void s.tickMs;
-    void s.lastDisplaySecond;
-    void s.remainingSeconds;
-    void s.elapsedSeconds;
-    return s.displaySeconds();
-  });
   const setMode = useFocusTimer((s) => s.setMode);
   const setClock = useFocusTimer((s) => s.setClock);
   const setDuration = useFocusTimer((s) => s.setDuration);
@@ -141,9 +135,12 @@ export function FocusTimer({
     progressBaseSeconds,
   });
   const subject = continueSubject(intention, linkedTask?.title ?? null);
+  const sessionSecondsHint = isStopwatch
+    ? elapsedSeconds
+    : Math.max(0, durationSeconds - remainingSeconds);
   const pickupHint =
     progressBaseSeconds > 0
-      ? buildPickupHint(shownSeconds, subject)
+      ? buildPickupHint(sessionSecondsHint, subject)
       : null;
 
   const appliedTaskParam = useRef(false);
@@ -186,6 +183,7 @@ export function FocusTimer({
     // Hidden tab: no 1s React loop (battery). Wall-clock still advances;
     // one shot fires when a countdown is due; catch-up on return.
     if (!pageVisible) {
+      stopFocusSound();
       const { clock, endsAt } = useFocusTimer.getState();
       if (clock !== "down" || !endsAt) return;
       const delay = Math.max(0, endsAt - Date.now()) + 40;
@@ -197,13 +195,38 @@ export function FocusTimer({
 
     let timeoutId: number;
     const schedule = () => {
-      tick();
+      const finished = tick();
+      const state = useFocusTimer.getState();
+
+      if (
+        state.clock === "up" &&
+        state.isRunning &&
+        !flowNudgeRef.current &&
+        state.liveElapsedSeconds() >= 90 * 60
+      ) {
+        flowNudgeRef.current = true;
+        notifyFocusPhase(
+          "Still in flow?",
+          "90 minutes in · seal whenever you’re ready",
+        );
+      }
+
+      if (finished && state.clock === "up") {
+        const actual = state.elapsedSeconds;
+        if (actual >= FOCUS_MAX_SECONDS && !loggedRef.current) {
+          loggedRef.current = true;
+          sealStopwatch(FOCUS_MAX_SECONDS);
+        }
+      }
+
       const delay = 1000 - (Date.now() % 1000);
       timeoutId = window.setTimeout(schedule, delay);
     };
 
     schedule();
     return () => window.clearTimeout(timeoutId);
+    // sealStopwatch is stable enough via latest closures for max-seconds edge case
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRunning, tick, pageVisible]);
 
   useEffect(() => {
@@ -220,14 +243,9 @@ export function FocusTimer({
   }, [tick]);
 
   useEffect(() => {
-    if (!isStopwatch || !isRunning) {
-      if (!isRunning && shownSeconds < 60) flowNudgeRef.current = false;
-      return;
-    }
-    if (shownSeconds < 90 * 60 || flowNudgeRef.current) return;
-    flowNudgeRef.current = true;
-    notifyFocusPhase("Still in flow?", "90 minutes in · seal whenever you’re ready");
-  }, [isStopwatch, isRunning, shownSeconds]);
+    if (!isStopwatch || isRunning) return;
+    if (elapsedSeconds < 60) flowNudgeRef.current = false;
+  }, [isStopwatch, isRunning, elapsedSeconds]);
 
   useEffect(() => {
     if (isStopwatch) return;
@@ -496,17 +514,6 @@ export function FocusTimer({
     setClock(next);
   }
 
-  useEffect(() => {
-    if (!isStopwatch) return;
-    const actual = useFocusTimer.getState().displaySeconds();
-    if (actual < FOCUS_MAX_SECONDS) return;
-    if (loggedRef.current) return;
-    loggedRef.current = true;
-    sealStopwatch(FOCUS_MAX_SECONDS);
-    // sealStopwatch closes over latest intention/task
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isStopwatch, shownSeconds, elapsedSeconds]);
-
   function handleStart() {
     const custom = isStopwatch ? undefined : secondsFromCustom();
     void requestFocusNotifyPermission();
@@ -657,10 +664,6 @@ export function FocusTimer({
     return () => window.removeEventListener("keydown", onKey);
   });
 
-  const progress =
-    !isStopwatch && durationSeconds > 0
-      ? ((durationSeconds - remainingSeconds) / durationSeconds) * 100
-      : 0;
   const dots = filledDots(completedFocusCount, mode);
   const upcoming = nextFocusMode(mode, completedFocusCount, "complete");
   const endedHint =
@@ -668,12 +671,12 @@ export function FocusTimer({
       ? `Ends ${formatClockTime(endsAt)}`
       : null;
   const runningHint =
-    isStopwatch && sessionStartedAt && (isRunning || shownSeconds > 0)
+    isStopwatch && sessionStartedAt && (isRunning || elapsedSeconds > 0)
       ? `Since ${formatClockTime(sessionStartedAt)}`
-      : isStopwatch && !isRunning && shownSeconds > 0
+      : isStopwatch && !isRunning && elapsedSeconds > 0
         ? "Paused · R to seal"
         : null;
-  const canSealStopwatch = isStopwatch && shownSeconds >= 5;
+  const canSealStopwatch = isStopwatch && (isRunning || elapsedSeconds >= 5);
 
   const activeProfile =
     FOCUS_PROFILES.find((profile) => profile.id === profileId) ?? null;
@@ -852,97 +855,21 @@ export function FocusTimer({
                 : "size-[15.5rem] sm:size-[17.5rem] lg:size-[19.5rem]",
             )}
           >
-            <svg
-              className="absolute inset-0 size-full -rotate-90"
-              viewBox="0 0 100 100"
-              aria-hidden
-            >
-              <circle
-                cx="50"
-                cy="50"
-                r={ringRadius}
-                fill="none"
-                className="stroke-muted/50"
-                strokeWidth="1"
-              />
-              <circle
-                cx="50"
-                cy="50"
-                r={ringRadius}
-                fill="none"
-                className="stroke-muted/80"
-                strokeWidth="2.75"
-                strokeDasharray="1.2 2.4"
-                opacity={0.35}
-              />
-              {!isStopwatch ? (
-                <circle
-                  cx="50"
-                  cy="50"
-                  r={ringRadius}
-                  fill="none"
-                  className="stroke-foreground transition-[stroke-dashoffset] duration-500 ease-linear"
-                  strokeWidth="2.75"
-                  strokeLinecap="round"
-                  strokeDasharray={ringCircumference}
-                  strokeDashoffset={ringCircumference * (1 - progress / 100)}
-                />
-              ) : null}
-            </svg>
-
-            <div className="relative px-8 text-center">
-              <p
-                className={cn(
-                  "focus-clock text-foreground",
-                  shownSeconds >= 3600
-                    ? "text-[clamp(2.25rem,6.5vw,3.75rem)]"
-                    : "text-[clamp(2.75rem,8vw,4.75rem)]",
-                )}
-              >
-                {formatFocusClock(shownSeconds)}
-              </p>
-              <p className="mt-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-                {isStopwatch
-                  ? "Count up · Open"
-                  : `Countdown · ${formatFocusMinutes(Math.round(durationSeconds / 60))} ${FOCUS_PRESETS[mode].label}`}
-              </p>
-              {isRunning ? (
-                <div className="mt-4 space-y-1">
-                  <p className="mx-auto max-w-[14rem] truncate text-sm text-foreground/85">
-                    {isStopwatch
-                      ? subject ?? "Focus"
-                      : mode === "focus"
-                        ? "Deep work"
-                        : FOCUS_PRESETS[mode].label}
-                    {sessionLine ? ` · ${sessionLine}` : ""}
-                  </p>
-                  {pickupHint && isRunning ? (
-                    <p className="text-xs text-muted-foreground">{pickupHint}</p>
-                  ) : endedHint ? (
-                    <p className="text-xs text-muted-foreground">{endedHint}</p>
-                  ) : runningHint ? (
-                    <p className="text-xs text-muted-foreground">{runningHint}</p>
-                  ) : isStopwatch ? null : (
-                    <p className="text-xs text-muted-foreground">
-                      Up next: {FOCUS_PRESETS[upcoming].label}
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <p className="mt-3 text-sm tabular-nums text-muted-foreground">
-                  {isStopwatch
-                    ? canContinue
-                      ? pickupHint ??
-                        `Paused · ${formatFocusClock(shownSeconds)}`
-                      : shownSeconds > 0
-                        ? `Paused · ${formatFocusClock(shownSeconds)}`
-                        : "Count up · 00:00"
-                    : canContinue
-                      ? `Paused · ${formatFocusClock(durationSeconds - remainingSeconds)}`
-                      : `${FOCUS_PRESETS[mode].label} · ${formatFocusClock(durationSeconds)}`}
-                </p>
-              )}
-            </div>
+            <FocusClockFace
+              isRunning={isRunning}
+              isStopwatch={isStopwatch}
+              canContinue={canContinue}
+              mode={mode}
+              durationSeconds={durationSeconds}
+              subject={subject}
+              sessionLine={sessionLine}
+              pickupHint={pickupHint}
+              endedHint={endedHint}
+              runningHint={runningHint}
+              upcomingLabel={FOCUS_PRESETS[upcoming].label}
+              ringRadius={ringRadius}
+              ringCircumference={ringCircumference}
+            />
           </div>
         </div>
 
@@ -967,12 +894,12 @@ export function FocusTimer({
             )}
           </div>
         ) : (
-          <p className="mt-5 text-xs text-muted-foreground">
+          <p className="mt-3 text-xs text-muted-foreground">
             {isRunning
               ? "Pause anytime · R seals · ↺ discards"
               : canContinue
                 ? "Continue · R seals · Space · ↺ discards"
-                : shownSeconds > 0
+                : elapsedSeconds > 0
                   ? "R seals · Continue · Space · ↺ discards"
                   : "Start focus · no timer limit"}
           </p>
@@ -989,9 +916,7 @@ export function FocusTimer({
                   "opacity-0 group-hover:opacity-100 focus-visible:opacity-100 max-sm:opacity-100",
               )}
               aria-label={
-                isStopwatch && shownSeconds >= 5
-                  ? "Discard session"
-                  : "Reset timer"
+                canSealStopwatch ? "Discard session" : "Reset timer"
               }
             >
               <RotateCcw className="size-5" />

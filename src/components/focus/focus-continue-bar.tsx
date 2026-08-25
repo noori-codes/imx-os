@@ -27,12 +27,6 @@ export function FocusContinueBar() {
   const remainingSeconds = useFocusTimer((s) => s.remainingSeconds);
   const progressBaseSeconds = useFocusTimer((s) => s.progressBaseSeconds);
   const intention = useFocusTimer((s) => s.intention);
-  const liveElapsedSeconds = useFocusTimer((s) => {
-    if (s.clock !== "up") return 0;
-    if (!s.isRunning) return s.elapsedSeconds;
-    void s.tickMs;
-    return s.liveElapsedSeconds();
-  });
 
   const canContinue = canContinueFocusSession({
     clock,
@@ -47,8 +41,9 @@ export function FocusContinueBar() {
 
   if (!canContinue) return null;
 
+  // Bar only shows while paused — frozen elapsed, no 1 Hz tick.
   const stopwatchSession =
-    clock === "up" && liveElapsedSeconds > 0 ? liveElapsedSeconds : 0;
+    clock === "up" && elapsedSeconds > 0 ? elapsedSeconds : 0;
   const countdownSession =
     mode === "focus" && durationSeconds > remainingSeconds
       ? durationSeconds - remainingSeconds

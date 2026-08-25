@@ -423,6 +423,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
       isRunning: true,
       startedAt: now,
       endsAt: now + remainingSeconds * 1000,
+      lastDisplaySecond: remainingSeconds,
       lastFocusSeconds,
       lastShortBreakSeconds,
       lastLongBreakSeconds,
@@ -586,8 +587,10 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
       return true;
     }
 
-    if (remaining !== current.remainingSeconds) {
-      set({ remainingSeconds: remaining });
+    // Display-only tick — avoid rewriting remainingSeconds every second
+    // so FocusTimer / sky don't re-render at 1 Hz.
+    if (remaining !== current.lastDisplaySecond) {
+      set({ tickMs: Date.now(), lastDisplaySecond: remaining });
     }
     return false;
   },
