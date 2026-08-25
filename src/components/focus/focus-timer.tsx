@@ -10,6 +10,7 @@ import { logFocusSession, updateFocusSession } from "@/actions/focus";
 import { toggleTaskComplete } from "@/actions/tasks";
 import { FocusSounds } from "@/components/focus/focus-sounds";
 import { FocusClockFace } from "@/components/focus/focus-clock-face";
+import { showFocusSealToast } from "@/components/focus/focus-seal-toast";
 import { Input } from "@/components/ui/input";
 import {
   notifyFocusPhase,
@@ -31,7 +32,6 @@ import {
   FOCUS_PRESETS,
   FOCUS_PROFILES,
   formatFocusClock,
-  formatFocusMinutes,
   buildOptimisticFocusSession,
   type FocusClock,
   type FocusMode,
@@ -43,15 +43,6 @@ const CLOCKS: { id: FocusClock; label: string; hint: string }[] = [
   { id: "down", label: "Countdown", hint: "Timed blocks" },
   { id: "up", label: "Count up", hint: "Until you stop" },
 ];
-
-type SealMoment = {
-  mode: FocusMode;
-  seconds: number;
-  todayMinutes: number;
-  nextLabel: string;
-  task?: { id: string; title: string } | null;
-  taskDone?: boolean;
-};
 
 function isTypingTarget(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) return false;
@@ -168,7 +159,6 @@ export function FocusTimer({
   const prevRemaining = useRef(remainingSeconds);
   const [customHours, setCustomHours] = useState("");
   const [customMinutes, setCustomMinutes] = useState("");
-  const [seal, setSeal] = useState<SealMoment | null>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
   useEffect(() => {
@@ -304,25 +294,52 @@ export function FocusTimer({
 
       const addedMinutes =
         currentMode === "focus" ? Math.max(1, Math.round(planned / 60)) : 0;
+      const todayMinutes = focusMinutesToday + addedMinutes;
       if (currentMode === "focus") {
         useFocusTimer.getState().pulseSeal({
           startedAt: new Date(Date.now() - planned * 1000).toISOString(),
           seconds: planned,
         });
       }
-      setSeal({
-        mode: currentMode,
-        seconds: planned,
-        todayMinutes: focusMinutesToday + addedMinutes,
-        nextLabel,
-        task:
-          currentMode === "focus" && taskId
-            ? {
-                id: taskId,
-                title: linkedTask?.title ?? (intention.trim() || "this task"),
+
+      const linkedTaskForToast =
+        currentMode === "focus" && taskId
+          ? {
+              id: taskId,
+              title: linkedTask?.title ?? (intention.trim() || "this task"),
+            }
+          : null;
+
+      if (currentMode === "focus") {
+        showFocusSealToast({
+          kind: "focus",
+          title: "Session sealed",
+          seconds: planned,
+          todayMinutes,
+          nextLabel,
+          onMarkDone: linkedTaskForToast
+            ? () => {
+                setLinkedTaskId(null);
+                startTransition(async () => {
+                  await toggleTaskComplete(linkedTaskForToast.id, true);
+                  router.refresh();
+                });
+                showFocusSealToast({
+                  kind: "task",
+                  title: "Task done",
+                  taskTitle: linkedTaskForToast.title,
+                });
               }
-            : null,
-      });
+            : undefined,
+        });
+      } else {
+        showFocusSealToast({
+          kind: "break",
+          title: "Break complete",
+          seconds: planned,
+          nextLabel,
+        });
+      }
 
       advance("complete");
 
@@ -343,15 +360,9 @@ export function FocusTimer({
     focusMinutesToday,
     advance,
     router,
+    linkedTask?.title,
+    setLinkedTaskId,
   ]);
-
-  useEffect(() => {
-    if (!seal) return;
-    if (seal.mode === "focus" && seal.task && !seal.taskDone) return;
-    const delay = seal.taskDone ? 1600 : 3400;
-    const id = window.setTimeout(() => setSeal(null), delay);
-    return () => window.clearTimeout(id);
-  }, [seal]);
 
   useEffect(() => {
     if (!isStopwatch) {
@@ -461,33 +472,38 @@ export function FocusTimer({
       startedAt: sealStartedAt,
       seconds: isContinuation ? incremental : actual,
     });
-    setSeal({
-      mode: "focus",
+
+    const todayMinutes = focusMinutesToday + addedMinutes;
+    const linkedTaskForToast = taskId
+      ? {
+          id: taskId,
+          title: linkedTask?.title ?? (note.trim() || "this task"),
+        }
+      : null;
+
+    showFocusSealToast({
+      kind: "focus",
+      title: "Session sealed",
       seconds: actual,
-      todayMinutes: focusMinutesToday + addedMinutes,
-      nextLabel: "Focus",
-      task: taskId
-        ? {
-            id: taskId,
-            title: linkedTask?.title ?? (note.trim() || "this task"),
+      todayMinutes,
+      onMarkDone: linkedTaskForToast
+        ? () => {
+            setLinkedTaskId(null);
+            startTransition(async () => {
+              await toggleTaskComplete(linkedTaskForToast.id, true);
+              router.refresh();
+            });
+            showFocusSealToast({
+              kind: "task",
+              title: "Task done",
+              taskTitle: linkedTaskForToast.title,
+            });
           }
-        : null,
+        : undefined,
     });
+
     loggedRef.current = false;
     reset();
-  }
-
-  function handleMarkTaskDone() {
-    const task = seal?.task;
-    if (!task) return;
-    setSeal((current) =>
-      current ? { ...current, taskDone: true } : current,
-    );
-    setLinkedTaskId(null);
-    startTransition(async () => {
-      await toggleTaskComplete(task.id, true);
-      router.refresh();
-    });
   }
 
   function handleSealStopwatch() {
@@ -714,67 +730,6 @@ export function FocusTimer({
       id="focus-timer"
     >
       <div className="focus-stage-glow" aria-hidden />
-      {seal ? (
-        <div className="focus-seal absolute inset-0 z-20 flex items-center justify-center px-6 text-center">
-          <button
-            type="button"
-            className="absolute inset-0"
-            onClick={() => setSeal(null)}
-            aria-label="Dismiss completion"
-          />
-          <span className="focus-seal-flash" aria-hidden />
-          <span className="focus-seal-card relative z-[1] max-w-sm">
-            <span className="block text-[11px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
-              {seal.taskDone
-                ? "Task done"
-                : seal.mode === "focus"
-                  ? "Session sealed"
-                  : "Break complete"}
-            </span>
-            <span className="focus-clock mt-2 block text-3xl text-foreground sm:text-4xl">
-              {formatFocusClock(seal.seconds)}
-            </span>
-            {seal.mode === "focus" ? (
-              <span className="mt-2 block text-sm text-foreground/85">
-                Today · {formatFocusMinutes(seal.todayMinutes)} focused
-              </span>
-            ) : (
-              <span className="mt-2 block text-sm text-muted-foreground">
-                Nicely reset
-              </span>
-            )}
-            {seal.mode === "focus" && seal.task && !seal.taskDone ? (
-              <span className="mt-4 block space-y-3">
-                <span className="block truncate text-sm text-muted-foreground">
-                  Still working on {seal.task.title}?
-                </span>
-                <span className="flex items-center justify-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handleMarkTaskDone}
-                    className="rounded-full bg-foreground px-3.5 py-1.5 text-xs font-medium text-background transition-opacity hover:opacity-90"
-                  >
-                    Mark done
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSeal(null)}
-                    className="rounded-full px-3.5 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                  >
-                    Keep open
-                  </button>
-                </span>
-              </span>
-            ) : (
-              <span className="mt-3 block text-xs text-muted-foreground">
-                {seal.taskDone
-                  ? `${seal.task?.title ?? "Task"} marked done`
-                  : `Up next · ${seal.nextLabel}`}
-              </span>
-            )}
-          </span>
-        </div>
-      ) : null}
 
       <div className="relative z-[1] flex w-full flex-1 flex-col">
         <div className="mx-auto flex w-full max-w-xl flex-1 flex-col items-center justify-center">
