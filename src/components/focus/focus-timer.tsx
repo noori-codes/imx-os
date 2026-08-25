@@ -179,6 +179,16 @@ export function FocusTimer({
 
   useEffect(() => {
     if (!isRunning) return;
+    function onBeforeUnload(event: BeforeUnloadEvent) {
+      event.preventDefault();
+      event.returnValue = "";
+    }
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [isRunning]);
+
+  useEffect(() => {
+    if (!isRunning) return;
 
     // Hidden tab: no 1s React loop (battery). Ambient keeps playing;
     // wall-clock still advances; one shot fires when a countdown is due.
