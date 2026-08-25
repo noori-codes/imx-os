@@ -17,11 +17,11 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   return (
     <UserProvider email={user.email ?? null}>
       <FocusAudioHost />
-      <div className="flex min-h-screen">
+      <div className="flex min-h-svh">
         <div className="hidden md:block">
           <Sidebar />
         </div>
-        <div className="flex min-h-screen flex-1 flex-col">
+        <div className="flex min-h-svh min-w-0 flex-1 flex-col">
           <Suspense fallback={null}>
             <NavigationProgress />
           </Suspense>
