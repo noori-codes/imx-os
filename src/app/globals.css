@@ -285,13 +285,15 @@
     opacity 700ms ease,
     background 700ms ease,
     width 700ms ease,
-    height 700ms ease;
+    height 700ms ease,
+    top 700ms ease;
 }
 
 .focus-stage[data-running="true"] .focus-stage-glow {
   opacity: 1;
-  width: min(38rem, 98%);
-  height: min(38rem, 98%);
+  top: 42%;
+  width: min(42rem, 100%);
+  height: min(42rem, 100%);
 }
 
 .dark .focus-stage[data-mode="focus"] {

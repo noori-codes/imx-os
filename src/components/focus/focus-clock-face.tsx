@@ -108,11 +108,13 @@ export function FocusClockFace({
         >
           {formatFocusClock(shownSeconds)}
         </p>
-        <p className="mt-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-          {isStopwatch
-            ? "Count up · Open"
-            : `Countdown · ${formatFocusMinutes(Math.round(durationSeconds / 60))} ${FOCUS_PRESETS[mode].label}`}
-        </p>
+        {compactHints && isRunning ? null : (
+          <p className="mt-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+            {isStopwatch
+              ? "Count up · Open"
+              : `Countdown · ${formatFocusMinutes(Math.round(durationSeconds / 60))} ${FOCUS_PRESETS[mode].label}`}
+          </p>
+        )}
         {compactHints ? null : isRunning ? (
           <div className="mt-4 space-y-1">
             <p className="mx-auto max-w-[14rem] truncate text-sm text-foreground/85">

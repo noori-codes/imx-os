@@ -30,25 +30,16 @@ export function FocusWorkspace({ timer, sky, sessions }: FocusWorkspaceProps) {
       >
         <div className="w-full">{timer}</div>
 
-        <div
-          className={cn(
-            "mt-6 border-t border-border/30 pt-8 transition-opacity duration-500 sm:mt-8 sm:pt-10",
-            isRunning && "opacity-60",
-          )}
-        >
-          {sky}
-        </div>
+        {!isRunning ? (
+          <div className="mt-6 border-t border-border/30 pt-8 sm:mt-8 sm:pt-10">
+            {sky}
+          </div>
+        ) : null}
       </div>
 
-      <div
-        className={cn(
-          "mt-12 w-full transition-opacity duration-500 sm:mt-14",
-          isRunning && "max-sm:hidden sm:opacity-40",
-        )}
-        aria-hidden={isRunning ? true : undefined}
-      >
-        {sessions}
-      </div>
+      {!isRunning ? (
+        <div className="mt-12 w-full sm:mt-14">{sessions}</div>
+      ) : null}
 
       <FocusContinueBar />
     </>
