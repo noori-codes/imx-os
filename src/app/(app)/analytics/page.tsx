@@ -1,39 +1,74 @@
 import { getAnalyticsData } from "@/actions/analytics";
 import {
+  FocusMinutesChart,
   HabitCompletionChart,
   MoodEnergyChart,
-  ProductivityChart,
 } from "@/components/analytics/analytics-charts";
-import { AnalyticsSummaryCards } from "@/components/analytics/analytics-summary";
+import { AnalyticsHero } from "@/components/analytics/analytics-hero";
 import { HabitStreaksList } from "@/components/analytics/habit-streaks-list";
 import { Header } from "@/components/layout/header";
+import { AppPageFrame } from "@/components/shared/app-page-frame";
+import { parseAnalyticsRange } from "@/types/analytics";
 
-export default async function AnalyticsPage() {
-  const data = await getAnalyticsData(30);
+type AnalyticsPageProps = {
+  searchParams: Promise<{ range?: string }>;
+};
+
+export default async function AnalyticsPage({
+  searchParams,
+}: AnalyticsPageProps) {
+  const { range } = await searchParams;
+  const rangeDays = parseAnalyticsRange(range);
+  const data = await getAnalyticsData(rangeDays);
+  const { summary } = data;
 
   return (
     <>
       <Header
         title="Analytics"
-        description="Streaks and productivity over the last 30 days"
+        description={`Patterns over the last ${rangeDays} days`}
       />
-      <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
-        <AnalyticsSummaryCards
-          summary={data.summary}
-          rangeDays={data.range_days}
+      <AppPageFrame className="max-w-5xl gap-10 md:py-8">
+        <AnalyticsHero
+          rangeDays={rangeDays}
+          focusMinutes={summary.focus_minutes}
+          habitsAvgRate={summary.habits_avg_rate}
+          bestHabitStreak={summary.best_habit_streak}
+          focusGoalHitDays={summary.focus_goal_hit_days}
+          focusGoalDays={summary.focus_goal_days}
+          focusSessions={summary.focus_sessions}
+          tasksCompleted={summary.tasks_completed}
+          dailyFocusGoalMinutes={summary.daily_focus_goal_minutes}
         />
 
-        <div className="grid gap-6 xl:grid-cols-5">
-          <div className="space-y-6 xl:col-span-3">
-            <ProductivityChart series={data.series} />
-            <HabitCompletionChart series={data.series} />
-            <MoodEnergyChart series={data.series} />
-          </div>
-          <div className="xl:col-span-2">
-            <HabitStreaksList streaks={data.habit_streaks} />
-          </div>
+        <div className="border-t border-border/30 pt-8">
+          <FocusMinutesChart
+            series={data.series}
+            goalMinutes={summary.daily_focus_goal_minutes}
+          />
         </div>
-      </div>
+
+        <div className="grid gap-10 border-t border-border/30 pt-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:gap-12">
+          <HabitCompletionChart series={data.series} />
+          <HabitStreaksList
+            streaks={data.habit_streaks}
+            rangeDays={rangeDays}
+          />
+        </div>
+
+        <div className="border-t border-border/30 pt-8">
+          <MoodEnergyChart series={data.series} />
+          {summary.avg_mood !== null || summary.avg_energy !== null ? (
+            <p className="mt-3 text-center text-xs tabular-nums text-muted-foreground sm:text-left">
+              Avg mood {summary.avg_mood ?? "—"} · energy{" "}
+              {summary.avg_energy ?? "—"}
+              {summary.reviews_logged > 0
+                ? ` · ${summary.reviews_logged} review${summary.reviews_logged === 1 ? "" : "s"}`
+                : ""}
+            </p>
+          ) : null}
+        </div>
+      </AppPageFrame>
     </>
   );
 }

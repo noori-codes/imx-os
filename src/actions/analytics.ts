@@ -15,14 +15,18 @@ import { createClient } from "@/lib/supabase/server";
 import type {
   AnalyticsData,
   AnalyticsDayPoint,
+  AnalyticsRangeDays,
   HabitStreakSummary,
 } from "@/types/analytics";
-
-const RANGE_DAYS = 30;
+import { parseAnalyticsRange } from "@/types/analytics";
+import {
+  clampDailyFocusGoal,
+  FOCUS_DAILY_GOAL_DEFAULT,
+} from "@/types/focus";
 
 type QueryClient = Awaited<ReturnType<typeof createClient>>;
 
-function emptyAnalytics(rangeDays: number): AnalyticsData {
+function emptyAnalytics(rangeDays: AnalyticsRangeDays): AnalyticsData {
   const days = getPastDays(rangeDays);
   return {
     range_days: rangeDays,
@@ -35,12 +39,16 @@ function emptyAnalytics(rangeDays: number): AnalyticsData {
       avg_mood: null,
       avg_energy: null,
       best_habit_streak: 0,
+      focus_goal_hit_days: 0,
+      focus_goal_days: rangeDays,
+      daily_focus_goal_minutes: FOCUS_DAILY_GOAL_DEFAULT,
     },
     series: days.map((day) => ({
       date: toDateString(day),
       label: formatShortDate(day),
       tasks_completed: 0,
       focus_minutes: 0,
+      focus_goal_minutes: FOCUS_DAILY_GOAL_DEFAULT,
       habits_done: 0,
       habits_total: 0,
       mood: null,
@@ -50,10 +58,27 @@ function emptyAnalytics(rangeDays: number): AnalyticsData {
   };
 }
 
+async function loadDailyFocusGoalMinutes(
+  supabase: QueryClient,
+  userId: string | null,
+): Promise<number> {
+  let query = supabase.from("user_settings").select("daily_focus_goal_minutes");
+  if (userId) {
+    query = query.eq("user_id", userId);
+  }
+  const { data, error } = await query.maybeSingle();
+  if (error) {
+    console.error("[analytics] focus goal:", error.message);
+    return FOCUS_DAILY_GOAL_DEFAULT;
+  }
+  if (!data) return FOCUS_DAILY_GOAL_DEFAULT;
+  return clampDailyFocusGoal(data.daily_focus_goal_minutes);
+}
+
 async function loadAnalyticsData(
   supabase: QueryClient,
   userId: string | null,
-  rangeDays: number,
+  rangeDays: AnalyticsRangeDays,
 ): Promise<AnalyticsData> {
   const days = getPastDays(rangeDays);
   const rangeStart = toDateString(days[0]);
@@ -96,7 +121,6 @@ async function loadAnalyticsData(
     .lte("review_date", rangeEnd)
     .order("review_date", { ascending: true });
 
-  // Admin client bypasses RLS — always scope by user.
   if (userId) {
     tasksQuery = tasksQuery.eq("user_id", userId);
     focusQuery = focusQuery.eq("user_id", userId);
@@ -111,12 +135,14 @@ async function loadAnalyticsData(
     habitsResult,
     habitLogsResult,
     reviewsResult,
+    dailyGoalMinutes,
   ] = await Promise.all([
     tasksQuery,
     focusQuery,
     habitsQuery,
     habitLogsQuery,
     reviewsQuery,
+    loadDailyFocusGoalMinutes(supabase, userId),
   ]);
 
   if (completedTasksResult.error) {
@@ -184,6 +210,7 @@ async function loadAnalyticsData(
       label: formatShortDate(day),
       tasks_completed: tasksByDay.get(date) ?? 0,
       focus_minutes: focusByDay.get(date) ?? 0,
+      focus_goal_minutes: dailyGoalMinutes,
       habits_done: habitsDoneByDay.get(date) ?? 0,
       habits_total: habitCount,
       mood: review?.mood ?? null,
@@ -259,6 +286,10 @@ async function loadAnalyticsData(
   const focus_sessions = focusResult.data?.length ?? 0;
   const reviews_logged = reviewsResult.data?.length ?? 0;
 
+  const focus_goal_hit_days = series.filter(
+    (d) => d.focus_minutes >= dailyGoalMinutes,
+  ).length;
+
   const moodValues = series
     .map((d) => d.mood)
     .filter((v): v is number => v !== null);
@@ -301,6 +332,9 @@ async function loadAnalyticsData(
         (max, h) => Math.max(max, h.longest_streak),
         0,
       ),
+      focus_goal_hit_days,
+      focus_goal_days: rangeDays,
+      daily_focus_goal_minutes: dailyGoalMinutes,
     },
     series,
     habit_streaks,
@@ -312,25 +346,32 @@ async function loadAnalyticsData(
  * cross-request cached when SUPABASE_SERVICE_ROLE_KEY is set.
  */
 export const getAnalyticsData = cache(
-  async (rangeDays = RANGE_DAYS): Promise<AnalyticsData> => {
+  async (
+    rangeDays: number | AnalyticsRangeDays = 30,
+  ): Promise<AnalyticsData> => {
+    const resolved = parseAnalyticsRange(String(rangeDays));
     const user = await getCurrentUser();
     if (!user) {
-      return emptyAnalytics(rangeDays);
+      return emptyAnalytics(resolved);
     }
 
     if (hasAdminClient()) {
       return cachedQuery(
-        ["analytics", user.id, String(rangeDays)],
+        ["analytics", user.id, String(resolved)],
         [cacheTags.analytics(user.id)],
         CACHE_TTL.analytics,
         async () => {
           const admin = createAdminClient();
-          return loadAnalyticsData(admin as unknown as QueryClient, user.id, rangeDays);
+          return loadAnalyticsData(
+            admin as unknown as QueryClient,
+            user.id,
+            resolved,
+          );
         },
       )();
     }
 
     const supabase = await createClient();
-    return loadAnalyticsData(supabase, null, rangeDays);
+    return loadAnalyticsData(supabase, null, resolved);
   },
 );

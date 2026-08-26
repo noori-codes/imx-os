@@ -6,9 +6,9 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Legend,
   Line,
   LineChart,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -16,22 +16,33 @@ import {
 } from "recharts";
 
 import type { AnalyticsDayPoint } from "@/types/analytics";
+import { formatFocusMinutes } from "@/types/focus";
 
-type ChartCardProps = {
-  title: string;
+type ChartBlockProps = {
+  label: string;
   description?: string;
   children: React.ReactNode;
+  heightClassName?: string;
 };
 
-function ChartCard({ title, description, children }: ChartCardProps) {
+function ChartBlock({
+  label,
+  description,
+  children,
+  heightClassName = "h-56",
+}: ChartBlockProps) {
   return (
-    <div className="rounded-xl border bg-card p-4 shadow-sm">
-      <h2 className="text-sm font-semibold">{title}</h2>
-      {description ? (
-        <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
-      ) : null}
-      <div className="mt-4 h-64 w-full">{children}</div>
-    </div>
+    <section className="w-full">
+      <div className="text-center sm:text-left">
+        <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+          {label}
+        </p>
+        {description ? (
+          <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+        ) : null}
+      </div>
+      <div className={`mt-4 w-full ${heightClassName}`}>{children}</div>
+    </section>
   );
 }
 
@@ -42,45 +53,79 @@ const tooltipStyle = {
   fontSize: "12px",
 };
 
-type ProductivityChartProps = {
+type FocusMinutesChartProps = {
   series: AnalyticsDayPoint[];
+  goalMinutes: number;
 };
 
-export function ProductivityChart({ series }: ProductivityChartProps) {
+export function FocusMinutesChart({
+  series,
+  goalMinutes,
+}: FocusMinutesChartProps) {
+  const hasFocus = series.some((d) => d.focus_minutes > 0);
+
   return (
-    <ChartCard
-      title="Productivity"
-      description="Tasks completed and focus minutes per day"
+    <ChartBlock
+      label="Focus"
+      description={`Minutes sealed each day · goal ${formatFocusMinutes(goalMinutes)}`}
     >
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={series} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-          <XAxis
-            dataKey="label"
-            tick={{ fontSize: 10 }}
-            interval="preserveStartEnd"
-            minTickGap={24}
-          />
-          <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
-          <Tooltip contentStyle={tooltipStyle} />
-          <Legend wrapperStyle={{ fontSize: 12 }} />
-          <Bar
-            dataKey="tasks_completed"
-            name="Tasks done"
-            fill="var(--primary)"
-            radius={[3, 3, 0, 0]}
-            maxBarSize={18}
-          />
-          <Bar
-            dataKey="focus_minutes"
-            name="Focus min"
-            fill="oklch(0.65 0.12 230)"
-            radius={[3, 3, 0, 0]}
-            maxBarSize={18}
-          />
-        </BarChart>
-      </ResponsiveContainer>
-    </ChartCard>
+      {hasFocus ? (
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={series}
+            margin={{ top: 8, right: 8, left: -20, bottom: 0 }}
+          >
+            <CartesianGrid
+              strokeDasharray="3 3"
+              vertical={false}
+              className="stroke-border/60"
+            />
+            <XAxis
+              dataKey="label"
+              tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
+              axisLine={false}
+              tickLine={false}
+              interval="preserveStartEnd"
+              minTickGap={28}
+            />
+            <YAxis
+              tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
+              axisLine={false}
+              tickLine={false}
+              allowDecimals={false}
+              width={36}
+            />
+            <Tooltip
+              contentStyle={tooltipStyle}
+              formatter={(value) => [
+                formatFocusMinutes(Number(value) || 0),
+                "Focus",
+              ]}
+            />
+            {goalMinutes > 0 ? (
+              <ReferenceLine
+                y={goalMinutes}
+                stroke="var(--muted-foreground)"
+                strokeDasharray="4 4"
+                strokeOpacity={0.45}
+              />
+            ) : null}
+            <Bar
+              dataKey="focus_minutes"
+              name="Focus"
+              fill="var(--foreground)"
+              fillOpacity={0.85}
+              radius={[3, 3, 0, 0]}
+              maxBarSize={22}
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      ) : (
+        <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+          Seal focus sessions to see the pattern.
+        </div>
+      )}
+    </ChartBlock>
   );
 }
 
@@ -96,41 +141,63 @@ export function HabitCompletionChart({ series }: HabitCompletionChartProps) {
         ? Math.round((day.habits_done / day.habits_total) * 100)
         : 0,
   }));
+  const hasHabits = series.some((d) => d.habits_total > 0);
 
   return (
-    <ChartCard
-      title="Habit consistency"
+    <ChartBlock
+      label="Habits"
       description="% of habits checked each day"
+      heightClassName="h-40"
     >
-      <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={data} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-          <XAxis
-            dataKey="label"
-            tick={{ fontSize: 10 }}
-            interval="preserveStartEnd"
-            minTickGap={24}
-          />
-          <YAxis
-            tick={{ fontSize: 10 }}
-            domain={[0, 100]}
-            tickFormatter={(v) => `${v}%`}
-          />
-          <Tooltip
-            contentStyle={tooltipStyle}
-            formatter={(value) => [`${value}%`, "Completion"]}
-          />
-          <Area
-            type="monotone"
-            dataKey="rate"
-            name="Completion"
-            stroke="oklch(0.62 0.15 145)"
-            fill="oklch(0.62 0.15 145 / 25%)"
-            strokeWidth={2}
-          />
-        </AreaChart>
-      </ResponsiveContainer>
-    </ChartCard>
+      {hasHabits ? (
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart
+            data={data}
+            margin={{ top: 8, right: 8, left: -20, bottom: 0 }}
+          >
+            <CartesianGrid
+              strokeDasharray="3 3"
+              vertical={false}
+              className="stroke-border/50"
+            />
+            <XAxis
+              dataKey="label"
+              tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
+              axisLine={false}
+              tickLine={false}
+              interval="preserveStartEnd"
+              minTickGap={28}
+            />
+            <YAxis
+              tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
+              axisLine={false}
+              tickLine={false}
+              domain={[0, 100]}
+              width={36}
+              tickFormatter={(v) => `${v}%`}
+            />
+            <Tooltip
+              contentStyle={tooltipStyle}
+              formatter={(value) => [`${value}%`, "Completion"]}
+            />
+            <Area
+              type="monotone"
+              dataKey="rate"
+              name="Completion"
+              stroke="var(--foreground)"
+              fill="var(--foreground)"
+              fillOpacity={0.12}
+              strokeWidth={1.75}
+              strokeOpacity={0.7}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      ) : (
+        <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+          Add habits to track consistency.
+        </div>
+      )}
+    </ChartBlock>
   );
 }
 
@@ -142,51 +209,66 @@ export function MoodEnergyChart({ series }: MoodEnergyChartProps) {
   const hasData = series.some((d) => d.mood !== null || d.energy !== null);
 
   return (
-    <ChartCard
-      title="Mood & energy"
-      description="From daily reviews (1–5 scale)"
+    <ChartBlock
+      label="Mood & energy"
+      description="From daily reviews · 1–5"
+      heightClassName="h-40"
     >
       {hasData ? (
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
             data={series}
-            margin={{ top: 8, right: 8, left: -16, bottom: 0 }}
+            margin={{ top: 8, right: 8, left: -20, bottom: 0 }}
           >
-            <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+            <CartesianGrid
+              strokeDasharray="3 3"
+              vertical={false}
+              className="stroke-border/40"
+            />
             <XAxis
               dataKey="label"
-              tick={{ fontSize: 10 }}
+              tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
+              axisLine={false}
+              tickLine={false}
               interval="preserveStartEnd"
-              minTickGap={24}
+              minTickGap={28}
             />
-            <YAxis tick={{ fontSize: 10 }} domain={[1, 5]} />
+            <YAxis
+              tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
+              axisLine={false}
+              tickLine={false}
+              domain={[1, 5]}
+              width={28}
+            />
             <Tooltip contentStyle={tooltipStyle} />
-            <Legend wrapperStyle={{ fontSize: 12 }} />
             <Line
               type="monotone"
               dataKey="mood"
               name="Mood"
-              stroke="oklch(0.65 0.15 45)"
-              strokeWidth={2}
-              dot={{ r: 2 }}
+              stroke="var(--foreground)"
+              strokeWidth={1.75}
+              strokeOpacity={0.85}
+              dot={false}
               connectNulls
             />
             <Line
               type="monotone"
               dataKey="energy"
               name="Energy"
-              stroke="oklch(0.55 0.14 280)"
-              strokeWidth={2}
-              dot={{ r: 2 }}
+              stroke="var(--muted-foreground)"
+              strokeWidth={1.5}
+              strokeOpacity={0.7}
+              strokeDasharray="4 4"
+              dot={false}
               connectNulls
             />
           </LineChart>
         </ResponsiveContainer>
       ) : (
         <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-          Log daily reviews to see mood and energy trends.
+          Log daily reviews to see mood and energy.
         </div>
       )}
-    </ChartCard>
+    </ChartBlock>
   );
 }
