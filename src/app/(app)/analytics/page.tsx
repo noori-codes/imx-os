@@ -59,7 +59,7 @@ export default async function AnalyticsPage({
         <div className="border-t border-border/30 pt-8">
           <MoodEnergyChart series={data.series} />
           {summary.avg_mood !== null || summary.avg_energy !== null ? (
-            <p className="mt-3 text-center text-xs tabular-nums text-muted-foreground sm:text-left">
+            <p className="mt-4 text-center text-xs tabular-nums text-muted-foreground sm:text-left">
               Avg mood {summary.avg_mood ?? "—"} · energy{" "}
               {summary.avg_energy ?? "—"}
               {summary.reviews_logged > 0

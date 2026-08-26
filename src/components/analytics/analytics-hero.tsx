@@ -170,7 +170,7 @@ export function AnalyticsHero({
           <p className="mt-1 text-xs text-muted-foreground">
             {tasksCompleted > 0
               ? `${tasksCompleted} task${tasksCompleted === 1 ? "" : "s"} done`
-              : "habits"}
+              : "across habits"}
           </p>
         </div>
       </div>
