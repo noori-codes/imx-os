@@ -77,7 +77,6 @@ export type DashboardData = {
     has_today: boolean;
     intent: string | null;
   };
-  is_new_user: boolean;
 };
 
 export function activityLevel(count: number): 0 | 1 | 2 | 3 | 4 {

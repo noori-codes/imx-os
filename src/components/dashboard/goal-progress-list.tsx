@@ -10,14 +10,9 @@ export function GoalProgressList({ goals }: GoalProgressListProps) {
   return (
     <section className="min-w-0">
       <div className="flex items-baseline justify-between gap-3">
-        <div>
-          <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-            Goals
-          </p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Progress on active goals
-          </p>
-        </div>
+        <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+          Goals
+        </p>
         <Link
           href="/goals"
           className="text-xs text-muted-foreground transition-colors hover:text-foreground"
@@ -27,22 +22,16 @@ export function GoalProgressList({ goals }: GoalProgressListProps) {
       </div>
 
       {goals.length === 0 ? (
-        <p className="mt-6 text-sm text-muted-foreground">
-          No goals yet.{" "}
-          <Link
-            href="/goals"
-            className="text-foreground underline-offset-2 hover:underline"
-          >
-            Create one
-          </Link>
-        </p>
+        <Link
+          href="/goals"
+          className="mt-5 inline-block text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          Create a goal
+        </Link>
       ) : (
         <ul className="mt-5 divide-y divide-border/40">
           {goals.slice(0, 4).map((goal) => (
-            <li
-              key={goal.id}
-              className="py-3.5 first:pt-0 last:pb-0"
-            >
+            <li key={goal.id} className="py-3.5 first:pt-0 last:pb-0">
               <div className="flex items-center justify-between gap-3">
                 <Link
                   href={`/goals/${goal.id}`}
@@ -60,9 +49,6 @@ export function GoalProgressList({ goals }: GoalProgressListProps) {
                   style={{ width: `${Math.min(100, goal.progress)}%` }}
                 />
               </div>
-              <p className="mt-1.5 text-[11px] tabular-nums text-muted-foreground">
-                {goal.completed_task_count}/{goal.task_count} tasks
-              </p>
             </li>
           ))}
         </ul>

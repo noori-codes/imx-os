@@ -41,10 +41,7 @@ function TaskRow({ task }: { task: TaskWithContext }) {
         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
           {task.due_date ? (
             <span
-              className={cn(
-                "tabular-nums",
-                overdue && "text-destructive",
-              )}
+              className={cn("tabular-nums", overdue && "text-destructive")}
             >
               {overdue ? "Overdue" : "Due today"}
             </span>
@@ -67,34 +64,29 @@ export function TodayFocus({ tasks }: TodayFocusProps) {
   return (
     <section className="min-w-0">
       <div className="flex items-baseline justify-between gap-3">
-        <div>
-          <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-            Tasks
-          </p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {tasks.length === 0
-              ? "Nothing due today"
-              : `${tasks.length} needing attention`}
-          </p>
-        </div>
+        <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+          Tasks
+          {tasks.length > 0 ? (
+            <span className="ml-2 tabular-nums text-muted-foreground/80">
+              {tasks.length}
+            </span>
+          ) : null}
+        </p>
         <Link
           href="/tasks"
           className="text-xs text-muted-foreground transition-colors hover:text-foreground"
         >
-          All tasks
+          All
         </Link>
       </div>
 
       {tasks.length === 0 ? (
-        <p className="mt-6 text-sm text-muted-foreground">
-          Clear day.{" "}
-          <Link
-            href="/tasks"
-            className="text-foreground underline-offset-2 hover:underline"
-          >
-            Add a task
-          </Link>
-        </p>
+        <Link
+          href="/tasks"
+          className="mt-5 inline-block text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          Add a task
+        </Link>
       ) : (
         <ul className="mt-4">
           {tasks.map((task) => (

@@ -59,34 +59,29 @@ export function HabitsToday({ habits }: HabitsTodayProps) {
   return (
     <section className="min-w-0">
       <div className="flex items-baseline justify-between gap-3">
-        <div>
-          <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-            Habits
-          </p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {optimisticHabits.length === 0
-              ? "Build a daily rhythm"
-              : `${done}/${optimisticHabits.length} done`}
-          </p>
-        </div>
+        <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+          Habits
+          {optimisticHabits.length > 0 ? (
+            <span className="ml-2 tabular-nums text-muted-foreground/80">
+              {done}/{optimisticHabits.length}
+            </span>
+          ) : null}
+        </p>
         <Link
           href="/habits"
           className="text-xs text-muted-foreground transition-colors hover:text-foreground"
         >
-          Manage
+          All
         </Link>
       </div>
 
       {optimisticHabits.length === 0 ? (
-        <p className="mt-6 text-sm text-muted-foreground">
-          No habits yet.{" "}
-          <Link
-            href="/habits"
-            className="text-foreground underline-offset-2 hover:underline"
-          >
-            Add one
-          </Link>
-        </p>
+        <Link
+          href="/habits"
+          className="mt-5 inline-block text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          Add a habit
+        </Link>
       ) : (
         <ul className="mt-4 divide-y divide-border/40">
           {optimisticHabits.slice(0, 8).map((habit) => (

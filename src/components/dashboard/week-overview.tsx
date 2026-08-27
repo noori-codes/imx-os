@@ -12,17 +12,10 @@ export function WeekOverview({ week }: WeekOverviewProps) {
   return (
     <section className="min-w-0">
       <div className="flex items-baseline justify-between gap-3">
-        <div>
-          <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-            This week
-          </p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Tasks due by day
-          </p>
-        </div>
-        <p className="text-xs tabular-nums text-muted-foreground">
-          {total} total
+        <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+          Week
         </p>
+        <p className="text-xs tabular-nums text-muted-foreground">{total}</p>
       </div>
 
       <div className="mt-5 grid grid-cols-7 gap-2 sm:gap-2.5">
@@ -57,15 +50,6 @@ export function WeekOverview({ week }: WeekOverviewProps) {
                 )}
               >
                 {day.day_label.slice(0, 2)}
-              </span>
-              <span
-                className={cn(
-                  "h-3 text-[10px] leading-none tabular-nums text-muted-foreground/80",
-                  day.is_today && "text-foreground/80",
-                  day.task_count === 0 && "opacity-40",
-                )}
-              >
-                {day.task_count}
               </span>
             </div>
           );

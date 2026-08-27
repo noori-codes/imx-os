@@ -1,14 +1,14 @@
+import Link from "next/link";
+
 import { getDashboardData } from "@/actions/dashboard";
 import { getCurrentUser } from "@/lib/auth";
 import { DashboardHero } from "@/components/dashboard/dashboard-hero";
 import { GoalProgressList } from "@/components/dashboard/goal-progress-list";
 import { HabitsToday } from "@/components/dashboard/habits-today";
-import { OnboardingCard } from "@/components/dashboard/onboarding-card";
 import { TodayFocus } from "@/components/dashboard/today-focus";
 import { WeekOverview } from "@/components/dashboard/week-overview";
 import { Header } from "@/components/layout/header";
 import { AppPageFrame } from "@/components/shared/app-page-frame";
-import Link from "next/link";
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -39,7 +39,7 @@ export default async function DashboardPage() {
 
   return (
     <>
-      <Header title="Dashboard" description="What needs you today" />
+      <Header title="Dashboard" />
       <AppPageFrame className="max-w-5xl gap-10 md:py-8">
         <DashboardHero
           name={name}
@@ -53,8 +53,6 @@ export default async function DashboardPage() {
           streak={data.stats.activity_streak}
         />
 
-        {data.is_new_user ? <OnboardingCard /> : null}
-
         <div className="grid items-start gap-10 border-t border-border/30 pt-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:gap-12">
           <TodayFocus tasks={data.today_tasks} />
           <HabitsToday habits={data.habits_today} />
@@ -65,22 +63,14 @@ export default async function DashboardPage() {
           <GoalProgressList goals={data.goals} />
         </div>
 
-        <div className="flex flex-col gap-1 border-t border-border/30 pt-8 text-center sm:flex-row sm:items-baseline sm:justify-between sm:text-left">
-          <div>
-            <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-              Patterns
-            </p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {data.activity.active_days > 0
-                ? `${data.activity.active_days} active days · ${data.stats.activity_streak}d streak`
-                : "Longer trends live in Analytics"}
-            </p>
-          </div>
+        <div className="flex justify-end border-t border-border/30 pt-8">
           <Link
             href="/analytics"
-            className="mt-2 text-xs text-muted-foreground transition-colors hover:text-foreground sm:mt-0"
+            className="text-xs text-muted-foreground transition-colors hover:text-foreground"
           >
-            Open analytics
+            {data.stats.activity_streak > 0
+              ? `${data.stats.activity_streak}d · Analytics`
+              : "Analytics"}
           </Link>
         </div>
       </AppPageFrame>

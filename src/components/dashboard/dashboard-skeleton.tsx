@@ -13,13 +13,9 @@ export function DashboardSkeleton() {
       aria-label="Loading dashboard"
     >
       <AppPageFrame className="max-w-5xl gap-10 md:py-8">
-        <div className="space-y-6">
+        <div className="space-y-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="space-y-2 text-center sm:text-left">
-              <Bone className="mx-auto h-2.5 w-12 sm:mx-0" />
-              <Bone className="mx-auto h-8 w-64 max-w-full sm:mx-0" />
-              <Bone className="mx-auto h-4 w-72 max-w-full opacity-60 sm:mx-0" />
-            </div>
+            <Bone className="mx-auto h-8 w-64 max-w-full sm:mx-0" />
             <Bone className="mx-auto h-9 w-24 rounded-full sm:mx-0" />
           </div>
 
@@ -28,7 +24,6 @@ export function DashboardSkeleton() {
               <div key={i} className="space-y-2 text-center sm:text-left">
                 <Bone className="mx-auto h-2.5 w-10 sm:mx-0" />
                 <Bone className="mx-auto h-8 w-14 sm:mx-0" />
-                <Bone className="mx-auto h-3 w-16 opacity-60 sm:mx-0" />
               </div>
             ))}
           </div>
@@ -37,7 +32,6 @@ export function DashboardSkeleton() {
         <div className="grid items-start gap-10 border-t border-border/30 pt-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:gap-12">
           <section className="space-y-3">
             <Bone className="h-2.5 w-14" />
-            <Bone className="h-3 w-24 opacity-60" />
             <div className="space-y-3 pt-2">
               {Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="flex items-center gap-3 py-1">
@@ -53,7 +47,6 @@ export function DashboardSkeleton() {
 
           <aside className="space-y-3">
             <Bone className="h-2.5 w-14" />
-            <Bone className="h-3 w-20 opacity-60" />
             <div className="space-y-2 pt-1">
               {Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="flex items-center gap-3 py-1.5">
@@ -67,12 +60,12 @@ export function DashboardSkeleton() {
 
         <div className="grid items-start gap-10 border-t border-border/30 pt-8 lg:grid-cols-2 lg:gap-12">
           <section className="space-y-4">
-            <Bone className="h-2.5 w-16" />
+            <Bone className="h-2.5 w-12" />
             <div className="grid grid-cols-7 gap-2 sm:gap-3">
               {Array.from({ length: 7 }).map((_, i) => (
                 <div key={i} className="flex flex-col items-center gap-1.5">
-                  <Bone className="h-2.5 w-6 opacity-60" />
                   <Bone className="h-10 w-full rounded-sm sm:h-12" />
+                  <Bone className="h-2.5 w-6 opacity-60" />
                 </div>
               ))}
             </div>
@@ -91,12 +84,8 @@ export function DashboardSkeleton() {
           </section>
         </div>
 
-        <div className="flex flex-col gap-2 border-t border-border/30 pt-8 sm:flex-row sm:items-baseline sm:justify-between">
-          <div className="space-y-2">
-            <Bone className="h-2.5 w-16" />
-            <Bone className="h-4 w-48 opacity-60" />
-          </div>
-          <Bone className="h-3 w-24" />
+        <div className="flex justify-end border-t border-border/30 pt-8">
+          <Bone className="h-3 w-20" />
         </div>
       </AppPageFrame>
     </div>

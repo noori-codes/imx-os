@@ -16,50 +16,6 @@ type DashboardHeroProps = {
   streak: number;
 };
 
-function buildStory({
-  intent,
-  dueToday,
-  overdue,
-  focusMinutes,
-  habitsDone,
-  habitsTotal,
-}: Pick<
-  DashboardHeroProps,
-  | "intent"
-  | "dueToday"
-  | "overdue"
-  | "focusMinutes"
-  | "habitsDone"
-  | "habitsTotal"
->) {
-  if (intent?.trim()) return intent.trim();
-
-  const attention = dueToday + overdue;
-  const habitsLabel =
-    habitsTotal > 0 ? `${habitsDone}/${habitsTotal} habits` : null;
-  const focusLabel =
-    focusMinutes > 0 ? `${formatFocusMinutes(focusMinutes)} focus` : null;
-
-  if (attention > 0) {
-    const due =
-      overdue > 0 && dueToday > 0
-        ? `${dueToday} due · ${overdue} overdue`
-        : overdue > 0
-          ? `${overdue} overdue`
-          : `${dueToday} due today`;
-    const extras = [focusLabel, habitsLabel].filter(Boolean);
-    return extras.length > 0 ? `${due} · ${extras.join(" · ")}` : due;
-  }
-
-  if (focusLabel || habitsLabel) {
-    return ["Clear on tasks", focusLabel, habitsLabel]
-      .filter(Boolean)
-      .join(" · ");
-  }
-
-  return "You're clear — nice work.";
-}
-
 export function DashboardHero({
   name,
   greeting,
@@ -71,29 +27,21 @@ export function DashboardHero({
   habitsTotal,
   streak,
 }: DashboardHeroProps) {
-  const story = buildStory({
-    intent,
-    dueToday,
-    overdue,
-    focusMinutes,
-    habitsDone,
-    habitsTotal,
-  });
   const attention = dueToday + overdue;
+  const story = intent?.trim() || null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 text-center sm:text-left">
-          <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-            Today
-          </p>
-          <h2 className="mt-2 text-2xl font-medium tracking-tight text-foreground sm:text-3xl">
+          <h2 className="text-2xl font-medium tracking-tight text-foreground sm:text-3xl">
             {greeting}, {name}
           </h2>
-          <p className="mt-2 max-w-xl text-sm leading-snug text-muted-foreground sm:text-base">
-            {story}
-          </p>
+          {story ? (
+            <p className="mt-2 max-w-xl text-sm leading-snug text-muted-foreground sm:text-base">
+              {story}
+            </p>
+          ) : null}
         </div>
         <div className="flex justify-center sm:justify-end">
           <Link
@@ -117,14 +65,7 @@ export function DashboardHero({
               attention > 0 ? "text-foreground" : "text-muted-foreground",
             )}
           >
-            {attention > 0 ? attention : "0"}
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {overdue > 0
-              ? `${dueToday} today · ${overdue} overdue`
-              : dueToday > 0
-                ? "today"
-                : "clear"}
+            {attention}
           </p>
         </div>
         <div className="text-center sm:text-left">
@@ -134,7 +75,6 @@ export function DashboardHero({
           <p className="mt-1.5 text-2xl font-medium tracking-tight tabular-nums text-foreground sm:text-3xl">
             {formatFocusMinutes(focusMinutes)}
           </p>
-          <p className="mt-1 text-xs text-muted-foreground">sealed today</p>
         </div>
         <div className="text-center sm:text-left">
           <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
@@ -142,9 +82,6 @@ export function DashboardHero({
           </p>
           <p className="mt-1.5 text-2xl font-medium tracking-tight tabular-nums text-foreground sm:text-3xl">
             {habitsTotal > 0 ? `${habitsDone}/${habitsTotal}` : "—"}
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {habitsTotal > 0 ? "checked in" : "none yet"}
           </p>
         </div>
         <div className="text-center sm:text-left">
@@ -154,7 +91,6 @@ export function DashboardHero({
           <p className="mt-1.5 text-2xl font-medium tracking-tight tabular-nums text-foreground sm:text-3xl">
             {streak}d
           </p>
-          <p className="mt-1 text-xs text-muted-foreground">activity</p>
         </div>
       </div>
     </div>

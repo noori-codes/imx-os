@@ -43,7 +43,6 @@ const emptyDashboard: DashboardData = {
   habits_today: [],
   focus_today: { sessions: 0, focus_minutes: 0 },
   review: { has_today: false, intent: null },
-  is_new_user: true,
 };
 
 async function loadActivity(
@@ -267,11 +266,6 @@ async function loadDashboardData(
     projectsResult.count ?? 0,
   );
 
-  const is_new_user =
-    base.stats.active_tasks === 0 &&
-    base.stats.goals === 0 &&
-    extras.habits_today.length === 0;
-
   const habits_done = extras.habits_today.filter((h) => h.completed_today)
     .length;
 
@@ -281,7 +275,6 @@ async function loadDashboardData(
     habits_today: extras.habits_today,
     focus_today: extras.focus_today,
     review: extras.review,
-    is_new_user,
     stats: {
       ...base.stats,
       focus_minutes_today: extras.focus_today.focus_minutes,
@@ -301,7 +294,7 @@ export const getDashboardData = cache(async (): Promise<DashboardData> => {
 
   if (hasAdminClient()) {
     return cachedQuery(
-      ["dashboard", user.id, "v4"],
+      ["dashboard", user.id, "v5"],
       [cacheTags.dashboard(user.id)],
       CACHE_TTL.dashboard,
       async () => loadDashboardData(user.id),
