@@ -60,15 +60,15 @@ export function TaskForm({
   const formRef = useRef<HTMLFormElement>(null);
   const titleRef = useRef<HTMLInputElement>(null);
   const [moreOpen, setMoreOpen] = useState(Boolean(defaultDueDate && !compact));
-  const [chip, setChip] = useState<ScheduleChip>(
-    defaultDueDate ? "none" : "none",
-  );
+  const [chip, setChip] = useState<ScheduleChip>("none");
+  const [focused, setFocused] = useState(false);
 
   const mode =
     variant ?? (compact ? "compact" : projectId ? "card" : "quick");
 
   const schedule = chipToFields(chip);
   const showChips = mode === "quick" && !defaultDueDate;
+  const showProjectMore = !projectId && projects.length > 0;
 
   const [state, formAction, pending] = useActionState<
     TaskActionState | null,
@@ -128,14 +128,98 @@ export function TaskForm({
     );
   }
 
+  if (mode === "card") {
+    return (
+      <form
+        ref={formRef}
+        action={formAction}
+        className="rounded-xl border bg-card p-4 shadow-sm"
+      >
+        {projectId ? (
+          <input type="hidden" name="project_id" value={projectId} />
+        ) : null}
+        {defaultDueDate ? (
+          <input type="hidden" name="due_date" value={defaultDueDate} />
+        ) : null}
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative min-w-0 flex-1">
+            <Plus className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              ref={titleRef}
+              name="title"
+              placeholder="What needs doing?"
+              required
+              autoComplete="off"
+              className="h-10 border-0 bg-muted/40 pl-9 shadow-none focus-visible:ring-1"
+              aria-label="New task"
+            />
+          </div>
+          <Button type="submit" disabled={pending} size="sm" className="h-9">
+            {pending ? "Adding..." : "Add"}
+          </Button>
+        </div>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {!defaultDueDate ? (
+            <div className="space-y-1.5">
+              <label
+                htmlFor="task-due-card"
+                className="text-xs font-medium text-muted-foreground"
+              >
+                Due date
+              </label>
+              <Input id="task-due-card" name="due_date" type="date" />
+            </div>
+          ) : null}
+          {!projectId && projects.length > 0 ? (
+            <div className="space-y-1.5">
+              <label
+                htmlFor="task-project-card"
+                className="text-xs font-medium text-muted-foreground"
+              >
+                Project
+              </label>
+              <select
+                id="task-project-card"
+                name="project_id"
+                defaultValue=""
+                className="border-input bg-background h-9 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+              >
+                <option value="">Inbox (no project)</option>
+                {projects.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : null}
+        </div>
+
+        {state?.error ? (
+          <p className="mt-3 text-sm text-destructive">{state.error}</p>
+        ) : null}
+      </form>
+    );
+  }
+
+  // quick — stage composer
   return (
     <form
       ref={formRef}
       action={formAction}
       className={cn(
-        mode === "card" && "rounded-xl border bg-card p-4 shadow-sm",
-        mode === "quick" && "border-b border-border/40 pb-5",
+        "task-composer rounded-2xl border border-border/40 bg-muted/25 p-3.5 transition-[border-color,background-color,box-shadow] duration-200 sm:p-4",
+        focused &&
+          "border-border/70 bg-muted/40 shadow-[0_0_0_1px_color-mix(in_oklab,var(--foreground)_6%,transparent)]",
       )}
+      onFocusCapture={() => setFocused(true)}
+      onBlurCapture={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+          setFocused(false);
+        }
+      }}
     >
       {projectId ? (
         <input type="hidden" name="project_id" value={projectId} />
@@ -154,64 +238,36 @@ export function TaskForm({
         <input type="hidden" name="due_date" value={defaultDueDate} />
       ) : null}
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div className="flex items-center gap-2">
         <div className="relative min-w-0 flex-1">
-          <Plus className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Plus
+            className={cn(
+              "pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 transition-colors",
+              focused ? "text-foreground/70" : "text-muted-foreground",
+            )}
+          />
           <Input
             ref={titleRef}
             name="title"
             placeholder="What needs doing?"
             required
             autoComplete="off"
-            className="h-10 border-0 bg-muted/40 pl-9 shadow-none focus-visible:ring-1"
+            className="h-11 border-0 bg-transparent pl-9 shadow-none focus-visible:ring-0"
             aria-label="New task"
           />
         </div>
-        <div className="flex items-center gap-2">
-          {!defaultDueDate && !showChips ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="text-muted-foreground"
-              onClick={() => setMoreOpen((v) => !v)}
-              aria-expanded={moreOpen}
-            >
-              More
-              <ChevronDown
-                className={cn(
-                  "size-3.5 transition-transform",
-                  moreOpen && "rotate-180",
-                )}
-              />
-            </Button>
-          ) : null}
-          {showChips ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="text-muted-foreground"
-              onClick={() => setMoreOpen((v) => !v)}
-              aria-expanded={moreOpen}
-            >
-              More
-              <ChevronDown
-                className={cn(
-                  "size-3.5 transition-transform",
-                  moreOpen && "rotate-180",
-                )}
-              />
-            </Button>
-          ) : null}
-          <Button type="submit" disabled={pending} size="sm" className="h-9">
-            {pending ? "Adding..." : "Add"}
-          </Button>
-        </div>
+        <Button
+          type="submit"
+          disabled={pending}
+          size="sm"
+          className="h-9 shrink-0 rounded-full px-4"
+        >
+          {pending ? "Adding…" : "Add"}
+        </Button>
       </div>
 
       {showChips ? (
-        <div className="mt-3 flex flex-wrap gap-1.5">
+        <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-border/30 pt-3">
           {CHIPS.map((item) => {
             const active = chip === item.id;
             return (
@@ -220,76 +276,78 @@ export function TaskForm({
                 type="button"
                 onClick={() => setChip(active ? "none" : item.id)}
                 className={cn(
-                  "rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors",
+                  "rounded-full px-2.5 py-1 text-[11px] tracking-wide transition-colors",
                   active
-                    ? "bg-foreground text-background"
-                    : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground",
+                    ? "bg-foreground font-medium text-background"
+                    : "text-muted-foreground hover:bg-muted/70 hover:text-foreground",
                 )}
               >
                 {item.label}
               </button>
             );
           })}
-        </div>
-      ) : null}
 
-      {moreOpen || defaultDueDate || (mode === "card" && !compact) ? (
-        <div
-          className={cn(
-            "grid gap-3 sm:grid-cols-2",
-            mode === "quick" ? "mt-3" : "mt-4",
-            !moreOpen && mode === "quick" && !defaultDueDate && "hidden",
-          )}
-        >
-          {!showChips && !defaultDueDate ? (
-            <div className="space-y-1.5">
-              <label
-                htmlFor="task-due"
-                className="text-xs font-medium text-muted-foreground"
-              >
-                Due date
-              </label>
-              <Input id="task-due" name="due_date" type="date" />
-            </div>
-          ) : null}
-
-          {!projectId && projects.length > 0 ? (
-            <div className="space-y-1.5">
-              <label
-                htmlFor="task-project"
-                className="text-xs font-medium text-muted-foreground"
-              >
-                Project
-              </label>
-              <select
-                id="task-project"
-                name="project_id"
-                defaultValue=""
-                className="border-input bg-background h-9 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-              >
-                <option value="">Inbox (no project)</option>
-                {projects.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+          {showProjectMore ? (
+            <button
+              type="button"
+              onClick={() => setMoreOpen((v) => !v)}
+              className={cn(
+                "ml-auto inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:text-foreground",
+                moreOpen && "text-foreground",
+              )}
+              aria-expanded={moreOpen}
+            >
+              Project
+              <ChevronDown
+                className={cn(
+                  "size-3 transition-transform",
+                  moreOpen && "rotate-180",
+                )}
+              />
+            </button>
           ) : null}
         </div>
       ) : null}
 
-      {mode === "quick" ? (
-        <p className="mt-2 text-[11px] text-muted-foreground">
-          Press <kbd className="rounded border px-1">N</kbd> to focus
-          {chip === "daily" || chip === "weekdays"
-            ? " · Done rolls to the next day"
-            : null}
-        </p>
+      {moreOpen && showProjectMore ? (
+        <div className="mt-3">
+          <label htmlFor="task-project" className="sr-only">
+            Project
+          </label>
+          <select
+            id="task-project"
+            name="project_id"
+            defaultValue=""
+            className="border-input bg-background/60 h-9 w-full rounded-lg border border-border/50 px-3 text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
+          >
+            <option value="">Inbox (no project)</option>
+            {projects.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.label}
+              </option>
+            ))}
+          </select>
+        </div>
       ) : null}
+
+      <p
+        className={cn(
+          "mt-2.5 text-[11px] text-muted-foreground/70 transition-opacity",
+          focused || chip !== "none" ? "opacity-100" : "opacity-0",
+        )}
+      >
+        {chip === "daily" || chip === "weekdays"
+          ? "Done rolls to the next day"
+          : (
+              <>
+                Press <kbd className="rounded border border-border/60 px-1">N</kbd>{" "}
+                anytime
+              </>
+            )}
+      </p>
 
       {state?.error ? (
-        <p className="mt-3 text-sm text-destructive">{state.error}</p>
+        <p className="mt-2 text-sm text-destructive">{state.error}</p>
       ) : null}
     </form>
   );

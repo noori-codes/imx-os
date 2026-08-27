@@ -157,22 +157,22 @@ export function viewEmptyCopy(view: TaskView): {
     case "inbox":
       return {
         title: "Inbox is clear",
-        description: "Capture anything without a project here.",
+        description: "Capture anything without a project.",
       };
     case "today":
       return {
         title: "Clear day",
-        description: "Add something due today — or Everyday for work that returns.",
+        description: "Due today — or Everyday for work that returns.",
       };
     case "upcoming":
       return {
-        title: "No upcoming dates",
-        description: "Future due dates land here.",
+        title: "Nothing ahead",
+        description: "Future due dates show up here.",
       };
     case "all":
       return {
         title: "No tasks yet",
-        description: "Add a task, or set Everyday for things you do each day.",
+        description: "Add one above to get started.",
       };
   }
 }

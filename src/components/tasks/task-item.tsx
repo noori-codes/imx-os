@@ -21,10 +21,12 @@ import {
 } from "@/lib/task-recurrence";
 import { cn } from "@/lib/utils";
 import { formatFocusDuration } from "@/types/focus";
-import type { TaskRecurrence, TaskWithContext } from "@/types/task";
+import type { TaskRecurrence, TaskView, TaskWithContext } from "@/types/task";
 
 type TaskItemProps = {
   task: TaskWithContext;
+  view?: TaskView;
+  index?: number;
   todayFocusSeconds?: number;
   onOptimisticToggle: (id: string, completed: boolean) => void;
   onOptimisticDelete: (id: string) => void;
@@ -53,8 +55,53 @@ function formatDueLabel(dueDate: string) {
   });
 }
 
+function buildMeta(
+  task: TaskWithContext,
+  view: TaskView | undefined,
+  todayFocusSeconds: number,
+): { text: string; href?: string; alert?: boolean }[] {
+  const parts: { text: string; href?: string; alert?: boolean }[] = [];
+  const repeat = recurrenceLabel(task.recurrence);
+  const overdue = Boolean(
+    task.due_date && !task.completed && isOverdue(task.due_date),
+  );
+
+  if (repeat) parts.push({ text: repeat });
+
+  if (overdue) {
+    parts.push({ text: "Overdue", alert: true });
+  } else if (task.due_date && !repeat) {
+    const label = formatDueLabel(task.due_date);
+    if (!(view === "today" && label === "Today")) {
+      parts.push({ text: label });
+    }
+  } else if (
+    task.due_date &&
+    repeat &&
+    !isToday(task.due_date) &&
+    !overdue
+  ) {
+    parts.push({ text: formatDueLabel(task.due_date) });
+  }
+
+  if (task.context && task.context_href) {
+    parts.push({ text: task.context, href: task.context_href });
+  }
+
+  if (todayFocusSeconds >= 60) {
+    parts.push({
+      text: `${formatFocusDuration(todayFocusSeconds)} focused`,
+      href: `/focus?task=${task.id}`,
+    });
+  }
+
+  return parts.slice(0, 2);
+}
+
 export function TaskItem({
   task,
+  view,
+  index = 0,
   todayFocusSeconds = 0,
   onOptimisticToggle,
   onOptimisticDelete,
@@ -69,10 +116,7 @@ export function TaskItem({
   );
   const [error, setError] = useState<string | null>(null);
 
-  const overdue = Boolean(
-    task.due_date && !task.completed && isOverdue(task.due_date),
-  );
-  const repeatLabel = recurrenceLabel(task.recurrence);
+  const meta = buildMeta(task, view, todayFocusSeconds);
 
   function handleToggle() {
     const next = !task.completed;
@@ -131,7 +175,7 @@ export function TaskItem({
 
   if (editing) {
     return (
-      <li className="border-b border-border/30 py-3">
+      <li className="border-b border-border/30 py-3.5">
         <div className="flex flex-col gap-3">
           <Input
             value={title}
@@ -193,26 +237,17 @@ export function TaskItem({
     );
   }
 
-  const metaParts: string[] = [];
-  if (repeatLabel) metaParts.push(repeatLabel);
-  if (task.due_date && !repeatLabel) {
-    metaParts.push(overdue ? "Overdue" : formatDueLabel(task.due_date));
-  } else if (task.due_date && overdue) {
-    metaParts.push("Overdue");
-  } else if (task.due_date && repeatLabel && !isToday(task.due_date) && !overdue) {
-    metaParts.push(formatDueLabel(task.due_date));
-  }
-
   return (
     <li
       className={cn(
         "group flex items-center gap-3 border-b border-border/30 py-3 last:border-b-0",
-        task.completed && "opacity-55",
+        task.completed && "opacity-50",
       )}
+      style={{ ["--i" as string]: index }}
     >
       <button
         type="button"
-        className="flex size-7 shrink-0 items-center justify-center rounded-full text-muted-foreground/70 transition-colors hover:text-foreground"
+        className="flex size-7 shrink-0 items-center justify-center rounded-full text-muted-foreground/65 transition-colors hover:text-foreground"
         onClick={handleToggle}
         aria-label={
           task.recurrence && !task.completed
@@ -233,43 +268,35 @@ export function TaskItem({
       <div className="min-w-0 flex-1">
         <p
           className={cn(
-            "truncate text-sm text-foreground",
+            "truncate text-sm text-foreground transition-colors",
             task.completed && "text-muted-foreground line-through",
           )}
         >
           {task.title}
         </p>
-        <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
-          {metaParts.map((part) => (
-            <span
-              key={part}
-              className={cn(
-                part === "Overdue" && "text-destructive/80",
-                part === "Everyday" || part === "Weekdays"
-                  ? "text-foreground/55"
-                  : null,
-              )}
-            >
-              {part}
-            </span>
-          ))}
-          {task.context && task.context_href ? (
-            <Link
-              href={task.context_href}
-              className="truncate transition-colors hover:text-foreground"
-            >
-              {task.context}
-            </Link>
-          ) : null}
-          {todayFocusSeconds >= 60 ? (
-            <Link
-              href={`/focus?task=${task.id}`}
-              className="truncate transition-colors hover:text-foreground"
-            >
-              {formatFocusDuration(todayFocusSeconds)} focused
-            </Link>
-          ) : null}
-        </div>
+        {meta.length > 0 ? (
+          <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+            {meta.map((part, i) => (
+              <span key={`${part.text}-${i}`}>
+                {i > 0 ? (
+                  <span className="text-muted-foreground/40"> · </span>
+                ) : null}
+                {part.href ? (
+                  <Link
+                    href={part.href}
+                    className="transition-colors hover:text-foreground"
+                  >
+                    {part.text}
+                  </Link>
+                ) : (
+                  <span className={cn(part.alert && "text-destructive/80")}>
+                    {part.text}
+                  </span>
+                )}
+              </span>
+            ))}
+          </p>
+        ) : null}
       </div>
 
       <div className="flex shrink-0 opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">

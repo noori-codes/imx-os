@@ -20,6 +20,37 @@ type TaskListProps = {
   todayFocus?: TaskFocusToday;
 };
 
+function GhostEmpty({ view }: { view: TaskView }) {
+  const empty = viewEmptyCopy(view);
+  const widths = [68, 54, 40];
+
+  return (
+    <div className="mt-1">
+      <ul className="pointer-events-none border-t border-border/30" aria-hidden="true">
+        {widths.map((width, i) => (
+          <li
+            key={i}
+            className="flex items-center gap-3 border-b border-border/20 py-3 last:border-b-0"
+            style={{ opacity: 0.4 - i * 0.1 }}
+          >
+            <span className="size-4 shrink-0 rounded-full border border-border/50" />
+            <span
+              className="h-2.5 rounded-full bg-muted"
+              style={{ width: `${width}%` }}
+            />
+          </li>
+        ))}
+      </ul>
+      <div className="mt-5">
+        <p className="text-sm text-muted-foreground">{empty.title}</p>
+        <p className="mt-1 text-[13px] text-muted-foreground/75">
+          {empty.description}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export function TaskList({
   tasks,
   view = "all",
@@ -39,22 +70,36 @@ export function TaskList({
   const completed = optimisticTasks.filter((t) => t.completed);
 
   if (optimisticTasks.length === 0) {
-    const empty =
-      mode === "project"
-        ? {
-            title: "No tasks yet",
-            description: "Add a task above to start this project.",
-          }
-        : viewEmptyCopy(view);
+    if (mode === "project") {
+      return (
+        <div className="mt-1">
+          <ul
+            className="pointer-events-none border-t border-border/30"
+            aria-hidden="true"
+          >
+            {[68, 54, 40].map((width, i) => (
+              <li
+                key={i}
+                className="flex items-center gap-3 border-b border-border/20 py-3 last:border-b-0"
+                style={{ opacity: 0.4 - i * 0.1 }}
+              >
+                <span className="size-4 shrink-0 rounded-full border border-border/50" />
+                <span
+                  className="h-2.5 rounded-full bg-muted"
+                  style={{ width: `${width}%` }}
+                />
+              </li>
+            ))}
+          </ul>
+          <p className="mt-5 text-sm text-muted-foreground">No tasks yet</p>
+          <p className="mt-1 text-[13px] text-muted-foreground/75">
+            Add a task above to start this project.
+          </p>
+        </div>
+      );
+    }
 
-    return (
-      <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
-        <p className="text-sm text-muted-foreground">{empty.title}</p>
-        <p className="mt-1 max-w-sm text-[13px] text-muted-foreground/80">
-          {empty.description}
-        </p>
-      </div>
-    );
+    return <GhostEmpty view={view} />;
   }
 
   const groups =
@@ -72,7 +117,7 @@ export function TaskList({
             <h2
               className={
                 group.id === "overdue"
-                  ? "text-[10px] font-medium uppercase tracking-[0.18em] text-destructive"
+                  ? "text-[10px] font-medium uppercase tracking-[0.18em] text-destructive/90"
                   : "text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground"
               }
             >
@@ -82,11 +127,13 @@ export function TaskList({
               {group.tasks.length}
             </span>
           </div>
-          <ul className="border-t border-border/30">
-            {group.tasks.map((task) => (
+          <ul className="dash-stagger border-t border-border/30">
+            {group.tasks.map((task, index) => (
               <TaskItem
                 key={task.id}
                 task={task}
+                view={view}
+                index={index}
                 todayFocusSeconds={todayFocus?.[task.id] ?? 0}
                 onOptimisticToggle={onOptimisticToggle}
                 onOptimisticDelete={onOptimisticDelete}
@@ -103,21 +150,23 @@ export function TaskList({
             type="button"
             variant="ghost"
             size="sm"
-            className="-ml-2 h-8 text-muted-foreground"
+            className="-ml-2 h-8 text-[11px] text-muted-foreground"
             onClick={() => setCompletedOpen((v) => !v)}
             aria-expanded={completedOpen}
           >
             <ChevronDown
               className={`size-3.5 transition-transform ${completedOpen ? "rotate-180" : ""}`}
             />
-            Completed ({completed.length})
+            Completed · {completed.length}
           </Button>
           {completedOpen ? (
             <ul className="mt-1 border-t border-border/30">
-              {completed.map((task) => (
+              {completed.map((task, index) => (
                 <TaskItem
                   key={task.id}
                   task={task}
+                  view={view}
+                  index={index}
                   todayFocusSeconds={todayFocus?.[task.id] ?? 0}
                   onOptimisticToggle={onOptimisticToggle}
                   onOptimisticDelete={onOptimisticDelete}
