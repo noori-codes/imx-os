@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ListTodo } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 
 import { TaskItem, useTaskOptimistic } from "@/components/tasks/task-item";
 import { Button } from "@/components/ui/button";
@@ -48,10 +48,9 @@ export function TaskList({
         : viewEmptyCopy(view);
 
     return (
-      <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
-        <ListTodo className="mb-3 size-8 text-muted-foreground" />
-        <h3 className="text-base font-medium">{empty.title}</h3>
-        <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+      <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
+        <p className="text-sm text-muted-foreground">{empty.title}</p>
+        <p className="mt-1 max-w-sm text-[13px] text-muted-foreground/80">
           {empty.description}
         </p>
       </div>
@@ -73,17 +72,17 @@ export function TaskList({
             <h2
               className={
                 group.id === "overdue"
-                  ? "text-xs font-semibold uppercase tracking-wider text-destructive"
-                  : "text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                  ? "text-[10px] font-medium uppercase tracking-[0.18em] text-destructive"
+                  : "text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground"
               }
             >
               {group.label}
             </h2>
-            <span className="text-xs tabular-nums text-muted-foreground">
+            <span className="text-[11px] tabular-nums text-muted-foreground">
               {group.tasks.length}
             </span>
           </div>
-          <ul className="border-t border-border/60">
+          <ul className="border-t border-border/30">
             {group.tasks.map((task) => (
               <TaskItem
                 key={task.id}
@@ -114,7 +113,7 @@ export function TaskList({
             Completed ({completed.length})
           </Button>
           {completedOpen ? (
-            <ul className="mt-1 border-t border-border/60">
+            <ul className="mt-1 border-t border-border/30">
               {completed.map((task) => (
                 <TaskItem
                   key={task.id}

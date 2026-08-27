@@ -18,11 +18,19 @@ function TaskRow({
   index: number;
 }) {
   const overdue = Boolean(task.due_date && isOverdue(task.due_date));
+  const repeat =
+    task.recurrence === "daily"
+      ? "Everyday"
+      : task.recurrence === "weekdays"
+        ? "Weekdays"
+        : null;
   const meta = overdue
     ? "Overdue"
-    : task.context
-      ? task.context
-      : null;
+    : repeat
+      ? repeat
+      : task.context
+        ? task.context
+        : null;
 
   return (
     <li

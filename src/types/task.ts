@@ -1,3 +1,5 @@
+export type TaskRecurrence = "daily" | "weekdays" | null;
+
 export type Task = {
   id: string;
   user_id: string;
@@ -5,6 +7,7 @@ export type Task = {
   title: string;
   completed: boolean;
   due_date: string | null;
+  recurrence: TaskRecurrence;
   created_at: string;
   updated_at: string;
 };

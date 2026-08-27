@@ -40,7 +40,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
 
   return (
     <>
-      <Header title="Tasks" description="Capture, schedule, and finish" />
+      <Header title="Tasks" description="Capture, schedule, finish" />
       <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-6 md:px-8 md:py-8">
         <TaskViewTabs active={view} counts={counts} />
         <TaskForm projects={projects} variant="quick" />

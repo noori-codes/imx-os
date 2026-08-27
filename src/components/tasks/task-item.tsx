@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useOptimistic, useState, useTransition } from "react";
 import {
-  Calendar,
   CheckCircle2,
   Circle,
   Pencil,
@@ -16,9 +15,13 @@ import { deleteTask, toggleTaskComplete, updateTask } from "@/actions/tasks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { isOverdue, isToday } from "@/lib/date-utils";
+import {
+  nextRecurrenceDueDate,
+  recurrenceLabel,
+} from "@/lib/task-recurrence";
 import { cn } from "@/lib/utils";
 import { formatFocusDuration } from "@/types/focus";
-import type { TaskWithContext } from "@/types/task";
+import type { TaskRecurrence, TaskWithContext } from "@/types/task";
 
 type TaskItemProps = {
   task: TaskWithContext;
@@ -27,7 +30,11 @@ type TaskItemProps = {
   onOptimisticDelete: (id: string) => void;
   onOptimisticUpdate: (
     id: string,
-    patch: { title: string; due_date: string | null },
+    patch: {
+      title: string;
+      due_date: string | null;
+      recurrence?: TaskRecurrence;
+    },
   ) => void;
 };
 
@@ -57,11 +64,15 @@ export function TaskItem({
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(task.title);
   const [dueDate, setDueDate] = useState(task.due_date ?? "");
+  const [recurrence, setRecurrence] = useState<TaskRecurrence>(
+    task.recurrence ?? null,
+  );
   const [error, setError] = useState<string | null>(null);
 
   const overdue = Boolean(
     task.due_date && !task.completed && isOverdue(task.due_date),
   );
+  const repeatLabel = recurrenceLabel(task.recurrence);
 
   function handleToggle() {
     const next = !task.completed;
@@ -81,6 +92,7 @@ export function TaskItem({
   function startEdit() {
     setTitle(task.title);
     setDueDate(task.due_date ?? "");
+    setRecurrence(task.recurrence ?? null);
     setError(null);
     setEditing(true);
   }
@@ -98,10 +110,15 @@ export function TaskItem({
     }
     const nextDue = dueDate.length ? dueDate : null;
     startTransition(async () => {
-      onOptimisticUpdate(task.id, { title: nextTitle, due_date: nextDue });
+      onOptimisticUpdate(task.id, {
+        title: nextTitle,
+        due_date: nextDue,
+        recurrence,
+      });
       const result = await updateTask(task.id, {
         title: nextTitle,
         due_date: nextDue,
+        recurrence,
       });
       if (result.error) {
         setError(result.error);
@@ -114,8 +131,8 @@ export function TaskItem({
 
   if (editing) {
     return (
-      <li className="border-b border-border/50 py-3">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+      <li className="border-b border-border/30 py-3">
+        <div className="flex flex-col gap-3">
           <Input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -130,25 +147,43 @@ export function TaskItem({
             autoFocus
             aria-label="Task title"
           />
-          <Input
-            type="date"
-            value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
-            className="w-full sm:w-40"
-            aria-label="Due date"
-          />
-          <div className="flex gap-2">
-            <Button type="button" size="sm" onClick={saveEdit}>
-              Save
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              onClick={cancelEdit}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Input
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              className="w-full sm:w-40"
+              aria-label="Due date"
+            />
+            <select
+              value={recurrence ?? ""}
+              onChange={(e) =>
+                setRecurrence(
+                  e.target.value === "daily" || e.target.value === "weekdays"
+                    ? e.target.value
+                    : null,
+                )
+              }
+              className="border-input bg-background h-9 w-full rounded-md border px-3 text-sm sm:w-40"
+              aria-label="Repeat"
             >
-              <X className="size-4" />
-            </Button>
+              <option value="">Doesn’t repeat</option>
+              <option value="daily">Everyday</option>
+              <option value="weekdays">Weekdays</option>
+            </select>
+            <div className="flex gap-2">
+              <Button type="button" size="sm" onClick={saveEdit}>
+                Save
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={cancelEdit}
+              >
+                <X className="size-4" />
+              </Button>
+            </div>
           </div>
         </div>
         {error ? (
@@ -158,69 +193,84 @@ export function TaskItem({
     );
   }
 
+  const metaParts: string[] = [];
+  if (repeatLabel) metaParts.push(repeatLabel);
+  if (task.due_date && !repeatLabel) {
+    metaParts.push(overdue ? "Overdue" : formatDueLabel(task.due_date));
+  } else if (task.due_date && overdue) {
+    metaParts.push("Overdue");
+  } else if (task.due_date && repeatLabel && !isToday(task.due_date) && !overdue) {
+    metaParts.push(formatDueLabel(task.due_date));
+  }
+
   return (
     <li
       className={cn(
-        "group flex items-center gap-3 border-b border-border/50 py-2.5 transition-colors",
+        "group flex items-center gap-3 border-b border-border/30 py-3 last:border-b-0",
         task.completed && "opacity-55",
       )}
     >
-      <Button
+      <button
         type="button"
-        variant="ghost"
-        size="icon"
-        className="size-8 shrink-0"
+        className="flex size-7 shrink-0 items-center justify-center rounded-full text-muted-foreground/70 transition-colors hover:text-foreground"
         onClick={handleToggle}
-        aria-label={task.completed ? "Mark incomplete" : "Mark complete"}
+        aria-label={
+          task.recurrence && !task.completed
+            ? "Mark done for today"
+            : task.completed
+              ? "Mark incomplete"
+              : "Mark complete"
+        }
         aria-pressed={task.completed}
       >
         {task.completed ? (
-          <CheckCircle2 className="size-5 text-foreground" />
+          <CheckCircle2 className="size-4 text-foreground" />
         ) : (
-          <Circle className="size-5 text-muted-foreground transition-colors group-hover:text-foreground" />
+          <Circle className="size-4 transition-colors group-hover:text-foreground" />
         )}
-      </Button>
+      </button>
 
       <div className="min-w-0 flex-1">
         <p
           className={cn(
-            "truncate text-sm font-medium leading-snug",
+            "truncate text-sm text-foreground",
             task.completed && "text-muted-foreground line-through",
           )}
         >
           {task.title}
         </p>
-        {task.context && task.context_href ? (
-          <Link
-            href={task.context_href}
-            className="mt-0.5 block truncate text-xs text-muted-foreground hover:text-foreground hover:underline"
-          >
-            {task.context}
-          </Link>
-        ) : null}
-        {todayFocusSeconds >= 60 ? (
-          <Link
-            href={`/focus?task=${task.id}`}
-            className="mt-0.5 block truncate text-xs text-muted-foreground hover:text-foreground hover:underline"
-          >
-            Last focused · {formatFocusDuration(todayFocusSeconds)}
-          </Link>
-        ) : null}
+        <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
+          {metaParts.map((part) => (
+            <span
+              key={part}
+              className={cn(
+                part === "Overdue" && "text-destructive/80",
+                part === "Everyday" || part === "Weekdays"
+                  ? "text-foreground/55"
+                  : null,
+              )}
+            >
+              {part}
+            </span>
+          ))}
+          {task.context && task.context_href ? (
+            <Link
+              href={task.context_href}
+              className="truncate transition-colors hover:text-foreground"
+            >
+              {task.context}
+            </Link>
+          ) : null}
+          {todayFocusSeconds >= 60 ? (
+            <Link
+              href={`/focus?task=${task.id}`}
+              className="truncate transition-colors hover:text-foreground"
+            >
+              {formatFocusDuration(todayFocusSeconds)} focused
+            </Link>
+          ) : null}
+        </div>
       </div>
-
-      {task.due_date ? (
-        <span
-          className={cn(
-            "inline-flex shrink-0 items-center gap-1 text-xs",
-            overdue ? "font-medium text-destructive" : "text-muted-foreground",
-          )}
-        >
-          <Calendar className="size-3" />
-          <span className="max-w-[5.5rem] truncate sm:max-w-none">
-            {overdue ? "Overdue" : formatDueLabel(task.due_date)}
-          </span>
-        </span>
-      ) : null}
 
       <div className="flex shrink-0 opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
         {!task.completed ? (
@@ -270,6 +320,7 @@ export function useTaskOptimistic(tasks: TaskWithContext[]) {
         id: string;
         title: string;
         due_date: string | null;
+        recurrence?: TaskRecurrence;
       };
 
   const [optimisticTasks, dispatch] = useOptimistic(
@@ -277,15 +328,31 @@ export function useTaskOptimistic(tasks: TaskWithContext[]) {
     (current: TaskWithContext[], action: Action) => {
       switch (action.type) {
         case "toggle":
-          return current.map((t) =>
-            t.id === action.id ? { ...t, completed: action.completed } : t,
-          );
+          return current.map((t) => {
+            if (t.id !== action.id) return t;
+            if (t.recurrence && action.completed) {
+              return {
+                ...t,
+                completed: false,
+                due_date: nextRecurrenceDueDate(t.recurrence),
+              };
+            }
+            return { ...t, completed: action.completed };
+          });
         case "delete":
           return current.filter((t) => t.id !== action.id);
         case "update":
           return current.map((t) =>
             t.id === action.id
-              ? { ...t, title: action.title, due_date: action.due_date }
+              ? {
+                  ...t,
+                  title: action.title,
+                  due_date: action.due_date,
+                  recurrence:
+                    action.recurrence !== undefined
+                      ? action.recurrence
+                      : t.recurrence,
+                }
               : t,
           );
         default:
@@ -301,7 +368,11 @@ export function useTaskOptimistic(tasks: TaskWithContext[]) {
     onOptimisticDelete: (id: string) => dispatch({ type: "delete", id }),
     onOptimisticUpdate: (
       id: string,
-      patch: { title: string; due_date: string | null },
+      patch: {
+        title: string;
+        due_date: string | null;
+        recurrence?: TaskRecurrence;
+      },
     ) => dispatch({ type: "update", id, ...patch }),
   };
 }

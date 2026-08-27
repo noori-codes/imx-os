@@ -161,18 +161,18 @@ export function viewEmptyCopy(view: TaskView): {
       };
     case "today":
       return {
-        title: "Nothing for today",
-        description: "Enjoy the space — or add something due today.",
+        title: "Clear day",
+        description: "Add something due today — or Everyday for work that returns.",
       };
     case "upcoming":
       return {
         title: "No upcoming dates",
-        description: "Tasks with future due dates will show up here.",
+        description: "Future due dates land here.",
       };
     case "all":
       return {
         title: "No tasks yet",
-        description: "Add your first task to get started.",
+        description: "Add a task, or set Everyday for things you do each day.",
       };
   }
 }

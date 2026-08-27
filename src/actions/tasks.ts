@@ -4,11 +4,17 @@ import { revalidatePath } from "next/cache";
 
 import { getCurrentUser } from "@/lib/auth";
 import { revalidateUserCaches } from "@/lib/cache";
+import {
+  initialDueForRecurrence,
+  nextRecurrenceDueDate,
+  parseTaskRecurrence,
+} from "@/lib/task-recurrence";
 import { createClient } from "@/lib/supabase/server";
 import type {
   FocusLinkableTask,
   Task,
   TaskProjectOption,
+  TaskRecurrence,
   TaskWithContext,
 } from "@/types/task";
 
@@ -44,6 +50,7 @@ function mapTask(row: TaskRow): TaskWithContext {
     title: row.title,
     completed: row.completed,
     due_date: row.due_date,
+    recurrence: row.recurrence ?? null,
     created_at: row.created_at,
     updated_at: row.updated_at,
     context,
@@ -58,6 +65,7 @@ const TASK_SELECT = `
   title,
   completed,
   due_date,
+  recurrence,
   created_at,
   updated_at,
   projects (
@@ -97,7 +105,10 @@ export async function getStandaloneTasks(): Promise<Task[]> {
     return [];
   }
 
-  return data ?? [];
+  return (data ?? []).map((row) => ({
+    ...row,
+    recurrence: (row.recurrence as TaskRecurrence) ?? null,
+  }));
 }
 
 export async function getAllTasks(): Promise<TaskWithContext[]> {
@@ -208,14 +219,18 @@ export async function createTask(
   }
 
   const title = (formData.get("title") as string)?.trim();
-  const dueDateRaw = formData.get("due_date") as string;
+  const dueDateRaw = (formData.get("due_date") as string) || "";
   const projectIdRaw = formData.get("project_id") as string;
+  const recurrence = parseTaskRecurrence(formData.get("recurrence"));
 
   if (!title) {
     return { error: "Task title is required." };
   }
 
-  const due_date = dueDateRaw?.length ? dueDateRaw : null;
+  const due_date = initialDueForRecurrence(
+    recurrence,
+    dueDateRaw.length ? dueDateRaw : null,
+  );
   const project_id = projectIdRaw?.length ? projectIdRaw : null;
 
   const { error } = await supabase.from("tasks").insert({
@@ -223,6 +238,7 @@ export async function createTask(
     title,
     due_date,
     project_id,
+    recurrence,
   });
 
   if (error) {
@@ -235,7 +251,11 @@ export async function createTask(
 
 export async function updateTask(
   taskId: string,
-  input: { title: string; due_date: string | null },
+  input: {
+    title: string;
+    due_date: string | null;
+    recurrence?: TaskRecurrence;
+  },
 ): Promise<TaskActionState> {
   const supabase = await createClient();
   const title = input.title.trim();
@@ -244,13 +264,28 @@ export async function updateTask(
     return { error: "Task title is required." };
   }
 
-  const { error } = await supabase
-    .from("tasks")
-    .update({
-      title,
-      due_date: input.due_date,
-    })
-    .eq("id", taskId);
+  const recurrence =
+    input.recurrence === undefined
+      ? undefined
+      : parseTaskRecurrence(input.recurrence);
+
+  const patch: {
+    title: string;
+    due_date: string | null;
+    recurrence?: TaskRecurrence;
+  } = {
+    title,
+    due_date:
+      recurrence !== undefined
+        ? initialDueForRecurrence(recurrence, input.due_date)
+        : input.due_date,
+  };
+
+  if (recurrence !== undefined) {
+    patch.recurrence = recurrence;
+  }
+
+  const { error } = await supabase.from("tasks").update(patch).eq("id", taskId);
 
   if (error) {
     return { error: error.message };
@@ -263,14 +298,44 @@ export async function updateTask(
 export async function toggleTaskComplete(taskId: string, completed: boolean) {
   const supabase = await createClient();
 
-  const { error } = await supabase
+  const { data: task, error: loadError } = await supabase
     .from("tasks")
-    .update({ completed })
-    .eq("id", taskId);
+    .select("id, recurrence, due_date")
+    .eq("id", taskId)
+    .maybeSingle();
 
-  if (error) {
-    console.error("[tasks] toggleTaskComplete:", error.message);
+  if (loadError) {
+    console.error("[tasks] toggleTaskComplete load:", loadError.message);
     return;
+  }
+
+  if (!task) return;
+
+  const recurrence = parseTaskRecurrence(task.recurrence);
+
+  if (recurrence && completed) {
+    const { error } = await supabase
+      .from("tasks")
+      .update({
+        completed: false,
+        due_date: nextRecurrenceDueDate(recurrence),
+      })
+      .eq("id", taskId);
+
+    if (error) {
+      console.error("[tasks] toggleTaskComplete roll:", error.message);
+      return;
+    }
+  } else {
+    const { error } = await supabase
+      .from("tasks")
+      .update({ completed })
+      .eq("id", taskId);
+
+    if (error) {
+      console.error("[tasks] toggleTaskComplete:", error.message);
+      return;
+    }
   }
 
   await revalidateTaskViews();
