@@ -1,6 +1,7 @@
+import Link from "next/link";
+
 import { getDashboardData } from "@/actions/dashboard";
 import { getCurrentUser } from "@/lib/auth";
-import { ActivityHeatmap } from "@/components/dashboard/activity-heatmap";
 import { DashboardHero } from "@/components/dashboard/dashboard-hero";
 import { GoalProgressList } from "@/components/dashboard/goal-progress-list";
 import { HabitsToday } from "@/components/dashboard/habits-today";
@@ -65,13 +66,28 @@ export default async function DashboardPage() {
           <NextSteps steps={data.next_steps} show />
         ) : null}
 
-        <div className="grid items-start gap-8 border-t border-border/30 pt-8 lg:grid-cols-2 lg:gap-10">
+        <div className="grid items-start gap-10 border-t border-border/30 pt-8 lg:grid-cols-2 lg:gap-12">
           <WeekOverview week={data.week} />
           <GoalProgressList goals={data.goals} />
         </div>
 
-        <div className="border-t border-border/30 pt-8">
-          <ActivityHeatmap activity={data.activity} />
+        <div className="flex flex-col gap-1 border-t border-border/30 pt-8 text-center sm:flex-row sm:items-baseline sm:justify-between sm:text-left">
+          <div>
+            <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+              Patterns
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {data.activity.active_days > 0
+                ? `${data.activity.active_days} active days · ${data.stats.activity_streak}d streak`
+                : "Longer trends live in Analytics"}
+            </p>
+          </div>
+          <Link
+            href="/analytics"
+            className="mt-2 text-xs text-muted-foreground transition-colors hover:text-foreground sm:mt-0"
+          >
+            Open analytics
+          </Link>
         </div>
       </AppPageFrame>
     </>

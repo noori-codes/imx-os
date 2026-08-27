@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 
 import type { GoalProgress } from "@/types/dashboard";
 
@@ -8,66 +7,66 @@ type GoalProgressListProps = {
 };
 
 export function GoalProgressList({ goals }: GoalProgressListProps) {
-  if (goals.length === 0) {
-    return (
-      <section className="imx-panel h-full">
-        <div className="mb-3 flex items-center justify-between gap-2">
-          <h2 className="text-sm font-medium">Goals</h2>
-          <Link
-            href="/goals"
-            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-          >
-            All
-            <ArrowRight className="size-3" />
-          </Link>
-        </div>
-        <p className="text-sm text-muted-foreground">No goals yet.</p>
-        <Link
-          href="/goals"
-          className="mt-2 inline-flex text-sm font-medium hover:underline"
-        >
-          Create a goal
-        </Link>
-      </section>
-    );
-  }
-
   return (
-    <section className="imx-panel h-full">
-      <div className="mb-4 flex items-center justify-between gap-2">
-        <h2 className="text-sm font-medium">Goals</h2>
+    <section className="min-w-0">
+      <div className="flex items-baseline justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+            Goals
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Progress on active goals
+          </p>
+        </div>
         <Link
           href="/goals"
-          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+          className="text-xs text-muted-foreground transition-colors hover:text-foreground"
         >
           All
-          <ArrowRight className="size-3" />
         </Link>
       </div>
 
-      <ul className="space-y-4">
-        {goals.slice(0, 4).map((goal) => (
-          <li key={goal.id}>
-            <div className="flex items-center justify-between gap-3">
-              <Link
-                href={`/goals/${goal.id}`}
-                className="truncate text-sm font-medium hover:underline"
-              >
-                {goal.title}
-              </Link>
-              <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-                {goal.progress}%
-              </span>
-            </div>
-            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full rounded-full bg-foreground/80 transition-all"
-                style={{ width: `${goal.progress}%` }}
-              />
-            </div>
-          </li>
-        ))}
-      </ul>
+      {goals.length === 0 ? (
+        <p className="mt-6 text-sm text-muted-foreground">
+          No goals yet.{" "}
+          <Link
+            href="/goals"
+            className="text-foreground underline-offset-2 hover:underline"
+          >
+            Create one
+          </Link>
+        </p>
+      ) : (
+        <ul className="mt-5 divide-y divide-border/40">
+          {goals.slice(0, 4).map((goal) => (
+            <li
+              key={goal.id}
+              className="py-3.5 first:pt-0 last:pb-0"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <Link
+                  href={`/goals/${goal.id}`}
+                  className="truncate text-sm text-foreground transition-colors hover:text-foreground/80"
+                >
+                  {goal.title}
+                </Link>
+                <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                  {goal.progress}%
+                </span>
+              </div>
+              <div className="mt-2 h-1 overflow-hidden rounded-full bg-muted/60">
+                <div
+                  className="h-full rounded-full bg-foreground/75 transition-all"
+                  style={{ width: `${Math.min(100, goal.progress)}%` }}
+                />
+              </div>
+              <p className="mt-1.5 text-[11px] tabular-nums text-muted-foreground">
+                {goal.completed_task_count}/{goal.task_count} tasks
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }

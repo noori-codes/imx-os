@@ -10,53 +10,66 @@ export function WeekOverview({ week }: WeekOverviewProps) {
   const total = week.reduce((sum, d) => sum + d.task_count, 0);
 
   return (
-    <section className="imx-panel h-full">
-      <div className="mb-4 flex items-baseline justify-between gap-3">
-        <h2 className="text-sm font-medium">This week</h2>
+    <section className="min-w-0">
+      <div className="flex items-baseline justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+            This week
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Tasks due by day
+          </p>
+        </div>
         <p className="text-xs tabular-nums text-muted-foreground">
-          {total} due
+          {total} total
         </p>
       </div>
 
-      <div className="grid grid-cols-7 gap-2 sm:gap-3">
-        {week.map((day) => (
-          <div key={day.date} className="flex flex-col items-center gap-1.5">
-            <span
-              className={cn(
-                "text-[11px] font-medium",
-                day.is_today ? "text-foreground" : "text-muted-foreground",
-              )}
+      <div className="mt-5 grid grid-cols-7 gap-2 sm:gap-2.5">
+        {week.map((day) => {
+          const height =
+            day.task_count <= 0
+              ? 8
+              : Math.max(16, Math.round((day.task_count / maxCount) * 100));
+          return (
+            <div
+              key={day.date}
+              className="flex min-w-0 flex-col items-center gap-1.5"
+              title={`${day.label}: ${day.task_count} due`}
             >
-              {day.day_label.slice(0, 2)}
-            </span>
-            <div className="flex h-10 w-full items-end justify-center sm:h-12">
-              <div
+              <div className="relative flex h-16 w-full items-end rounded-md bg-muted/25 px-1 pb-1 sm:h-20">
+                <div
+                  className={cn(
+                    "w-full min-h-[3px] rounded-[3px] transition-all",
+                    day.is_today
+                      ? "bg-foreground"
+                      : day.task_count > 0
+                        ? "bg-foreground/55"
+                        : "bg-foreground/15",
+                  )}
+                  style={{ height: `${height}%` }}
+                />
+              </div>
+              <span
                 className={cn(
-                  "w-full max-w-4 rounded-sm transition-all",
-                  day.is_today && day.task_count > 0
-                    ? "bg-foreground"
-                    : day.task_count > 0
-                      ? "bg-foreground/70"
-                      : "bg-muted",
+                  "text-[11px] tabular-nums text-muted-foreground",
+                  day.is_today && "font-medium text-foreground",
                 )}
-                style={{
-                  height: `${Math.max(
-                    (day.task_count / maxCount) * 100,
-                    day.task_count > 0 ? 20 : 6,
-                  )}%`,
-                }}
-              />
+              >
+                {day.day_label.slice(0, 2)}
+              </span>
+              <span
+                className={cn(
+                  "h-3 text-[10px] leading-none tabular-nums text-muted-foreground/80",
+                  day.is_today && "text-foreground/80",
+                  day.task_count === 0 && "opacity-40",
+                )}
+              >
+                {day.task_count}
+              </span>
             </div>
-            <span
-              className={cn(
-                "text-xs font-semibold tabular-nums",
-                day.is_today ? "text-foreground" : "text-muted-foreground",
-              )}
-            >
-              {day.task_count}
-            </span>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );

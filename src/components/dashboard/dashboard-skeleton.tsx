@@ -90,6 +90,14 @@ export function DashboardSkeleton() {
             ))}
           </section>
         </div>
+
+        <div className="flex flex-col gap-2 border-t border-border/30 pt-8 sm:flex-row sm:items-baseline sm:justify-between">
+          <div className="space-y-2">
+            <Bone className="h-2.5 w-16" />
+            <Bone className="h-4 w-48 opacity-60" />
+          </div>
+          <Bone className="h-3 w-24" />
+        </div>
       </AppPageFrame>
     </div>
   );
