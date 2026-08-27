@@ -42,6 +42,7 @@ function mapTask(row: TaskRow): CalendarTask {
     title: row.title,
     completed: row.completed,
     due_date: row.due_date,
+    recurrence: row.recurrence ?? null,
     created_at: row.created_at,
     updated_at: row.updated_at,
     context: project && goal ? `${goal.title} · ${project.title}` : null,
