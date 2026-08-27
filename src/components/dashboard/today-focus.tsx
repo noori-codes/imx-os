@@ -10,11 +10,20 @@ type TodayFocusProps = {
   tasks: TaskWithContext[];
 };
 
-function TaskRow({ task }: { task: TaskWithContext }) {
+function TaskRow({
+  task,
+  index,
+}: {
+  task: TaskWithContext;
+  index: number;
+}) {
   const overdue = task.due_date ? isOverdue(task.due_date) : false;
 
   return (
-    <li className="group flex items-start gap-3 border-b border-border/40 py-3.5 last:border-b-0">
+    <li
+      className="group flex items-start gap-3 border-b border-border/40 py-3.5 last:border-b-0"
+      style={{ ["--i" as string]: index }}
+    >
       <form action={toggleTaskComplete.bind(null, task.id, !task.completed)}>
         <button
           type="submit"
@@ -60,6 +69,34 @@ function TaskRow({ task }: { task: TaskWithContext }) {
   );
 }
 
+function GhostTasks() {
+  return (
+    <div className="relative mt-4">
+      <ul className="dash-ghost pointer-events-none space-y-0" aria-hidden="true">
+        {[0.9, 0.65, 0.4].map((opacity, i) => (
+          <li
+            key={i}
+            className="flex items-center gap-3 border-b border-border/30 py-3.5 last:border-b-0"
+            style={{ opacity }}
+          >
+            <span className="size-8 shrink-0 rounded-full border border-border/60" />
+            <span
+              className="h-3 rounded-full bg-muted"
+              style={{ width: `${58 - i * 12}%` }}
+            />
+          </li>
+        ))}
+      </ul>
+      <Link
+        href="/tasks"
+        className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground transition-colors hover:text-foreground"
+      >
+        Add a task
+      </Link>
+    </div>
+  );
+}
+
 export function TodayFocus({ tasks }: TodayFocusProps) {
   return (
     <section className="min-w-0">
@@ -81,16 +118,11 @@ export function TodayFocus({ tasks }: TodayFocusProps) {
       </div>
 
       {tasks.length === 0 ? (
-        <Link
-          href="/tasks"
-          className="mt-5 inline-block text-sm text-muted-foreground transition-colors hover:text-foreground"
-        >
-          Add a task
-        </Link>
+        <GhostTasks />
       ) : (
-        <ul className="mt-4">
-          {tasks.map((task) => (
-            <TaskRow key={task.id} task={task} />
+        <ul className="dash-stagger mt-4">
+          {tasks.map((task, index) => (
+            <TaskRow key={task.id} task={task} index={index} />
           ))}
         </ul>
       )}

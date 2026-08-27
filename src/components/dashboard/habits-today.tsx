@@ -39,6 +39,31 @@ function applyToggle(
   });
 }
 
+function GhostHabits() {
+  return (
+    <div className="relative mt-5">
+      <div
+        className="dash-ghost pointer-events-none flex flex-wrap gap-2.5"
+        aria-hidden="true"
+      >
+        {Array.from({ length: 5 }).map((_, i) => (
+          <span
+            key={i}
+            className="size-9 rounded-full border border-dashed border-border/70"
+            style={{ opacity: 1 - i * 0.12 }}
+          />
+        ))}
+      </div>
+      <Link
+        href="/habits"
+        className="mt-4 inline-block text-sm text-muted-foreground transition-colors hover:text-foreground"
+      >
+        Add a habit
+      </Link>
+    </div>
+  );
+}
+
 export function HabitsToday({ habits }: HabitsTodayProps) {
   const [, startTransition] = useTransition();
   const [optimisticHabits, setOptimisticHabits] = useOptimistic(
@@ -76,24 +101,20 @@ export function HabitsToday({ habits }: HabitsTodayProps) {
       </div>
 
       {optimisticHabits.length === 0 ? (
-        <Link
-          href="/habits"
-          className="mt-5 inline-block text-sm text-muted-foreground transition-colors hover:text-foreground"
-        >
-          Add a habit
-        </Link>
+        <GhostHabits />
       ) : (
-        <ul className="mt-4 divide-y divide-border/40">
-          {optimisticHabits.slice(0, 8).map((habit) => (
+        <ul className="dash-stagger mt-4 space-y-1">
+          {optimisticHabits.slice(0, 8).map((habit, index) => (
             <li
               key={habit.id}
-              className="flex items-center gap-3 py-3 first:pt-0 last:pb-0"
+              className="flex items-center gap-3 rounded-lg px-1 py-2 transition-colors hover:bg-muted/30"
+              style={{ ["--i" as string]: index }}
             >
               <button
                 type="button"
                 onClick={() => onToggle(habit)}
                 className={cn(
-                  "flex size-7 shrink-0 items-center justify-center rounded-full border-2 transition-transform duration-150",
+                  "flex size-8 shrink-0 items-center justify-center rounded-full border-2 transition-transform duration-150",
                   habit.completed_today
                     ? "text-white"
                     : "hover:scale-105 active:scale-95",
@@ -103,6 +124,7 @@ export function HabitsToday({ habits }: HabitsTodayProps) {
                     ? {
                         backgroundColor: habit.color,
                         borderColor: habit.color,
+                        boxShadow: `0 0 0 3px color-mix(in oklab, ${habit.color} 22%, transparent)`,
                       }
                     : { borderColor: habit.color }
                 }

@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { Timer } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -16,6 +19,58 @@ type DashboardHeroProps = {
   streak: number;
 };
 
+type Phase = "morning" | "afternoon" | "evening" | "night";
+
+function phaseFromHour(hour: number): Phase {
+  if (hour >= 5 && hour < 11) return "morning";
+  if (hour >= 11 && hour < 17) return "afternoon";
+  if (hour >= 17 && hour < 21) return "evening";
+  return "night";
+}
+
+function formatTodayLabel(date = new Date()) {
+  return date.toLocaleDateString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function useCountUp(target: number, enabled: boolean) {
+  const [value, setValue] = useState(enabled ? 0 : target);
+
+  useEffect(() => {
+    if (!enabled || target <= 0) {
+      setValue(target);
+      return;
+    }
+
+    const reduce =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) {
+      setValue(target);
+      return;
+    }
+
+    let frame = 0;
+    const duration = 620;
+    const start = performance.now();
+
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setValue(Math.round(target * eased));
+      if (t < 1) frame = requestAnimationFrame(tick);
+    };
+
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [target, enabled]);
+
+  return value;
+}
+
 export function DashboardHero({
   name,
   greeting,
@@ -27,72 +82,151 @@ export function DashboardHero({
   habitsTotal,
   streak,
 }: DashboardHeroProps) {
+  const [phase, setPhase] = useState<Phase>("afternoon");
+  const [dateLabel, setDateLabel] = useState("");
   const attention = dueToday + overdue;
   const story = intent?.trim() || null;
 
-  return (
-    <div className="space-y-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0 text-center sm:text-left">
-          <h2 className="text-2xl font-medium tracking-tight text-foreground sm:text-3xl">
-            {greeting}, {name}
-          </h2>
-          {story ? (
-            <p className="mt-2 max-w-xl text-sm leading-snug text-muted-foreground sm:text-base">
-              {story}
-            </p>
-          ) : null}
-        </div>
-        <div className="flex justify-center sm:justify-end">
-          <Link
-            href="/focus"
-            className="inline-flex items-center gap-2 rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-90"
-          >
-            <Timer className="size-3.5" />
-            Focus
-          </Link>
-        </div>
-      </div>
+  const heroKind: "due" | "focus" =
+    attention > 0 ? "due" : "focus";
 
-      <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
-        <div className="text-center sm:text-left">
-          <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-            Due
-          </p>
-          <p
-            className={cn(
-              "mt-1.5 text-2xl font-medium tracking-tight tabular-nums sm:text-3xl",
-              attention > 0 ? "text-foreground" : "text-muted-foreground",
+  const dueDisplay = useCountUp(attention, heroKind === "due");
+  const focusDisplay = useCountUp(focusMinutes, heroKind === "focus");
+
+  useEffect(() => {
+    const now = new Date();
+    setPhase(phaseFromHour(now.getHours()));
+    setDateLabel(formatTodayLabel(now));
+  }, []);
+
+  return (
+    <section
+      className="dash-stage px-5 py-6 sm:px-7 sm:py-8"
+      data-phase={phase}
+    >
+      <div className="dash-stage-glow" aria-hidden="true" />
+      <div className="dash-stage-glow-secondary" aria-hidden="true" />
+
+      <div className="relative z-[1] space-y-8">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+          <div className="dash-reveal min-w-0 text-center sm:text-left">
+            <h2 className="text-2xl font-medium tracking-tight text-foreground sm:text-3xl">
+              {greeting}, {name}
+            </h2>
+            <p className="mt-2 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm text-muted-foreground sm:justify-start">
+              {dateLabel ? <span>{dateLabel}</span> : null}
+              {streak > 0 ? (
+                <>
+                  <span className="text-muted-foreground/40" aria-hidden="true">
+                    ·
+                  </span>
+                  <span className="tabular-nums">{streak}d streak</span>
+                </>
+              ) : null}
+            </p>
+            {story ? (
+              <p className="mt-3 max-w-md text-sm leading-snug text-muted-foreground">
+                {story}
+              </p>
+            ) : null}
+          </div>
+
+          <div className="dash-reveal dash-reveal-delay-1 flex justify-center sm:justify-end">
+            <Link
+              href="/focus"
+              className="dash-focus-cta inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-sm font-medium text-background shadow-[0_8px_30px_oklch(0_0_0/0.12)] dark:shadow-[0_8px_30px_oklch(0_0_0/0.45)]"
+            >
+              <Timer className="size-3.5" />
+              Focus
+            </Link>
+          </div>
+        </div>
+
+        <div className="dash-reveal dash-reveal-delay-2 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between sm:gap-10">
+          <div className="text-center sm:text-left">
+            <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+              {heroKind === "due" ? "Needs you" : "Focus today"}
+            </p>
+            <p
+              className={cn(
+                "mt-2 text-5xl font-medium tracking-tight tabular-nums sm:text-6xl",
+                heroKind === "due" && attention > 0
+                  ? overdue > 0
+                    ? "text-destructive"
+                    : "text-foreground"
+                  : focusMinutes > 0
+                    ? "text-foreground"
+                    : "text-muted-foreground",
+              )}
+            >
+              {heroKind === "due"
+                ? dueDisplay
+                : formatFocusMinutes(focusDisplay)}
+            </p>
+            {heroKind === "due" && overdue > 0 ? (
+              <p className="mt-2 text-xs tabular-nums text-muted-foreground">
+                {dueToday} today · {overdue} overdue
+              </p>
+            ) : null}
+          </div>
+
+          <div className="grid grid-cols-2 gap-6 sm:min-w-[11rem] sm:gap-8">
+            {heroKind === "due" ? (
+              <SecondaryStat
+                label="Focus"
+                value={formatFocusMinutes(focusMinutes)}
+                muted={focusMinutes <= 0}
+              />
+            ) : (
+              <SecondaryStat
+                label="Due"
+                value={String(attention)}
+                muted={attention <= 0}
+                alert={overdue > 0}
+              />
             )}
-          >
-            {attention}
-          </p>
-        </div>
-        <div className="text-center sm:text-left">
-          <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-            Focus
-          </p>
-          <p className="mt-1.5 text-2xl font-medium tracking-tight tabular-nums text-foreground sm:text-3xl">
-            {formatFocusMinutes(focusMinutes)}
-          </p>
-        </div>
-        <div className="text-center sm:text-left">
-          <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-            Habits
-          </p>
-          <p className="mt-1.5 text-2xl font-medium tracking-tight tabular-nums text-foreground sm:text-3xl">
-            {habitsTotal > 0 ? `${habitsDone}/${habitsTotal}` : "—"}
-          </p>
-        </div>
-        <div className="text-center sm:text-left">
-          <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-            Streak
-          </p>
-          <p className="mt-1.5 text-2xl font-medium tracking-tight tabular-nums text-foreground sm:text-3xl">
-            {streak}d
-          </p>
+            <SecondaryStat
+              label="Habits"
+              value={
+                habitsTotal > 0 ? `${habitsDone}/${habitsTotal}` : "—"
+              }
+              muted={habitsTotal <= 0}
+            />
+          </div>
         </div>
       </div>
+    </section>
+  );
+}
+
+function SecondaryStat({
+  label,
+  value,
+  muted,
+  alert,
+}: {
+  label: string;
+  value: string;
+  muted?: boolean;
+  alert?: boolean;
+}) {
+  return (
+    <div className="text-center sm:text-left">
+      <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+        {label}
+      </p>
+      <p
+        className={cn(
+          "mt-1 text-lg font-medium tracking-tight tabular-nums sm:text-xl",
+          alert
+            ? "text-destructive"
+            : muted
+              ? "text-muted-foreground"
+              : "text-foreground",
+        )}
+      >
+        {value}
+      </p>
     </div>
   );
 }

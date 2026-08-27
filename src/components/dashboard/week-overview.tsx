@@ -8,6 +8,7 @@ type WeekOverviewProps = {
 export function WeekOverview({ week }: WeekOverviewProps) {
   const maxCount = Math.max(...week.map((d) => d.task_count), 1);
   const total = week.reduce((sum, d) => sum + d.task_count, 0);
+  const empty = total === 0;
 
   return (
     <section className="min-w-0">
@@ -15,30 +16,43 @@ export function WeekOverview({ week }: WeekOverviewProps) {
         <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
           Week
         </p>
-        <p className="text-xs tabular-nums text-muted-foreground">{total}</p>
+        <p className="text-xs tabular-nums text-muted-foreground">
+          {empty ? "—" : total}
+        </p>
       </div>
 
       <div className="mt-5 grid grid-cols-7 gap-2 sm:gap-2.5">
-        {week.map((day) => {
-          const height =
-            day.task_count <= 0
+        {week.map((day, index) => {
+          const height = empty
+            ? day.is_today
+              ? 28
+              : 10
+            : day.task_count <= 0
               ? 8
-              : Math.max(16, Math.round((day.task_count / maxCount) * 100));
+              : Math.max(18, Math.round((day.task_count / maxCount) * 100));
+
           return (
             <div
               key={day.date}
-              className="flex min-w-0 flex-col items-center gap-1.5"
+              className="flex min-w-0 flex-col items-center gap-2"
               title={`${day.label}: ${day.task_count} due`}
+              style={{ ["--i" as string]: index }}
             >
-              <div className="relative flex h-16 w-full items-end rounded-md bg-muted/25 px-1 pb-1 sm:h-20">
+              <div
+                className={cn(
+                  "relative flex h-20 w-full items-end rounded-lg bg-muted/20 px-1 pb-1 sm:h-24",
+                  day.is_today && "dash-week-today bg-muted/35",
+                  empty && !day.is_today && "opacity-50",
+                )}
+              >
                 <div
                   className={cn(
-                    "w-full min-h-[3px] rounded-[3px] transition-all",
+                    "dash-bar-rise w-full min-h-[3px] rounded-[4px]",
                     day.is_today
                       ? "bg-foreground"
                       : day.task_count > 0
                         ? "bg-foreground/55"
-                        : "bg-foreground/15",
+                        : "bg-foreground/12",
                   )}
                   style={{ height: `${height}%` }}
                 />

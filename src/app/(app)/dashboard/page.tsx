@@ -53,7 +53,7 @@ export default async function DashboardPage() {
           streak={data.stats.activity_streak}
         />
 
-        <div className="grid items-start gap-10 border-t border-border/30 pt-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:gap-12">
+        <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] lg:gap-12">
           <TodayFocus tasks={data.today_tasks} />
           <HabitsToday habits={data.habits_today} />
         </div>
