@@ -1,8 +1,7 @@
 import Link from "next/link";
-import { Calendar, CheckCircle2, Circle, Plus } from "lucide-react";
+import { CheckCircle2, Circle } from "lucide-react";
 
 import { toggleTaskComplete } from "@/actions/tasks";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { isOverdue } from "@/lib/date-utils";
 import type { TaskWithContext } from "@/types/dashboard";
@@ -15,41 +14,45 @@ function TaskRow({ task }: { task: TaskWithContext }) {
   const overdue = task.due_date ? isOverdue(task.due_date) : false;
 
   return (
-    <li className="group flex items-start gap-3 border-b border-border/50 py-3 last:border-b-0">
+    <li className="group flex items-start gap-3 border-b border-border/40 py-3.5 last:border-b-0">
       <form action={toggleTaskComplete.bind(null, task.id, !task.completed)}>
-        <Button
+        <button
           type="submit"
-          variant="ghost"
-          size="icon"
-          className="size-8 shrink-0"
-          aria-label="Mark complete"
+          className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+          aria-label={task.completed ? "Mark incomplete" : "Mark complete"}
         >
           {task.completed ? (
             <CheckCircle2 className="size-4 text-foreground" />
           ) : (
-            <Circle className="size-4 text-muted-foreground transition-colors group-hover:text-foreground" />
+            <Circle className="size-4 transition-colors group-hover:text-foreground" />
           )}
-        </Button>
+        </button>
       </form>
 
       <div className="min-w-0 flex-1 pt-1">
-        <p className="text-sm font-medium leading-snug">{task.title}</p>
+        <p
+          className={cn(
+            "text-sm leading-snug text-foreground",
+            task.completed && "text-muted-foreground line-through",
+          )}
+        >
+          {task.title}
+        </p>
         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
           {task.due_date ? (
             <span
               className={cn(
-                "inline-flex items-center gap-1",
+                "tabular-nums",
                 overdue && "text-destructive",
               )}
             >
-              <Calendar className="size-3" />
               {overdue ? "Overdue" : "Due today"}
             </span>
           ) : null}
           {task.context && task.context_href ? (
             <Link
               href={task.context_href}
-              className="truncate hover:text-foreground hover:underline"
+              className="truncate transition-colors hover:text-foreground"
             >
               {task.context}
             </Link>
@@ -62,36 +65,38 @@ function TaskRow({ task }: { task: TaskWithContext }) {
 
 export function TodayFocus({ tasks }: TodayFocusProps) {
   return (
-    <section className="imx-panel h-full">
-      <div className="flex items-end justify-between gap-3">
+    <section className="min-w-0">
+      <div className="flex items-baseline justify-between gap-3">
         <div>
-          <h2 className="text-sm font-medium">Today</h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">
+          <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+            Tasks
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
             {tasks.length === 0
-              ? "Nothing scheduled"
-              : `${tasks.length} task${tasks.length === 1 ? "" : "s"}`}
+              ? "Nothing due today"
+              : `${tasks.length} needing attention`}
           </p>
         </div>
-        <Button asChild variant="ghost" size="sm" className="text-muted-foreground">
-          <Link href="/tasks">
-            <Plus className="size-3.5" />
-            Add
-          </Link>
-        </Button>
+        <Link
+          href="/tasks"
+          className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+        >
+          All tasks
+        </Link>
       </div>
 
       {tasks.length === 0 ? (
-        <div className="mt-5">
-          <p className="text-sm text-muted-foreground">Nothing due today.</p>
+        <p className="mt-6 text-sm text-muted-foreground">
+          Clear day.{" "}
           <Link
             href="/tasks"
-            className="mt-2 inline-flex text-sm font-medium hover:underline"
+            className="text-foreground underline-offset-2 hover:underline"
           >
             Add a task
           </Link>
-        </div>
+        </p>
       ) : (
-        <ul className="mt-3">
+        <ul className="mt-4">
           {tasks.map((task) => (
             <TaskRow key={task.id} task={task} />
           ))}

@@ -2,10 +2,8 @@
 
 import Link from "next/link";
 import { useOptimistic, useTransition } from "react";
-import { Flame } from "lucide-react";
 
 import { toggleHabitToday } from "@/actions/habits";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { DashboardHabit } from "@/types/dashboard";
 
@@ -59,11 +57,13 @@ export function HabitsToday({ habits }: HabitsTodayProps) {
   }
 
   return (
-    <section className="imx-panel imx-panel-tight h-full">
-      <div className="flex items-end justify-between gap-3">
+    <section className="min-w-0">
+      <div className="flex items-baseline justify-between gap-3">
         <div>
-          <h2 className="text-sm font-medium">Habits</h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">
+          <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+            Habits
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
             {optimisticHabits.length === 0
               ? "Build a daily rhythm"
               : `${done}/${optimisticHabits.length} done`}
@@ -71,32 +71,36 @@ export function HabitsToday({ habits }: HabitsTodayProps) {
         </div>
         <Link
           href="/habits"
-          className="text-xs text-muted-foreground hover:text-foreground"
+          className="text-xs text-muted-foreground transition-colors hover:text-foreground"
         >
           Manage
         </Link>
       </div>
 
       {optimisticHabits.length === 0 ? (
-        <Link
-          href="/habits"
-          className="mt-5 inline-flex text-sm font-medium hover:underline"
-        >
-          Add a habit
-        </Link>
+        <p className="mt-6 text-sm text-muted-foreground">
+          No habits yet.{" "}
+          <Link
+            href="/habits"
+            className="text-foreground underline-offset-2 hover:underline"
+          >
+            Add one
+          </Link>
+        </p>
       ) : (
-        <ul className="mt-4 space-y-0.5">
+        <ul className="mt-4 divide-y divide-border/40">
           {optimisticHabits.slice(0, 8).map((habit) => (
-            <li key={habit.id} className="flex items-center gap-3 py-1.5">
-              <Button
+            <li
+              key={habit.id}
+              className="flex items-center gap-3 py-3 first:pt-0 last:pb-0"
+            >
+              <button
                 type="button"
-                variant="outline"
-                size="icon"
                 onClick={() => onToggle(habit)}
                 className={cn(
-                  "size-7 shrink-0 rounded-full border-2 transition-all duration-150",
+                  "flex size-7 shrink-0 items-center justify-center rounded-full border-2 transition-transform duration-150",
                   habit.completed_today
-                    ? "scale-100 text-white"
+                    ? "text-white"
                     : "hover:scale-105 active:scale-95",
                 )}
                 style={
@@ -124,11 +128,11 @@ export function HabitsToday({ habits }: HabitsTodayProps) {
                 >
                   ✓
                 </span>
-              </Button>
+              </button>
 
               <p
                 className={cn(
-                  "min-w-0 flex-1 truncate text-sm transition-colors",
+                  "min-w-0 flex-1 truncate text-sm text-foreground",
                   habit.completed_today &&
                     "text-muted-foreground line-through",
                 )}
@@ -137,9 +141,8 @@ export function HabitsToday({ habits }: HabitsTodayProps) {
               </p>
 
               {habit.current_streak > 0 ? (
-                <span className="inline-flex items-center gap-0.5 text-xs font-medium tabular-nums text-amber-700 dark:text-amber-300">
-                  <Flame className="size-3 fill-current" />
-                  {habit.current_streak}
+                <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                  {habit.current_streak}d
                 </span>
               ) : null}
             </li>

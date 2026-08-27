@@ -56,7 +56,7 @@ export default async function DashboardPage() {
 
         {data.is_new_user ? <OnboardingCard /> : null}
 
-        <div className="grid items-start gap-8 border-t border-border/30 pt-8 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,20rem)] lg:gap-10">
+        <div className="grid items-start gap-10 border-t border-border/30 pt-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:gap-12">
           <TodayFocus tasks={data.today_tasks} />
           <HabitsToday habits={data.habits_today} />
         </div>
