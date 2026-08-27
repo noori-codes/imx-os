@@ -5,8 +5,20 @@ type WeekOverviewProps = {
   week: WeekDaySummary[];
 };
 
+function heatSize(count: number, maxCount: number) {
+  if (count <= 0) return 10;
+  const t = maxCount <= 0 ? 0 : count / maxCount;
+  return Math.round(12 + t * 16);
+}
+
+function heatOpacity(count: number, maxCount: number) {
+  if (count <= 0) return 0.18;
+  const t = maxCount <= 0 ? 0 : count / Math.max(maxCount, 1);
+  return 0.4 + t * 0.55;
+}
+
 export function WeekOverview({ week }: WeekOverviewProps) {
-  const maxCount = Math.max(...week.map((d) => d.task_count), 1);
+  const maxCount = Math.max(...week.map((d) => d.task_count), 0);
   const total = week.reduce((sum, d) => sum + d.task_count, 0);
   const empty = total === 0;
 
@@ -17,43 +29,65 @@ export function WeekOverview({ week }: WeekOverviewProps) {
           Week
         </p>
         <p className="text-[11px] tabular-nums text-muted-foreground">
-          {empty ? "—" : total}
+          Sat–Fri
         </p>
       </div>
 
-      <div className="mt-3 flex flex-1 flex-col border-t border-border/30 pt-4">
-        <div className="grid h-full min-h-[7.5rem] flex-1 grid-cols-7 gap-2 sm:gap-2.5">
+      <div className="dash-reveal mt-4">
+        <p
+          className={cn(
+            "text-4xl font-medium tracking-tight tabular-nums",
+            empty ? "text-muted-foreground" : "text-foreground",
+          )}
+        >
+          {empty ? "—" : total}
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {empty ? "Nothing scheduled" : "due this week"}
+        </p>
+      </div>
+
+      <div className="mt-auto border-t border-border/30 pt-5">
+        <div className="dash-stagger grid grid-cols-7 items-end gap-1">
           {week.map((day, index) => {
-            const height =
-              day.task_count <= 0
-                ? 4
-                : Math.max(14, Math.round((day.task_count / maxCount) * 100));
+            const size = heatSize(day.task_count, maxCount);
+            const opacity = heatOpacity(day.task_count, maxCount);
+            const hasTasks = day.task_count > 0;
 
             return (
               <div
                 key={day.date}
-                className="flex min-h-0 min-w-0 flex-col items-center gap-2"
+                className="flex min-w-0 flex-col items-center gap-2"
                 title={`${day.label}: ${day.task_count} due`}
                 style={{ ["--i" as string]: index }}
               >
-                <div
+                <span
                   className={cn(
-                    "relative flex min-h-0 w-full flex-1 items-end rounded-lg bg-muted/20 px-1 pb-1",
-                    day.is_today && "dash-week-today bg-muted/35",
+                    "h-3 text-[10px] leading-none tabular-nums",
+                    hasTasks
+                      ? "text-muted-foreground"
+                      : "text-transparent",
+                    day.is_today && hasTasks && "text-foreground/80",
                   )}
                 >
-                  <div
+                  {hasTasks ? day.task_count : "0"}
+                </span>
+
+                <div className="flex h-9 w-full items-center justify-center">
+                  <span
                     className={cn(
-                      "dash-bar-rise w-full min-h-[2px] rounded-[4px]",
-                      day.task_count <= 0
-                        ? "bg-foreground/10"
-                        : day.is_today
-                          ? "bg-foreground"
-                          : "bg-foreground/55",
+                      "dash-heat-dot rounded-full bg-foreground",
+                      day.is_today && "dash-heat-today",
                     )}
-                    style={{ height: `${height}%` }}
+                    style={{
+                      width: size,
+                      height: size,
+                      opacity,
+                      ["--i" as string]: index,
+                    }}
                   />
                 </div>
+
                 <span
                   className={cn(
                     "text-[11px] tabular-nums text-muted-foreground",

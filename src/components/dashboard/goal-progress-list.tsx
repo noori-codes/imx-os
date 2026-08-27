@@ -1,70 +1,76 @@
 import Link from "next/link";
 
+import { cn } from "@/lib/utils";
 import type { GoalProgress } from "@/types/dashboard";
 
 type GoalProgressListProps = {
   goals: GoalProgress[];
 };
 
-function GhostGoal() {
+function ProgressRing({
+  progress,
+  index,
+}: {
+  progress: number;
+  index: number;
+}) {
+  const size = 36;
+  const stroke = 2.5;
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const pct = Math.min(100, Math.max(progress, 0));
+  const offset = circumference * (1 - pct / 100);
+
   return (
-    <div className="flex flex-1 flex-col">
-      <div
-        className="pointer-events-none space-y-0 border-t border-border/30"
-        aria-hidden="true"
-      >
-        {[
-          { width: 68, fill: 34, opacity: 0.42 },
-          { width: 54, fill: 22, opacity: 0.32 },
-          { width: 40, fill: 14, opacity: 0.22 },
-        ].map((row, i) => (
-          <div
-            key={i}
-            className="border-b border-border/20 py-3 last:border-b-0"
-            style={{ opacity: row.opacity }}
-          >
-            <div className="flex items-center justify-between gap-3">
-              <span
-                className="h-2.5 rounded-full bg-muted"
-                style={{ width: `${row.width}%` }}
-              />
-              <span className="h-2.5 w-7 rounded-full bg-muted" />
-            </div>
-            <div className="mt-2.5 h-px overflow-hidden rounded-full bg-border/40">
-              <div
-                className="h-full rounded-full bg-foreground/25"
-                style={{ width: `${row.fill}%` }}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-      <Link
-        href="/goals"
-        className="mt-auto pt-4 text-sm text-muted-foreground transition-colors hover:text-foreground"
-      >
-        Create a goal
-      </Link>
-    </div>
+    <svg
+      width={size}
+      height={size}
+      viewBox={`0 0 ${size} ${size}`}
+      className="dash-ring-draw shrink-0 -rotate-90"
+      style={{ ["--i" as string]: index }}
+      aria-hidden="true"
+    >
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={stroke}
+        className="text-border/60"
+      />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={stroke}
+        strokeLinecap="round"
+        strokeDasharray={circumference}
+        strokeDashoffset={offset}
+        className="text-foreground/80"
+      />
+    </svg>
   );
 }
 
 export function GoalProgressList({ goals }: GoalProgressListProps) {
   const visible = goals.slice(0, 3);
+  const withTasks = visible.filter((g) => g.task_count > 0);
+  const avg =
+    withTasks.length > 0
+      ? Math.round(
+          withTasks.reduce((sum, g) => sum + g.progress, 0) / withTasks.length,
+        )
+      : null;
 
   return (
     <section className="min-w-0">
       <div className="flex items-baseline justify-between gap-3">
-        <div className="flex items-baseline gap-2">
-          <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-            Goals
-          </p>
-          {visible.length > 0 ? (
-            <span className="text-[11px] tabular-nums text-muted-foreground/70">
-              {visible.length}
-            </span>
-          ) : null}
-        </div>
+        <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+          Goals
+        </p>
         <Link
           href="/goals"
           className="text-[11px] text-muted-foreground transition-colors hover:text-foreground"
@@ -73,38 +79,64 @@ export function GoalProgressList({ goals }: GoalProgressListProps) {
         </Link>
       </div>
 
+      <div className="dash-reveal mt-4">
+        <p
+          className={cn(
+            "text-4xl font-medium tracking-tight tabular-nums",
+            visible.length === 0
+              ? "text-muted-foreground"
+              : "text-foreground",
+          )}
+        >
+          {visible.length === 0
+            ? "—"
+            : avg != null
+              ? `${avg}%`
+              : visible.length}
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {visible.length === 0
+            ? "No goals yet"
+            : avg != null
+              ? "avg progress"
+              : visible.length === 1
+                ? "goal"
+                : "goals"}
+        </p>
+      </div>
+
       {visible.length === 0 ? (
-        <div className="mt-3 flex min-h-0 flex-1 flex-col">
-          <GhostGoal />
-        </div>
+        <Link
+          href="/goals"
+          className="mt-auto pt-6 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          Create a goal
+        </Link>
       ) : (
-        <ul className="dash-stagger mt-3 min-h-0 flex-1 border-t border-border/30">
+        <ul className="dash-stagger mt-5 min-h-0 flex-1 space-y-3 border-t border-border/30 pt-4">
           {visible.map((goal, index) => (
             <li
               key={goal.id}
-              className="border-b border-border/30 py-3 last:border-b-0"
+              className="flex items-center gap-3"
               style={{ ["--i" as string]: index }}
             >
-              <div className="flex items-baseline justify-between gap-3">
+              <ProgressRing progress={goal.progress} index={index} />
+              <div className="min-w-0 flex-1">
                 <Link
                   href={`/goals/${goal.id}`}
-                  className="min-w-0 truncate text-sm text-foreground transition-colors hover:text-foreground/75"
+                  className="block truncate text-sm text-foreground transition-colors hover:text-foreground/75"
                 >
                   {goal.title}
                 </Link>
-                <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
-                  {goal.progress}%
-                </span>
+                <p className="mt-0.5 text-[11px] tabular-nums text-muted-foreground">
+                  {goal.task_count === 0
+                    ? "No tasks yet"
+                    : `${goal.completed_task_count}/${goal.task_count} tasks`}
+                </p>
               </div>
-              <div className="mt-2.5 h-px overflow-hidden rounded-full bg-border/50">
-                <div
-                  className="dash-bar-rise h-full rounded-full bg-foreground/70"
-                  style={{
-                    width: `${Math.min(100, Math.max(goal.progress, 0))}%`,
-                    ["--i" as string]: index,
-                  }}
-                />
-              </div>
+              <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
+                {goal.progress}%
+              </span>
             </li>
           ))}
         </ul>

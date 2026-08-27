@@ -39,34 +39,6 @@ function applyToggle(
   });
 }
 
-function GhostHabits() {
-  return (
-    <div className="flex flex-1 flex-col">
-      <ul className="pointer-events-none border-t border-border/30" aria-hidden="true">
-        {[68, 54, 40].map((width, i) => (
-          <li
-            key={i}
-            className="flex items-center gap-3 border-b border-border/20 py-3 last:border-b-0"
-            style={{ opacity: 0.42 - i * 0.1 }}
-          >
-            <span className="size-4 shrink-0 rounded-full border border-border/50" />
-            <span
-              className="h-2.5 rounded-full bg-muted"
-              style={{ width: `${width}%` }}
-            />
-          </li>
-        ))}
-      </ul>
-      <Link
-        href="/habits"
-        className="mt-auto pt-4 text-sm text-muted-foreground transition-colors hover:text-foreground"
-      >
-        Add a habit
-      </Link>
-    </div>
-  );
-}
-
 export function HabitsToday({ habits }: HabitsTodayProps) {
   const [, startTransition] = useTransition();
   const [optimisticHabits, setOptimisticHabits] = useOptimistic(
@@ -75,6 +47,8 @@ export function HabitsToday({ habits }: HabitsTodayProps) {
   );
 
   const done = optimisticHabits.filter((h) => h.completed_today).length;
+  const total = optimisticHabits.length;
+  const clear = total > 0 && done === total;
 
   function onToggle(habit: DashboardHabit) {
     const next = !habit.completed_today;
@@ -87,16 +61,9 @@ export function HabitsToday({ habits }: HabitsTodayProps) {
   return (
     <section className="min-w-0">
       <div className="flex items-baseline justify-between gap-3">
-        <div className="flex items-baseline gap-2">
-          <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-            Habits
-          </p>
-          {optimisticHabits.length > 0 ? (
-            <span className="text-[11px] tabular-nums text-muted-foreground/70">
-              {done}/{optimisticHabits.length}
-            </span>
-          ) : null}
-        </div>
+        <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+          Habits
+        </p>
         <Link
           href="/habits"
           className="text-[11px] text-muted-foreground transition-colors hover:text-foreground"
@@ -105,35 +72,46 @@ export function HabitsToday({ habits }: HabitsTodayProps) {
         </Link>
       </div>
 
-      {optimisticHabits.length === 0 ? (
-        <div className="mt-3 flex min-h-0 flex-1 flex-col">
-          <GhostHabits />
-        </div>
+      <div className="dash-reveal mt-4">
+        <p
+          className={cn(
+            "text-4xl font-medium tracking-tight tabular-nums",
+            total === 0 || clear
+              ? "text-muted-foreground"
+              : "text-foreground",
+          )}
+        >
+          {total === 0 ? "—" : (
+            <>
+              {done}
+              <span className="text-2xl text-muted-foreground/60">/{total}</span>
+            </>
+          )}
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {total === 0 ? "No habits yet" : clear ? "Sealed" : "done today"}
+        </p>
+      </div>
+
+      {total === 0 ? (
+        <Link
+          href="/habits"
+          className="mt-auto pt-6 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          Add a habit
+        </Link>
       ) : (
-        <ul className="dash-stagger mt-3 min-h-0 flex-1 border-t border-border/30">
-          {optimisticHabits.slice(0, 6).map((habit, index) => (
+        <ul className="dash-stagger mt-5 flex flex-wrap gap-x-3 gap-y-4 border-t border-border/30 pt-5">
+          {optimisticHabits.slice(0, 8).map((habit, index) => (
             <li
               key={habit.id}
-              className="flex items-center gap-3 border-b border-border/30 py-3 last:border-b-0"
+              className="w-17 sm:w-18"
               style={{ ["--i" as string]: index }}
             >
               <button
                 type="button"
                 onClick={() => onToggle(habit)}
-                className={cn(
-                  "flex size-5 shrink-0 items-center justify-center rounded-full border-[1.5px] transition-transform duration-150",
-                  habit.completed_today
-                    ? "text-white"
-                    : "hover:scale-105 active:scale-95",
-                )}
-                style={
-                  habit.completed_today
-                    ? {
-                        backgroundColor: habit.color,
-                        borderColor: habit.color,
-                      }
-                    : { borderColor: habit.color }
-                }
+                className="group flex w-full flex-col items-center gap-1.5"
                 aria-label={
                   habit.completed_today
                     ? `Undo ${habit.title}`
@@ -143,31 +121,42 @@ export function HabitsToday({ habits }: HabitsTodayProps) {
               >
                 <span
                   className={cn(
-                    "text-[9px] font-bold leading-none transition-all duration-150",
+                    "dash-habit-seal flex size-11 items-center justify-center rounded-full border-2 transition-transform duration-150 group-hover:scale-105 group-active:scale-95 sm:size-12",
+                    habit.completed_today && "text-white",
+                  )}
+                  style={
                     habit.completed_today
-                      ? "scale-100 opacity-100"
-                      : "scale-50 opacity-0",
+                      ? {
+                          backgroundColor: habit.color,
+                          borderColor: habit.color,
+                          boxShadow: `0 0 0 3px color-mix(in oklab, ${habit.color} 28%, transparent)`,
+                        }
+                      : { borderColor: habit.color }
+                  }
+                >
+                  <span
+                    className={cn(
+                      "text-sm font-bold leading-none transition-all duration-150",
+                      habit.completed_today
+                        ? "scale-100 opacity-100"
+                        : "scale-50 opacity-0",
+                    )}
+                  >
+                    ✓
+                  </span>
+                </span>
+                <span
+                  className={cn(
+                    "w-full truncate text-center text-[11px] leading-tight text-foreground",
+                    habit.completed_today && "text-muted-foreground",
                   )}
                 >
-                  ✓
+                  {habit.title}
+                </span>
+                <span className="h-3 text-[10px] leading-none tabular-nums text-muted-foreground/70">
+                  {habit.current_streak > 0 ? `${habit.current_streak}d` : ""}
                 </span>
               </button>
-
-              <p
-                className={cn(
-                  "min-w-0 flex-1 truncate text-sm text-foreground",
-                  habit.completed_today &&
-                    "text-muted-foreground line-through",
-                )}
-              >
-                {habit.title}
-              </p>
-
-              {habit.current_streak > 0 ? (
-                <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
-                  {habit.current_streak}d
-                </span>
-              ) : null}
             </li>
           ))}
         </ul>

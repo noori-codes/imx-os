@@ -20,119 +20,66 @@ function TaskRow({
   const overdue = Boolean(
     task.due_date && !task.completed && isOverdue(task.due_date),
   );
-  const repeat =
-    task.recurrence === "daily"
+  const tag = overdue
+    ? "Overdue"
+    : task.recurrence === "daily"
       ? "Everyday"
       : task.recurrence === "weekdays"
         ? "Weekdays"
         : null;
-  const meta = overdue
-    ? "Overdue"
-    : repeat
-      ? repeat
-      : task.context
-        ? task.context
-        : null;
 
   return (
     <li
-      className="group flex items-center gap-3 border-b border-border/30 py-3 last:border-b-0"
+      className="group flex items-center gap-2.5 py-2"
       style={{ ["--i" as string]: index }}
     >
       <form action={toggleTaskComplete.bind(null, task.id, !task.completed)}>
         <button
           type="submit"
-          className="flex size-7 shrink-0 items-center justify-center rounded-full text-muted-foreground/70 transition-colors hover:text-foreground"
+          className="flex size-6 shrink-0 items-center justify-center text-muted-foreground/70 transition-colors hover:text-foreground"
           aria-label={task.completed ? "Mark incomplete" : "Mark complete"}
         >
           {task.completed ? (
-            <CheckCircle2 className="size-4 text-foreground" />
+            <CheckCircle2 className="size-4 text-foreground/70" />
           ) : (
             <Circle className="size-4 transition-colors group-hover:text-foreground" />
           )}
         </button>
       </form>
 
-      <div className="min-w-0 flex-1">
-        <p
+      <p
+        className={cn(
+          "min-w-0 flex-1 truncate text-sm text-foreground",
+          task.completed && "text-muted-foreground/70 line-through",
+        )}
+      >
+        {task.title}
+      </p>
+
+      {tag ? (
+        <span
           className={cn(
-            "truncate text-sm text-foreground",
-            task.completed && "text-muted-foreground line-through",
+            "shrink-0 text-[10px] uppercase tracking-[0.12em] text-muted-foreground/70",
+            overdue && "text-destructive/80",
           )}
         >
-          {task.title}
-        </p>
-        {meta ? (
-          <p
-            className={cn(
-              "mt-0.5 truncate text-[11px] text-muted-foreground",
-              overdue && "text-destructive/80",
-            )}
-          >
-            {task.context_href && !overdue ? (
-              <Link
-                href={task.context_href}
-                className="transition-colors hover:text-foreground"
-              >
-                {meta}
-              </Link>
-            ) : (
-              meta
-            )}
-          </p>
-        ) : null}
-      </div>
+          {tag}
+        </span>
+      ) : null}
     </li>
-  );
-}
-
-function GhostTasks() {
-  return (
-    <div className="flex flex-1 flex-col">
-      <ul className="pointer-events-none border-t border-border/30" aria-hidden="true">
-        {[68, 54, 40].map((width, i) => (
-          <li
-            key={i}
-            className="flex items-center gap-3 border-b border-border/20 py-3 last:border-b-0"
-            style={{ opacity: 0.42 - i * 0.1 }}
-          >
-            <span className="size-4 shrink-0 rounded-full border border-border/50" />
-            <span
-              className="h-2.5 rounded-full bg-muted"
-              style={{ width: `${width}%` }}
-            />
-          </li>
-        ))}
-      </ul>
-      <Link
-        href="/tasks"
-        className="mt-auto pt-4 text-sm text-muted-foreground transition-colors hover:text-foreground"
-      >
-        Add a task
-      </Link>
-    </div>
   );
 }
 
 export function TodayFocus({ tasks }: TodayFocusProps) {
   const openCount = tasks.filter((t) => !t.completed).length;
-  const doneCount = tasks.filter((t) => t.completed).length;
+  const clear = tasks.length > 0 && openCount === 0;
 
   return (
     <section className="min-w-0">
       <div className="flex items-baseline justify-between gap-3">
-        <div className="flex items-baseline gap-2">
-          <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-            Tasks
-          </p>
-          {tasks.length > 0 ? (
-            <span className="text-[11px] tabular-nums text-muted-foreground/70">
-              {doneCount > 0
-                ? `${openCount}/${tasks.length}`
-                : openCount}
-            </span>
-          ) : null}
-        </div>
+        <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+          Tasks
+        </p>
         <Link
           href="/tasks"
           className="text-[11px] text-muted-foreground transition-colors hover:text-foreground"
@@ -141,12 +88,35 @@ export function TodayFocus({ tasks }: TodayFocusProps) {
         </Link>
       </div>
 
+      <div className="dash-reveal mt-4">
+        <p
+          className={cn(
+            "text-4xl font-medium tracking-tight tabular-nums",
+            tasks.length === 0 || clear
+              ? "text-muted-foreground"
+              : "text-foreground",
+          )}
+        >
+          {tasks.length === 0 ? "—" : openCount}
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {tasks.length === 0
+            ? "Nothing due"
+            : clear
+              ? "Clear for today"
+              : "open"}
+        </p>
+      </div>
+
       {tasks.length === 0 ? (
-        <div className="mt-3 flex min-h-0 flex-1 flex-col">
-          <GhostTasks />
-        </div>
+        <Link
+          href="/tasks"
+          className="mt-auto pt-6 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          Add a task
+        </Link>
       ) : (
-        <ul className="dash-stagger mt-3 min-h-0 flex-1 border-t border-border/30">
+        <ul className="dash-stagger mt-5 min-h-0 flex-1 border-t border-border/30 pt-1">
           {tasks.map((task, index) => (
             <TaskRow key={task.id} task={task} index={index} />
           ))}

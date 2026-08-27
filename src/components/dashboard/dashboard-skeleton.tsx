@@ -4,6 +4,24 @@ function Bone({ className }: { className?: string }) {
   return <div className={className} aria-hidden="true" />;
 }
 
+function QuadHeader() {
+  return (
+    <div className="flex items-baseline justify-between gap-3">
+      <Bone className="h-2.5 w-14" />
+      <Bone className="h-2.5 w-6" />
+    </div>
+  );
+}
+
+function QuadSignal() {
+  return (
+    <div className="mt-4 space-y-2">
+      <Bone className="h-10 w-16" />
+      <Bone className="h-3 w-20 opacity-55" />
+    </div>
+  );
+}
+
 export function DashboardSkeleton() {
   return (
     <div
@@ -46,20 +64,18 @@ export function DashboardSkeleton() {
         <div className="dash-quad grid grid-cols-1 border-t border-border/30 lg:grid-cols-2 lg:grid-rows-[1fr_1fr]">
           <div className="dash-quad-cell border-b border-border/30 lg:border-r">
             <section className="min-w-0">
-              <div className="flex items-baseline justify-between gap-3">
-                <Bone className="h-2.5 w-14" />
-                <Bone className="h-2.5 w-6" />
-              </div>
-              <div className="mt-3 border-t border-border/30">
-                <div className="flex items-center gap-3 border-b border-border/20 py-3">
+              <QuadHeader />
+              <QuadSignal />
+              <div className="mt-5 space-y-1 border-t border-border/30 pt-3">
+                <div className="flex items-center gap-2.5 py-2">
                   <Bone className="size-4 shrink-0 rounded-full" />
                   <Bone className="h-2.5 w-[68%]" />
                 </div>
-                <div className="flex items-center gap-3 border-b border-border/20 py-3">
+                <div className="flex items-center gap-2.5 py-2">
                   <Bone className="size-4 shrink-0 rounded-full" />
                   <Bone className="h-2.5 w-[54%]" />
                 </div>
-                <div className="flex items-center gap-3 py-3">
+                <div className="flex items-center gap-2.5 py-2">
                   <Bone className="size-4 shrink-0 rounded-full" />
                   <Bone className="h-2.5 w-[40%]" />
                 </div>
@@ -69,41 +85,46 @@ export function DashboardSkeleton() {
 
           <div className="dash-quad-cell border-b border-border/30">
             <section className="min-w-0">
-              <div className="flex items-baseline justify-between gap-3">
-                <Bone className="h-2.5 w-14" />
-                <Bone className="h-2.5 w-6" />
-              </div>
-              <div className="mt-3 border-t border-border/30">
-                <div className="flex items-center gap-3 border-b border-border/20 py-3">
-                  <Bone className="size-4 shrink-0 rounded-full" />
-                  <Bone className="h-2.5 w-[68%]" />
-                </div>
-                <div className="flex items-center gap-3 border-b border-border/20 py-3">
-                  <Bone className="size-4 shrink-0 rounded-full" />
-                  <Bone className="h-2.5 w-[54%]" />
-                </div>
-                <div className="flex items-center gap-3 py-3">
-                  <Bone className="size-4 shrink-0 rounded-full" />
-                  <Bone className="h-2.5 w-[40%]" />
-                </div>
+              <QuadHeader />
+              <QuadSignal />
+              <div className="mt-5 flex flex-wrap gap-3 border-t border-border/30 pt-5">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="flex w-16 flex-col items-center gap-1.5"
+                  >
+                    <Bone className="size-11 rounded-full sm:size-12" />
+                    <Bone className="h-2.5 w-10" />
+                    <Bone className="h-2 w-5 opacity-55" />
+                  </div>
+                ))}
               </div>
             </section>
           </div>
 
           <div className="dash-quad-cell border-b border-border/30 lg:border-r lg:border-b-0">
             <section className="min-w-0">
-              <div className="flex items-baseline justify-between gap-3">
-                <Bone className="h-2.5 w-12" />
-                <Bone className="h-2.5 w-5" />
-              </div>
-              <div className="mt-3 flex min-h-0 flex-1 flex-col border-t border-border/30 pt-4">
-                <div className="grid min-h-[7.5rem] flex-1 grid-cols-7 gap-2 sm:gap-2.5">
+              <QuadHeader />
+              <QuadSignal />
+              <div className="mt-auto border-t border-border/30 pt-5">
+                <div className="grid grid-cols-7 items-end gap-1">
                   {Array.from({ length: 7 }).map((_, i) => (
                     <div
                       key={i}
-                      className="flex min-h-0 min-w-0 flex-col items-center gap-2"
+                      className="flex flex-col items-center gap-2"
                     >
-                      <Bone className="min-h-0 w-full flex-1 rounded-lg" />
+                      <Bone className="h-2.5 w-3 opacity-40" />
+                      <div className="flex h-9 items-center justify-center">
+                        <Bone
+                          className={
+                            i % 3 === 0
+                              ? "size-2.5 rounded-full"
+                              : i % 3 === 1
+                                ? "size-3.5 rounded-full"
+                                : "size-4 rounded-full"
+                          }
+                        />
+                      </div>
                       <Bone className="h-2.5 w-5 opacity-55" />
                     </div>
                   ))}
@@ -114,32 +135,19 @@ export function DashboardSkeleton() {
 
           <div className="dash-quad-cell border-b border-border/30 lg:border-b-0">
             <section className="min-w-0">
-              <div className="flex items-baseline justify-between gap-3">
-                <Bone className="h-2.5 w-14" />
-                <Bone className="h-2.5 w-6" />
-              </div>
-              <div className="mt-3 border-t border-border/30">
-                <div className="space-y-2.5 border-b border-border/20 py-3">
-                  <div className="flex justify-between gap-3">
-                    <Bone className="h-2.5 w-[68%]" />
+              <QuadHeader />
+              <QuadSignal />
+              <div className="mt-5 space-y-3 border-t border-border/30 pt-4">
+                {Array.from({ length: 2 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <Bone className="size-9 shrink-0 rounded-full" />
+                    <div className="min-w-0 flex-1 space-y-1.5">
+                      <Bone className="h-2.5 w-[70%]" />
+                      <Bone className="h-2 w-16 opacity-55" />
+                    </div>
                     <Bone className="h-2.5 w-7" />
                   </div>
-                  <Bone className="h-px w-full" />
-                </div>
-                <div className="space-y-2.5 border-b border-border/20 py-3">
-                  <div className="flex justify-between gap-3">
-                    <Bone className="h-2.5 w-[54%]" />
-                    <Bone className="h-2.5 w-7" />
-                  </div>
-                  <Bone className="h-px w-full" />
-                </div>
-                <div className="space-y-2.5 py-3">
-                  <div className="flex justify-between gap-3">
-                    <Bone className="h-2.5 w-[40%]" />
-                    <Bone className="h-2.5 w-7" />
-                  </div>
-                  <Bone className="h-px w-full" />
-                </div>
+                ))}
               </div>
             </section>
           </div>
