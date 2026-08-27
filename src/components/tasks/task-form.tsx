@@ -16,7 +16,6 @@ type TaskFormProps = {
   defaultDueDate?: string;
   compact?: boolean;
   projects?: TaskProjectOption[];
-  /** Prefer quick-add chrome on the main Tasks page */
   variant?: "card" | "quick" | "compact";
 };
 
@@ -141,7 +140,6 @@ export function TaskForm({
         {defaultDueDate ? (
           <input type="hidden" name="due_date" value={defaultDueDate} />
         ) : null}
-
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="relative min-w-0 flex-1">
             <Plus className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -159,7 +157,6 @@ export function TaskForm({
             {pending ? "Adding..." : "Add"}
           </Button>
         </div>
-
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           {!defaultDueDate ? (
             <div className="space-y-1.5">
@@ -184,7 +181,7 @@ export function TaskForm({
                 id="task-project-card"
                 name="project_id"
                 defaultValue=""
-                className="border-input bg-background h-9 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                className="border-input bg-background h-9 w-full rounded-md border px-3 text-sm"
               >
                 <option value="">Inbox (no project)</option>
                 {projects.map((p) => (
@@ -196,7 +193,6 @@ export function TaskForm({
             </div>
           ) : null}
         </div>
-
         {state?.error ? (
           <p className="mt-3 text-sm text-destructive">{state.error}</p>
         ) : null}
@@ -204,15 +200,14 @@ export function TaskForm({
     );
   }
 
-  // quick — stage composer
   return (
     <form
       ref={formRef}
       action={formAction}
       className={cn(
-        "task-composer rounded-2xl border border-border/40 bg-muted/25 p-3.5 transition-[border-color,background-color,box-shadow] duration-200 sm:p-4",
+        "rounded-2xl border border-border/40 bg-muted/20 p-4 transition-[border-color,background-color,box-shadow] duration-300 sm:p-5",
         focused &&
-          "border-border/70 bg-muted/40 shadow-[0_0_0_1px_color-mix(in_oklab,var(--foreground)_6%,transparent)]",
+          "border-border/70 bg-muted/35 shadow-[0_12px_40px_oklch(0_0_0/0.08)] dark:shadow-[0_12px_40px_oklch(0_0_0/0.35)]",
       )}
       onFocusCapture={() => setFocused(true)}
       onBlurCapture={(e) => {
@@ -224,7 +219,6 @@ export function TaskForm({
       {projectId ? (
         <input type="hidden" name="project_id" value={projectId} />
       ) : null}
-
       {showChips ? (
         <>
           <input type="hidden" name="due_date" value={schedule.due_date} />
@@ -238,12 +232,12 @@ export function TaskForm({
         <input type="hidden" name="due_date" value={defaultDueDate} />
       ) : null}
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
         <div className="relative min-w-0 flex-1">
           <Plus
             className={cn(
-              "pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 transition-colors",
-              focused ? "text-foreground/70" : "text-muted-foreground",
+              "pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 transition-colors",
+              focused ? "text-foreground/75" : "text-muted-foreground",
             )}
           />
           <Input
@@ -252,22 +246,21 @@ export function TaskForm({
             placeholder="What needs doing?"
             required
             autoComplete="off"
-            className="h-11 border-0 bg-transparent pl-9 shadow-none focus-visible:ring-0"
+            className="h-12 border-0 bg-transparent pl-10 text-base shadow-none focus-visible:ring-0"
             aria-label="New task"
           />
         </div>
         <Button
           type="submit"
           disabled={pending}
-          size="sm"
-          className="h-9 shrink-0 rounded-full px-4"
+          className="h-10 shrink-0 rounded-full px-5"
         >
           {pending ? "Adding…" : "Add"}
         </Button>
       </div>
 
       {showChips ? (
-        <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-border/30 pt-3">
+        <div className="mt-4 flex flex-wrap items-center gap-1.5 border-t border-border/30 pt-4">
           {CHIPS.map((item) => {
             const active = chip === item.id;
             return (
@@ -276,23 +269,22 @@ export function TaskForm({
                 type="button"
                 onClick={() => setChip(active ? "none" : item.id)}
                 className={cn(
-                  "rounded-full px-2.5 py-1 text-[11px] tracking-wide transition-colors",
+                  "rounded-full px-3 py-1.5 text-[11px] tracking-wide transition-colors",
                   active
                     ? "bg-foreground font-medium text-background"
-                    : "text-muted-foreground hover:bg-muted/70 hover:text-foreground",
+                    : "text-muted-foreground hover:bg-background/60 hover:text-foreground",
                 )}
               >
                 {item.label}
               </button>
             );
           })}
-
           {showProjectMore ? (
             <button
               type="button"
               onClick={() => setMoreOpen((v) => !v)}
               className={cn(
-                "ml-auto inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:text-foreground",
+                "ml-auto inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-[11px] text-muted-foreground transition-colors hover:text-foreground",
                 moreOpen && "text-foreground",
               )}
               aria-expanded={moreOpen}
@@ -318,7 +310,7 @@ export function TaskForm({
             id="task-project"
             name="project_id"
             defaultValue=""
-            className="border-input bg-background/60 h-9 w-full rounded-lg border border-border/50 px-3 text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
+            className="border-input bg-background/70 h-10 w-full rounded-xl border border-border/50 px-3 text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
           >
             <option value="">Inbox (no project)</option>
             {projects.map((p) => (
@@ -332,18 +324,18 @@ export function TaskForm({
 
       <p
         className={cn(
-          "mt-2.5 text-[11px] text-muted-foreground/70 transition-opacity",
+          "mt-3 text-[11px] text-muted-foreground/70 transition-opacity",
           focused || chip !== "none" ? "opacity-100" : "opacity-0",
         )}
       >
-        {chip === "daily" || chip === "weekdays"
-          ? "Done rolls to the next day"
-          : (
-              <>
-                Press <kbd className="rounded border border-border/60 px-1">N</kbd>{" "}
-                anytime
-              </>
-            )}
+        {chip === "daily" || chip === "weekdays" ? (
+          "Done rolls to the next day"
+        ) : (
+          <>
+            Press <kbd className="rounded border border-border/50 px-1">N</kbd>{" "}
+            anytime
+          </>
+        )}
       </p>
 
       {state?.error ? (

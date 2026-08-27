@@ -49,3 +49,23 @@ export function recurrenceLabel(recurrence: TaskRecurrence): string | null {
   if (recurrence === "weekdays") return "Weekdays";
   return null;
 }
+
+/**
+ * After a completed recurring day has passed, reopen for the next due date.
+ * Keeps habit-like "done today" feedback until tomorrow.
+ */
+export function shouldResetRecurringTask(task: {
+  recurrence: TaskRecurrence;
+  completed: boolean;
+  due_date: string | null;
+}, today = toDateString(startOfDay(new Date()))): boolean {
+  if (!task.recurrence || !task.completed || !task.due_date) return false;
+  return task.due_date < today;
+}
+
+export function resetDueForRecurrence(
+  recurrence: Exclude<TaskRecurrence, null>,
+  today = new Date(),
+): string {
+  return initialDueForRecurrence(recurrence, null) ?? toDateString(startOfDay(today));
+}

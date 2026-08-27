@@ -15,25 +15,26 @@ import type { TaskView, TaskWithContext } from "@/types/task";
 type TaskListProps = {
   tasks: TaskWithContext[];
   view?: TaskView;
-  /** Project pages: flat active/completed, no smart groups */
   mode?: "smart" | "project";
   todayFocus?: TaskFocusToday;
 };
 
 function GhostEmpty({ view }: { view: TaskView }) {
   const empty = viewEmptyCopy(view);
-  const widths = [68, 54, 40];
 
   return (
-    <div className="mt-1">
-      <ul className="pointer-events-none border-t border-border/30" aria-hidden="true">
-        {widths.map((width, i) => (
+    <div>
+      <ul
+        className="pointer-events-none border-t border-border/30"
+        aria-hidden="true"
+      >
+        {[72, 56, 40].map((width, i) => (
           <li
             key={i}
-            className="flex items-center gap-3 border-b border-border/20 py-3 last:border-b-0"
-            style={{ opacity: 0.4 - i * 0.1 }}
+            className="flex items-center gap-3 border-b border-border/20 py-3.5 last:border-b-0"
+            style={{ opacity: 0.42 - i * 0.1 }}
           >
-            <span className="size-4 shrink-0 rounded-full border border-border/50" />
+            <span className="size-5 shrink-0 rounded-full border border-border/50" />
             <span
               className="h-2.5 rounded-full bg-muted"
               style={{ width: `${width}%` }}
@@ -41,11 +42,9 @@ function GhostEmpty({ view }: { view: TaskView }) {
           </li>
         ))}
       </ul>
-      <div className="mt-5">
-        <p className="text-sm text-muted-foreground">{empty.title}</p>
-        <p className="mt-1 text-[13px] text-muted-foreground/75">
-          {empty.description}
-        </p>
+      <div className="mt-6 text-center sm:text-left">
+        <p className="text-base font-medium text-foreground/90">{empty.title}</p>
+        <p className="mt-1.5 text-sm text-muted-foreground">{empty.description}</p>
       </div>
     </div>
   );
@@ -65,40 +64,15 @@ export function TaskList({
   } = useTaskOptimistic(tasks);
 
   const [completedOpen, setCompletedOpen] = useState(false);
-
   const active = optimisticTasks.filter((t) => !t.completed);
   const completed = optimisticTasks.filter((t) => t.completed);
 
   if (optimisticTasks.length === 0) {
     if (mode === "project") {
       return (
-        <div className="mt-1">
-          <ul
-            className="pointer-events-none border-t border-border/30"
-            aria-hidden="true"
-          >
-            {[68, 54, 40].map((width, i) => (
-              <li
-                key={i}
-                className="flex items-center gap-3 border-b border-border/20 py-3 last:border-b-0"
-                style={{ opacity: 0.4 - i * 0.1 }}
-              >
-                <span className="size-4 shrink-0 rounded-full border border-border/50" />
-                <span
-                  className="h-2.5 rounded-full bg-muted"
-                  style={{ width: `${width}%` }}
-                />
-              </li>
-            ))}
-          </ul>
-          <p className="mt-5 text-sm text-muted-foreground">No tasks yet</p>
-          <p className="mt-1 text-[13px] text-muted-foreground/75">
-            Add a task above to start this project.
-          </p>
-        </div>
+        <GhostEmpty view="all" />
       );
     }
-
     return <GhostEmpty view={view} />;
   }
 
@@ -110,14 +84,14 @@ export function TaskList({
       : groupActiveTasks(optimisticTasks, view);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       {groups.map((group) => (
         <section key={group.id}>
-          <div className="mb-1 flex items-baseline justify-between gap-3">
+          <div className="mb-2 flex items-baseline justify-between gap-3">
             <h2
               className={
                 group.id === "overdue"
-                  ? "text-[10px] font-medium uppercase tracking-[0.18em] text-destructive/90"
+                  ? "text-[10px] font-medium uppercase tracking-[0.18em] text-destructive"
                   : "text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground"
               }
             >

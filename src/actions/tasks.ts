@@ -6,9 +6,11 @@ import { getCurrentUser } from "@/lib/auth";
 import { revalidateUserCaches } from "@/lib/cache";
 import {
   initialDueForRecurrence,
-  nextRecurrenceDueDate,
   parseTaskRecurrence,
+  resetDueForRecurrence,
+  shouldResetRecurringTask,
 } from "@/lib/task-recurrence";
+import { toDateString, startOfDay } from "@/lib/date-utils";
 import { createClient } from "@/lib/supabase/server";
 import type {
   FocusLinkableTask,
@@ -76,6 +78,65 @@ const TASK_SELECT = `
   )
 `;
 
+/** Reopen completed recurring tasks once their due day has passed. */
+async function resetStaleRecurringTasks(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  rows: TaskRow[],
+): Promise<TaskRow[]> {
+  const today = toDateString(startOfDay(new Date()));
+  const stale = rows.filter((row) =>
+    shouldResetRecurringTask(
+      {
+        recurrence: row.recurrence ?? null,
+        completed: row.completed,
+        due_date: row.due_date,
+      },
+      today,
+    ),
+  );
+
+  if (stale.length === 0) return rows;
+
+  await Promise.all(
+    stale.map(async (row) => {
+      const recurrence = parseTaskRecurrence(row.recurrence);
+      if (!recurrence) return;
+      const { error } = await supabase
+        .from("tasks")
+        .update({
+          completed: false,
+          due_date: resetDueForRecurrence(recurrence),
+        })
+        .eq("id", row.id);
+      if (error) {
+        console.error("[tasks] resetStaleRecurring:", error.message);
+      }
+    }),
+  );
+
+  return rows.map((row) => {
+    const recurrence = parseTaskRecurrence(row.recurrence);
+    if (
+      !recurrence ||
+      !shouldResetRecurringTask(
+        {
+          recurrence,
+          completed: row.completed,
+          due_date: row.due_date,
+        },
+        today,
+      )
+    ) {
+      return row;
+    }
+    return {
+      ...row,
+      completed: false,
+      due_date: resetDueForRecurrence(recurrence),
+    };
+  });
+}
+
 async function revalidateTaskViews() {
   revalidatePath("/tasks");
   revalidatePath("/focus");
@@ -126,7 +187,12 @@ export async function getAllTasks(): Promise<TaskWithContext[]> {
     return [];
   }
 
-  return ((data ?? []) as unknown as TaskRow[]).map(mapTask);
+  const rows = await resetStaleRecurringTasks(
+    supabase,
+    (data ?? []) as unknown as TaskRow[],
+  );
+
+  return rows.map(mapTask);
 }
 
 export async function getProjectTasks(
@@ -298,44 +364,14 @@ export async function updateTask(
 export async function toggleTaskComplete(taskId: string, completed: boolean) {
   const supabase = await createClient();
 
-  const { data: task, error: loadError } = await supabase
+  const { error } = await supabase
     .from("tasks")
-    .select("id, recurrence, due_date")
-    .eq("id", taskId)
-    .maybeSingle();
+    .update({ completed })
+    .eq("id", taskId);
 
-  if (loadError) {
-    console.error("[tasks] toggleTaskComplete load:", loadError.message);
+  if (error) {
+    console.error("[tasks] toggleTaskComplete:", error.message);
     return;
-  }
-
-  if (!task) return;
-
-  const recurrence = parseTaskRecurrence(task.recurrence);
-
-  if (recurrence && completed) {
-    const { error } = await supabase
-      .from("tasks")
-      .update({
-        completed: false,
-        due_date: nextRecurrenceDueDate(recurrence),
-      })
-      .eq("id", taskId);
-
-    if (error) {
-      console.error("[tasks] toggleTaskComplete roll:", error.message);
-      return;
-    }
-  } else {
-    const { error } = await supabase
-      .from("tasks")
-      .update({ completed })
-      .eq("id", taskId);
-
-    if (error) {
-      console.error("[tasks] toggleTaskComplete:", error.message);
-      return;
-    }
   }
 
   await revalidateTaskViews();

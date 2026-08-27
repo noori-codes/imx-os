@@ -95,12 +95,18 @@ export function groupActiveTasks(
     const dueToday = active
       .filter((t) => t.due_date && isToday(t.due_date))
       .sort(sortActive);
+    const doneToday = tasks
+      .filter((t) => t.completed && t.due_date && isToday(t.due_date))
+      .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
     const groups: TaskGroup[] = [];
     if (overdue.length) {
       groups.push({ id: "overdue", label: "Overdue", tasks: overdue });
     }
     if (dueToday.length) {
       groups.push({ id: "today", label: "Today", tasks: dueToday });
+    }
+    if (doneToday.length) {
+      groups.push({ id: "done", label: "Done today", tasks: doneToday });
     }
     return groups;
   }

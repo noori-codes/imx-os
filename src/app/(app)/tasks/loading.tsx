@@ -15,35 +15,34 @@ export default function TasksLoading() {
         aria-live="polite"
         aria-label="Loading tasks"
       >
-        <AppPageFrame className="max-w-3xl gap-8 md:py-8">
-          <div className="space-y-2 text-center sm:text-left">
-            <Bone className="mx-auto h-2.5 w-12 sm:mx-0" />
-            <Bone className="mx-auto h-8 w-56 max-w-full sm:mx-0" />
-            <Bone className="mx-auto h-3.5 w-24 opacity-60 sm:mx-0" />
-          </div>
-
-          <div className="flex gap-4 border-b border-border/40 pb-2">
-            <Bone className="h-4 w-12" />
-            <Bone className="h-4 w-12" />
-            <Bone className="h-4 w-16" />
-            <Bone className="h-4 w-8" />
-          </div>
-
-          <div className="rounded-2xl border border-border/40 bg-muted/20 p-4">
-            <div className="flex items-center gap-2">
-              <Bone className="h-11 min-w-0 flex-1 rounded-md" />
-              <Bone className="h-9 w-16 shrink-0 rounded-full" />
-            </div>
-            <div className="mt-3 flex gap-1.5 border-t border-border/30 pt-3">
-              <Bone className="h-6 w-14 rounded-full" />
-              <Bone className="h-6 w-16 rounded-full" />
-              <Bone className="h-6 w-16 rounded-full" />
-              <Bone className="h-6 w-16 rounded-full" />
+        <AppPageFrame className="max-w-5xl gap-10 md:py-8">
+          <div className="relative overflow-hidden rounded-[1.35rem] px-5 py-6 sm:px-8 sm:py-8">
+            <Bone className="absolute inset-0 rounded-[1.35rem] opacity-40" />
+            <div className="relative flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+              <div className="mx-auto space-y-3 sm:mx-0">
+                <Bone className="mx-auto h-2.5 w-28 sm:mx-0" />
+                <Bone className="mx-auto h-14 w-20 sm:mx-0 sm:h-16" />
+                <Bone className="mx-auto h-3.5 w-24 opacity-60 sm:mx-0" />
+              </div>
+              <Bone className="mx-auto h-9 w-64 max-w-full rounded-full sm:mx-0" />
             </div>
           </div>
 
-          <div>
-            <div className="mb-1 flex justify-between">
+          <div className="rounded-2xl border border-border/40 bg-muted/20 p-4 sm:p-5">
+            <div className="flex items-center gap-3">
+              <Bone className="h-12 min-w-0 flex-1 rounded-md" />
+              <Bone className="h-10 w-16 shrink-0 rounded-full" />
+            </div>
+            <div className="mt-4 flex gap-1.5 border-t border-border/30 pt-4">
+              <Bone className="h-7 w-14 rounded-full" />
+              <Bone className="h-7 w-16 rounded-full" />
+              <Bone className="h-7 w-16 rounded-full" />
+              <Bone className="h-7 w-16 rounded-full" />
+            </div>
+          </div>
+
+          <div className="border-t border-border/30 pt-8">
+            <div className="mb-2 flex justify-between">
               <Bone className="h-2.5 w-12" />
               <Bone className="h-2.5 w-4" />
             </div>
@@ -53,10 +52,10 @@ export default function TasksLoading() {
                   key={i}
                   className="flex items-center gap-3 border-b border-border/20 py-3"
                 >
-                  <Bone className="size-4 shrink-0 rounded-full" />
+                  <Bone className="size-5 shrink-0 rounded-full" />
                   <div className="min-w-0 flex-1 space-y-1.5">
-                    <Bone className="h-2.5 w-[70%]" />
-                    <Bone className="h-2 w-20 opacity-50" />
+                    <Bone className="h-3 w-[65%]" />
+                    <Bone className="h-2 w-24 opacity-50" />
                   </div>
                 </div>
               ))}

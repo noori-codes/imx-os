@@ -240,14 +240,14 @@ export function TaskItem({
   return (
     <li
       className={cn(
-        "group flex items-center gap-3 border-b border-border/30 py-3 last:border-b-0",
-        task.completed && "opacity-50",
+        "group flex items-center gap-3 border-b border-border/50 py-2.5 last:border-b-0",
+        task.completed && "opacity-55",
       )}
       style={{ ["--i" as string]: index }}
     >
       <button
         type="button"
-        className="flex size-7 shrink-0 items-center justify-center rounded-full text-muted-foreground/65 transition-colors hover:text-foreground"
+        className="flex size-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground"
         onClick={handleToggle}
         aria-label={
           task.recurrence && !task.completed
@@ -259,17 +259,17 @@ export function TaskItem({
         aria-pressed={task.completed}
       >
         {task.completed ? (
-          <CheckCircle2 className="size-4 text-foreground" />
+          <CheckCircle2 className="size-5 text-foreground" />
         ) : (
-          <Circle className="size-4 transition-colors group-hover:text-foreground" />
+          <Circle className="size-5 transition-colors group-hover:text-foreground" />
         )}
       </button>
 
       <div className="min-w-0 flex-1">
         <p
           className={cn(
-            "truncate text-sm text-foreground transition-colors",
-            task.completed && "text-muted-foreground line-through",
+            "truncate text-sm font-medium leading-snug text-foreground transition-colors",
+            task.completed && "font-normal text-muted-foreground line-through",
           )}
         >
           {task.title}
