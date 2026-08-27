@@ -830,45 +830,47 @@
 .dash-stage-glow {
   pointer-events: none;
   position: absolute;
-  left: 18%;
-  top: -20%;
-  width: min(28rem, 90%);
-  height: min(22rem, 90%);
+  left: 8%;
+  top: 12%;
+  width: min(18rem, 52%);
+  aspect-ratio: 1;
+  height: auto;
   border-radius: 9999px;
   background: radial-gradient(
     circle at center,
     var(--dash-glow) 0%,
-    transparent 70%
+    transparent 68%
   );
-  opacity: 0.85;
+  opacity: 0.9;
   animation: dash-glow-breathe 10s ease-in-out infinite;
 }
 
 .dash-stage-glow-secondary {
   pointer-events: none;
   position: absolute;
-  right: -8%;
-  bottom: -35%;
-  width: min(20rem, 70%);
-  height: min(16rem, 70%);
+  right: 6%;
+  bottom: 10%;
+  width: min(14rem, 42%);
+  aspect-ratio: 1;
+  height: auto;
   border-radius: 9999px;
   background: radial-gradient(
     circle at center,
     var(--dash-glow) 0%,
-    transparent 72%
+    transparent 70%
   );
-  opacity: 0.35;
+  opacity: 0.4;
 }
 
 @keyframes dash-glow-breathe {
   0%,
   100% {
-    opacity: 0.7;
+    opacity: 0.75;
     transform: scale(1);
   }
   50% {
     opacity: 1;
-    transform: scale(1.06);
+    transform: scale(1.04);
   }
 }
 
