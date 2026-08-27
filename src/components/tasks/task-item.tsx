@@ -15,10 +15,7 @@ import { deleteTask, toggleTaskComplete, updateTask } from "@/actions/tasks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { isOverdue, isToday } from "@/lib/date-utils";
-import {
-  nextRecurrenceDueDate,
-  recurrenceLabel,
-} from "@/lib/task-recurrence";
+import { recurrenceLabel } from "@/lib/task-recurrence";
 import { cn } from "@/lib/utils";
 import { formatFocusDuration } from "@/types/focus";
 import type { TaskRecurrence, TaskView, TaskWithContext } from "@/types/task";
@@ -250,11 +247,7 @@ export function TaskItem({
         className="flex size-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground"
         onClick={handleToggle}
         aria-label={
-          task.recurrence && !task.completed
-            ? "Mark done for today"
-            : task.completed
-              ? "Mark incomplete"
-              : "Mark complete"
+          task.completed ? "Mark incomplete" : "Mark complete"
         }
         aria-pressed={task.completed}
       >
@@ -355,17 +348,9 @@ export function useTaskOptimistic(tasks: TaskWithContext[]) {
     (current: TaskWithContext[], action: Action) => {
       switch (action.type) {
         case "toggle":
-          return current.map((t) => {
-            if (t.id !== action.id) return t;
-            if (t.recurrence && action.completed) {
-              return {
-                ...t,
-                completed: false,
-                due_date: nextRecurrenceDueDate(t.recurrence),
-              };
-            }
-            return { ...t, completed: action.completed };
-          });
+          return current.map((t) =>
+            t.id === action.id ? { ...t, completed: action.completed } : t,
+          );
         case "delete":
           return current.filter((t) => t.id !== action.id);
         case "update":

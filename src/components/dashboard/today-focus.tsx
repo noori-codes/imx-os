@@ -17,7 +17,9 @@ function TaskRow({
   task: TaskWithContext;
   index: number;
 }) {
-  const overdue = Boolean(task.due_date && isOverdue(task.due_date));
+  const overdue = Boolean(
+    task.due_date && !task.completed && isOverdue(task.due_date),
+  );
   const repeat =
     task.recurrence === "daily"
       ? "Everyday"
@@ -113,6 +115,9 @@ function GhostTasks() {
 }
 
 export function TodayFocus({ tasks }: TodayFocusProps) {
+  const openCount = tasks.filter((t) => !t.completed).length;
+  const doneCount = tasks.filter((t) => t.completed).length;
+
   return (
     <section className="min-w-0">
       <div className="flex items-baseline justify-between gap-3">
@@ -122,7 +127,9 @@ export function TodayFocus({ tasks }: TodayFocusProps) {
           </p>
           {tasks.length > 0 ? (
             <span className="text-[11px] tabular-nums text-muted-foreground/70">
-              {tasks.length}
+              {doneCount > 0
+                ? `${openCount}/${tasks.length}`
+                : openCount}
             </span>
           ) : null}
         </div>

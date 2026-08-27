@@ -179,9 +179,17 @@ export function buildDashboardData(
     (t) => t.due_date && isOverdue(t.due_date),
   );
 
-  const today_tasks = active.filter(
+  const open_today = active.filter(
     (t) => t.due_date && (t.due_date === todayStr || isOverdue(t.due_date)),
   );
+  const done_today = completed.filter(
+    (t) => t.due_date === todayStr,
+  );
+  // Habit-like: keep finished-today items visible with open ones first
+  const today_tasks = [
+    ...open_today,
+    ...done_today.sort((a, b) => b.updated_at.localeCompare(a.updated_at)),
+  ];
 
   const due_today_only = active.filter((t) => t.due_date === todayStr);
 

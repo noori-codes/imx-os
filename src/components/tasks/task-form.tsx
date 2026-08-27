@@ -329,7 +329,7 @@ export function TaskForm({
         )}
       >
         {chip === "daily" || chip === "weekdays" ? (
-          "Done rolls to the next day"
+          "Checks off for today · returns tomorrow"
         ) : (
           <>
             Press <kbd className="rounded border border-border/50 px-1">N</kbd>{" "}

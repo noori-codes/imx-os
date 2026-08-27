@@ -10,6 +10,7 @@ import {
 } from "@/lib/date-utils";
 import { createAdminClient, hasAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { syncRecurringTasks } from "@/actions/tasks";
 import {
   buildActivitySummary,
   buildDashboardData,
@@ -214,6 +215,8 @@ async function loadDashboardExtras(
 async function loadDashboardData(
   userId: string | null,
 ): Promise<DashboardData> {
+  await syncRecurringTasks();
+
   const supabase =
     userId && hasAdminClient() ? createAdminClient() : await createClient();
   const scopedUserId = userId && hasAdminClient() ? userId : null;
@@ -294,7 +297,7 @@ export const getDashboardData = cache(async (): Promise<DashboardData> => {
 
   if (hasAdminClient()) {
     return cachedQuery(
-      ["dashboard", user.id, "v6"],
+      ["dashboard", user.id, "v7"],
       [cacheTags.dashboard(user.id)],
       CACHE_TTL.dashboard,
       async () => loadDashboardData(user.id),

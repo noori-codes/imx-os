@@ -9,6 +9,7 @@ import {
   groupActiveTasks,
   viewEmptyCopy,
 } from "@/lib/task-views";
+import { isToday } from "@/lib/date-utils";
 import type { TaskFocusToday } from "@/types/focus";
 import type { TaskView, TaskWithContext } from "@/types/task";
 
@@ -65,7 +66,12 @@ export function TaskList({
 
   const [completedOpen, setCompletedOpen] = useState(false);
   const active = optimisticTasks.filter((t) => !t.completed);
-  const completed = optimisticTasks.filter((t) => t.completed);
+  const completed = optimisticTasks.filter((t) => {
+    if (!t.completed) return false;
+    // Today view already shows these under "Done today"
+    if (view === "today" && t.due_date && isToday(t.due_date)) return false;
+    return true;
+  });
 
   if (optimisticTasks.length === 0) {
     if (mode === "project") {
@@ -92,7 +98,9 @@ export function TaskList({
               className={
                 group.id === "overdue"
                   ? "text-[10px] font-medium uppercase tracking-[0.18em] text-destructive"
-                  : "text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground"
+                  : group.id === "done"
+                    ? "text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground/80"
+                    : "text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground"
               }
             >
               {group.label}
