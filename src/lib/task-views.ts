@@ -21,10 +21,10 @@ function sortActive(a: TaskWithContext, b: TaskWithContext) {
 }
 
 export function parseTaskView(value: string | undefined | null): TaskView {
-  if (value === "today" || value === "upcoming" || value === "all") {
+  if (value === "inbox" || value === "upcoming" || value === "all") {
     return value;
   }
-  return "inbox";
+  return "today";
 }
 
 export function filterTasksForView(

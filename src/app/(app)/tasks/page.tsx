@@ -1,9 +1,12 @@
 import { Header } from "@/components/layout/header";
+import { AppPageFrame } from "@/components/shared/app-page-frame";
 import { TaskForm } from "@/components/tasks/task-form";
 import { TaskList } from "@/components/tasks/task-list";
 import { TaskViewTabs } from "@/components/tasks/task-view-tabs";
+import { TasksHero } from "@/components/tasks/tasks-hero";
 import { getTodayTaskFocus } from "@/actions/focus";
 import { getAllTasks, getTaskProjectOptions } from "@/actions/tasks";
+import { addDays, startOfDay, toDateString } from "@/lib/date-utils";
 import {
   filterTasksForView,
   parseTaskView,
@@ -21,6 +24,26 @@ function countForView(
   return filterTasksForView(tasks, view).filter((t) => !t.completed).length;
 }
 
+function nextUpcomingLabel(
+  tasks: Awaited<ReturnType<typeof getAllTasks>>,
+): string | null {
+  const today = toDateString(startOfDay(new Date()));
+  const next = tasks
+    .filter((t) => !t.completed && t.due_date != null && t.due_date > today)
+    .sort((a, b) => (a.due_date ?? "").localeCompare(b.due_date ?? ""))[0];
+
+  if (!next?.due_date) return null;
+
+  const tomorrow = toDateString(addDays(startOfDay(new Date()), 1));
+  if (next.due_date === tomorrow) return "Tomorrow";
+
+  return new Date(`${next.due_date}T00:00:00`).toLocaleDateString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+}
+
 export default async function TasksPage({ searchParams }: TasksPageProps) {
   const params = await searchParams;
   const view = parseTaskView(params.view);
@@ -30,6 +53,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
     getTodayTaskFocus(),
   ]);
   const filtered = filterTasksForView(tasks, view);
+  const openCount = filtered.filter((t) => !t.completed).length;
 
   const counts = {
     inbox: countForView(tasks, "inbox"),
@@ -40,12 +64,22 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
 
   return (
     <>
-      <Header title="Tasks" description="Capture, schedule, finish" />
-      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-6 md:px-8 md:py-8">
+      <Header title="Tasks" />
+      <AppPageFrame className="max-w-3xl gap-8 md:py-8">
+        <TasksHero
+          view={view}
+          openCount={openCount}
+          nextDueLabel={view === "upcoming" ? nextUpcomingLabel(tasks) : null}
+        />
         <TaskViewTabs active={view} counts={counts} />
         <TaskForm projects={projects} variant="quick" />
-        <TaskList tasks={filtered} view={view} mode="smart" todayFocus={todayFocus} />
-      </div>
+        <TaskList
+          tasks={filtered}
+          view={view}
+          mode="smart"
+          todayFocus={todayFocus}
+        />
+      </AppPageFrame>
     </>
   );
 }

@@ -20,8 +20,8 @@ export type TaskWithContext = Task & {
 export type TaskView = "inbox" | "today" | "upcoming" | "all";
 
 export const TASK_VIEWS: { id: TaskView; label: string }[] = [
-  { id: "inbox", label: "Inbox" },
   { id: "today", label: "Today" },
+  { id: "inbox", label: "Inbox" },
   { id: "upcoming", label: "Upcoming" },
   { id: "all", label: "All" },
 ];

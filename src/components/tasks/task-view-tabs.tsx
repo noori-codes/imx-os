@@ -8,10 +8,14 @@ type TaskViewTabsProps = {
   counts: Record<TaskView, number>;
 };
 
+function viewHref(view: TaskView) {
+  return view === "today" ? "/tasks" : `/tasks?view=${view}`;
+}
+
 export function TaskViewTabs({ active, counts }: TaskViewTabsProps) {
   return (
     <nav
-      className="flex gap-1 overflow-x-auto border-b border-border/60"
+      className="flex gap-1 overflow-x-auto border-b border-border/40"
       aria-label="Task views"
     >
       {TASK_VIEWS.map((view) => {
@@ -20,7 +24,7 @@ export function TaskViewTabs({ active, counts }: TaskViewTabsProps) {
         return (
           <Link
             key={view.id}
-            href={view.id === "inbox" ? "/tasks" : `/tasks?view=${view.id}`}
+            href={viewHref(view.id)}
             className={cn(
               "relative shrink-0 px-3 py-2.5 text-sm transition-colors",
               isActive
@@ -31,12 +35,7 @@ export function TaskViewTabs({ active, counts }: TaskViewTabsProps) {
           >
             {view.label}
             {count > 0 ? (
-              <span
-                className={cn(
-                  "ml-1.5 tabular-nums",
-                  isActive ? "text-muted-foreground" : "text-muted-foreground/80",
-                )}
-              >
+              <span className="ml-1.5 text-[11px] tabular-nums text-muted-foreground">
                 {count}
               </span>
             ) : null}
