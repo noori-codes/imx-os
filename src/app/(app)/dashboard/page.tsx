@@ -1,18 +1,15 @@
-import Link from "next/link";
-import { Moon, Plus, Timer } from "lucide-react";
-
 import { getDashboardData } from "@/actions/dashboard";
 import { getCurrentUser } from "@/lib/auth";
-import { Header } from "@/components/layout/header";
 import { ActivityHeatmap } from "@/components/dashboard/activity-heatmap";
-import { DashboardChrome } from "@/components/dashboard/dashboard-chrome";
+import { DashboardHero } from "@/components/dashboard/dashboard-hero";
 import { GoalProgressList } from "@/components/dashboard/goal-progress-list";
 import { HabitsToday } from "@/components/dashboard/habits-today";
 import { NextSteps } from "@/components/dashboard/next-steps";
 import { OnboardingCard } from "@/components/dashboard/onboarding-card";
 import { TodayFocus } from "@/components/dashboard/today-focus";
 import { WeekOverview } from "@/components/dashboard/week-overview";
-import { Button } from "@/components/ui/button";
+import { Header } from "@/components/layout/header";
+import { AppPageFrame } from "@/components/shared/app-page-frame";
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -40,77 +37,43 @@ export default async function DashboardPage() {
     getDashboardData(),
   ]);
   const name = user ? displayName(user) : "there";
-  const attention = data.stats.due_today + data.stats.overdue;
 
   return (
     <>
-      <Header title="Dashboard" />
-      <DashboardChrome
-        status={{
-          dueToday: data.stats.due_today,
-          overdue: data.stats.overdue,
-          streak: data.stats.activity_streak,
-          focusMinutes: data.stats.focus_minutes_today,
-          habitsDone: data.stats.habits_done,
-          habitsTotal: data.stats.habits_total,
-        }}
-      >
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div className="max-w-xl">
-            <h2 className="text-3xl font-semibold tracking-tight">
-              {getGreeting()}, {name}
-            </h2>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              {data.review.intent
-                ? data.review.intent
-                : attention > 0
-                  ? `${attention} item${attention === 1 ? "" : "s"} need attention.`
-                  : "You're clear — nice work."}
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <Button asChild size="sm">
-              <Link href="/tasks">
-                <Plus className="size-3.5" />
-                Task
-              </Link>
-            </Button>
-            <Button asChild variant="outline" size="sm">
-              <Link href="/focus">
-                <Timer className="size-3.5" />
-                Focus
-              </Link>
-            </Button>
-            <Button asChild variant="outline" size="sm">
-              <Link href="/review">
-                <Moon className="size-3.5" />
-                Review
-              </Link>
-            </Button>
-          </div>
-        </div>
+      <Header title="Dashboard" description="What needs you today" />
+      <AppPageFrame className="max-w-5xl gap-10 md:py-8">
+        <DashboardHero
+          name={name}
+          greeting={getGreeting()}
+          intent={data.review.intent}
+          dueToday={data.stats.due_today}
+          overdue={data.stats.overdue}
+          focusMinutes={data.stats.focus_minutes_today}
+          habitsDone={data.stats.habits_done}
+          habitsTotal={data.stats.habits_total}
+          streak={data.stats.activity_streak}
+        />
 
         {data.is_new_user ? <OnboardingCard /> : null}
 
-        <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(18.5rem,22rem)] lg:gap-6">
+        <div className="grid items-start gap-8 border-t border-border/30 pt-8 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,20rem)] lg:gap-10">
           <TodayFocus tasks={data.today_tasks} />
-          <div className="lg:sticky lg:top-28">
-            <HabitsToday habits={data.habits_today} />
-          </div>
+          <HabitsToday habits={data.habits_today} />
         </div>
 
         {data.is_new_user ? (
           <NextSteps steps={data.next_steps} show />
         ) : null}
 
-        <div className="grid items-start gap-4 lg:grid-cols-2 lg:gap-6">
+        <div className="grid items-start gap-8 border-t border-border/30 pt-8 lg:grid-cols-2 lg:gap-10">
           <WeekOverview week={data.week} />
           <GoalProgressList goals={data.goals} />
         </div>
 
-        <ActivityHeatmap activity={data.activity} />
-      </DashboardChrome>
+        <div className="border-t border-border/30 pt-8">
+          <ActivityHeatmap activity={data.activity} />
+        </div>
+      </AppPageFrame>
     </>
   );
 }
