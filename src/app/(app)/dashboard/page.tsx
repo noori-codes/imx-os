@@ -53,17 +53,22 @@ export default async function DashboardPage() {
           streak={data.stats.activity_streak}
         />
 
-        <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] lg:gap-12">
-          <TodayFocus tasks={data.today_tasks} />
-          <HabitsToday habits={data.habits_today} />
+        <div className="dash-quad grid grid-cols-1 border-t border-border/30 lg:grid-cols-2 lg:grid-rows-[1fr_1fr]">
+          <div className="dash-quad-cell border-b border-border/30 lg:border-r">
+            <TodayFocus tasks={data.today_tasks} />
+          </div>
+          <div className="dash-quad-cell border-b border-border/30">
+            <HabitsToday habits={data.habits_today} />
+          </div>
+          <div className="dash-quad-cell border-b border-border/30 lg:border-r lg:border-b-0">
+            <WeekOverview week={data.week} />
+          </div>
+          <div className="dash-quad-cell border-b border-border/30 lg:border-b-0">
+            <GoalProgressList goals={data.goals} />
+          </div>
         </div>
 
-        <div className="grid items-start gap-10 border-t border-border/30 pt-8 lg:grid-cols-2 lg:gap-12">
-          <WeekOverview week={data.week} />
-          <GoalProgressList goals={data.goals} />
-        </div>
-
-        <div className="flex justify-end border-t border-border/30 pt-8">
+        <div className="flex justify-end">
           <Link
             href="/analytics"
             className="text-xs text-muted-foreground transition-colors hover:text-foreground"

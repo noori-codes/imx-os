@@ -41,22 +41,25 @@ function applyToggle(
 
 function GhostHabits() {
   return (
-    <div className="relative mt-5">
-      <div
-        className="dash-ghost pointer-events-none flex flex-wrap gap-2.5"
-        aria-hidden="true"
-      >
-        {Array.from({ length: 5 }).map((_, i) => (
-          <span
+    <div className="flex flex-1 flex-col">
+      <ul className="pointer-events-none border-t border-border/30" aria-hidden="true">
+        {[68, 54, 40].map((width, i) => (
+          <li
             key={i}
-            className="size-9 rounded-full border border-dashed border-border/70"
-            style={{ opacity: 1 - i * 0.12 }}
-          />
+            className="flex items-center gap-3 border-b border-border/20 py-3 last:border-b-0"
+            style={{ opacity: 0.42 - i * 0.1 }}
+          >
+            <span className="size-4 shrink-0 rounded-full border border-border/50" />
+            <span
+              className="h-2.5 rounded-full bg-muted"
+              style={{ width: `${width}%` }}
+            />
+          </li>
         ))}
-      </div>
+      </ul>
       <Link
         href="/habits"
-        className="mt-4 inline-block text-sm text-muted-foreground transition-colors hover:text-foreground"
+        className="mt-auto pt-4 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         Add a habit
       </Link>
@@ -84,37 +87,41 @@ export function HabitsToday({ habits }: HabitsTodayProps) {
   return (
     <section className="min-w-0">
       <div className="flex items-baseline justify-between gap-3">
-        <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-          Habits
+        <div className="flex items-baseline gap-2">
+          <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+            Habits
+          </p>
           {optimisticHabits.length > 0 ? (
-            <span className="ml-2 tabular-nums text-muted-foreground/80">
+            <span className="text-[11px] tabular-nums text-muted-foreground/70">
               {done}/{optimisticHabits.length}
             </span>
           ) : null}
-        </p>
+        </div>
         <Link
           href="/habits"
-          className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+          className="text-[11px] text-muted-foreground transition-colors hover:text-foreground"
         >
           All
         </Link>
       </div>
 
       {optimisticHabits.length === 0 ? (
-        <GhostHabits />
+        <div className="mt-3 flex min-h-0 flex-1 flex-col">
+          <GhostHabits />
+        </div>
       ) : (
-        <ul className="dash-stagger mt-4 space-y-1">
-          {optimisticHabits.slice(0, 8).map((habit, index) => (
+        <ul className="dash-stagger mt-3 min-h-0 flex-1 border-t border-border/30">
+          {optimisticHabits.slice(0, 6).map((habit, index) => (
             <li
               key={habit.id}
-              className="flex items-center gap-3 rounded-lg px-1 py-2 transition-colors hover:bg-muted/30"
+              className="flex items-center gap-3 border-b border-border/30 py-3 last:border-b-0"
               style={{ ["--i" as string]: index }}
             >
               <button
                 type="button"
                 onClick={() => onToggle(habit)}
                 className={cn(
-                  "flex size-8 shrink-0 items-center justify-center rounded-full border-2 transition-transform duration-150",
+                  "flex size-5 shrink-0 items-center justify-center rounded-full border-[1.5px] transition-transform duration-150",
                   habit.completed_today
                     ? "text-white"
                     : "hover:scale-105 active:scale-95",
@@ -124,7 +131,6 @@ export function HabitsToday({ habits }: HabitsTodayProps) {
                     ? {
                         backgroundColor: habit.color,
                         borderColor: habit.color,
-                        boxShadow: `0 0 0 3px color-mix(in oklab, ${habit.color} 22%, transparent)`,
                       }
                     : { borderColor: habit.color }
                 }
@@ -137,7 +143,7 @@ export function HabitsToday({ habits }: HabitsTodayProps) {
               >
                 <span
                   className={cn(
-                    "text-[10px] font-bold transition-all duration-150",
+                    "text-[9px] font-bold leading-none transition-all duration-150",
                     habit.completed_today
                       ? "scale-100 opacity-100"
                       : "scale-50 opacity-0",
@@ -158,7 +164,7 @@ export function HabitsToday({ habits }: HabitsTodayProps) {
               </p>
 
               {habit.current_streak > 0 ? (
-                <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
                   {habit.current_streak}d
                 </span>
               ) : null}

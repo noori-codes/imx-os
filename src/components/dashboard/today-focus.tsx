@@ -17,17 +17,22 @@ function TaskRow({
   task: TaskWithContext;
   index: number;
 }) {
-  const overdue = task.due_date ? isOverdue(task.due_date) : false;
+  const overdue = Boolean(task.due_date && isOverdue(task.due_date));
+  const meta = overdue
+    ? "Overdue"
+    : task.context
+      ? task.context
+      : null;
 
   return (
     <li
-      className="group flex items-start gap-3 border-b border-border/40 py-3.5 last:border-b-0"
+      className="group flex items-center gap-3 border-b border-border/30 py-3 last:border-b-0"
       style={{ ["--i" as string]: index }}
     >
       <form action={toggleTaskComplete.bind(null, task.id, !task.completed)}>
         <button
           type="submit"
-          className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+          className="flex size-7 shrink-0 items-center justify-center rounded-full text-muted-foreground/70 transition-colors hover:text-foreground"
           aria-label={task.completed ? "Mark incomplete" : "Mark complete"}
         >
           {task.completed ? (
@@ -38,32 +43,34 @@ function TaskRow({
         </button>
       </form>
 
-      <div className="min-w-0 flex-1 pt-1">
+      <div className="min-w-0 flex-1">
         <p
           className={cn(
-            "text-sm leading-snug text-foreground",
+            "truncate text-sm text-foreground",
             task.completed && "text-muted-foreground line-through",
           )}
         >
           {task.title}
         </p>
-        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-          {task.due_date ? (
-            <span
-              className={cn("tabular-nums", overdue && "text-destructive")}
-            >
-              {overdue ? "Overdue" : "Due today"}
-            </span>
-          ) : null}
-          {task.context && task.context_href ? (
-            <Link
-              href={task.context_href}
-              className="truncate transition-colors hover:text-foreground"
-            >
-              {task.context}
-            </Link>
-          ) : null}
-        </div>
+        {meta ? (
+          <p
+            className={cn(
+              "mt-0.5 truncate text-[11px] text-muted-foreground",
+              overdue && "text-destructive/80",
+            )}
+          >
+            {task.context_href && !overdue ? (
+              <Link
+                href={task.context_href}
+                className="transition-colors hover:text-foreground"
+              >
+                {meta}
+              </Link>
+            ) : (
+              meta
+            )}
+          </p>
+        ) : null}
       </div>
     </li>
   );
@@ -71,25 +78,25 @@ function TaskRow({
 
 function GhostTasks() {
   return (
-    <div className="relative mt-4">
-      <ul className="dash-ghost pointer-events-none space-y-0" aria-hidden="true">
-        {[0.9, 0.65, 0.4].map((opacity, i) => (
+    <div className="flex flex-1 flex-col">
+      <ul className="pointer-events-none border-t border-border/30" aria-hidden="true">
+        {[68, 54, 40].map((width, i) => (
           <li
             key={i}
-            className="flex items-center gap-3 border-b border-border/30 py-3.5 last:border-b-0"
-            style={{ opacity }}
+            className="flex items-center gap-3 border-b border-border/20 py-3 last:border-b-0"
+            style={{ opacity: 0.42 - i * 0.1 }}
           >
-            <span className="size-8 shrink-0 rounded-full border border-border/60" />
+            <span className="size-4 shrink-0 rounded-full border border-border/50" />
             <span
-              className="h-3 rounded-full bg-muted"
-              style={{ width: `${58 - i * 12}%` }}
+              className="h-2.5 rounded-full bg-muted"
+              style={{ width: `${width}%` }}
             />
           </li>
         ))}
       </ul>
       <Link
         href="/tasks"
-        className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground transition-colors hover:text-foreground"
+        className="mt-auto pt-4 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         Add a task
       </Link>
@@ -101,26 +108,30 @@ export function TodayFocus({ tasks }: TodayFocusProps) {
   return (
     <section className="min-w-0">
       <div className="flex items-baseline justify-between gap-3">
-        <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-          Tasks
+        <div className="flex items-baseline gap-2">
+          <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+            Tasks
+          </p>
           {tasks.length > 0 ? (
-            <span className="ml-2 tabular-nums text-muted-foreground/80">
+            <span className="text-[11px] tabular-nums text-muted-foreground/70">
               {tasks.length}
             </span>
           ) : null}
-        </p>
+        </div>
         <Link
           href="/tasks"
-          className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+          className="text-[11px] text-muted-foreground transition-colors hover:text-foreground"
         >
           All
         </Link>
       </div>
 
       {tasks.length === 0 ? (
-        <GhostTasks />
+        <div className="mt-3 flex min-h-0 flex-1 flex-col">
+          <GhostTasks />
+        </div>
       ) : (
-        <ul className="dash-stagger mt-4">
+        <ul className="dash-stagger mt-3 min-h-0 flex-1 border-t border-border/30">
           {tasks.map((task, index) => (
             <TaskRow key={task.id} task={task} index={index} />
           ))}

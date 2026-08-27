@@ -4,6 +4,22 @@ function Bone({ className }: { className?: string }) {
   return <div className={className} aria-hidden="true" />;
 }
 
+function QuadCell({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={`dash-quad-cell ${className ?? ""}`}>
+      <div className="flex min-h-[14.5rem] w-full flex-1 flex-col lg:min-h-[16rem]">
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export function DashboardSkeleton() {
   return (
     <div
@@ -41,56 +57,71 @@ export function DashboardSkeleton() {
           </div>
         </div>
 
-        <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] lg:gap-12">
-          <section className="space-y-3">
+        <div className="dash-quad grid grid-cols-1 border-t border-border/30 lg:grid-cols-2 lg:grid-rows-[1fr_1fr]">
+          <QuadCell className="border-b border-border/30 lg:border-r">
             <Bone className="h-2.5 w-14" />
-            <div className="space-y-3 pt-2">
+            <div className="mt-3 border-t border-border/30">
               {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-3 py-1">
-                  <Bone className="size-8 shrink-0 rounded-full" />
-                  <Bone className="h-3.5 w-[70%] max-w-[16rem]" />
+                <div
+                  key={i}
+                  className="flex items-center gap-3 border-b border-border/20 py-3"
+                >
+                  <Bone className="size-4 shrink-0 rounded-full" />
+                  <Bone className="h-2.5 w-[65%]" />
                 </div>
               ))}
             </div>
-          </section>
+          </QuadCell>
 
-          <aside className="space-y-3">
+          <QuadCell className="border-b border-border/30">
             <Bone className="h-2.5 w-14" />
-            <div className="flex flex-wrap gap-2.5 pt-2">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Bone key={i} className="size-9 rounded-full" />
+            <div className="mt-3 border-t border-border/30">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-3 border-b border-border/20 py-3"
+                >
+                  <Bone className="size-4 shrink-0 rounded-full" />
+                  <Bone className="h-2.5 w-[55%]" />
+                </div>
               ))}
             </div>
-          </aside>
-        </div>
+          </QuadCell>
 
-        <div className="grid items-start gap-10 border-t border-border/30 pt-8 lg:grid-cols-2 lg:gap-12">
-          <section className="space-y-4">
+          <QuadCell className="border-b border-border/30 lg:border-r lg:border-b-0">
             <Bone className="h-2.5 w-12" />
-            <div className="grid grid-cols-7 gap-2 sm:gap-3">
-              {Array.from({ length: 7 }).map((_, i) => (
-                <div key={i} className="flex flex-col items-center gap-2">
-                  <Bone className="h-20 w-full rounded-lg sm:h-24" />
-                  <Bone className="h-2.5 w-6 opacity-60" />
+            <div className="mt-3 flex flex-1 flex-col border-t border-border/30 pt-4">
+              <div className="grid min-h-[7.5rem] flex-1 grid-cols-7 gap-2">
+                {Array.from({ length: 7 }).map((_, i) => (
+                  <div key={i} className="flex min-h-0 flex-col gap-2">
+                    <Bone className="min-h-0 w-full flex-1 rounded-lg" />
+                    <Bone className="mx-auto h-2.5 w-5 opacity-60" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </QuadCell>
+
+          <QuadCell className="border-b border-border/30 lg:border-b-0">
+            <Bone className="h-2.5 w-14" />
+            <div className="mt-3 border-t border-border/30">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="space-y-2.5 border-b border-border/20 py-3"
+                >
+                  <div className="flex justify-between gap-3">
+                    <Bone className="h-2.5 w-[55%]" />
+                    <Bone className="h-2.5 w-7" />
+                  </div>
+                  <Bone className="h-px w-full" />
                 </div>
               ))}
             </div>
-          </section>
-          <section className="space-y-4">
-            <Bone className="h-2.5 w-14" />
-            {Array.from({ length: 2 }).map((_, i) => (
-              <div key={i} className="space-y-2">
-                <div className="flex justify-between gap-3">
-                  <Bone className="h-3.5 w-32" />
-                  <Bone className="h-3 w-8" />
-                </div>
-                <Bone className="h-1.5 w-full rounded-full" />
-              </div>
-            ))}
-          </section>
+          </QuadCell>
         </div>
 
-        <div className="flex justify-end border-t border-border/30 pt-8">
+        <div className="flex justify-end">
           <Bone className="h-3 w-20" />
         </div>
       </AppPageFrame>
