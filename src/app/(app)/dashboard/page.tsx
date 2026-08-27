@@ -1,16 +1,14 @@
-import Link from "next/link";
-
 import { getDashboardData } from "@/actions/dashboard";
 import { getCurrentUser } from "@/lib/auth";
 import { DashboardHero } from "@/components/dashboard/dashboard-hero";
 import { GoalProgressList } from "@/components/dashboard/goal-progress-list";
 import { HabitsToday } from "@/components/dashboard/habits-today";
-import { NextSteps } from "@/components/dashboard/next-steps";
 import { OnboardingCard } from "@/components/dashboard/onboarding-card";
 import { TodayFocus } from "@/components/dashboard/today-focus";
 import { WeekOverview } from "@/components/dashboard/week-overview";
 import { Header } from "@/components/layout/header";
 import { AppPageFrame } from "@/components/shared/app-page-frame";
+import Link from "next/link";
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -61,10 +59,6 @@ export default async function DashboardPage() {
           <TodayFocus tasks={data.today_tasks} />
           <HabitsToday habits={data.habits_today} />
         </div>
-
-        {data.is_new_user ? (
-          <NextSteps steps={data.next_steps} show />
-        ) : null}
 
         <div className="grid items-start gap-10 border-t border-border/30 pt-8 lg:grid-cols-2 lg:gap-12">
           <WeekOverview week={data.week} />

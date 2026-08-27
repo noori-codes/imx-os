@@ -13,7 +13,6 @@ import { createClient } from "@/lib/supabase/server";
 import {
   buildActivitySummary,
   buildDashboardData,
-  buildNextSteps,
   emptyActivity,
   type ActivitySummary,
   type DashboardData,
@@ -44,7 +43,6 @@ const emptyDashboard: DashboardData = {
   habits_today: [],
   focus_today: { sessions: 0, focus_minutes: 0 },
   review: { has_today: false, intent: null },
-  next_steps: [],
   is_new_user: true,
 };
 
@@ -277,22 +275,12 @@ async function loadDashboardData(
   const habits_done = extras.habits_today.filter((h) => h.completed_today)
     .length;
 
-  const next_steps = buildNextSteps({
-    todayTasks: base.today_tasks,
-    nextTasks: base.next_tasks,
-    habits: extras.habits_today,
-    hasReviewToday: extras.review.has_today,
-    focusMinutes: extras.focus_today.focus_minutes,
-    isNewUser: is_new_user,
-  });
-
   return {
     ...base,
     activity,
     habits_today: extras.habits_today,
     focus_today: extras.focus_today,
     review: extras.review,
-    next_steps,
     is_new_user,
     stats: {
       ...base.stats,
@@ -313,7 +301,7 @@ export const getDashboardData = cache(async (): Promise<DashboardData> => {
 
   if (hasAdminClient()) {
     return cachedQuery(
-      ["dashboard", user.id, "v3"],
+      ["dashboard", user.id, "v4"],
       [cacheTags.dashboard(user.id)],
       CACHE_TTL.dashboard,
       async () => loadDashboardData(user.id),

@@ -34,7 +34,7 @@ export function DashboardSkeleton() {
           </div>
         </div>
 
-        <div className="grid items-start gap-8 border-t border-border/30 pt-8 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,20rem)] lg:gap-10">
+        <div className="grid items-start gap-10 border-t border-border/30 pt-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:gap-12">
           <section className="space-y-3">
             <Bone className="h-2.5 w-14" />
             <Bone className="h-3 w-24 opacity-60" />
@@ -65,7 +65,7 @@ export function DashboardSkeleton() {
           </aside>
         </div>
 
-        <div className="grid items-start gap-8 border-t border-border/30 pt-8 lg:grid-cols-2 lg:gap-10">
+        <div className="grid items-start gap-10 border-t border-border/30 pt-8 lg:grid-cols-2 lg:gap-12">
           <section className="space-y-4">
             <Bone className="h-2.5 w-16" />
             <div className="grid grid-cols-7 gap-2 sm:gap-3">

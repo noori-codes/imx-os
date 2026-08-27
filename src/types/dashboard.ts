@@ -63,14 +63,6 @@ export type DashboardHabit = {
   longest_streak: number;
 };
 
-export type NextStep = {
-  id: string;
-  kind: "task" | "habit" | "review" | "focus" | "setup";
-  title: string;
-  href: string;
-  detail?: string;
-};
-
 export type DashboardData = {
   stats: DashboardStats;
   today_tasks: TaskWithContext[];
@@ -85,7 +77,6 @@ export type DashboardData = {
     has_today: boolean;
     intent: string | null;
   };
-  next_steps: NextStep[];
   is_new_user: boolean;
 };
 
@@ -162,85 +153,6 @@ export function mapTask(row: TaskRow): TaskWithContext {
     context,
     context_href,
   };
-}
-
-export function buildNextSteps(input: {
-  todayTasks: TaskWithContext[];
-  nextTasks: TaskWithContext[];
-  habits: DashboardHabit[];
-  hasReviewToday: boolean;
-  focusMinutes: number;
-  isNewUser: boolean;
-}): NextStep[] {
-  const steps: NextStep[] = [];
-
-  if (input.isNewUser) {
-    steps.push({
-      id: "setup-task",
-      kind: "setup",
-      title: "Add your first task",
-      href: "/tasks",
-      detail: "Give today a clear starting point",
-    });
-    steps.push({
-      id: "setup-goal",
-      kind: "setup",
-      title: "Create a goal",
-      href: "/goals",
-      detail: "Connect work to something bigger",
-    });
-    return steps.slice(0, 3);
-  }
-
-  for (const habit of input.habits.filter((h) => !h.completed_today).slice(0, 2)) {
-    steps.push({
-      id: `habit-${habit.id}`,
-      kind: "habit",
-      title: `Check in: ${habit.title}`,
-      href: "/habits",
-      detail:
-        habit.current_streak > 0
-          ? `${habit.current_streak} day streak`
-          : "Build the streak",
-    });
-  }
-
-  for (const task of [...input.todayTasks, ...input.nextTasks].slice(0, 3)) {
-    if (steps.some((s) => s.id === `task-${task.id}`)) continue;
-    steps.push({
-      id: `task-${task.id}`,
-      kind: "task",
-      title: task.title,
-      href: task.context_href ?? "/tasks",
-      detail: task.due_date
-        ? isOverdue(task.due_date)
-          ? "Overdue"
-          : "Due today"
-        : "Next up",
-    });
-  }
-
-  if (!input.hasReviewToday) {
-    steps.push({
-      id: "review",
-      kind: "review",
-      title: "Write today’s review",
-      href: "/review",
-      detail: "Close the day with a short reflection",
-    });
-  }
-
-  if (input.focusMinutes === 0) {
-    steps.push({
-      id: "focus",
-      kind: "focus",
-      title: "Start a focus session",
-      href: "/focus",
-      detail: "Protect time for deep work",
-    });
-  }
-
-  return steps.slice(0, 4);
 }
 
 export function buildDashboardData(
