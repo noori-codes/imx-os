@@ -6,6 +6,7 @@ import {
   getWeekDays,
   isOverdue,
   startOfDay,
+  startOfWeekSaturday,
   toDateString,
 } from "@/lib/date-utils";
 import type { Task, TaskWithContext } from "@/types/task";
@@ -197,7 +198,7 @@ export function buildDashboardData(
     .filter((t) => !t.due_date || (!isOverdue(t.due_date) && t.due_date !== todayStr))
     .slice(0, 5);
 
-  const weekStart = startOfDay(new Date());
+  const weekStart = startOfWeekSaturday(new Date());
   const week = getWeekDays(weekStart).map((day) => {
     const dateStr = toDateString(day);
     const task_count = active.filter((t) => t.due_date === dateStr).length;
@@ -210,36 +211,6 @@ export function buildDashboardData(
       is_today: dateStr === todayStr,
     };
   });
-
-  const goalMap = new Map<
-    string,
-    { title: string; total: number; completed: number }
-  >();
-
-  for (const row of rows) {
-    const goal = row.projects?.goals;
-    if (!goal) continue;
-
-    const current = goalMap.get(goal.id) ?? {
-      title: goal.title,
-      total: 0,
-      completed: 0,
-    };
-    current.total += 1;
-    if (row.completed) current.completed += 1;
-    goalMap.set(goal.id, current);
-  }
-
-  const goals: GoalProgress[] = Array.from(goalMap.entries())
-    .map(([id, g]) => ({
-      id,
-      title: g.title,
-      task_count: g.total,
-      completed_task_count: g.completed,
-      progress: g.total > 0 ? Math.round((g.completed / g.total) * 100) : 0,
-    }))
-    .sort((a, b) => b.task_count - a.task_count)
-    .slice(0, 5);
 
   return {
     stats: {
@@ -258,7 +229,65 @@ export function buildDashboardData(
     overdue_tasks: overdue_tasks.slice(0, 5),
     next_tasks,
     week,
-    goals,
+    goals: [],
     activity: emptyActivity,
   };
+}
+
+/** Same progress math as the Goals page: completed tasks / all project tasks. */
+export function buildGoalProgressList(
+  goals: { id: string; title: string }[],
+  projects: { id: string; goal_id: string }[],
+  tasks: { project_id: string | null; completed: boolean }[],
+): GoalProgress[] {
+  const projectIdsByGoal = new Map<string, string[]>();
+  for (const project of projects) {
+    const list = projectIdsByGoal.get(project.goal_id) ?? [];
+    list.push(project.id);
+    projectIdsByGoal.set(project.goal_id, list);
+  }
+
+  const taskStatsByProject = new Map<
+    string,
+    { total: number; completed: number }
+  >();
+  for (const task of tasks) {
+    if (!task.project_id) continue;
+    const current = taskStatsByProject.get(task.project_id) ?? {
+      total: 0,
+      completed: 0,
+    };
+    current.total += 1;
+    if (task.completed) current.completed += 1;
+    taskStatsByProject.set(task.project_id, current);
+  }
+
+  return goals
+    .map((goal) => {
+      const goalProjectIds = projectIdsByGoal.get(goal.id) ?? [];
+      let task_count = 0;
+      let completed_task_count = 0;
+      for (const pid of goalProjectIds) {
+        const stats = taskStatsByProject.get(pid);
+        if (!stats) continue;
+        task_count += stats.total;
+        completed_task_count += stats.completed;
+      }
+
+      return {
+        id: goal.id,
+        title: goal.title,
+        task_count,
+        completed_task_count,
+        progress:
+          task_count > 0
+            ? Math.round((completed_task_count / task_count) * 100)
+            : 0,
+      };
+    })
+    .sort((a, b) => {
+      if (b.task_count !== a.task_count) return b.task_count - a.task_count;
+      return a.title.localeCompare(b.title);
+    })
+    .slice(0, 5);
 }

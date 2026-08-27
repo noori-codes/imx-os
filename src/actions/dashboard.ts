@@ -14,6 +14,7 @@ import { syncRecurringTasks } from "@/actions/tasks";
 import {
   buildActivitySummary,
   buildDashboardData,
+  buildGoalProgressList,
   emptyActivity,
   type ActivitySummary,
   type DashboardData,
@@ -238,11 +239,10 @@ async function loadDashboardData(
 
   let goalsQuery = supabase
     .from("goals")
-    .select("id", { count: "exact", head: true });
+    .select("id, title")
+    .order("created_at", { ascending: false });
 
-  let projectsQuery = supabase
-    .from("projects")
-    .select("id", { count: "exact", head: true });
+  let projectsQuery = supabase.from("projects").select("id, goal_id");
 
   if (scopedUserId) {
     tasksQuery = tasksQuery.eq("user_id", scopedUserId);
@@ -262,18 +262,31 @@ async function loadDashboardData(
   if (tasksResult.error) {
     console.error("[dashboard] getDashboardData:", tasksResult.error.message);
   }
+  if (goalsResult.error) {
+    console.error("[dashboard] goals:", goalsResult.error.message);
+  }
+  if (projectsResult.error) {
+    console.error("[dashboard] projects:", projectsResult.error.message);
+  }
+
+  const goalRows = goalsResult.data ?? [];
+  const projectRows = projectsResult.data ?? [];
+  const taskRows = tasksResult.data ?? [];
 
   const base = buildDashboardData(
-    tasksResult.data ?? [],
-    goalsResult.count ?? 0,
-    projectsResult.count ?? 0,
+    taskRows,
+    goalRows.length,
+    projectRows.length,
   );
+
+  const goals = buildGoalProgressList(goalRows, projectRows, taskRows);
 
   const habits_done = extras.habits_today.filter((h) => h.completed_today)
     .length;
 
   return {
     ...base,
+    goals,
     activity,
     habits_today: extras.habits_today,
     focus_today: extras.focus_today,
@@ -297,7 +310,7 @@ export const getDashboardData = cache(async (): Promise<DashboardData> => {
 
   if (hasAdminClient()) {
     return cachedQuery(
-      ["dashboard", user.id, "v7"],
+      ["dashboard", user.id, "v9"],
       [cacheTags.dashboard(user.id)],
       CACHE_TTL.dashboard,
       async () => loadDashboardData(user.id),

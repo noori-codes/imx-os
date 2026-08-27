@@ -24,13 +24,10 @@ export function WeekOverview({ week }: WeekOverviewProps) {
       <div className="mt-3 flex flex-1 flex-col border-t border-border/30 pt-4">
         <div className="grid h-full min-h-[7.5rem] flex-1 grid-cols-7 gap-2 sm:gap-2.5">
           {week.map((day, index) => {
-            const height = empty
-              ? day.is_today
-                ? 32
-                : 12
-              : day.task_count <= 0
-                ? 8
-                : Math.max(18, Math.round((day.task_count / maxCount) * 100));
+            const height =
+              day.task_count <= 0
+                ? 4
+                : Math.max(14, Math.round((day.task_count / maxCount) * 100));
 
             return (
               <div
@@ -43,17 +40,16 @@ export function WeekOverview({ week }: WeekOverviewProps) {
                   className={cn(
                     "relative flex min-h-0 w-full flex-1 items-end rounded-lg bg-muted/20 px-1 pb-1",
                     day.is_today && "dash-week-today bg-muted/35",
-                    empty && !day.is_today && "opacity-50",
                   )}
                 >
                   <div
                     className={cn(
-                      "dash-bar-rise w-full min-h-[3px] rounded-[4px]",
-                      day.is_today
-                        ? "bg-foreground"
-                        : day.task_count > 0
-                          ? "bg-foreground/55"
-                          : "bg-foreground/12",
+                      "dash-bar-rise w-full min-h-[2px] rounded-[4px]",
+                      day.task_count <= 0
+                        ? "bg-foreground/10"
+                        : day.is_today
+                          ? "bg-foreground"
+                          : "bg-foreground/55",
                     )}
                     style={{ height: `${height}%` }}
                   />
