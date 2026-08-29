@@ -17,6 +17,7 @@ import type {
 } from "@/types/focus";
 import {
   clampDailyFocusGoal,
+  focusLevel,
   FOCUS_DAILY_GOAL_DEFAULT,
   FOCUS_MAX_SECONDS,
 } from "@/types/focus";
@@ -102,12 +103,8 @@ export async function getTodayFocusStats() {
   };
 }
 
-function focusLevel(minutes: number): FocusWeekDay["level"] {
-  if (minutes <= 0) return 0;
-  if (minutes < 25) return 1;
-  if (minutes < 50) return 2;
-  if (minutes < 90) return 3;
-  return 4;
+function focusLevelFromMinutes(minutes: number): FocusWeekDay["level"] {
+  return focusLevel(minutes);
 }
 
 /** Today totals + streak + last-7-day heatmap for the Focus page. */
@@ -138,6 +135,7 @@ export async function getFocusOverviewStats() {
         minutes: 0,
         level: 0 as const,
       })),
+      focus_by_day: {},
       today_marks: [],
     };
   }
@@ -171,9 +169,14 @@ export async function getFocusOverviewStats() {
     return {
       date,
       minutes,
-      level: focusLevel(minutes),
+      level: focusLevelFromMinutes(minutes),
     };
   });
+
+  const focus_by_day: Record<string, number> = {};
+  for (const [date, minutes] of minutesByDay.entries()) {
+    focus_by_day[date] = minutes;
+  }
 
   const todayMinutes = minutesByDay.get(today) ?? 0;
   todayMarks.sort(
@@ -187,6 +190,7 @@ export async function getFocusOverviewStats() {
     current_streak,
     longest_streak,
     week,
+    focus_by_day,
     today_marks: todayMarks,
   };
 }

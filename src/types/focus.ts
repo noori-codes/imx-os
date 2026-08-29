@@ -71,8 +71,18 @@ export type FocusOverviewStats = {
   current_streak: number;
   longest_streak: number;
   week: FocusWeekDay[];
+  /** Daily focus minutes keyed by YYYY-MM-DD (Sat–Fri weeks, ~120d lookback). */
+  focus_by_day: Record<string, number>;
   today_marks: FocusTodayMark[];
 };
+
+export function focusLevel(minutes: number): FocusWeekDay["level"] {
+  if (minutes <= 0) return 0;
+  if (minutes < 25) return 1;
+  if (minutes < 50) return 2;
+  if (minutes < 90) return 3;
+  return 4;
+}
 
 export const FOCUS_DAILY_GOAL_PRESETS = [
   { label: "1h", minutes: 60 },

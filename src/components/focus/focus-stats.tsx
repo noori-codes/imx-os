@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { ChevronDown, Moon, Play, Sun, Sunrise } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Moon, Play, Sun, Sunrise } from "lucide-react";
 
 import { updateDailyFocusGoal } from "@/actions/focus";
 import { useDocumentVisible } from "@/hooks/use-document-visible";
@@ -19,6 +19,12 @@ import {
   unstackSkyPoints,
 } from "@/lib/focus-sky";
 import { focusThreadKey } from "@/lib/focus-threads";
+import {
+  buildFocusWeekDays,
+  focusWeekSummaryLabel,
+  formatFocusWeekLabel,
+  minFocusWeekOffset,
+} from "@/lib/focus-week";
 import { cn } from "@/lib/utils";
 import { toDateString } from "@/lib/date-utils";
 import { canContinueFocusSession, useFocusTimer } from "@/stores/focus-timer";
@@ -691,6 +697,7 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
   const [goalMinutes, setGoalMinutes] = useState(dailyGoal.minutes);
   const [ready, setReady] = useState(false);
   const [goalOpen, setGoalOpen] = useState(false);
+  const [weekOffset, setWeekOffset] = useState(0);
   const [mobileLayout, setMobileLayout] = useState(false);
   const [skySessionSeconds, setSkySessionSeconds] = useState(0);
   const [, startGoalTransition] = useTransition();
@@ -915,10 +922,16 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
     : null;
 
   const todayDisplayMinutes = Math.floor(todayTotalSeconds / 60);
-  const weekDays = stats.week.map((day) => ({
-    ...day,
-    minutes: isToday(day.date) ? todayDisplayMinutes : day.minutes,
-  }));
+  const focusByDay =
+    stats.focus_by_day ??
+    Object.fromEntries(stats.week.map((day) => [day.date, day.minutes]));
+  const minWeekOffset = minFocusWeekOffset(focusByDay);
+  const weekDays = buildFocusWeekDays(
+    focusByDay,
+    weekOffset,
+    weekOffset === 0 ? todayDisplayMinutes : undefined,
+  );
+  const weekLabel = formatFocusWeekLabel(weekDays, weekOffset);
 
   const weekScale = Math.max(
     1,
@@ -930,7 +943,14 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
     (goalMinutes / weekScale) * 100,
   );
   const todayKey = toDateString(new Date());
-  const pace = ready ? weekPaceLabel(weekDays, goalMinutes, todayKey) : null;
+  const pace =
+    ready && weekOffset === 0
+      ? weekPaceLabel(weekDays, goalMinutes, todayKey)
+      : null;
+  const weekSummary =
+    ready && weekOffset !== 0
+      ? focusWeekSummaryLabel(weekDays, goalMinutes)
+      : null;
 
   return (
     <section
@@ -1069,9 +1089,29 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
               </div>
 
               <div className="w-full border-t border-border/30 pt-5">
-                <p className="text-center text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground lg:text-left">
-                  This week
-                </p>
+                <div className="flex items-center justify-between gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setWeekOffset((offset) => offset - 1)}
+                    disabled={weekOffset <= minWeekOffset}
+                    aria-label="Previous week"
+                    className="inline-flex size-7 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+                  >
+                    <ChevronLeft className="size-4" />
+                  </button>
+                  <p className="min-w-0 flex-1 text-center text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground lg:text-left">
+                    {weekLabel}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setWeekOffset((offset) => offset + 1)}
+                    disabled={weekOffset >= 0}
+                    aria-label="Next week"
+                    className="inline-flex size-7 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+                  >
+                    <ChevronRight className="size-4" />
+                  </button>
+                </div>
                 <div className="mt-3 grid grid-cols-7 gap-1 sm:gap-1.5">
                   {weekDays.map((day) => {
                     const height =
@@ -1136,6 +1176,10 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
                 {pace ? (
                   <p className="mt-3 text-center text-[11px] text-muted-foreground lg:text-left">
                     {pace}
+                  </p>
+                ) : weekSummary ? (
+                  <p className="mt-3 text-center text-[11px] text-muted-foreground lg:text-left">
+                    {weekSummary}
                   </p>
                 ) : null}
               </div>
