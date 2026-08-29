@@ -140,17 +140,24 @@ export function DashboardSkeleton() {
               <section className="min-w-0">
               <QuadHeader />
               <QuadSignal />
-              <div className="mt-5 space-y-3 border-t border-border/30 pt-4">
-                {Array.from({ length: 2 }).map((_, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <Bone className="size-9 shrink-0 rounded-full" />
+              <div className="mt-5 border-t border-border/30 pt-4">
+                <div className="flex items-center gap-3.5">
+                  <Bone className="size-16 shrink-0 rounded-full" />
+                  <div className="min-w-0 flex-1 space-y-1.5">
+                    <Bone className="h-2.5 w-[72%]" />
+                    <Bone className="h-2 w-16 opacity-55" />
+                  </div>
+                </div>
+                <div className="mt-3 space-y-2.5 border-t border-border/20 pt-3">
+                  <div className="flex items-center gap-3">
+                    <Bone className="size-[34px] shrink-0 rounded-full" />
                     <div className="min-w-0 flex-1 space-y-1.5">
-                      <Bone className="h-2.5 w-[70%]" />
-                      <Bone className="h-2 w-16 opacity-55" />
+                      <Bone className="h-2.5 w-[58%]" />
+                      <Bone className="h-2 w-14 opacity-55" />
                     </div>
                     <Bone className="h-2.5 w-7" />
                   </div>
-                ))}
+                </div>
               </div>
               </section>
             </div>

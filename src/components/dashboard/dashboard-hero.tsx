@@ -1,11 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Timer } from "lucide-react";
 
-import { cn } from "@/lib/utils";
+import { DashboardFocusCta } from "@/components/dashboard/dashboard-focus-cta";
 import { DashboardHeroSky } from "@/components/dashboard/dashboard-hero-sky";
+import { cn } from "@/lib/utils";
 import { formatFocusMinutes } from "@/types/focus";
 
 type DashboardHeroProps = {
@@ -143,13 +142,7 @@ export function DashboardHero({
           </div>
 
           <div className="dash-reveal dash-reveal-delay-1 flex justify-center sm:justify-end">
-            <Link
-              href="/focus"
-              className="dash-focus-cta inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-sm font-medium text-background shadow-[0_8px_30px_oklch(0_0_0/0.12)] dark:shadow-[0_8px_30px_oklch(0_0_0/0.45)]"
-            >
-              <Timer className="size-3.5" />
-              Focus
-            </Link>
+            <DashboardFocusCta />
           </div>
         </div>
 
