@@ -1,3 +1,7 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+
 import { cn } from "@/lib/utils";
 import type { WeekDaySummary } from "@/types/dashboard";
 
@@ -21,6 +25,24 @@ export function WeekOverview({ week }: WeekOverviewProps) {
   const maxCount = Math.max(...week.map((d) => d.task_count), 0);
   const total = week.reduce((sum, d) => sum + d.task_count, 0);
   const empty = total === 0;
+  const todayCount = week.find((d) => d.is_today)?.task_count ?? 0;
+  const [pulseToday, setPulseToday] = useState(false);
+  const prevTodayCount = useRef(todayCount);
+  const mounted = useRef(false);
+
+  useEffect(() => {
+    if (!mounted.current) {
+      mounted.current = true;
+      prevTodayCount.current = todayCount;
+      return;
+    }
+    if (prevTodayCount.current !== todayCount) {
+      setPulseToday(true);
+      const timer = window.setTimeout(() => setPulseToday(false), 540);
+      prevTodayCount.current = todayCount;
+      return () => window.clearTimeout(timer);
+    }
+  }, [todayCount]);
 
   return (
     <section className="min-w-0">
@@ -63,11 +85,12 @@ export function WeekOverview({ week }: WeekOverviewProps) {
               >
                 <span
                   className={cn(
-                    "h-3 text-[10px] leading-none tabular-nums",
+                    "h-3 text-[10px] leading-none tabular-nums transition-transform duration-300",
                     hasTasks
                       ? "text-muted-foreground"
                       : "text-transparent",
                     day.is_today && hasTasks && "text-foreground/80",
+                    day.is_today && pulseToday && "dash-heat-count-pop",
                   )}
                 >
                   {hasTasks ? day.task_count : "0"}
@@ -76,8 +99,9 @@ export function WeekOverview({ week }: WeekOverviewProps) {
                 <div className="flex h-9 w-full items-center justify-center">
                   <span
                     className={cn(
-                      "dash-heat-dot rounded-full bg-foreground",
+                      "dash-heat-dot rounded-full bg-foreground transition-transform duration-300",
                       day.is_today && "dash-heat-today",
+                      day.is_today && pulseToday && "dash-heat-pulse",
                     )}
                     style={{
                       width: size,

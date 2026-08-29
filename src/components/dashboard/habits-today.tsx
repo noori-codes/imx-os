@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 import type { DashboardHabit } from "@/types/dashboard";
@@ -14,6 +15,33 @@ export function HabitsToday({ habits, onToggle }: HabitsTodayProps) {
   const done = habits.filter((h) => h.completed_today).length;
   const total = habits.length;
   const clear = total > 0 && done === total;
+  const [burstId, setBurstId] = useState<string | null>(null);
+  const [celebrateSealed, setCelebrateSealed] = useState(false);
+  const prevClear = useRef(clear);
+  const mounted = useRef(false);
+
+  useEffect(() => {
+    if (!mounted.current) {
+      mounted.current = true;
+      prevClear.current = clear;
+      return;
+    }
+    if (clear && !prevClear.current) {
+      setCelebrateSealed(true);
+      const timer = window.setTimeout(() => setCelebrateSealed(false), 720);
+      prevClear.current = clear;
+      return () => window.clearTimeout(timer);
+    }
+    prevClear.current = clear;
+  }, [clear]);
+
+  function handleToggle(habitId: string, completed: boolean) {
+    if (completed) {
+      setBurstId(habitId);
+      window.setTimeout(() => setBurstId(null), 460);
+    }
+    onToggle(habitId, completed);
+  }
 
   return (
     <section className="min-w-0">
@@ -29,12 +57,19 @@ export function HabitsToday({ habits, onToggle }: HabitsTodayProps) {
         </Link>
       </div>
 
-      <div className="dash-reveal mt-4">
+      <div
+        className={cn(
+          "dash-reveal mt-4",
+          celebrateSealed && "dash-signal-celebrate",
+        )}
+      >
         <p
           className={cn(
-            "text-4xl font-medium tracking-tight tabular-nums transition-all duration-200",
+            "dash-signal-value text-4xl font-medium tracking-tight tabular-nums transition-all duration-200",
             total === 0 || clear
-              ? "text-muted-foreground"
+              ? celebrateSealed
+                ? "text-foreground"
+                : "text-muted-foreground"
               : "text-foreground",
           )}
         >
@@ -67,7 +102,7 @@ export function HabitsToday({ habits, onToggle }: HabitsTodayProps) {
             >
               <button
                 type="button"
-                onClick={() => onToggle(habit.id, !habit.completed_today)}
+                onClick={() => handleToggle(habit.id, !habit.completed_today)}
                 className="group flex w-full flex-col items-center gap-1.5"
                 aria-label={
                   habit.completed_today
@@ -78,15 +113,18 @@ export function HabitsToday({ habits, onToggle }: HabitsTodayProps) {
               >
                 <span
                   className={cn(
-                    "dash-habit-seal flex size-11 items-center justify-center rounded-full border-2 transition-all duration-150 group-hover:scale-105 group-active:scale-95 sm:size-12",
+                    "dash-habit-seal relative flex size-11 items-center justify-center rounded-full border-2 transition-all duration-150 group-hover:scale-105 group-active:scale-95 sm:size-12",
                     habit.completed_today && "text-white",
+                    burstId === habit.id && "dash-habit-seal-burst",
                   )}
+                  data-burst={burstId === habit.id ? "true" : undefined}
                   style={
                     habit.completed_today
                       ? {
                           backgroundColor: habit.color,
                           borderColor: habit.color,
                           boxShadow: `0 0 0 3px color-mix(in oklab, ${habit.color} 28%, transparent)`,
+                          ["--habit-burst" as string]: `color-mix(in oklab, ${habit.color} 45%, transparent)`,
                         }
                       : { borderColor: habit.color }
                   }

@@ -61,9 +61,10 @@ export function DashboardSkeleton() {
           </div>
         </section>
 
-        <div className="dash-quad grid grid-cols-1 border-t border-border/30 lg:grid-cols-2 lg:grid-rows-[1fr_1fr]">
-          <div className="dash-quad-cell border-b border-border/30 lg:border-r">
-            <section className="min-w-0">
+        <div className="dash-quad-shell">
+          <div className="dash-quad grid grid-cols-1 lg:grid-cols-2 lg:grid-rows-[1fr_1fr]">
+            <div className="dash-quad-cell" data-quad="tasks">
+              <section className="min-w-0">
               <QuadHeader />
               <QuadSignal />
               <div className="mt-5 space-y-1 border-t border-border/30 pt-3">
@@ -80,11 +81,11 @@ export function DashboardSkeleton() {
                   <Bone className="h-2.5 w-[40%]" />
                 </div>
               </div>
-            </section>
-          </div>
+              </section>
+            </div>
 
-          <div className="dash-quad-cell border-b border-border/30">
-            <section className="min-w-0">
+            <div className="dash-quad-cell" data-quad="habits">
+              <section className="min-w-0">
               <QuadHeader />
               <QuadSignal />
               <div className="mt-5 flex flex-wrap gap-3 border-t border-border/30 pt-5">
@@ -99,11 +100,11 @@ export function DashboardSkeleton() {
                   </div>
                 ))}
               </div>
-            </section>
-          </div>
+              </section>
+            </div>
 
-          <div className="dash-quad-cell border-b border-border/30 lg:border-r lg:border-b-0">
-            <section className="min-w-0">
+            <div className="dash-quad-cell" data-quad="week">
+              <section className="min-w-0">
               <QuadHeader />
               <QuadSignal />
               <div className="mt-auto border-t border-border/30 pt-5">
@@ -130,11 +131,11 @@ export function DashboardSkeleton() {
                   ))}
                 </div>
               </div>
-            </section>
-          </div>
+              </section>
+            </div>
 
-          <div className="dash-quad-cell border-b border-border/30 lg:border-b-0">
-            <section className="min-w-0">
+            <div className="dash-quad-cell" data-quad="goals">
+              <section className="min-w-0">
               <QuadHeader />
               <QuadSignal />
               <div className="mt-5 space-y-3 border-t border-border/30 pt-4">
@@ -149,7 +150,8 @@ export function DashboardSkeleton() {
                   </div>
                 ))}
               </div>
-            </section>
+              </section>
+            </div>
           </div>
         </div>
 

@@ -147,21 +147,23 @@ export function DashboardStage({ name, greeting, data }: DashboardStageProps) {
         attention={dueToday + overdue}
       />
 
-      <div className="dash-quad grid grid-cols-1 border-t border-border/30 lg:grid-cols-2 lg:grid-rows-[1fr_1fr]">
-        <div className="dash-quad-cell border-b border-border/30 lg:border-r">
-          <TodayFocus tasks={optimisticTasks} onToggle={onTaskToggle} />
-        </div>
-        <div className="dash-quad-cell border-b border-border/30">
-          <HabitsToday
-            habits={optimisticHabits}
-            onToggle={onHabitToggle}
-          />
-        </div>
-        <div className="dash-quad-cell border-b border-border/30 lg:border-r lg:border-b-0">
-          <WeekOverview week={optimisticWeek} />
-        </div>
-        <div className="dash-quad-cell border-b border-border/30 lg:border-b-0">
-          <GoalProgressList goals={data.goals} />
+      <div className="dash-quad-shell">
+        <div className="dash-quad grid grid-cols-1 lg:grid-cols-2 lg:grid-rows-[1fr_1fr]">
+          <div className="dash-quad-cell" data-quad="tasks">
+            <TodayFocus tasks={optimisticTasks} onToggle={onTaskToggle} />
+          </div>
+          <div className="dash-quad-cell" data-quad="habits">
+            <HabitsToday
+              habits={optimisticHabits}
+              onToggle={onHabitToggle}
+            />
+          </div>
+          <div className="dash-quad-cell" data-quad="week">
+            <WeekOverview week={optimisticWeek} />
+          </div>
+          <div className="dash-quad-cell" data-quad="goals">
+            <GoalProgressList goals={data.goals} />
+          </div>
         </div>
       </div>
 

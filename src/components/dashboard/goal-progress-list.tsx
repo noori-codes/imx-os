@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 import type { GoalProgress } from "@/types/dashboard";
@@ -20,13 +23,17 @@ function ProgressRing({
   const circumference = 2 * Math.PI * radius;
   const pct = Math.min(100, Math.max(progress, 0));
   const offset = circumference * (1 - pct / 100);
+  const sealed = pct >= 100;
 
   return (
     <svg
       width={size}
       height={size}
       viewBox={`0 0 ${size} ${size}`}
-      className="dash-ring-draw shrink-0 -rotate-90"
+      className={cn(
+        "dash-ring-draw shrink-0 -rotate-90",
+        sealed && "dash-ring-sealed",
+      )}
       style={{ ["--i" as string]: index }}
       aria-hidden="true"
     >
@@ -49,7 +56,7 @@ function ProgressRing({
         strokeLinecap="round"
         strokeDasharray={circumference}
         strokeDashoffset={offset}
-        className="text-foreground/80"
+        className="dash-ring-fill text-foreground/80"
       />
     </svg>
   );
@@ -64,6 +71,26 @@ export function GoalProgressList({ goals }: GoalProgressListProps) {
           withTasks.reduce((sum, g) => sum + g.progress, 0) / withTasks.length,
         )
       : null;
+  const allSealed =
+    withTasks.length > 0 && withTasks.every((g) => g.progress >= 100);
+  const [celebrateSealed, setCelebrateSealed] = useState(false);
+  const prevAllSealed = useRef(allSealed);
+  const mounted = useRef(false);
+
+  useEffect(() => {
+    if (!mounted.current) {
+      mounted.current = true;
+      prevAllSealed.current = allSealed;
+      return;
+    }
+    if (allSealed && !prevAllSealed.current) {
+      setCelebrateSealed(true);
+      const timer = window.setTimeout(() => setCelebrateSealed(false), 720);
+      prevAllSealed.current = allSealed;
+      return () => window.clearTimeout(timer);
+    }
+    prevAllSealed.current = allSealed;
+  }, [allSealed]);
 
   return (
     <section className="min-w-0">
@@ -79,13 +106,22 @@ export function GoalProgressList({ goals }: GoalProgressListProps) {
         </Link>
       </div>
 
-      <div className="dash-reveal mt-4">
+      <div
+        className={cn(
+          "dash-reveal mt-4",
+          celebrateSealed && "dash-signal-celebrate",
+        )}
+      >
         <p
           className={cn(
-            "text-4xl font-medium tracking-tight tabular-nums",
+            "dash-signal-value text-4xl font-medium tracking-tight tabular-nums",
             visible.length === 0
               ? "text-muted-foreground"
-              : "text-foreground",
+              : allSealed
+                ? celebrateSealed
+                  ? "text-foreground"
+                  : "text-muted-foreground"
+                : "text-foreground",
           )}
         >
           {visible.length === 0
@@ -97,11 +133,13 @@ export function GoalProgressList({ goals }: GoalProgressListProps) {
         <p className="mt-1 text-xs text-muted-foreground">
           {visible.length === 0
             ? "No goals yet"
-            : avg != null
-              ? "avg progress"
-              : visible.length === 1
-                ? "goal"
-                : "goals"}
+            : allSealed
+              ? "All sealed"
+              : avg != null
+                ? "avg progress"
+                : visible.length === 1
+                  ? "goal"
+                  : "goals"}
         </p>
       </div>
 
@@ -131,10 +169,17 @@ export function GoalProgressList({ goals }: GoalProgressListProps) {
                 <p className="mt-0.5 text-[11px] tabular-nums text-muted-foreground">
                   {goal.task_count === 0
                     ? "No tasks yet"
-                    : `${goal.completed_task_count}/${goal.task_count} tasks`}
+                    : goal.progress >= 100
+                      ? "Sealed"
+                      : `${goal.completed_task_count}/${goal.task_count} tasks`}
                 </p>
               </div>
-              <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
+              <span
+                className={cn(
+                  "shrink-0 text-[11px] tabular-nums text-muted-foreground",
+                  goal.progress >= 100 && "font-medium text-foreground",
+                )}
+              >
                 {goal.progress}%
               </span>
             </li>

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, Circle } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -15,10 +16,12 @@ type TodayFocusProps = {
 function TaskRow({
   task,
   index,
+  flash,
   onToggle,
 }: {
   task: TaskWithContext;
   index: number;
+  flash: boolean;
   onToggle: (taskId: string, completed: boolean) => void;
 }) {
   const overdue = Boolean(
@@ -34,7 +37,10 @@ function TaskRow({
 
   return (
     <li
-      className="group flex items-center gap-2.5 py-2 transition-colors"
+      className={cn(
+        "group flex items-center gap-2.5 rounded-md py-2 transition-colors",
+        flash && "dash-task-row-done",
+      )}
       style={{ ["--i" as string]: index }}
     >
       <button
@@ -77,6 +83,33 @@ function TaskRow({
 export function TodayFocus({ tasks, onToggle }: TodayFocusProps) {
   const openCount = tasks.filter((t) => !t.completed).length;
   const clear = tasks.length > 0 && openCount === 0;
+  const [flashTaskId, setFlashTaskId] = useState<string | null>(null);
+  const [celebrateClear, setCelebrateClear] = useState(false);
+  const prevClear = useRef(clear);
+  const mounted = useRef(false);
+
+  useEffect(() => {
+    if (!mounted.current) {
+      mounted.current = true;
+      prevClear.current = clear;
+      return;
+    }
+    if (clear && !prevClear.current) {
+      setCelebrateClear(true);
+      const timer = window.setTimeout(() => setCelebrateClear(false), 720);
+      prevClear.current = clear;
+      return () => window.clearTimeout(timer);
+    }
+    prevClear.current = clear;
+  }, [clear]);
+
+  function handleToggle(taskId: string, completed: boolean) {
+    if (completed) {
+      setFlashTaskId(taskId);
+      window.setTimeout(() => setFlashTaskId(null), 500);
+    }
+    onToggle(taskId, completed);
+  }
 
   return (
     <section className="min-w-0">
@@ -92,16 +125,20 @@ export function TodayFocus({ tasks, onToggle }: TodayFocusProps) {
         </Link>
       </div>
 
-      <div className="dash-reveal mt-4">
+      <div
+        className={cn("dash-reveal mt-4", celebrateClear && "dash-signal-celebrate")}
+      >
         <p
           className={cn(
-            "text-4xl font-medium tracking-tight tabular-nums transition-all duration-200",
+            "dash-signal-value text-4xl font-medium tracking-tight tabular-nums transition-all duration-200",
             tasks.length === 0 || clear
-              ? "text-muted-foreground"
+              ? celebrateClear
+                ? "text-foreground"
+                : "text-muted-foreground"
               : "text-foreground",
           )}
         >
-          {tasks.length === 0 ? "—" : openCount}
+          {tasks.length === 0 ? "—" : clear ? "Clear" : openCount}
         </p>
         <p className="mt-1 text-xs text-muted-foreground">
           {tasks.length === 0
@@ -126,7 +163,8 @@ export function TodayFocus({ tasks, onToggle }: TodayFocusProps) {
               key={task.id}
               task={task}
               index={index}
-              onToggle={onToggle}
+              flash={flashTaskId === task.id}
+              onToggle={handleToggle}
             />
           ))}
         </ul>
