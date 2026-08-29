@@ -10,6 +10,9 @@ import {
   continueSubject,
 } from "@/lib/focus-continue";
 import {
+  mergeTodayMarks,
+} from "@/lib/focus-optimistic";
+import {
   skyArcPath,
   skyArcPoint,
   skyTimeToT,
@@ -718,7 +721,7 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
     return () => media.removeEventListener("change", sync);
   }, []);
 
-  // Sky progress: sync on pause / visibility, otherwise every 30s — not 1 Hz.
+  // Sky progress: tick every second while a focus session is live.
   useEffect(() => {
     function readSessionSeconds() {
       const s = useFocusTimer.getState();
@@ -746,7 +749,7 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
 
     const id = window.setInterval(() => {
       setSkySessionSeconds(readSessionSeconds());
-    }, 30_000);
+    }, 1_000);
     return () => window.clearInterval(id);
   }, [
     isRunning,
@@ -759,10 +762,11 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
     endsAt,
   ]);
 
+  // Keep optimistic seal until server stats include this session (or long fallback).
   useEffect(() => {
     if (!sealPulse) return;
-    const id = window.setTimeout(() => clearSealPulse(), 3200);
-    return () => window.clearTimeout(id);
+    const fallback = window.setTimeout(() => clearSealPulse(), 30_000);
+    return () => window.clearTimeout(fallback);
   }, [sealPulse, clearSealPulse]);
 
   useEffect(() => {
@@ -824,6 +828,13 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
             new Date(sealPulse.startedAt).getTime(),
         ) < 10_000,
     );
+  const displayMarks = mergeTodayMarks(
+    marks,
+    sealPulse,
+    Boolean(sealAlreadyInStats),
+    linkedTaskId,
+    intention.trim() || null,
+  );
   const optimisticSealSeconds =
     sealPulse && !sealAlreadyInStats ? sealPulse.seconds : 0;
   const todayTotalSeconds =
@@ -855,7 +866,7 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
         blockMinutes,
         goalMinutes,
         goalLabel,
-        marks,
+        marks: displayMarks,
         goalRemainingSeconds,
       })
     : null;
@@ -869,15 +880,15 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
       )
     : null;
 
-  const constellationLitLabel = sealPulse
+  const constellationLitLabel = sealPulse && !sealAlreadyInStats
     ? "Star sealed"
-    : marks.length === 0 && !liveFocus
+    : displayMarks.length === 0 && !liveFocus
       ? "Clear sky"
       : liveFocus
-        ? marks.length === 0
+        ? displayMarks.length === 0
           ? "Star forming"
-          : `${marks.length} lit · live`
-        : `${marks.length} lit`;
+          : `${displayMarks.length} lit · live`
+        : `${displayMarks.length} lit`;
 
   const liveMark =
     liveNow && liveNowIso
@@ -896,19 +907,6 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
             intention,
             continuedSessionId,
           }),
-        }
-      : null;
-
-  const sealMark =
-    sealPulse && !sealAlreadyInStats
-      ? {
-          t: skyTimeToT(new Date(sealPulse.startedAt)),
-          radius: markRadius(
-            Math.max(1, Math.round(sealPulse.seconds / 60)),
-          ),
-          title: ready
-            ? `${formatMarkTime(sealPulse.startedAt)} · ${formatFocusDuration(sealPulse.seconds)} · sealed`
-            : "Session sealed",
         }
       : null;
 
@@ -960,7 +958,7 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
                     ? "Continue session"
                     : (weekday ?? "Today")}
               </span>
-              {marks.length > 0 || liveFocus ? (
+              {displayMarks.length > 0 || liveFocus ? (
                 <span className="text-xs tabular-nums text-muted-foreground/70">
                   · {constellationLitLabel}
                 </span>
@@ -970,9 +968,9 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
 
           <div className="focus-constellation-stage w-full">
             <ConstellationSky
-              marks={marks}
+              marks={displayMarks}
               liveMark={liveMark}
-              sealMark={sealMark}
+              sealMark={null}
               liveFocus={liveFocus}
               continuing={progressBaseSeconds > 0}
               ready={ready}

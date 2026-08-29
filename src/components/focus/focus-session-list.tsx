@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useOptimistic, useState, useTransition } from "react";
+import { useEffect, useMemo, useOptimistic, useRef, useState, useTransition } from "react";
 import { ChevronDown, Clock, Play, Trash2 } from "lucide-react";
 
 import { deleteFocusSessions } from "@/actions/focus";
@@ -13,6 +13,10 @@ import {
   canContinueLoggedSession,
   continueSubject,
 } from "@/lib/focus-continue";
+import {
+  isOptimisticSessionId,
+  mergeOptimisticSessions,
+} from "@/lib/focus-optimistic";
 import { groupDaySessionsIntoThreads } from "@/lib/focus-threads";
 import { cn } from "@/lib/utils";
 import { useFocusTimer } from "@/stores/focus-timer";
@@ -99,55 +103,54 @@ function threadTimeRange(sessions: FocusSession[]) {
 export function FocusSessionList({ sessions }: FocusSessionListProps) {
   const [, startTransition] = useTransition();
   const isRunning = useFocusTimer((s) => s.isRunning);
-  const optimisticLog = useFocusTimer((s) => s.optimisticLog);
-  const clearOptimisticLog = useFocusTimer((s) => s.clearOptimisticLog);
+  const optimisticLogs = useFocusTimer((s) => s.optimisticLogs);
+  const pruneOptimisticLogs = useFocusTimer((s) => s.pruneOptimisticLogs);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [flashIds, setFlashIds] = useState<Set<string>>(new Set());
+  const prevOptimisticCount = useRef(optimisticLogs.length);
+
+  const mergedSessions = useMemo(
+    () => mergeOptimisticSessions(sessions, optimisticLogs),
+    [sessions, optimisticLogs],
+  );
 
   useEffect(() => {
-    if (!optimisticLog) return;
-    const matched = sessions.some((session) => {
-      if (optimisticLog.id && !optimisticLog.id.startsWith("optimistic-")) {
-        return session.id === optimisticLog.id;
-      }
-      return (
-        session.mode === optimisticLog.mode &&
-        Math.abs(
-          new Date(session.started_at).getTime() -
-            new Date(optimisticLog.started_at).getTime(),
-        ) < 15_000 &&
-        Math.abs(session.actual_seconds - optimisticLog.actual_seconds) < 30
-      );
-    });
-    if (matched) clearOptimisticLog();
-  }, [sessions, optimisticLog, clearOptimisticLog]);
+    pruneOptimisticLogs(sessions);
+  }, [sessions, pruneOptimisticLogs]);
 
-  const mergedSessions = (() => {
-    if (!optimisticLog) return sessions;
-    const existing = sessions.findIndex((session) => session.id === optimisticLog.id);
-    if (existing >= 0) {
-      return sessions.map((session, index) =>
-        index === existing ? { ...session, ...optimisticLog, id: session.id } : session,
-      );
+  useEffect(() => {
+    if (optimisticLogs.length <= prevOptimisticCount.current) {
+      prevOptimisticCount.current = optimisticLogs.length;
+      return;
     }
-    const already = sessions.some(
-      (session) =>
-        session.mode === optimisticLog.mode &&
-        Math.abs(
-          new Date(session.started_at).getTime() -
-            new Date(optimisticLog.started_at).getTime(),
-        ) < 15_000,
-    );
-    if (already) return sessions;
-    return [optimisticLog, ...sessions];
-  })();
 
-  const [optimisticSessions, removeOptimistic] = useOptimistic(
+    prevOptimisticCount.current = optimisticLogs.length;
+    const newest = optimisticLogs[0];
+    if (!newest) return;
+
+    setFlashIds((current) => new Set(current).add(newest.id));
+    const flashTimer = window.setTimeout(() => {
+      setFlashIds((current) => {
+        const next = new Set(current);
+        next.delete(newest.id);
+        return next;
+      });
+    }, 1400);
+
+    document
+      .getElementById("focus-recent-sessions")
+      ?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+
+    return () => window.clearTimeout(flashTimer);
+  }, [optimisticLogs]);
+
+  const [displaySessions, removeOptimistic] = useOptimistic(
     mergedSessions,
     (current: FocusSession[], ids: string[]) =>
       current.filter((s) => !ids.includes(s.id)),
   );
 
-  if (optimisticSessions.length === 0) {
+  if (displaySessions.length === 0) {
     return (
       <section>
         <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
@@ -163,7 +166,8 @@ export function FocusSessionList({ sessions }: FocusSessionListProps) {
     );
   }
 
-  const groups = groupSessions(optimisticSessions);
+  const groups = groupSessions(displaySessions);
+  const hasPending = optimisticLogs.length > 0;
 
   function handleDelete(sessionsToDelete: FocusSession[], event: React.MouseEvent) {
     event.stopPropagation();
@@ -205,7 +209,10 @@ export function FocusSessionList({ sessions }: FocusSessionListProps) {
             Recent sessions
           </p>
           <p className="mt-1.5 text-sm text-muted-foreground">
-            {optimisticSessions.length} logged
+            {displaySessions.length} logged
+            {hasPending ? (
+              <span className="ml-2 text-foreground/80">· saving…</span>
+            ) : null}
           </p>
         </div>
       </div>
@@ -240,6 +247,14 @@ export function FocusSessionList({ sessions }: FocusSessionListProps) {
                   const pickupHint = canContinue
                     ? buildPickupHint(thread.totalSeconds, subject)
                     : null;
+                  const isFresh =
+                    flashIds.has(latest.id) ||
+                    thread.sessions.some((session) => flashIds.has(session.id));
+                  const isPending =
+                    isOptimisticSessionId(latest.id) ||
+                    thread.sessions.some((session) =>
+                      isOptimisticSessionId(session.id),
+                    );
 
                   return (
                     <li key={thread.key}>
@@ -266,6 +281,8 @@ export function FocusSessionList({ sessions }: FocusSessionListProps) {
                         }
                         className={cn(
                           "group rounded-2xl px-2.5 py-2.5 transition-colors",
+                          isFresh && "focus-session-flash bg-muted/35",
+                          isPending && !isFresh && "bg-muted/20",
                           canContinue &&
                             "cursor-pointer hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                           !canContinue && "hover:bg-muted/20",
@@ -281,6 +298,7 @@ export function FocusSessionList({ sessions }: FocusSessionListProps) {
                             className={cn(
                               "size-2 shrink-0 rounded-full",
                               modeTone(latest.mode),
+                              isFresh && "ring-2 ring-foreground/30",
                             )}
                             aria-hidden
                           />
@@ -289,7 +307,12 @@ export function FocusSessionList({ sessions }: FocusSessionListProps) {
                               {isThread
                                 ? thread.title
                                 : FOCUS_PRESETS[latest.mode].label}
-                              {!latest.completed && !isThread ? (
+                              {isPending ? (
+                                <span className="ml-2 text-xs font-normal text-muted-foreground">
+                                  just now
+                                </span>
+                              ) : null}
+                              {!latest.completed && !isThread && !isPending ? (
                                 <span className="ml-2 text-xs font-normal text-muted-foreground">
                                   stopped early
                                 </span>

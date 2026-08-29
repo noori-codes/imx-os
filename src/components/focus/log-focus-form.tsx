@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 
 import {
@@ -9,7 +10,13 @@ import {
 } from "@/actions/focus";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { celebrateMarathonSessionIfNeeded } from "@/lib/focus-celebrate";
+import {
+  commitFocusSessionOptimistic,
+  rollbackFocusSessionOptimistic,
+} from "@/lib/focus-optimistic";
 import { cn } from "@/lib/utils";
+import { buildOptimisticFocusSession } from "@/types/focus";
 import type { FocusLinkableTask } from "@/types/task";
 
 const PRESETS = [25, 50, 90, 120, 180] as const;
@@ -19,6 +26,7 @@ export function LogFocusForm({
 }: {
   tasks?: FocusLinkableTask[];
 }) {
+  const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [open, setOpen] = useState(false);
   const [hours, setHours] = useState("");
@@ -33,8 +41,48 @@ export function LogFocusForm({
     FocusActionState | null,
     FormData
   >(async (prev, formData) => {
+    const parsedHours = Number(formData.get("hours") ?? 0);
+    const parsedMinutes = Number(formData.get("minutes") ?? 0);
+    const note = (formData.get("note") as string | null)?.trim() || null;
+    const taskRaw = (formData.get("task_id") as string | null)?.trim() || "";
+    const task_id = taskRaw.length ? taskRaw : null;
+    const linkedTask = task_id
+      ? tasks.find((task) => task.id === task_id)
+      : undefined;
+
+    if (
+      Number.isFinite(parsedHours) &&
+      Number.isFinite(parsedMinutes) &&
+      parsedHours >= 0 &&
+      parsedMinutes >= 0 &&
+      parsedMinutes <= 59
+    ) {
+      const actual_seconds = Math.round(parsedHours * 3600 + parsedMinutes * 60);
+      if (actual_seconds >= 60) {
+        const started_at = new Date(
+          Date.now() - actual_seconds * 1000,
+        ).toISOString();
+        commitFocusSessionOptimistic(
+          buildOptimisticFocusSession({
+            mode: "focus",
+            planned_seconds: actual_seconds,
+            actual_seconds,
+            completed: true,
+            note,
+            task_id,
+            task_title: linkedTask?.title ?? null,
+            started_at,
+          }),
+        );
+        celebrateMarathonSessionIfNeeded({ sessionSeconds: actual_seconds });
+      }
+    }
+
     const result = await logManualFocusSession(prev, formData);
-    if (!result.error) {
+    if (result.error) {
+      rollbackFocusSessionOptimistic();
+    } else {
+      router.refresh();
       formRef.current?.reset();
       setHours("");
       setMinutes("");

@@ -19,6 +19,9 @@ import {
   requestFocusNotifyPermission,
 } from "@/lib/focus-alerts";
 import {
+  commitFocusSessionOptimistic,
+} from "@/lib/focus-optimistic";
+import {
   celebrateMarathonSessionIfNeeded,
 } from "@/lib/focus-celebrate";
 import {
@@ -274,21 +277,23 @@ export function FocusTimer({
         FOCUS_PRESETS[nextFocusMode(currentMode, completedFocusCount, "complete")]
           .label;
 
+      const startedAt = new Date(Date.now() - planned * 1000).toISOString();
+
+      commitFocusSessionOptimistic(
+        buildOptimisticFocusSession({
+          mode: currentMode,
+          planned_seconds: planned,
+          actual_seconds: planned,
+          completed: true,
+          note,
+          task_id: taskId,
+          task_title: linkedTask?.title ?? null,
+          started_at: startedAt,
+        }),
+        currentMode === "focus" ? planned : 0,
+      );
+
       startTransition(async () => {
-        if (currentMode === "focus") {
-          useFocusTimer.getState().pushOptimisticLog(
-            buildOptimisticFocusSession({
-              mode: currentMode,
-              planned_seconds: planned,
-              actual_seconds: planned,
-              completed: true,
-              note,
-              task_id: taskId,
-              task_title: linkedTask?.title ?? null,
-              started_at: new Date(Date.now() - planned * 1000).toISOString(),
-            }),
-          );
-        }
         await logFocusSession({
           mode: currentMode,
           planned_seconds: planned,
@@ -309,10 +314,6 @@ export function FocusTimer({
       const todayMinutes = todayMinutesRef.current + addedMinutes;
       if (currentMode === "focus") {
         todayMinutesRef.current = todayMinutes;
-        useFocusTimer.getState().pulseSeal({
-          startedAt: new Date(Date.now() - planned * 1000).toISOString(),
-          seconds: planned,
-        });
       }
 
       const linkedTaskForToast =
@@ -445,21 +446,21 @@ export function FocusTimer({
         ? new Date(continuedStartedAt).toISOString()
         : new Date(Date.now() - actual * 1000).toISOString();
 
-    useFocusTimer.getState().pushOptimisticLog(
-      buildOptimisticFocusSession({
-        id: isContinuation && continuedSessionId ? continuedSessionId : undefined,
-        mode: "focus",
-        planned_seconds: isContinuation
-          ? Math.max(actual, progressBaseSeconds)
-          : actual,
-        actual_seconds: actual,
-        completed: true,
-        note,
-        task_id: taskId,
-        task_title: linkedTask?.title ?? null,
-        started_at: sealStartedAt,
-      }),
-    );
+    const sealSeconds = isContinuation ? incremental : actual;
+    const session = buildOptimisticFocusSession({
+      id: isContinuation && continuedSessionId ? continuedSessionId : undefined,
+      mode: "focus",
+      planned_seconds: isContinuation
+        ? Math.max(actual, progressBaseSeconds)
+        : actual,
+      actual_seconds: actual,
+      completed: true,
+      note,
+      task_id: taskId,
+      task_title: linkedTask?.title ?? null,
+      started_at: sealStartedAt,
+    });
+    commitFocusSessionOptimistic(session, sealSeconds);
 
     startTransition(async () => {
       if (isContinuation && continuedSessionId) {
@@ -493,10 +494,6 @@ export function FocusTimer({
     stopFocusSound();
     playFocusChime();
     notifyFocusPhase("Session sealed", formatFocusClock(actual));
-    useFocusTimer.getState().pulseSeal({
-      startedAt: sealStartedAt,
-      seconds: isContinuation ? incremental : actual,
-    });
 
     const todayMinutes = todayMinutesRef.current + addedMinutes;
     todayMinutesRef.current = todayMinutes;
@@ -621,22 +618,27 @@ export function FocusTimer({
     const planned = durationSeconds;
     const note = currentMode === "focus" ? intention : "";
     const taskId = currentMode === "focus" ? linkedTaskId : null;
+
+    if (actual >= 5 && currentMode === "focus") {
+      const startedAt = new Date(Date.now() - actual * 1000).toISOString();
+      commitFocusSessionOptimistic(
+        buildOptimisticFocusSession({
+          mode: currentMode,
+          planned_seconds: planned,
+          actual_seconds: actual,
+          completed: false,
+          note,
+          task_id: taskId,
+          task_title: linkedTask?.title ?? null,
+          started_at: startedAt,
+        }),
+      );
+      const addedMinutes = Math.max(1, Math.round(actual / 60));
+      todayMinutesRef.current += addedMinutes;
+    }
+
     startTransition(async () => {
       if (actual >= 5) {
-        if (currentMode === "focus") {
-          useFocusTimer.getState().pushOptimisticLog(
-            buildOptimisticFocusSession({
-              mode: currentMode,
-              planned_seconds: planned,
-              actual_seconds: actual,
-              completed: false,
-              note,
-              task_id: taskId,
-              task_title: linkedTask?.title ?? null,
-              started_at: new Date(Date.now() - actual * 1000).toISOString(),
-            }),
-          );
-        }
         await logFocusSession({
           mode: currentMode,
           planned_seconds: planned,
@@ -662,22 +664,26 @@ export function FocusTimer({
 
     stopFocusSound();
 
+    if (actual >= 5 && currentMode === "focus") {
+      const startedAt = new Date(Date.now() - actual * 1000).toISOString();
+      commitFocusSessionOptimistic(
+        buildOptimisticFocusSession({
+          mode: currentMode,
+          planned_seconds: planned,
+          actual_seconds: actual,
+          completed: false,
+          note,
+          task_id: taskId,
+          task_title: linkedTask?.title ?? null,
+          started_at: startedAt,
+        }),
+      );
+      const addedMinutes = Math.max(1, Math.round(actual / 60));
+      todayMinutesRef.current += addedMinutes;
+    }
+
     if (actual >= 5) {
       startTransition(async () => {
-        if (currentMode === "focus") {
-          useFocusTimer.getState().pushOptimisticLog(
-            buildOptimisticFocusSession({
-              mode: currentMode,
-              planned_seconds: planned,
-              actual_seconds: actual,
-              completed: false,
-              note,
-              task_id: taskId,
-              task_title: linkedTask?.title ?? null,
-              started_at: new Date(Date.now() - actual * 1000).toISOString(),
-            }),
-          );
-        }
         await logFocusSession({
           mode: currentMode,
           planned_seconds: planned,

@@ -70,9 +70,10 @@ type FocusTimerState = {
   liveElapsedSeconds: () => number;
   pulseSeal: (mark: { startedAt: string; seconds: number }) => void;
   clearSealPulse: () => void;
-  optimisticLog: FocusSession | null;
+  optimisticLogs: FocusSession[];
   pushOptimisticLog: (session: FocusSession) => void;
-  clearOptimisticLog: () => void;
+  clearOptimisticLogs: () => void;
+  pruneOptimisticLogs: (sessions: FocusSession[]) => void;
   continueFromLoggedSession: (
     session: Pick<
       FocusSession,
@@ -191,7 +192,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
   tickMs: 0,
   lastDisplaySecond: 0,
   sealPulse: null,
-  optimisticLog: null,
+  optimisticLogs: [],
   completedFocusCount: 0,
   autoStartNext: false,
   intention: "",
@@ -222,9 +223,46 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
 
   clearSealPulse: () => set({ sealPulse: null }),
 
-  pushOptimisticLog: (session) => set({ optimisticLog: session }),
+  pushOptimisticLog: (session) =>
+    set((state) => {
+      const without = state.optimisticLogs.filter(
+        (item) =>
+          item.id !== session.id &&
+          !(
+            item.mode === session.mode &&
+            Math.abs(
+              new Date(item.started_at).getTime() -
+                new Date(session.started_at).getTime(),
+            ) < 15_000
+          ),
+      );
+      return { optimisticLogs: [session, ...without] };
+    }),
 
-  clearOptimisticLog: () => set({ optimisticLog: null }),
+  clearOptimisticLogs: () => set({ optimisticLogs: [] }),
+
+  pruneOptimisticLogs: (sessions) =>
+    set((state) => {
+      if (state.optimisticLogs.length === 0) return state;
+      const remaining = state.optimisticLogs.filter(
+        (opt) =>
+          !sessions.some((session) => {
+            if (opt.id && !opt.id.startsWith("optimistic-")) {
+              return session.id === opt.id;
+            }
+            return (
+              session.mode === opt.mode &&
+              Math.abs(
+                new Date(session.started_at).getTime() -
+                  new Date(opt.started_at).getTime(),
+              ) < 15_000 &&
+              Math.abs(session.actual_seconds - opt.actual_seconds) < 30
+            );
+          }),
+      );
+      if (remaining.length === state.optimisticLogs.length) return state;
+      return { optimisticLogs: remaining };
+    }),
 
   setMode: (mode) => {
     const current = get();
