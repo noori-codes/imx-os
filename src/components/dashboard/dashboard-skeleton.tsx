@@ -31,6 +31,10 @@ export function DashboardSkeleton() {
       aria-label="Loading dashboard"
     >
       <AppPageFrame className="max-w-5xl gap-10 md:py-8">
+        <div className="dash-page-atmosphere" data-phase="evening">
+          <div className="dash-page-wash" aria-hidden="true" />
+          <div className="dash-page-grain" aria-hidden="true" />
+          <div className="dash-page-content">
         <section
           className="dash-stage px-5 py-6 sm:px-7 sm:py-8"
           data-phase="evening"
@@ -164,8 +168,13 @@ export function DashboardSkeleton() {
           </div>
         </div>
 
-        <div className="flex justify-end">
-          <Bone className="h-3 w-20" />
+        <div className="dash-insight-strip rounded-2xl border border-border/40 px-4 py-3.5 sm:px-5">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+            <Bone className="h-3 w-56 max-w-full" />
+            <Bone className="h-3 w-20" />
+          </div>
+        </div>
+          </div>
         </div>
       </AppPageFrame>
     </div>

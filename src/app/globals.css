@@ -791,6 +791,101 @@
   }
 }
 
+/* Dashboard — page atmosphere */
+.dash-page-atmosphere {
+  --dash-page-wash: oklch(0.74 0.035 235 / 0.14);
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+.dash-page-atmosphere[data-phase="morning"] {
+  --dash-page-wash: oklch(0.86 0.07 58 / 0.18);
+}
+
+.dash-page-atmosphere[data-phase="afternoon"] {
+  --dash-page-wash: oklch(0.78 0.04 220 / 0.13);
+}
+
+.dash-page-atmosphere[data-phase="evening"] {
+  --dash-page-wash: oklch(0.64 0.06 40 / 0.16);
+}
+
+.dash-page-atmosphere[data-phase="night"] {
+  --dash-page-wash: oklch(0.56 0.07 275 / 0.18);
+}
+
+.dark .dash-page-atmosphere[data-phase="morning"] {
+  --dash-page-wash: oklch(0.42 0.06 58 / 0.28);
+}
+
+.dark .dash-page-atmosphere[data-phase="afternoon"] {
+  --dash-page-wash: oklch(0.36 0.04 220 / 0.24);
+}
+
+.dark .dash-page-atmosphere[data-phase="evening"] {
+  --dash-page-wash: oklch(0.34 0.05 40 / 0.26);
+}
+
+.dark .dash-page-atmosphere[data-phase="night"] {
+  --dash-page-wash: oklch(0.3 0.06 275 / 0.3);
+}
+
+.dash-page-wash {
+  pointer-events: none;
+  position: absolute;
+  top: -1.5rem;
+  left: 50%;
+  z-index: 0;
+  width: min(110%, 48rem);
+  height: min(46vh, 22rem);
+  transform: translateX(-50%);
+  background: radial-gradient(
+    ellipse 85% 72% at 50% 0%,
+    var(--dash-page-wash) 0%,
+    transparent 72%
+  );
+}
+
+.dash-page-grain {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.028;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+}
+
+.dark .dash-page-grain {
+  opacity: 0.045;
+  mix-blend-mode: soft-light;
+}
+
+.dash-page-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+.dash-insight-strip {
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--foreground) 6%, transparent),
+    0 8px 28px -22px oklch(0 0 0 / 0.2);
+}
+
+.dark .dash-insight-strip {
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--foreground) 10%, transparent),
+    0 12px 32px -24px oklch(0 0 0 / 0.45);
+}
+
 /* Dashboard — today's stage */
 .dash-stage {
   --dash-glow: oklch(0.62 0.04 235 / 0.18);

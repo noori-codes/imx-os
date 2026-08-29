@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 
 import { DashboardFocusCta } from "@/components/dashboard/dashboard-focus-cta";
 import { DashboardHeroSky } from "@/components/dashboard/dashboard-hero-sky";
+import {
+  dashboardPhaseFromHour,
+  type DashboardPhase,
+} from "@/lib/dashboard-phase";
 import { cn } from "@/lib/utils";
 import { formatFocusMinutes } from "@/types/focus";
 
@@ -22,13 +26,10 @@ type DashboardHeroProps = {
   attention?: number;
 };
 
-type Phase = "morning" | "afternoon" | "evening" | "night";
+type Phase = DashboardPhase;
 
 function phaseFromHour(hour: number): Phase {
-  if (hour >= 5 && hour < 11) return "morning";
-  if (hour >= 11 && hour < 17) return "afternoon";
-  if (hour >= 17 && hour < 21) return "evening";
-  return "night";
+  return dashboardPhaseFromHour(hour);
 }
 
 function formatTodayLabel(date = new Date()) {

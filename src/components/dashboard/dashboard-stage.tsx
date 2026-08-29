@@ -1,10 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useOptimistic, useTransition } from "react";
 
 import { toggleHabitToday } from "@/actions/habits";
 import { toggleTaskComplete } from "@/actions/tasks";
+import { DashboardAtmosphere } from "@/components/dashboard/dashboard-atmosphere";
+import { DashboardInsightStrip } from "@/components/dashboard/dashboard-insight-strip";
 import { DashboardHero } from "@/components/dashboard/dashboard-hero";
 import { GoalProgressList } from "@/components/dashboard/goal-progress-list";
 import { HabitsToday } from "@/components/dashboard/habits-today";
@@ -112,6 +113,10 @@ export function DashboardStage({ name, greeting, data }: DashboardStageProps) {
     (task) => task.due_date && isOverdue(task.due_date),
   ).length;
   const habitsDone = optimisticHabits.filter((h) => h.completed_today).length;
+  const tasksDoneToday = optimisticTasks.filter((task) => task.completed).length;
+  const activeDaysWeek = data.activity.days
+    .slice(-7)
+    .filter((day) => day.count > 0).length;
   const headlineQuad = pickHeadlineQuad({
     overdue,
     dueToday,
@@ -145,7 +150,7 @@ export function DashboardStage({ name, greeting, data }: DashboardStageProps) {
   }
 
   return (
-    <>
+    <DashboardAtmosphere>
       <DashboardHero
         name={name}
         greeting={greeting}
@@ -196,16 +201,14 @@ export function DashboardStage({ name, greeting, data }: DashboardStageProps) {
         </div>
       </div>
 
-      <div className="flex justify-end">
-        <Link
-          href="/analytics"
-          className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-        >
-          {data.stats.activity_streak > 0
-            ? `${data.stats.activity_streak}d · Analytics`
-            : "Analytics"}
-        </Link>
-      </div>
-    </>
+      <DashboardInsightStrip
+        focusMinutes={data.stats.focus_minutes_today}
+        tasksDoneToday={tasksDoneToday}
+        habitsDone={habitsDone}
+        habitsTotal={optimisticHabits.length}
+        streak={data.stats.activity_streak}
+        activeDaysWeek={activeDaysWeek}
+      />
+    </DashboardAtmosphere>
   );
 }
