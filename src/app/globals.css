@@ -1123,6 +1123,80 @@
   opacity: 0.35;
 }
 
+.dash-hero-label {
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--muted-foreground) 86%, transparent);
+}
+
+.dash-hero-stat {
+  margin-top: 0.5rem;
+  font-size: 3.75rem;
+  font-weight: 500;
+  letter-spacing: -0.035em;
+  line-height: 0.95;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+@media (min-width: 640px) {
+  .dash-hero-stat {
+    font-size: 4.5rem;
+  }
+}
+
+.dash-hero-secondary-label {
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--muted-foreground) 80%, transparent);
+}
+
+.dash-hero-secondary-value {
+  margin-top: 0.25rem;
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+@media (min-width: 640px) {
+  .dash-hero-secondary-value {
+    font-size: 1.125rem;
+  }
+}
+
+.dash-quad-label {
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--muted-foreground) 72%, transparent);
+}
+
+.dash-quad-stat {
+  font-size: 1.875rem;
+  font-weight: 500;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+@media (min-width: 640px) {
+  .dash-quad-stat {
+    font-size: 2rem;
+  }
+}
+
+.dash-quad-stat-fraction {
+  font-size: 1.25rem;
+  letter-spacing: -0.02em;
+  color: color-mix(in oklab, var(--muted-foreground) 58%, transparent);
+}
+
 .dash-quad-shell {
   --dash-quad-surface: color-mix(in oklab, var(--card) 88%, transparent);
   --dash-quad-edge: color-mix(in oklab, var(--foreground) 7%, transparent);

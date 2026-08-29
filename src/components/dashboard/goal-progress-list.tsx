@@ -95,7 +95,7 @@ export function GoalProgressList({ goals }: GoalProgressListProps) {
   return (
     <section className="min-w-0">
       <div className="flex items-baseline justify-between gap-3">
-        <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+        <p className="dash-quad-label">
           Goals
         </p>
         <Link
@@ -114,7 +114,7 @@ export function GoalProgressList({ goals }: GoalProgressListProps) {
       >
         <p
           className={cn(
-            "dash-signal-value text-4xl font-medium tracking-tight tabular-nums",
+            "dash-signal-value dash-quad-stat",
             visible.length === 0
               ? "text-muted-foreground"
               : allSealed

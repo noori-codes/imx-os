@@ -47,7 +47,7 @@ export function WeekOverview({ week }: WeekOverviewProps) {
   return (
     <section className="min-w-0">
       <div className="flex items-baseline justify-between gap-3">
-        <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+        <p className="dash-quad-label">
           Week
         </p>
         <p className="text-[11px] tabular-nums text-muted-foreground">
@@ -58,7 +58,7 @@ export function WeekOverview({ week }: WeekOverviewProps) {
       <div className="dash-reveal mt-4">
         <p
           className={cn(
-            "text-4xl font-medium tracking-tight tabular-nums",
+            "dash-quad-stat",
             empty ? "text-muted-foreground" : "text-foreground",
           )}
         >

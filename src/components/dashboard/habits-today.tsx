@@ -46,7 +46,7 @@ export function HabitsToday({ habits, onToggle }: HabitsTodayProps) {
   return (
     <section className="min-w-0">
       <div className="flex items-baseline justify-between gap-3">
-        <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+        <p className="dash-quad-label">
           Habits
         </p>
         <Link
@@ -65,7 +65,7 @@ export function HabitsToday({ habits, onToggle }: HabitsTodayProps) {
       >
         <p
           className={cn(
-            "dash-signal-value text-4xl font-medium tracking-tight tabular-nums transition-all duration-200",
+            "dash-signal-value dash-quad-stat transition-all duration-200",
             total === 0 || clear
               ? celebrateSealed
                 ? "text-foreground"
@@ -76,7 +76,7 @@ export function HabitsToday({ habits, onToggle }: HabitsTodayProps) {
           {total === 0 ? "—" : (
             <>
               {done}
-              <span className="text-2xl text-muted-foreground/60">/{total}</span>
+              <span className="dash-quad-stat-fraction">/{total}</span>
             </>
           )}
         </p>

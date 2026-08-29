@@ -114,7 +114,7 @@ export function TodayFocus({ tasks, onToggle }: TodayFocusProps) {
   return (
     <section className="min-w-0">
       <div className="flex items-baseline justify-between gap-3">
-        <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+        <p className="dash-quad-label">
           Tasks
         </p>
         <Link
@@ -130,7 +130,7 @@ export function TodayFocus({ tasks, onToggle }: TodayFocusProps) {
       >
         <p
           className={cn(
-            "dash-signal-value text-4xl font-medium tracking-tight tabular-nums transition-all duration-200",
+            "dash-signal-value dash-quad-stat transition-all duration-200",
             tasks.length === 0 || clear
               ? celebrateClear
                 ? "text-foreground"

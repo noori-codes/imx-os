@@ -16,7 +16,7 @@ function QuadHeader() {
 function QuadSignal() {
   return (
     <div className="mt-4 space-y-2">
-      <Bone className="h-10 w-16" />
+      <Bone className="h-8 w-14" />
       <Bone className="h-3 w-20 opacity-55" />
     </div>
   );
@@ -47,7 +47,7 @@ export function DashboardSkeleton() {
             <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between sm:gap-10">
               <div className="mx-auto space-y-2 sm:mx-0">
                 <Bone className="mx-auto h-2.5 w-20 sm:mx-0" />
-                <Bone className="mx-auto h-14 w-28 sm:mx-0 sm:h-16 sm:w-32" />
+                <Bone className="mx-auto h-[4.5rem] w-32 sm:mx-0 sm:w-36" />
               </div>
               <div className="grid grid-cols-2 gap-6 sm:min-w-[11rem] sm:gap-8">
                 {Array.from({ length: 2 }).map((_, i) => (

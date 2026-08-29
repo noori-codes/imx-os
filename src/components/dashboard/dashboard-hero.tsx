@@ -113,7 +113,7 @@ export function DashboardHero({
       <div className="relative z-[1] space-y-8">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div className="dash-reveal min-w-0 text-center sm:text-left">
-            <h2 className="text-2xl font-medium tracking-tight text-foreground sm:text-3xl">
+            <h2 className="text-xl font-medium tracking-tight text-foreground sm:text-2xl">
               {greeting}, {name}
             </h2>
             <p className="mt-2 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm text-muted-foreground sm:justify-start">
@@ -147,12 +147,12 @@ export function DashboardHero({
 
         <div className="dash-reveal dash-reveal-delay-2 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between sm:gap-10">
           <div className="text-center sm:text-left">
-            <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+            <p className="dash-hero-label">
               {heroKind === "due" ? "Needs you" : "Focus today"}
             </p>
             <p
               className={cn(
-                "mt-2 text-5xl font-medium tracking-tight tabular-nums sm:text-6xl",
+                "dash-hero-stat",
                 heroKind === "due" && attention > 0
                   ? overdue > 0
                     ? "text-destructive"
@@ -215,12 +215,10 @@ function SecondaryStat({
 }) {
   return (
     <div className="text-center sm:text-left">
-      <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-        {label}
-      </p>
+      <p className="dash-hero-secondary-label">{label}</p>
       <p
         className={cn(
-          "mt-1 text-lg font-medium tracking-tight tabular-nums sm:text-xl",
+          "dash-hero-secondary-value",
           alert
             ? "text-destructive"
             : muted
