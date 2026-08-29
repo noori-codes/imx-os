@@ -16,11 +16,15 @@ declare module "canvas-confetti" {
     disableForReducedMotion?: boolean;
   };
 
-  export type ConfettiFunction = (options?: Options) => Promise<null> | null;
-
-  const confetti: ConfettiFunction & {
+  export type ConfettiFunction = ((options?: Options) => Promise<null> | null) & {
     reset: () => void;
+    create: (
+      canvas?: HTMLCanvasElement,
+      opts?: { resize?: boolean; useWorker?: boolean },
+    ) => ConfettiFunction;
   };
+
+  const confetti: ConfettiFunction;
 
   export default confetti;
 }

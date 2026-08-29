@@ -7,7 +7,7 @@ import { formatFocusClock, formatFocusMinutes } from "@/types/focus";
 
 type FocusSealToastProps = {
   id: string | number;
-  kind: "focus" | "break" | "task" | "goal";
+  kind: "focus" | "break" | "task" | "goal" | "marathon";
   title: string;
   seconds?: number;
   todayMinutes?: number;
@@ -35,6 +35,7 @@ export function FocusSealToast({
         "bg-background/90 shadow-[0_20px_50px_-24px_rgba(0,0,0,0.45)] backdrop-blur-xl",
         "dark:bg-card/90 dark:shadow-[0_24px_60px_-20px_rgba(0,0,0,0.75)]",
         kind === "goal" && "border-foreground/20",
+        kind === "marathon" && "border-foreground/25",
       )}
     >
       <div
@@ -86,6 +87,9 @@ export function FocusSealToast({
           {kind === "focus" && todayMinutes != null ? (
             <span>Today · {formatFocusMinutes(todayMinutes)}</span>
           ) : null}
+          {kind === "marathon" ? (
+            <span>Two hours of deep work — huge achievement</span>
+          ) : null}
           {kind === "break" ? <span>Nicely reset</span> : null}
           {kind === "task" ? <span>Cleared from the board</span> : null}
           {nextLabel ? (
@@ -123,7 +127,7 @@ export function FocusSealToast({
 }
 
 type ShowFocusSealToastArgs = {
-  kind: "focus" | "break" | "task" | "goal";
+  kind: "focus" | "break" | "task" | "goal" | "marathon";
   title: string;
   seconds?: number;
   todayMinutes?: number;
@@ -158,7 +162,14 @@ export function showFocusSealToast({
       />
     ),
     {
-      duration: kind === "goal" ? (onMarkDone ? 8000 : 5600) : onMarkDone ? 8000 : 4200,
+      duration:
+        kind === "goal" || kind === "marathon"
+          ? onMarkDone
+            ? 8000
+            : 5600
+          : onMarkDone
+            ? 8000
+            : 4200,
     },
   );
 }

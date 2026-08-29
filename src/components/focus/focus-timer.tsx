@@ -19,8 +19,7 @@ import {
   requestFocusNotifyPermission,
 } from "@/lib/focus-alerts";
 import {
-  celebrateDailyGoalIfCrossed,
-  readFocusDailyGoalMinutes,
+  celebrateMarathonSessionIfNeeded,
 } from "@/lib/focus-celebrate";
 import {
   buildPickupHint,
@@ -307,8 +306,7 @@ export function FocusTimer({
 
       const addedMinutes =
         currentMode === "focus" ? Math.max(1, Math.round(planned / 60)) : 0;
-      const beforeMinutes = todayMinutesRef.current;
-      const todayMinutes = beforeMinutes + addedMinutes;
+      const todayMinutes = todayMinutesRef.current + addedMinutes;
       if (currentMode === "focus") {
         todayMinutesRef.current = todayMinutes;
         useFocusTimer.getState().pulseSeal({
@@ -341,14 +339,14 @@ export function FocusTimer({
             }
           : undefined;
 
-        const goalCrossed = celebrateDailyGoalIfCrossed({
-          beforeMinutes,
-          afterMinutes: todayMinutes,
-          goalMinutes: readFocusDailyGoalMinutes(dailyGoalMinutes),
+        const marathon = celebrateMarathonSessionIfNeeded({
+          sessionSeconds: planned,
+          todayMinutes,
+          nextLabel,
           onMarkDone: markDone,
         });
 
-        if (!goalCrossed) {
+        if (!marathon) {
           showFocusSealToast({
             kind: "focus",
             title: "Session sealed",
@@ -500,8 +498,7 @@ export function FocusTimer({
       seconds: isContinuation ? incremental : actual,
     });
 
-    const beforeMinutes = todayMinutesRef.current;
-    const todayMinutes = beforeMinutes + addedMinutes;
+    const todayMinutes = todayMinutesRef.current + addedMinutes;
     todayMinutesRef.current = todayMinutes;
 
     const linkedTaskForToast = taskId
@@ -526,14 +523,13 @@ export function FocusTimer({
         }
       : undefined;
 
-    const goalCrossed = celebrateDailyGoalIfCrossed({
-      beforeMinutes,
-      afterMinutes: todayMinutes,
-      goalMinutes: readFocusDailyGoalMinutes(dailyGoalMinutes),
+    const marathon = celebrateMarathonSessionIfNeeded({
+      sessionSeconds: actual,
+      todayMinutes,
       onMarkDone: markDone,
     });
 
-    if (!goalCrossed) {
+    if (!marathon) {
       showFocusSealToast({
         kind: "focus",
         title: "Session sealed",

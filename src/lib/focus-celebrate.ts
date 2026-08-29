@@ -1,28 +1,16 @@
 "use client";
 
 import { showFocusSealToast } from "@/components/focus/focus-seal-toast";
-import { toDateString } from "@/lib/date-utils";
 import {
   clampDailyFocusGoal,
   FOCUS_DAILY_GOAL_DEFAULT,
   FOCUS_DAILY_GOAL_KEY,
 } from "@/types/focus";
 
-const CELEBRATED_KEY_PREFIX = "imx-focus-goal-celebrated-";
+const CONFETTI_CANVAS_ID = "imx-focus-confetti-canvas";
 
-function celebratedStorageKey(day = new Date()) {
-  return `${CELEBRATED_KEY_PREFIX}${toDateString(day)}`;
-}
-
-export function hasCelebratedDailyGoalToday() {
-  if (typeof window === "undefined") return false;
-  return window.localStorage.getItem(celebratedStorageKey()) === "1";
-}
-
-function markDailyGoalCelebratedToday() {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(celebratedStorageKey(), "1");
-}
+/** Single focus session length that triggers celebration (2 hours). */
+export const FOCUS_MARATHON_SECONDS = 2 * 60 * 60;
 
 /** Live goal from the sky rail (localStorage), falling back to server prop. */
 export function readFocusDailyGoalMinutes(fallback = FOCUS_DAILY_GOAL_DEFAULT) {
@@ -34,19 +22,99 @@ export function readFocusDailyGoalMinutes(fallback = FOCUS_DAILY_GOAL_DEFAULT) {
   return clampDailyFocusGoal(value);
 }
 
-type ConfettiFn = (options?: Record<string, unknown>) => Promise<null> | null;
+type ConfettiOptions = Record<string, unknown>;
+type ConfettiFn = ((options?: ConfettiOptions) => Promise<null> | null) & {
+  reset?: () => void;
+  create?: (
+    canvas: HTMLCanvasElement,
+    opts?: { resize?: boolean; useWorker?: boolean },
+  ) => ConfettiFn;
+};
 
-async function loadConfetti(): Promise<ConfettiFn | null> {
-  try {
-    const mod = await import("canvas-confetti");
-    const candidate = (mod as { default?: unknown }).default ?? mod;
-    if (typeof candidate === "function") return candidate as ConfettiFn;
-    console.error("[focus] canvas-confetti export is not a function", mod);
-    return null;
-  } catch (error) {
-    console.error("[focus] failed to load canvas-confetti", error);
-    return null;
+let confettiInstance: ConfettiFn | null = null;
+let confettiModulePromise: Promise<ConfettiFn | null> | null = null;
+
+function resolveConfettiExport(mod: unknown): ConfettiFn | null {
+  if (typeof mod === "function") return mod as ConfettiFn;
+
+  if (mod && typeof mod === "object") {
+    const record = mod as Record<string, unknown>;
+    const candidates = [record.default, record.confetti];
+
+    for (const candidate of candidates) {
+      if (typeof candidate === "function") return candidate as ConfettiFn;
+      if (candidate && typeof candidate === "object") {
+        const nested = candidate as Record<string, unknown>;
+        if (typeof nested.default === "function") {
+          return nested.default as ConfettiFn;
+        }
+      }
+    }
   }
+
+  return null;
+}
+
+async function loadConfettiModule(): Promise<ConfettiFn | null> {
+  if (confettiModulePromise) return confettiModulePromise;
+
+  confettiModulePromise = (async () => {
+    try {
+      const mod = await import("canvas-confetti");
+      const resolved = resolveConfettiExport(mod);
+      if (!resolved) {
+        console.error("[focus] canvas-confetti export is not a function", mod);
+        return null;
+      }
+      return resolved;
+    } catch (error) {
+      console.error("[focus] failed to load canvas-confetti", error);
+      return null;
+    }
+  })();
+
+  return confettiModulePromise;
+}
+
+function ensureConfettiCanvas(): HTMLCanvasElement {
+  const existing = document.getElementById(
+    CONFETTI_CANVAS_ID,
+  ) as HTMLCanvasElement | null;
+  if (existing) return existing;
+
+  const canvas = document.createElement("canvas");
+  canvas.id = CONFETTI_CANVAS_ID;
+  canvas.setAttribute("aria-hidden", "true");
+  Object.assign(canvas.style, {
+    position: "fixed",
+    inset: "0",
+    width: "100%",
+    height: "100%",
+    pointerEvents: "none",
+    zIndex: "2147483647",
+  });
+  document.body.appendChild(canvas);
+  return canvas;
+}
+
+async function getConfetti(): Promise<ConfettiFn | null> {
+  if (typeof window === "undefined") return null;
+  if (confettiInstance) return confettiInstance;
+
+  const factory = await loadConfettiModule();
+  if (!factory) return null;
+
+  if (typeof factory.create === "function") {
+    const canvas = ensureConfettiCanvas();
+    confettiInstance = factory.create(canvas, {
+      resize: true,
+      useWorker: true,
+    });
+  } else {
+    confettiInstance = factory;
+  }
+
+  return confettiInstance;
 }
 
 function themeColors() {
@@ -56,76 +124,92 @@ function themeColors() {
     : ["#18181b", "#3f3f46", "#71717a", "#a1a1aa"];
 }
 
-/** Always try to fire — used on every focus finish/seal. */
-export function fireFocusGoalConfetti() {
+async function burst(
+  confetti: ConfettiFn,
+  intensity: "full" | "light",
+) {
+  const colors = themeColors();
+  const base = {
+    colors,
+    disableForReducedMotion: false,
+    scalar: intensity === "full" ? 1 : 0.85,
+    ticks: intensity === "full" ? 280 : 180,
+  };
+
+  if (intensity === "light") {
+    await confetti({
+      ...base,
+      particleCount: 45,
+      spread: 70,
+      startVelocity: 32,
+      origin: { x: 0.5, y: 0.6 },
+    });
+    return;
+  }
+
+  await confetti({
+    ...base,
+    particleCount: 120,
+    spread: 86,
+    startVelocity: 45,
+    origin: { x: 0.5, y: 0.55 },
+  });
+  await confetti({
+    ...base,
+    particleCount: 60,
+    angle: 60,
+    spread: 55,
+    origin: { x: 0.1, y: 0.7 },
+  });
+  await confetti({
+    ...base,
+    particleCount: 60,
+    angle: 120,
+    spread: 55,
+    origin: { x: 0.9, y: 0.7 },
+  });
+}
+
+/** Fire goal confetti onto a dedicated full-viewport canvas. */
+export function fireFocusGoalConfetti(intensity: "full" | "light" = "full") {
   if (typeof window === "undefined") return;
 
   void (async () => {
-    const confetti = await loadConfetti();
+    const confetti = await getConfetti();
     if (!confetti) return;
 
-    const colors = themeColors();
-    const base = {
-      colors,
-      zIndex: 2147483647,
-      disableForReducedMotion: false,
-      scalar: 1,
-      ticks: 280,
-    };
-
     try {
-      await confetti({
-        ...base,
-        particleCount: 120,
-        spread: 86,
-        startVelocity: 45,
-        origin: { x: 0.5, y: 0.55 },
-      });
-      await confetti({
-        ...base,
-        particleCount: 60,
-        angle: 60,
-        spread: 55,
-        origin: { x: 0.1, y: 0.7 },
-      });
-      await confetti({
-        ...base,
-        particleCount: 60,
-        angle: 120,
-        spread: 55,
-        origin: { x: 0.9, y: 0.7 },
-      });
+      await burst(confetti, intensity);
     } catch (error) {
       console.error("[focus] confetti failed", error);
+      confettiInstance = null;
     }
   })();
 }
 
 /**
- * On finish/seal: use the user's chosen daily goal + today's total after this
- * session. Congrats toast once per day when today >= goal.
+ * On finish/seal: celebrate when a single focus session reaches 2+ hours.
  */
-export function celebrateDailyGoalIfCrossed({
-  afterMinutes,
-  goalMinutes,
+export function celebrateMarathonSessionIfNeeded({
+  sessionSeconds,
+  todayMinutes,
+  nextLabel,
   onMarkDone,
 }: {
-  beforeMinutes?: number;
-  afterMinutes: number;
-  goalMinutes: number;
+  sessionSeconds: number;
+  todayMinutes?: number;
+  nextLabel?: string;
   onMarkDone?: () => void;
 }) {
-  if (goalMinutes <= 0) return false;
-  if (afterMinutes < goalMinutes) return false;
-  if (hasCelebratedDailyGoalToday()) return false;
+  if (sessionSeconds < FOCUS_MARATHON_SECONDS) return false;
 
-  markDailyGoalCelebratedToday();
-  fireFocusGoalConfetti();
+  fireFocusGoalConfetti("full");
   showFocusSealToast({
-    kind: "goal",
-    title: "Daily goal sealed",
-    todayMinutes: afterMinutes,
-    goalMinutes,
+    kind: "marathon",
+    title: "Huge focus session",
+    seconds: sessionSeconds,
+    todayMinutes,
+    nextLabel,
     onMarkDone,
   });
   return true;
