@@ -10,6 +10,7 @@ import { GoalProgressList } from "@/components/dashboard/goal-progress-list";
 import { HabitsToday } from "@/components/dashboard/habits-today";
 import { TodayFocus } from "@/components/dashboard/today-focus";
 import { WeekOverview } from "@/components/dashboard/week-overview";
+import { pickHeadlineQuad } from "@/lib/dashboard-headline";
 import { isOverdue, startOfDay, toDateString } from "@/lib/date-utils";
 import type {
   DashboardData,
@@ -111,6 +112,17 @@ export function DashboardStage({ name, greeting, data }: DashboardStageProps) {
     (task) => task.due_date && isOverdue(task.due_date),
   ).length;
   const habitsDone = optimisticHabits.filter((h) => h.completed_today).length;
+  const headlineQuad = pickHeadlineQuad({
+    overdue,
+    dueToday,
+    openTaskCount: openTasks.length,
+    taskCount: optimisticTasks.length,
+    habitsDone,
+    habitsTotal: optimisticHabits.length,
+    focusMinutes: data.stats.focus_minutes_today,
+    week: optimisticWeek,
+    goals: data.goals,
+  });
 
   function onTaskToggle(taskId: string, completed: boolean) {
     const after = applyTaskToggle(optimisticTasks, { id: taskId, completed });
@@ -150,19 +162,35 @@ export function DashboardStage({ name, greeting, data }: DashboardStageProps) {
 
       <div className="dash-quad-shell">
         <div className="dash-quad grid grid-cols-1 lg:grid-cols-2 lg:grid-rows-[1fr_1fr]">
-          <div className="dash-quad-cell" data-quad="tasks">
+          <div
+            className="dash-quad-cell"
+            data-quad="tasks"
+            data-headline={headlineQuad === "tasks" ? "true" : undefined}
+          >
             <TodayFocus tasks={optimisticTasks} onToggle={onTaskToggle} />
           </div>
-          <div className="dash-quad-cell" data-quad="habits">
+          <div
+            className="dash-quad-cell"
+            data-quad="habits"
+            data-headline={headlineQuad === "habits" ? "true" : undefined}
+          >
             <HabitsToday
               habits={optimisticHabits}
               onToggle={onHabitToggle}
             />
           </div>
-          <div className="dash-quad-cell" data-quad="week">
+          <div
+            className="dash-quad-cell"
+            data-quad="week"
+            data-headline={headlineQuad === "week" ? "true" : undefined}
+          >
             <WeekOverview week={optimisticWeek} />
           </div>
-          <div className="dash-quad-cell" data-quad="goals">
+          <div
+            className="dash-quad-cell"
+            data-quad="goals"
+            data-headline={headlineQuad === "goals" ? "true" : undefined}
+          >
             <GoalProgressList goals={data.goals} />
           </div>
         </div>
