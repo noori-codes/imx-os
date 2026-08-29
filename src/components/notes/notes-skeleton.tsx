@@ -1,7 +1,7 @@
 import { AppPageFrame } from "@/components/shared/app-page-frame";
 
 function Bone({ className }: { className?: string }) {
-  return <div className={className} aria-hidden="true" />;
+  return <div className={`imx-skeleton-bone ${className ?? ""}`} aria-hidden="true" />;
 }
 
 export function NotesSkeleton() {

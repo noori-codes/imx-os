@@ -193,8 +193,8 @@
   }
 }
 
-.dashboard-skeleton [aria-hidden="true"],
-.imx-skeleton [aria-hidden="true"] {
+.dashboard-skeleton .imx-skeleton-bone,
+.imx-skeleton .imx-skeleton-bone {
   background-color: color-mix(in oklab, var(--muted) 88%, transparent);
   background-image: linear-gradient(
     105deg,
@@ -205,11 +205,11 @@
     transparent 100%
   );
   background-size: 200% 100%;
-  animation: dashboard-shimmer 1.35s ease-in-out infinite;
+  animation: dashboard-shimmer 1.35s ease-in-out infinite !important;
 }
 
-.dark .dashboard-skeleton [aria-hidden="true"],
-.dark .imx-skeleton [aria-hidden="true"] {
+.dark .dashboard-skeleton .imx-skeleton-bone,
+.dark .imx-skeleton .imx-skeleton-bone {
   background-color: color-mix(in oklab, var(--muted) 92%, transparent);
   background-image: linear-gradient(
     105deg,
@@ -219,6 +219,19 @@
     color-mix(in oklab, white 8%, transparent) 60%,
     transparent 100%
   );
+}
+
+/* Dashboard skeleton — layout only, no atmosphere or entrance motion */
+.dashboard-skeleton .dash-reveal,
+.dashboard-skeleton .dash-reveal-delay-1,
+.dashboard-skeleton .dash-reveal-delay-2,
+.dashboard-skeleton .dash-quad-cell,
+.dashboard-skeleton .dash-stagger > *,
+.dashboard-skeleton .dash-heat-jewel,
+.dashboard-skeleton .dash-heat-dot {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
 }
 
 @keyframes focus-eq {
@@ -460,20 +473,21 @@
 
 .focus-sky-fill {
   transition: opacity 600ms ease;
+  animation: focus-sky-breathe 8s ease-in-out infinite;
 }
 
 .dark .focus-sky-fill {
   opacity: 0.85;
 }
 
-.focus-progress[data-live="false"] .focus-sky-fill {
-  animation: focus-sky-breathe 9s ease-in-out infinite;
+.focus-progress[data-live="true"] .focus-sky-fill {
+  animation-duration: 11s;
 }
 
 @keyframes focus-sky-breathe {
   0%,
   100% {
-    opacity: 0.82;
+    opacity: 0.72;
   }
   50% {
     opacity: 1;
@@ -482,20 +496,21 @@
 
 .focus-sky-arc {
   filter: drop-shadow(0 0 3px oklch(0.85 0.06 240 / 0.15));
+  animation: focus-arc-shimmer 11s ease-in-out infinite;
 }
 
 .dark .focus-sky-arc {
   filter: drop-shadow(0 0 4px oklch(0.55 0.08 240 / 0.2));
 }
 
-.focus-progress[data-live="false"] .focus-sky-arc {
-  animation: focus-arc-shimmer 14s ease-in-out infinite;
+.focus-progress[data-live="true"] .focus-sky-arc {
+  animation-duration: 14s;
 }
 
 @keyframes focus-arc-shimmer {
   0%,
   100% {
-    opacity: 0.7;
+    opacity: 0.58;
   }
   50% {
     opacity: 1;
@@ -504,7 +519,9 @@
 
 .focus-sky-star {
   opacity: 0.55;
-  animation: focus-star-twinkle 5.6s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: focus-star-twinkle 4.8s ease-in-out infinite;
 }
 
 .dark .focus-sky-star {
@@ -514,10 +531,12 @@
 @keyframes focus-star-twinkle {
   0%,
   100% {
-    opacity: 0.28;
+    opacity: 0.22;
+    transform: scale(0.86);
   }
   50% {
-    opacity: 0.9;
+    opacity: 1;
+    transform: scale(1.14);
   }
 }
 
@@ -677,6 +696,20 @@
   animation: focus-constellation-live 2.4s ease-in-out infinite;
 }
 
+.focus-sky-trail {
+  animation: focus-sky-trail-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes focus-sky-trail-pulse {
+  0%,
+  100% {
+    opacity: 0.12;
+  }
+  50% {
+    opacity: 0.32;
+  }
+}
+
 .focus-sky-continue-ring {
   animation: focus-continue-ring 1.8s ease-out 2;
   transform-box: fill-box;
@@ -767,14 +800,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .focus-constellation-live-halo,
-  .focus-sky-continue-ring,
-  .focus-progress[data-live="true"] .focus-sky-now circle:last-child,
-  .focus-progress[data-live="false"] .focus-sky-fill,
-  .focus-progress[data-live="false"] .focus-sky-arc,
-  .focus-sky-star,
-  .focus-sky-phase-active,
-  .focus-week-today,
   .focus-eq-bar,
   .focus-stage[data-running="true"] .focus-stage-glow {
     animation: none !important;
@@ -788,6 +813,49 @@
   .focus-seal,
   .focus-seal-flash {
     animation: none !important;
+  }
+}
+
+/* Focus sky always animates — GNOME enable-animations:false sets prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .focus-progress .focus-sky-fill {
+    animation: focus-sky-breathe 8s ease-in-out infinite !important;
+  }
+
+  .focus-progress .focus-sky-arc {
+    animation: focus-arc-shimmer 11s ease-in-out infinite !important;
+  }
+
+  .focus-progress .focus-sky-star {
+    animation: focus-star-twinkle 4.8s ease-in-out infinite !important;
+  }
+
+  .focus-progress .focus-sky-phase-active {
+    animation: focus-phase-glow 4.8s ease-in-out infinite !important;
+  }
+
+  .focus-progress .focus-constellation-live-halo {
+    animation: focus-constellation-live 2.4s ease-in-out infinite !important;
+  }
+
+  .focus-progress .focus-sky-trail {
+    animation: focus-sky-trail-pulse 1.8s ease-in-out infinite !important;
+  }
+
+  .focus-progress .focus-sky-continue-ring {
+    animation: focus-continue-ring 1.8s ease-out 2 !important;
+  }
+
+  .focus-progress[data-live="true"] .focus-sky-now circle:last-child {
+    animation: focus-sky-now 2.8s ease-in-out infinite !important;
+  }
+
+  .focus-progress[data-live="true"] .focus-week-today {
+    animation: focus-week-live 2.8s ease-in-out infinite !important;
+  }
+
+  .focus-progress .focus-constellation-comet {
+    animation: focus-comet-pulse 2.2s ease-in-out infinite !important;
   }
 }
 
@@ -843,11 +911,26 @@
   width: min(110%, 48rem);
   height: min(46vh, 22rem);
   transform: translateX(-50%);
+  transform-origin: center top;
+  will-change: transform, opacity;
+  animation: dash-page-wash-breathe 7s ease-in-out infinite;
   background: radial-gradient(
     ellipse 85% 72% at 50% 0%,
     var(--dash-page-wash) 0%,
     transparent 72%
   );
+}
+
+@keyframes dash-page-wash-breathe {
+  0%,
+  100% {
+    opacity: 0.82;
+    transform: translateX(-50%) scale(0.96);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1.06);
+  }
 }
 
 .dash-page-grain {
@@ -905,6 +988,9 @@
   bottom: -0.25rem;
   width: min(62%, 19rem);
   opacity: 0.42;
+  transform-origin: center bottom;
+  will-change: transform, opacity;
+  animation: dash-hero-sky-drift 9s ease-in-out infinite;
   transition: opacity 420ms ease;
 }
 
@@ -920,42 +1006,103 @@
 
 .dash-hero-sky-fill {
   opacity: 0.85;
+  animation: dash-hero-sky-breathe 8s ease-in-out infinite;
 }
 
 .dash-hero-sky-arc {
   opacity: 0.9;
+  animation: dash-hero-arc-shimmer 12s ease-in-out infinite;
 }
 
 .dash-hero-sky-star-dust {
   fill: color-mix(in oklab, var(--foreground) 22%, transparent);
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: dash-hero-star-twinkle 5.4s ease-in-out infinite;
 }
 
 .dash-hero-sky-star-lit {
   fill: color-mix(in oklab, var(--foreground) 72%, transparent);
+  transform-box: fill-box;
+  transform-origin: center;
   animation: dash-hero-star-twinkle 4.8s ease-in-out infinite;
 }
 
+.dash-hero-sky-now {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: dash-hero-now-core 3.2s ease-in-out infinite;
+}
+
 .dash-hero-sky-now-halo {
+  transform-box: fill-box;
+  transform-origin: center;
   animation: dash-hero-now-pulse 3.6s ease-in-out infinite;
 }
 
-@keyframes dash-hero-star-twinkle {
+@keyframes dash-hero-sky-drift {
   0%,
   100% {
-    opacity: 0.45;
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-3px) scale(1.02);
+  }
+}
+
+@keyframes dash-hero-sky-breathe {
+  0%,
+  100% {
+    opacity: 0.68;
   }
   50% {
     opacity: 1;
   }
 }
 
+@keyframes dash-hero-arc-shimmer {
+  0%,
+  100% {
+    opacity: 0.62;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes dash-hero-star-twinkle {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(0.88);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.12);
+  }
+}
+
+@keyframes dash-hero-now-core {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.92);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
 @keyframes dash-hero-now-pulse {
   0%,
   100% {
-    opacity: 0.28;
+    opacity: 0.22;
+    transform: scale(0.85);
   }
   50% {
-    opacity: 0.65;
+    opacity: 0.75;
+    transform: scale(1.15);
   }
 }
 
@@ -1028,7 +1175,9 @@
     transparent 68%
   );
   opacity: 0.9;
-  animation: dash-glow-breathe 10s ease-in-out infinite;
+  transform-origin: center;
+  will-change: transform, opacity;
+  animation: dash-glow-breathe 5s ease-in-out infinite;
 }
 
 .dash-stage-glow-secondary {
@@ -1045,18 +1194,34 @@
     var(--dash-glow) 0%,
     transparent 70%
   );
-  opacity: 0.4;
+  opacity: 0.55;
+  transform-origin: center;
+  will-change: transform, opacity;
+  animation: dash-glow-breathe-secondary 6.5s ease-in-out infinite;
+  animation-delay: -2.5s;
 }
 
 @keyframes dash-glow-breathe {
   0%,
   100% {
-    opacity: 0.75;
-    transform: scale(1);
+    opacity: 0.5;
+    transform: scale(0.9);
   }
   50% {
     opacity: 1;
-    transform: scale(1.04);
+    transform: scale(1.16);
+  }
+}
+
+@keyframes dash-glow-breathe-secondary {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.88);
+  }
+  50% {
+    opacity: 0.75;
+    transform: scale(1.12);
   }
 }
 
@@ -1691,6 +1856,19 @@
     transparent 100%
   );
   opacity: 0.95;
+  animation: dash-headline-bar-pulse 3.2s ease-in-out infinite;
+}
+
+@keyframes dash-headline-bar-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scaleX(0.92);
+  }
+  50% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
 }
 
 .dash-quad-cell[data-headline="true"][data-quad="tasks"] {
@@ -1741,44 +1919,71 @@
   }
 }
 
+/* Dashboard always animates — GNOME "enable-animations: false" sets prefers-reduced-motion */
 @media (prefers-reduced-motion: reduce) {
-  .dash-stage-glow,
-  .dash-reveal,
-  .dash-reveal-delay-1,
-  .dash-reveal-delay-2,
-  .dash-reveal-delay-3,
-  .dash-stagger > *,
-  .dash-bar-rise,
-  .dash-heat-dot,
-  .dash-heat-jewel,
-  .dash-ring-draw,
-  .dash-quad-cell {
-    animation: none !important;
+  .dash-page-atmosphere .dash-page-wash {
+    animation: dash-page-wash-breathe 7s ease-in-out infinite !important;
   }
 
-  .dash-focus-cta:hover,
-  .dash-focus-cta:active,
-  .dash-focus-live-dot,
-  .dash-habit-seal,
-  .dash-signal-celebrate,
-  .dash-signal-celebrate .dash-signal-value,
-  .dash-task-row-done,
-  .dash-habit-seal-burst,
-  .dash-habit-seal-burst::after,
-  .dash-ring-sealed .dash-ring-fill,
-  .dash-ring-disc,
-  .dash-ring-check,
-  .dash-heat-pulse,
-  .dash-heat-count-pop,
-  .dash-hero-sky-star-lit,
-  .dash-hero-sky-now-halo {
-    animation: none !important;
-    transform: none;
-    filter: none;
+  .dash-page-atmosphere .dash-stage-glow {
+    animation: dash-glow-breathe 5s ease-in-out infinite !important;
   }
 
-  .dash-ring-fill {
-    transition: none;
+  .dash-page-atmosphere .dash-stage-glow-secondary {
+    animation: dash-glow-breathe-secondary 6.5s ease-in-out infinite !important;
+    animation-delay: -2.5s !important;
+  }
+
+  .dash-page-atmosphere .dash-reveal {
+    animation: dash-reveal-up 520ms cubic-bezier(0.22, 1, 0.36, 1) both !important;
+  }
+
+  .dash-page-atmosphere .dash-stagger > * {
+    animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both !important;
+    animation-delay: calc(var(--i, 0) * 55ms) !important;
+  }
+
+  .dash-page-atmosphere .dash-quad-cell {
+    animation: dash-reveal-up 520ms cubic-bezier(0.22, 1, 0.36, 1) both !important;
+  }
+
+  .dash-page-atmosphere .dash-heat-dot,
+  .dash-page-atmosphere .dash-heat-jewel {
+    animation: dash-heat-pop 560ms cubic-bezier(0.22, 1, 0.36, 1) both !important;
+    animation-delay: calc(var(--i, 0) * 45ms) !important;
+  }
+
+  .dash-page-atmosphere .dash-hero-sky {
+    animation: dash-hero-sky-drift 9s ease-in-out infinite !important;
+  }
+
+  .dash-page-atmosphere .dash-hero-sky-fill {
+    animation: dash-hero-sky-breathe 8s ease-in-out infinite !important;
+  }
+
+  .dash-page-atmosphere .dash-hero-sky-arc {
+    animation: dash-hero-arc-shimmer 12s ease-in-out infinite !important;
+  }
+
+  .dash-page-atmosphere .dash-hero-sky-star-lit,
+  .dash-page-atmosphere .dash-hero-sky-star-dust {
+    animation: dash-hero-star-twinkle 4.8s ease-in-out infinite !important;
+  }
+
+  .dash-page-atmosphere .dash-hero-sky-now {
+    animation: dash-hero-now-core 3.2s ease-in-out infinite !important;
+  }
+
+  .dash-page-atmosphere .dash-hero-sky-now-halo {
+    animation: dash-hero-now-pulse 3.6s ease-in-out infinite !important;
+  }
+
+  .dash-page-atmosphere .dash-focus-live-dot {
+    animation: dash-focus-live-pulse 2.4s ease-in-out infinite !important;
+  }
+
+  .dash-page-atmosphere .dash-quad-cell[data-headline="true"]::before {
+    animation: dash-headline-bar-pulse 3.2s ease-in-out infinite !important;
   }
 }
 

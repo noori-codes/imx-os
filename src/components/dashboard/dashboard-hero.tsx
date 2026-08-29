@@ -49,14 +49,6 @@ function useCountUp(target: number, enabled: boolean) {
       return;
     }
 
-    const reduce =
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduce) {
-      setValue(target);
-      return;
-    }
-
     let frame = 0;
     const duration = 620;
     const start = performance.now();

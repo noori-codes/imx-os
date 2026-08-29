@@ -1,7 +1,8 @@
 import { AppPageFrame } from "@/components/shared/app-page-frame";
+import { cn } from "@/lib/utils";
 
 function Bone({ className }: { className?: string }) {
-  return <div className={className} aria-hidden="true" />;
+  return <div className={cn("imx-skeleton-bone", className)} aria-hidden="true" />;
 }
 
 function QuadHeader() {
@@ -22,74 +23,55 @@ function QuadSignal() {
   );
 }
 
-export function DashboardSkeleton() {
+function DashboardSkeletonBody() {
   return (
-    <div
-      className="imx-skeleton dashboard-skeleton"
-      role="status"
-      aria-live="polite"
-      aria-label="Loading dashboard"
-    >
-      <AppPageFrame className="max-w-5xl gap-10 md:py-8">
-        <div className="dash-page-atmosphere" data-phase="evening">
-          <div className="dash-page-wash" aria-hidden="true" />
-          <div className="dash-page-grain" aria-hidden="true" />
-          <div className="dash-page-content">
-        <section
-          className="dash-stage px-5 py-6 sm:px-7 sm:py-8"
-          data-phase="evening"
-        >
-          <div className="relative z-[1] space-y-8">
-            <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-              <div className="mx-auto space-y-2.5 sm:mx-0">
-                <Bone className="mx-auto h-8 w-56 max-w-full sm:mx-0 sm:h-9 sm:w-64" />
-                <Bone className="mx-auto h-3.5 w-40 opacity-55 sm:mx-0" />
-              </div>
-              <Bone className="mx-auto h-10 w-28 rounded-full sm:mx-0" />
+    <div className="flex flex-1 flex-col gap-10">
+      <section className="dash-stage px-5 py-6 sm:px-7 sm:py-8">
+        <div className="space-y-8">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+            <div className="mx-auto space-y-2.5 sm:mx-0">
+              <Bone className="mx-auto h-8 w-56 max-w-full sm:mx-0 sm:h-9 sm:w-64" />
+              <Bone className="mx-auto h-3.5 w-40 opacity-55 sm:mx-0" />
             </div>
+            <Bone className="mx-auto h-10 w-28 rounded-full sm:mx-0" />
+          </div>
 
-            <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between sm:gap-10">
-              <div className="mx-auto space-y-2 sm:mx-0">
-                <Bone className="mx-auto h-2.5 w-20 sm:mx-0" />
-                <Bone className="mx-auto h-[4.5rem] w-32 sm:mx-0 sm:w-36" />
-              </div>
-              <div className="grid grid-cols-2 gap-6 sm:min-w-[11rem] sm:gap-8">
-                {Array.from({ length: 2 }).map((_, i) => (
-                  <div key={i} className="space-y-2 text-center sm:text-left">
-                    <Bone className="mx-auto h-2.5 w-10 sm:mx-0" />
-                    <Bone className="mx-auto h-6 w-12 sm:mx-0" />
-                  </div>
-                ))}
-              </div>
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between sm:gap-10">
+            <div className="mx-auto space-y-2 sm:mx-0">
+              <Bone className="mx-auto h-2.5 w-20 sm:mx-0" />
+              <Bone className="mx-auto h-[4.5rem] w-32 sm:mx-0 sm:w-36" />
+            </div>
+            <div className="grid grid-cols-2 gap-6 sm:min-w-[11rem] sm:gap-8">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <div key={i} className="space-y-2 text-center sm:text-left">
+                  <Bone className="mx-auto h-2.5 w-10 sm:mx-0" />
+                  <Bone className="mx-auto h-6 w-12 sm:mx-0" />
+                </div>
+              ))}
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <div className="dash-quad-shell">
-          <div className="dash-quad grid grid-cols-1 lg:grid-cols-2 lg:grid-rows-[1fr_1fr]">
-            <div className="dash-quad-cell" data-quad="tasks">
-              <section className="min-w-0">
+      <div className="dash-quad-shell">
+        <div className="dash-quad grid grid-cols-1 lg:grid-cols-2 lg:grid-rows-[1fr_1fr]">
+          <div className="dash-quad-cell" data-quad="tasks">
+            <section className="min-w-0">
               <QuadHeader />
               <QuadSignal />
               <div className="mt-5 space-y-1 border-t border-border/30 pt-3">
-                <div className="flex items-center gap-2.5 py-2">
-                  <Bone className="size-4 shrink-0 rounded-full" />
-                  <Bone className="h-2.5 w-[68%]" />
-                </div>
-                <div className="flex items-center gap-2.5 py-2">
-                  <Bone className="size-4 shrink-0 rounded-full" />
-                  <Bone className="h-2.5 w-[54%]" />
-                </div>
-                <div className="flex items-center gap-2.5 py-2">
-                  <Bone className="size-4 shrink-0 rounded-full" />
-                  <Bone className="h-2.5 w-[40%]" />
-                </div>
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-2.5 py-2">
+                    <Bone className="size-4 shrink-0 rounded-full" />
+                    <Bone className="h-2.5 w-[68%]" />
+                  </div>
+                ))}
               </div>
-              </section>
-            </div>
+            </section>
+          </div>
 
-            <div className="dash-quad-cell" data-quad="habits">
-              <section className="min-w-0">
+          <div className="dash-quad-cell" data-quad="habits">
+            <section className="min-w-0">
               <QuadHeader />
               <QuadSignal />
               <div className="mt-5 flex flex-wrap gap-3 border-t border-border/30 pt-5">
@@ -104,44 +86,44 @@ export function DashboardSkeleton() {
                   </div>
                 ))}
               </div>
-              </section>
-            </div>
+            </section>
+          </div>
 
-            <div className="dash-quad-cell" data-quad="week">
-              <section className="min-w-0">
+          <div className="dash-quad-cell" data-quad="week">
+            <section className="min-w-0">
               <QuadHeader />
               <QuadSignal />
               <div className="mt-auto border-t border-border/30 pt-5">
                 <div className="dash-heat-stage">
                   <div className="grid grid-cols-7 items-end gap-1">
-                  {Array.from({ length: 7 }).map((_, i) => (
-                    <div
-                      key={i}
-                      className="flex flex-col items-center gap-2"
-                    >
-                      <Bone className="h-2.5 w-3 opacity-40" />
-                      <div className="dash-heat-jewel-wrap">
-                        <Bone
-                          className={
-                            i % 3 === 0
-                              ? "size-2.5 rounded-full"
-                              : i % 3 === 1
-                                ? "size-3.5 rounded-full"
-                                : "size-4 rounded-full"
-                          }
-                        />
+                    {Array.from({ length: 7 }).map((_, i) => (
+                      <div
+                        key={i}
+                        className="flex flex-col items-center gap-2"
+                      >
+                        <Bone className="h-2.5 w-3 opacity-40" />
+                        <div className="dash-heat-jewel-wrap">
+                          <Bone
+                            className={
+                              i % 3 === 0
+                                ? "size-2.5 rounded-full"
+                                : i % 3 === 1
+                                  ? "size-3.5 rounded-full"
+                                  : "size-4 rounded-full"
+                            }
+                          />
+                        </div>
+                        <Bone className="h-2.5 w-5 opacity-55" />
                       </div>
-                      <Bone className="h-2.5 w-5 opacity-55" />
-                    </div>
-                  ))}
+                    ))}
                   </div>
                 </div>
               </div>
-              </section>
-            </div>
+            </section>
+          </div>
 
-            <div className="dash-quad-cell" data-quad="goals">
-              <section className="min-w-0">
+          <div className="dash-quad-cell" data-quad="goals">
+            <section className="min-w-0">
               <QuadHeader />
               <QuadSignal />
               <div className="mt-5 border-t border-border/30 pt-4">
@@ -163,19 +145,31 @@ export function DashboardSkeleton() {
                   </div>
                 </div>
               </div>
-              </section>
-            </div>
+            </section>
           </div>
         </div>
+      </div>
 
-        <div className="dash-insight-strip rounded-2xl border border-border/40 px-4 py-3.5 sm:px-5">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-            <Bone className="h-3 w-56 max-w-full" />
-            <Bone className="h-3 w-20" />
-          </div>
+      <div className="dash-insight-strip rounded-2xl border border-border/40 px-4 py-3.5 sm:px-5">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+          <Bone className="h-3 w-56 max-w-full" />
+          <Bone className="h-3 w-20" />
         </div>
-          </div>
-        </div>
+      </div>
+    </div>
+  );
+}
+
+export function DashboardSkeleton() {
+  return (
+    <div
+      className="imx-skeleton dashboard-skeleton"
+      role="status"
+      aria-live="polite"
+      aria-label="Loading dashboard"
+    >
+      <AppPageFrame className="max-w-5xl gap-10 md:py-8">
+        <DashboardSkeletonBody />
       </AppPageFrame>
     </div>
   );

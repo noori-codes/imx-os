@@ -956,7 +956,7 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
     <section
       data-live={liveFocus ? "true" : "false"}
       data-visible={pageVisible ? "true" : "false"}
-      data-calm="true"
+      data-calm="false"
       data-compact={compact ? "true" : "false"}
       data-sealed={sealPulse ? "true" : "false"}
       data-continuing={progressBaseSeconds > 0 ? "true" : "false"}

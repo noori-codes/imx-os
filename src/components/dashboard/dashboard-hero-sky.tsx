@@ -73,10 +73,9 @@ export function DashboardHeroSky({
   const active = emphasize && focusMinutes > 0;
 
   useEffect(() => {
-    setNowT(skyTimeToT(new Date()));
-    const timer = window.setInterval(() => {
-      setNowT(skyTimeToT(new Date()));
-    }, 60_000);
+    const sync = () => setNowT(skyTimeToT(new Date()));
+    sync();
+    const timer = window.setInterval(sync, 1_000);
     return () => window.clearInterval(timer);
   }, []);
 
