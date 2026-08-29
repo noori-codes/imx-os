@@ -1,62 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useOptimistic, useTransition } from "react";
 
-import { toggleHabitToday } from "@/actions/habits";
 import { cn } from "@/lib/utils";
 import type { DashboardHabit } from "@/types/dashboard";
 
 type HabitsTodayProps = {
   habits: DashboardHabit[];
+  onToggle: (habitId: string, completed: boolean) => void;
 };
 
-type ToggleAction = {
-  id: string;
-  completed: boolean;
-};
-
-function applyToggle(
-  habits: DashboardHabit[],
-  action: ToggleAction,
-): DashboardHabit[] {
-  return habits.map((habit) => {
-    if (habit.id !== action.id) return habit;
-
-    const wasDone = habit.completed_today;
-    const willBeDone = action.completed;
-    let current_streak = habit.current_streak;
-
-    if (!wasDone && willBeDone) current_streak += 1;
-    if (wasDone && !willBeDone) current_streak = Math.max(0, current_streak - 1);
-
-    return {
-      ...habit,
-      completed_today: willBeDone,
-      current_streak,
-      longest_streak: Math.max(habit.longest_streak, current_streak),
-    };
-  });
-}
-
-export function HabitsToday({ habits }: HabitsTodayProps) {
-  const [, startTransition] = useTransition();
-  const [optimisticHabits, setOptimisticHabits] = useOptimistic(
-    habits,
-    applyToggle,
-  );
-
-  const done = optimisticHabits.filter((h) => h.completed_today).length;
-  const total = optimisticHabits.length;
+export function HabitsToday({ habits, onToggle }: HabitsTodayProps) {
+  const done = habits.filter((h) => h.completed_today).length;
+  const total = habits.length;
   const clear = total > 0 && done === total;
-
-  function onToggle(habit: DashboardHabit) {
-    const next = !habit.completed_today;
-    startTransition(async () => {
-      setOptimisticHabits({ id: habit.id, completed: next });
-      await toggleHabitToday(habit.id, next);
-    });
-  }
 
   return (
     <section className="min-w-0">
@@ -75,7 +32,7 @@ export function HabitsToday({ habits }: HabitsTodayProps) {
       <div className="dash-reveal mt-4">
         <p
           className={cn(
-            "text-4xl font-medium tracking-tight tabular-nums",
+            "text-4xl font-medium tracking-tight tabular-nums transition-all duration-200",
             total === 0 || clear
               ? "text-muted-foreground"
               : "text-foreground",
@@ -102,7 +59,7 @@ export function HabitsToday({ habits }: HabitsTodayProps) {
         </Link>
       ) : (
         <ul className="dash-stagger mt-5 flex flex-wrap gap-x-3 gap-y-4 border-t border-border/30 pt-5">
-          {optimisticHabits.slice(0, 8).map((habit, index) => (
+          {habits.slice(0, 8).map((habit, index) => (
             <li
               key={habit.id}
               className="w-17 sm:w-18"
@@ -110,7 +67,7 @@ export function HabitsToday({ habits }: HabitsTodayProps) {
             >
               <button
                 type="button"
-                onClick={() => onToggle(habit)}
+                onClick={() => onToggle(habit.id, !habit.completed_today)}
                 className="group flex w-full flex-col items-center gap-1.5"
                 aria-label={
                   habit.completed_today
@@ -121,7 +78,7 @@ export function HabitsToday({ habits }: HabitsTodayProps) {
               >
                 <span
                   className={cn(
-                    "dash-habit-seal flex size-11 items-center justify-center rounded-full border-2 transition-transform duration-150 group-hover:scale-105 group-active:scale-95 sm:size-12",
+                    "dash-habit-seal flex size-11 items-center justify-center rounded-full border-2 transition-all duration-150 group-hover:scale-105 group-active:scale-95 sm:size-12",
                     habit.completed_today && "text-white",
                   )}
                   style={
@@ -147,7 +104,7 @@ export function HabitsToday({ habits }: HabitsTodayProps) {
                 </span>
                 <span
                   className={cn(
-                    "w-full truncate text-center text-[11px] leading-tight text-foreground",
+                    "w-full truncate text-center text-[11px] leading-tight text-foreground transition-colors duration-150",
                     habit.completed_today && "text-muted-foreground",
                   )}
                 >

@@ -17,6 +17,8 @@ type DashboardHeroProps = {
   habitsDone: number;
   habitsTotal: number;
   streak: number;
+  /** Live due + overdue; falls back to dueToday + overdue when omitted. */
+  attention?: number;
 };
 
 type Phase = "morning" | "afternoon" | "evening" | "night";
@@ -81,10 +83,11 @@ export function DashboardHero({
   habitsDone,
   habitsTotal,
   streak,
+  attention: attentionOverride,
 }: DashboardHeroProps) {
   const [phase, setPhase] = useState<Phase>("afternoon");
   const [dateLabel, setDateLabel] = useState("");
-  const attention = dueToday + overdue;
+  const attention = attentionOverride ?? dueToday + overdue;
   const story = intent?.trim() || null;
 
   const heroKind: "due" | "focus" =

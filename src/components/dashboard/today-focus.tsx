@@ -1,21 +1,25 @@
+"use client";
+
 import Link from "next/link";
 import { CheckCircle2, Circle } from "lucide-react";
 
-import { toggleTaskComplete } from "@/actions/tasks";
 import { cn } from "@/lib/utils";
 import { isOverdue } from "@/lib/date-utils";
 import type { TaskWithContext } from "@/types/dashboard";
 
 type TodayFocusProps = {
   tasks: TaskWithContext[];
+  onToggle: (taskId: string, completed: boolean) => void;
 };
 
 function TaskRow({
   task,
   index,
+  onToggle,
 }: {
   task: TaskWithContext;
   index: number;
+  onToggle: (taskId: string, completed: boolean) => void;
 }) {
   const overdue = Boolean(
     task.due_date && !task.completed && isOverdue(task.due_date),
@@ -30,26 +34,26 @@ function TaskRow({
 
   return (
     <li
-      className="group flex items-center gap-2.5 py-2"
+      className="group flex items-center gap-2.5 py-2 transition-colors"
       style={{ ["--i" as string]: index }}
     >
-      <form action={toggleTaskComplete.bind(null, task.id, !task.completed)}>
-        <button
-          type="submit"
-          className="flex size-6 shrink-0 items-center justify-center text-muted-foreground/70 transition-colors hover:text-foreground"
-          aria-label={task.completed ? "Mark incomplete" : "Mark complete"}
-        >
-          {task.completed ? (
-            <CheckCircle2 className="size-4 text-foreground/70" />
-          ) : (
-            <Circle className="size-4 transition-colors group-hover:text-foreground" />
-          )}
-        </button>
-      </form>
+      <button
+        type="button"
+        onClick={() => onToggle(task.id, !task.completed)}
+        className="flex size-6 shrink-0 items-center justify-center text-muted-foreground/70 transition-colors hover:text-foreground active:scale-95"
+        aria-label={task.completed ? "Mark incomplete" : "Mark complete"}
+        aria-pressed={task.completed}
+      >
+        {task.completed ? (
+          <CheckCircle2 className="size-4 text-foreground/70" />
+        ) : (
+          <Circle className="size-4 transition-colors group-hover:text-foreground" />
+        )}
+      </button>
 
       <p
         className={cn(
-          "min-w-0 flex-1 truncate text-sm text-foreground",
+          "min-w-0 flex-1 truncate text-sm text-foreground transition-colors duration-150",
           task.completed && "text-muted-foreground/70 line-through",
         )}
       >
@@ -70,7 +74,7 @@ function TaskRow({
   );
 }
 
-export function TodayFocus({ tasks }: TodayFocusProps) {
+export function TodayFocus({ tasks, onToggle }: TodayFocusProps) {
   const openCount = tasks.filter((t) => !t.completed).length;
   const clear = tasks.length > 0 && openCount === 0;
 
@@ -91,7 +95,7 @@ export function TodayFocus({ tasks }: TodayFocusProps) {
       <div className="dash-reveal mt-4">
         <p
           className={cn(
-            "text-4xl font-medium tracking-tight tabular-nums",
+            "text-4xl font-medium tracking-tight tabular-nums transition-all duration-200",
             tasks.length === 0 || clear
               ? "text-muted-foreground"
               : "text-foreground",
@@ -118,7 +122,12 @@ export function TodayFocus({ tasks }: TodayFocusProps) {
       ) : (
         <ul className="dash-stagger mt-5 min-h-0 flex-1 border-t border-border/30 pt-1">
           {tasks.map((task, index) => (
-            <TaskRow key={task.id} task={task} index={index} />
+            <TaskRow
+              key={task.id}
+              task={task}
+              index={index}
+              onToggle={onToggle}
+            />
           ))}
         </ul>
       )}
