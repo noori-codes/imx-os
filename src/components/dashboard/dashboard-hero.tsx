@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Timer } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { DashboardHeroSky } from "@/components/dashboard/dashboard-hero-sky";
 import { formatFocusMinutes } from "@/types/focus";
 
 type DashboardHeroProps = {
@@ -14,6 +15,7 @@ type DashboardHeroProps = {
   dueToday: number;
   overdue: number;
   focusMinutes: number;
+  focusSessions: number;
   habitsDone: number;
   habitsTotal: number;
   streak: number;
@@ -80,6 +82,7 @@ export function DashboardHero({
   dueToday,
   overdue,
   focusMinutes,
+  focusSessions,
   habitsDone,
   habitsTotal,
   streak,
@@ -109,6 +112,11 @@ export function DashboardHero({
     >
       <div className="dash-stage-glow" aria-hidden="true" />
       <div className="dash-stage-glow-secondary" aria-hidden="true" />
+      <DashboardHeroSky
+        sessions={focusSessions}
+        focusMinutes={focusMinutes}
+        emphasize={heroKind === "focus"}
+      />
 
       <div className="relative z-[1] space-y-8">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
@@ -146,7 +154,7 @@ export function DashboardHero({
         </div>
 
         <div className="dash-reveal dash-reveal-delay-2 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between sm:gap-10">
-          <div className="text-center sm:text-left">
+          <div className="relative text-center sm:text-left">
             <p className="dash-hero-label">
               {heroKind === "due" ? "Needs you" : "Focus today"}
             </p>
@@ -169,6 +177,10 @@ export function DashboardHero({
             {heroKind === "due" && overdue > 0 ? (
               <p className="mt-2 text-xs tabular-nums text-muted-foreground">
                 {dueToday} today · {overdue} overdue
+              </p>
+            ) : heroKind === "focus" && focusSessions > 0 ? (
+              <p className="mt-2 text-xs tabular-nums text-muted-foreground">
+                {focusSessions} {focusSessions === 1 ? "star" : "stars"} lit
               </p>
             ) : null}
           </div>

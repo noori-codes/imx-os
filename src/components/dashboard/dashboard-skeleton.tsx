@@ -108,14 +108,15 @@ export function DashboardSkeleton() {
               <QuadHeader />
               <QuadSignal />
               <div className="mt-auto border-t border-border/30 pt-5">
-                <div className="grid grid-cols-7 items-end gap-1">
+                <div className="dash-heat-stage">
+                  <div className="grid grid-cols-7 items-end gap-1">
                   {Array.from({ length: 7 }).map((_, i) => (
                     <div
                       key={i}
                       className="flex flex-col items-center gap-2"
                     >
                       <Bone className="h-2.5 w-3 opacity-40" />
-                      <div className="flex h-9 items-center justify-center">
+                      <div className="dash-heat-jewel-wrap">
                         <Bone
                           className={
                             i % 3 === 0
@@ -129,6 +130,7 @@ export function DashboardSkeleton() {
                       <Bone className="h-2.5 w-5 opacity-55" />
                     </div>
                   ))}
+                  </div>
                 </div>
               </div>
               </section>

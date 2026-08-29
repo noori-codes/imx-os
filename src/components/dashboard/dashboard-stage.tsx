@@ -141,6 +141,7 @@ export function DashboardStage({ name, greeting, data }: DashboardStageProps) {
         dueToday={dueToday}
         overdue={overdue}
         focusMinutes={data.stats.focus_minutes_today}
+        focusSessions={data.focus_today.sessions}
         habitsDone={habitsDone}
         habitsTotal={optimisticHabits.length}
         streak={data.stats.activity_streak}
