@@ -16,15 +16,21 @@ type DashboardInsightStripProps = {
 function InsightItem({
   children,
   muted,
+  highlight,
 }: {
   children: ReactNode;
   muted?: boolean;
+  highlight?: boolean;
 }) {
   return (
     <span
       className={cn(
         "tabular-nums",
-        muted ? "text-muted-foreground/75" : "text-muted-foreground",
+        highlight
+          ? "font-medium text-amber-700 dark:text-amber-400"
+          : muted
+            ? "text-muted-foreground/75"
+            : "text-muted-foreground",
       )}
     >
       {children}
@@ -66,9 +72,11 @@ export function DashboardInsightStrip({
     );
   }
 
-  if (streak > 0) {
+  if (streak >= 14) {
     items.push(
-      <InsightItem key="streak">{streak}d streak</InsightItem>,
+      <InsightItem key="streak-milestone" highlight>
+        {streak} days strong
+      </InsightItem>,
     );
   }
 

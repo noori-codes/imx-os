@@ -41,8 +41,8 @@ function DashboardSkeletonBody() {
               <Bone className="mx-auto h-2.5 w-20 sm:mx-0" />
               <Bone className="mx-auto h-[4.5rem] w-32 sm:mx-0 sm:w-36" />
             </div>
-            <div className="grid grid-cols-2 gap-6 sm:min-w-[11rem] sm:gap-8">
-              {Array.from({ length: 2 }).map((_, i) => (
+            <div className="grid grid-cols-3 gap-4 sm:min-w-[16.5rem] sm:gap-6">
+              {Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="space-y-2 text-center sm:text-left">
                   <Bone className="mx-auto h-2.5 w-10 sm:mx-0" />
                   <Bone className="mx-auto h-6 w-12 sm:mx-0" />

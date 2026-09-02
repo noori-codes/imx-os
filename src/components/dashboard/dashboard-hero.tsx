@@ -1,5 +1,6 @@
 "use client";
 
+import { Flame } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { DashboardFocusCta } from "@/components/dashboard/dashboard-focus-cta";
@@ -67,6 +68,14 @@ function useCountUp(target: number, enabled: boolean) {
   return value;
 }
 
+function streakTier(streak: number) {
+  if (streak <= 0) return "none";
+  if (streak < 3) return "low";
+  if (streak < 7) return "warm";
+  if (streak < 14) return "hot";
+  return "milestone";
+}
+
 export function DashboardHero({
   name,
   greeting,
@@ -90,6 +99,8 @@ export function DashboardHero({
 
   const dueDisplay = useCountUp(attention, heroKind === "due");
   const focusDisplay = useCountUp(focusMinutes, heroKind === "focus");
+  const streakDisplay = useCountUp(streak, streak > 0);
+  const streakLevel = streakTier(streak);
 
   useEffect(() => {
     const now = new Date();
@@ -116,16 +127,8 @@ export function DashboardHero({
             <h2 className="text-xl font-medium tracking-tight text-foreground sm:text-2xl">
               {greeting}, {name}
             </h2>
-            <p className="mt-2 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm text-muted-foreground sm:justify-start">
+            <p className="mt-2 text-sm text-muted-foreground">
               {dateLabel ? <span>{dateLabel}</span> : null}
-              {streak > 0 ? (
-                <>
-                  <span className="text-muted-foreground/40" aria-hidden="true">
-                    ·
-                  </span>
-                  <span className="tabular-nums">{streak}d streak</span>
-                </>
-              ) : null}
             </p>
             {story ? (
               <p className="mt-3 max-w-md text-sm leading-snug text-muted-foreground">
@@ -134,7 +137,10 @@ export function DashboardHero({
             ) : null}
           </div>
 
-          <div className="dash-reveal dash-reveal-delay-1 flex justify-center sm:justify-end">
+          <div className="dash-reveal dash-reveal-delay-1 flex flex-col items-center gap-3 sm:items-end">
+            {streak >= 7 ? (
+              <StreakPill streak={streakDisplay} tier={streakLevel} />
+            ) : null}
             <DashboardFocusCta />
           </div>
         </div>
@@ -171,7 +177,7 @@ export function DashboardHero({
             ) : null}
           </div>
 
-          <div className="grid grid-cols-2 gap-6 sm:min-w-[11rem] sm:gap-8">
+          <div className="grid grid-cols-3 gap-4 sm:min-w-[16.5rem] sm:gap-6">
             {heroKind === "due" ? (
               <SecondaryStat
                 label="Focus"
@@ -193,6 +199,7 @@ export function DashboardHero({
               }
               muted={habitsTotal <= 0}
             />
+            <StreakStat streak={streakDisplay} tier={streakLevel} />
           </div>
         </div>
       </div>
@@ -226,6 +233,46 @@ function SecondaryStat({
       >
         {value}
       </p>
+    </div>
+  );
+}
+
+function StreakStat({
+  streak,
+  tier,
+}: {
+  streak: number;
+  tier: ReturnType<typeof streakTier>;
+}) {
+  const active = streak > 0;
+
+  return (
+    <div
+      className={cn("dash-hero-streak text-center sm:text-left", active && "dash-hero-streak-active")}
+      data-tier={active ? tier : "none"}
+    >
+      <p className="dash-hero-streak-label">
+        <Flame className="size-3 shrink-0" aria-hidden="true" />
+        <span>Streak</span>
+      </p>
+      <p className="dash-hero-streak-value tabular-nums">
+        {active ? `${streak}d` : "—"}
+      </p>
+    </div>
+  );
+}
+
+function StreakPill({
+  streak,
+  tier,
+}: {
+  streak: number;
+  tier: ReturnType<typeof streakTier>;
+}) {
+  return (
+    <div className="dash-hero-streak-pill" data-tier={tier}>
+      <Flame className="size-3.5 shrink-0" aria-hidden="true" />
+      <span className="tabular-nums">{streak} day streak</span>
     </div>
   );
 }
