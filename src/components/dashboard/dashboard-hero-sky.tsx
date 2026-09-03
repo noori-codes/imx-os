@@ -85,7 +85,11 @@ export function DashboardHeroSky({
       data-sessions={sessions > 0 ? "true" : "false"}
       aria-hidden="true"
     >
-      <svg viewBox="6 14 88 52" className="dash-hero-sky-svg">
+      <svg
+        viewBox="6 14 88 52"
+        className="dash-hero-sky-svg"
+        preserveAspectRatio="xMidYMax meet"
+      >
         <defs>
           <linearGradient
             id={`dash-hero-sky-dome-${uid}`}

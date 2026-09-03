@@ -574,7 +574,8 @@
 
 @media (max-width: 1023px) {
   .focus-progress:not([data-live="true"]) .focus-constellation-stage {
-    max-width: 17.5rem;
+    max-width: none;
+    width: 100%;
     margin-inline: auto;
   }
 
@@ -983,25 +984,33 @@
 .dash-hero-sky {
   pointer-events: none;
   position: absolute;
-  z-index: 0;
-  right: -0.5rem;
-  bottom: -0.25rem;
-  width: min(62%, 19rem);
-  opacity: 0.42;
+  z-index: 1;
+  right: 0.35rem;
+  bottom: 0.15rem;
+  width: min(56%, 21.5rem);
+  opacity: 0.5;
   transform-origin: center bottom;
   will-change: transform, opacity;
   animation: dash-hero-sky-drift 9s ease-in-out infinite;
   transition: opacity 420ms ease;
+  -webkit-mask-image: linear-gradient(
+    100deg,
+    transparent 0%,
+    #000 18%,
+    #000 100%
+  );
+  mask-image: linear-gradient(100deg, transparent 0%, #000 18%, #000 100%);
 }
 
 .dash-hero-sky-active {
-  opacity: 0.72;
+  opacity: 0.78;
 }
 
 .dash-hero-sky-svg {
   display: block;
-  height: auto;
   width: 100%;
+  height: auto;
+  aspect-ratio: 88 / 52;
 }
 
 .dash-hero-sky-fill {
@@ -1108,15 +1117,37 @@
 
 @media (max-width: 639px) {
   .dash-hero-sky {
-    right: 0;
-    left: 0;
-    margin-inline: auto;
-    width: min(88%, 16rem);
-    opacity: 0.3;
+    right: 50%;
+    bottom: -0.1rem;
+    width: min(78%, 17.5rem);
+    transform: translateX(50%);
+    transform-origin: center bottom;
+    opacity: 0.4;
+    -webkit-mask-image: linear-gradient(
+      180deg,
+      transparent 0%,
+      #000 22%,
+      #000 100%
+    );
+    mask-image: linear-gradient(180deg, transparent 0%, #000 22%, #000 100%);
   }
 
   .dash-hero-sky-active {
-    opacity: 0.48;
+    opacity: 0.62;
+  }
+
+  .dash-hero-sky {
+    animation: dash-hero-sky-drift-mobile 9s ease-in-out infinite;
+  }
+}
+
+@keyframes dash-hero-sky-drift-mobile {
+  0%,
+  100% {
+    transform: translateX(50%) translateY(0) scale(1);
+  }
+  50% {
+    transform: translateX(50%) translateY(-2px) scale(1.015);
   }
 }
 
@@ -1163,6 +1194,7 @@
 .dash-stage-glow {
   pointer-events: none;
   position: absolute;
+  z-index: 0;
   left: 8%;
   top: 12%;
   width: min(18rem, 52%);
@@ -1183,9 +1215,10 @@
 .dash-stage-glow-secondary {
   pointer-events: none;
   position: absolute;
-  right: 6%;
-  bottom: 10%;
-  width: min(14rem, 42%);
+  z-index: 0;
+  right: 8%;
+  bottom: 6%;
+  width: min(13rem, 38%);
   aspect-ratio: 1;
   height: auto;
   border-radius: 9999px;

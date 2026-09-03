@@ -121,7 +121,7 @@ export function DashboardHero({
         emphasize={heroKind === "focus"}
       />
 
-      <div className="relative z-[1] space-y-8">
+      <div className="relative z-[2] space-y-8">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div className="dash-reveal min-w-0 text-center sm:text-left">
             <h2 className="text-xl font-medium tracking-tight text-foreground sm:text-2xl">
