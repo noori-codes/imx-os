@@ -1,14 +1,44 @@
+import dynamic from "next/dynamic";
+
 import { getAnalyticsData } from "@/actions/analytics";
-import {
-  FocusMinutesChart,
-  HabitCompletionChart,
-  MoodEnergyChart,
-} from "@/components/analytics/analytics-charts";
+import { AnalyticsChartChunkFallback } from "@/components/analytics/analytics-chart-fallback";
 import { AnalyticsHero } from "@/components/analytics/analytics-hero";
 import { HabitStreaksList } from "@/components/analytics/habit-streaks-list";
 import { Header } from "@/components/layout/header";
 import { AppPageFrame } from "@/components/shared/app-page-frame";
 import { parseAnalyticsRange } from "@/types/analytics";
+
+const FocusMinutesChart = dynamic(
+  () =>
+    import("@/components/analytics/analytics-charts").then((m) => ({
+      default: m.FocusMinutesChart,
+    })),
+  { loading: () => <AnalyticsChartChunkFallback label="Loading focus chart" /> },
+);
+
+const HabitCompletionChart = dynamic(
+  () =>
+    import("@/components/analytics/analytics-charts").then((m) => ({
+      default: m.HabitCompletionChart,
+    })),
+  {
+    loading: () => (
+      <AnalyticsChartChunkFallback label="Loading habits chart" />
+    ),
+  },
+);
+
+const MoodEnergyChart = dynamic(
+  () =>
+    import("@/components/analytics/analytics-charts").then((m) => ({
+      default: m.MoodEnergyChart,
+    })),
+  {
+    loading: () => (
+      <AnalyticsChartChunkFallback label="Loading mood chart" />
+    ),
+  },
+);
 
 type AnalyticsPageProps = {
   searchParams: Promise<{ range?: string }>;

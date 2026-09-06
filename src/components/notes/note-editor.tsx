@@ -1,13 +1,33 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 
 import { deleteNote, updateNote, type NoteActionState } from "@/actions/notes";
-import { RichTextEditor } from "@/components/notes/rich-text-editor";
 import { Button } from "@/components/ui/button";
 import type { Note } from "@/types/note";
+
+const RichTextEditor = dynamic(
+  () =>
+    import("@/components/notes/rich-text-editor").then((m) => ({
+      default: m.RichTextEditor,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="imx-skeleton min-h-[16rem] rounded-xl border border-border/40 p-4"
+        role="status"
+        aria-label="Loading editor"
+      >
+        <div className="imx-skeleton-bone mb-3 h-8 w-40 rounded-md" />
+        <div className="imx-skeleton-bone h-40 w-full rounded-lg" />
+      </div>
+    ),
+  },
+);
 
 type NoteEditorProps = {
   note: Note;

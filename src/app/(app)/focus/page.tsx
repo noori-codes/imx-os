@@ -1,16 +1,36 @@
+import dynamic from "next/dynamic";
+
+import {
+  FocusStatsChunkFallback,
+  FocusTimerChunkFallback,
+} from "@/components/focus/focus-chunk-fallbacks";
+import { FocusSessionList } from "@/components/focus/focus-session-list";
+import { FocusWorkspace } from "@/components/focus/focus-workspace";
+import { LogFocusForm } from "@/components/focus/log-focus-form";
+import { Header } from "@/components/layout/header";
+import { AppPageFrame } from "@/components/shared/app-page-frame";
 import {
   getDailyFocusGoal,
   getFocusOverviewStats,
   getRecentFocusSessions,
 } from "@/actions/focus";
 import { getFocusLinkableTasks } from "@/actions/tasks";
-import { FocusSessionList } from "@/components/focus/focus-session-list";
-import { FocusStats } from "@/components/focus/focus-stats";
-import { FocusTimer } from "@/components/focus/focus-timer";
-import { FocusWorkspace } from "@/components/focus/focus-workspace";
-import { LogFocusForm } from "@/components/focus/log-focus-form";
-import { Header } from "@/components/layout/header";
-import { AppPageFrame } from "@/components/shared/app-page-frame";
+
+const FocusTimer = dynamic(
+  () =>
+    import("@/components/focus/focus-timer").then((m) => ({
+      default: m.FocusTimer,
+    })),
+  { loading: () => <FocusTimerChunkFallback /> },
+);
+
+const FocusStats = dynamic(
+  () =>
+    import("@/components/focus/focus-stats").then((m) => ({
+      default: m.FocusStats,
+    })),
+  { loading: () => <FocusStatsChunkFallback /> },
+);
 
 type FocusPageProps = {
   searchParams: Promise<{ task?: string }>;
