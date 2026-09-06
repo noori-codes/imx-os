@@ -1,7 +1,7 @@
 /**
- * Soft navigations keep the previous page visible via the top progress bar.
- * Route-specific loading UIs (e.g. dashboard/loading.tsx) own their skeletons.
- * Returning null here avoids a generic “boxes” flash that fights those layouts.
+ * Soft navigations use route-level loading.tsx skeletons.
+ * This parent fallback stays null so those skeletons own the flash —
+ * never a competing generic boxes UI.
  */
 export default function AppLoading() {
   return null;

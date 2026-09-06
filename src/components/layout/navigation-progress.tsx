@@ -5,26 +5,32 @@ import { usePathname, useSearchParams } from "next/navigation";
 
 /**
  * Thin top progress bar during client navigations.
- * Appears only if navigation takes >120ms (avoids flicker).
+ * Shows immediately so soft-nav never feels frozen.
  */
 export function NavigationProgress() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const search = searchParams.toString();
   const [visible, setVisible] = useState(false);
-  const showTimerRef = useRef<number | undefined>(undefined);
   const safetyTimerRef = useRef<number | undefined>(undefined);
 
-  function clearTimers() {
-    window.clearTimeout(showTimerRef.current);
+  function clearSafety() {
     window.clearTimeout(safetyTimerRef.current);
-    showTimerRef.current = undefined;
     safetyTimerRef.current = undefined;
   }
 
-  // Navigation finished — always clear any pending show and hide the bar.
+  function startProgress() {
+    clearSafety();
+    setVisible(true);
+    // Failsafe: never leave the bar stuck if the route update is missed.
+    safetyTimerRef.current = window.setTimeout(() => {
+      setVisible(false);
+    }, 8000);
+  }
+
+  // Navigation finished — hide the bar.
   useEffect(() => {
-    clearTimers();
+    clearSafety();
     setVisible(false);
   }, [pathname, search]);
 
@@ -59,20 +65,19 @@ export function NavigationProgress() {
         return;
       }
 
-      clearTimers();
-      showTimerRef.current = window.setTimeout(() => {
-        setVisible(true);
-        // Failsafe: never leave the bar stuck if the route update is missed.
-        safetyTimerRef.current = window.setTimeout(() => {
-          setVisible(false);
-        }, 8000);
-      }, 120);
+      startProgress();
+    }
+
+    function onPopState() {
+      startProgress();
     }
 
     document.addEventListener("click", onClick, true);
+    window.addEventListener("popstate", onPopState);
     return () => {
       document.removeEventListener("click", onClick, true);
-      clearTimers();
+      window.removeEventListener("popstate", onPopState);
+      clearSafety();
     };
   }, []);
 
