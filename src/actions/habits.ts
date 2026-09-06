@@ -105,6 +105,22 @@ export async function getArchivedHabitsWithStats(): Promise<HabitWithStats[]> {
   return loadHabitsWithStats(true);
 }
 
+/** Lightweight tab badge — no habit_logs. */
+export async function countHabits(archived: boolean): Promise<number> {
+  const supabase = await createClient();
+  const { count, error } = await supabase
+    .from("habits")
+    .select("*", { count: "exact", head: true })
+    .eq("archived", archived);
+
+  if (error) {
+    console.error("[habits] countHabits:", error.message);
+    return 0;
+  }
+
+  return count ?? 0;
+}
+
 export async function createHabit(
   _prevState: HabitActionState | null,
   formData: FormData,
