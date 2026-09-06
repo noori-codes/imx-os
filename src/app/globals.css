@@ -913,7 +913,6 @@
   height: min(46vh, 22rem);
   transform: translateX(-50%);
   transform-origin: center top;
-  will-change: transform, opacity;
   animation: dash-page-wash-breathe 7s ease-in-out infinite;
   background: radial-gradient(
     ellipse 85% 72% at 50% 0%,
@@ -939,14 +938,26 @@
   position: fixed;
   inset: 0;
   z-index: 0;
-  opacity: 0.028;
+  opacity: 0.02;
   mix-blend-mode: overlay;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
 }
 
 .dark .dash-page-grain {
-  opacity: 0.045;
+  opacity: 0.03;
   mix-blend-mode: soft-light;
+}
+
+@media (max-width: 767px) {
+  .dash-page-grain {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dash-page-grain {
+    display: none;
+  }
 }
 
 .dash-page-content {
@@ -990,7 +1001,6 @@
   width: min(56%, 21.5rem);
   opacity: 0.5;
   transform-origin: center bottom;
-  will-change: transform, opacity;
   animation: dash-hero-sky-drift 9s ease-in-out infinite;
   transition: opacity 420ms ease;
   -webkit-mask-image: linear-gradient(
@@ -1208,7 +1218,6 @@
   );
   opacity: 0.9;
   transform-origin: center;
-  will-change: transform, opacity;
   animation: dash-glow-breathe 5s ease-in-out infinite;
 }
 
@@ -1229,7 +1238,6 @@
   );
   opacity: 0.55;
   transform-origin: center;
-  will-change: transform, opacity;
   animation: dash-glow-breathe-secondary 6.5s ease-in-out infinite;
   animation-delay: -2.5s;
 }
