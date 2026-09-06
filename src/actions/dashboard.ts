@@ -10,7 +10,7 @@ import {
 } from "@/lib/date-utils";
 import { createAdminClient, hasAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { syncRecurringTasks } from "@/actions/tasks";
+import { scheduleRecurringTaskSync } from "@/actions/tasks";
 import {
   buildActivitySummary,
   buildDashboardData,
@@ -21,7 +21,8 @@ import {
   type DashboardHabit,
 } from "@/types/dashboard";
 
-const ACTIVITY_RANGE_DAYS = 365;
+/** Enough for streak + week insight; analytics keeps the long window. */
+const ACTIVITY_RANGE_DAYS = 90;
 
 const emptyDashboard: DashboardData = {
   stats: {
@@ -216,11 +217,12 @@ async function loadDashboardExtras(
 async function loadDashboardData(
   userId: string | null,
 ): Promise<DashboardData> {
-  await syncRecurringTasks();
-
   const supabase =
     userId && hasAdminClient() ? createAdminClient() : await createClient();
   const scopedUserId = userId && hasAdminClient() ? userId : null;
+
+  // Cookie-bound client for after() sync (cookies aren't available inside after).
+  scheduleRecurringTaskSync(await createClient());
 
   let tasksQuery = supabase
     .from("tasks")
@@ -310,7 +312,7 @@ export const getDashboardData = cache(async (): Promise<DashboardData> => {
 
   if (hasAdminClient()) {
     return cachedQuery(
-      ["dashboard", user.id, "v9"],
+      ["dashboard", user.id, "v10"],
       [cacheTags.dashboard(user.id)],
       CACHE_TTL.dashboard,
       async () => loadDashboardData(user.id),

@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
+import { cache } from "react";
 
 import { getCurrentUser } from "@/lib/auth";
 import { revalidateUserCaches } from "@/lib/cache";
@@ -32,6 +34,8 @@ type TaskRow = Task & {
   } | null;
 };
 
+type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
+
 function mapTask(row: TaskRow): TaskWithContext {
   const project = row.projects;
   const goal = project?.goals ?? null;
@@ -60,11 +64,13 @@ function mapTask(row: TaskRow): TaskWithContext {
 }
 
 /** Reopen completed recurring tasks once their due day has passed. */
-export async function syncRecurringTasks() {
-  const supabase = await createClient();
+export async function syncRecurringTasks(
+  supabase?: SupabaseServerClient,
+) {
+  const client = supabase ?? (await createClient());
   const today = toDateString(startOfDay(new Date()));
 
-  const { data, error } = await supabase
+  const { data, error } = await client
     .from("tasks")
     .select("id, recurrence, completed, due_date")
     .eq("completed", true)
@@ -80,7 +86,7 @@ export async function syncRecurringTasks() {
     (data ?? []).map(async (row) => {
       const recurrence = parseTaskRecurrence(row.recurrence);
       if (!recurrence) return;
-      const { error: updateError } = await supabase
+      const { error: updateError } = await client
         .from("tasks")
         .update({
           completed: false,
@@ -93,6 +99,18 @@ export async function syncRecurringTasks() {
     }),
   );
 }
+
+/**
+ * Run recurring sync after the response — never blocks dashboard/tasks reads.
+ * Deduped once per request via React cache.
+ */
+export const scheduleRecurringTaskSync = cache(
+  (supabase: SupabaseServerClient) => {
+    after(() => {
+      void syncRecurringTasks(supabase);
+    });
+  },
+);
 
 const TASK_SELECT = `
   id,
@@ -149,7 +167,7 @@ export async function getStandaloneTasks(): Promise<Task[]> {
 
 export async function getAllTasks(): Promise<TaskWithContext[]> {
   const supabase = await createClient();
-  await syncRecurringTasks();
+  scheduleRecurringTaskSync(supabase);
 
   const { data, error } = await supabase
     .from("tasks")
