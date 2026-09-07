@@ -1,0 +1,18 @@
+# Commit messages (Source Control “Generate” button)
+
+When generating a Git commit message for this repository:
+
+- Use Conventional Commits: `type: short summary`
+- Allowed types: `feat`, `fix`, `refactor`, `perf`, `style`, `docs`, `test`, `chore`, `build`, `ci`
+- One line only — subject ≤ 72 characters
+- Imperative mood (“add”, “fix”, “refactor”) — not “added” / “fixed”
+- No body, no bullet lists, no explanations of the diff
+- No trailing period
+- Prefer scope only when obvious: `feat(dashboard): …`
+
+Examples:
+- `feat: promote streak in dashboard hero`
+- `fix: align hero sky to bottom-right`
+- `refactor: defer recurring task sync after response`
+- `perf: code-split focus timer and analytics charts`
+- `chore: update loading skeletons`
