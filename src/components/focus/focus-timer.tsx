@@ -1,15 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useTransition } from "react";
 
 import { useDocumentVisible } from "@/hooks/use-document-visible";
 import { useRouter } from "next/navigation";
-import { ChevronDown, CircleCheck, CircleHelp, Pause, Play, RotateCcw, SkipForward } from "lucide-react";
+import { CircleCheck, Pause, Play, RotateCcw, SkipForward } from "lucide-react";
 
 import { logFocusSession, updateFocusSession } from "@/actions/focus";
 import { toggleTaskComplete } from "@/actions/tasks";
-import { FocusSounds } from "@/components/focus/focus-sounds";
 import { FocusClockFace } from "@/components/focus/focus-clock-face";
+import { FocusSettings } from "@/components/focus/focus-settings";
 import { showFocusSealToast } from "@/components/focus/focus-seal-toast";
 import { confirm } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
@@ -32,8 +32,6 @@ import { cn } from "@/lib/utils";
 import { stopFocusSound } from "@/stores/focus-sound";
 import { nextFocusMode, useFocusTimer, canContinueFocusSession } from "@/stores/focus-timer";
 import {
-  BREAK_DURATION_PRESETS,
-  FOCUS_DURATION_PRESETS,
   FOCUS_MAX_SECONDS,
   FOCUS_POMODOROS_PER_LONG_BREAK,
   FOCUS_PRESETS,
@@ -45,12 +43,6 @@ import {
   type FocusMode,
 } from "@/types/focus";
 import type { FocusLinkableTask } from "@/types/task";
-
-const MODES: FocusMode[] = ["focus", "short_break", "long_break"];
-const CLOCKS: { id: FocusClock; label: string; hint: string }[] = [
-  { id: "down", label: "Countdown", hint: "Timed blocks" },
-  { id: "up", label: "Count up", hint: "Until you stop" },
-];
 
 function isTypingTarget(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) return false;
@@ -168,10 +160,6 @@ export function FocusTimer({
   const flowNudgeRef = useRef(false);
   const todayMinutesRef = useRef(focusMinutesToday);
   const prevRemaining = useRef(remainingSeconds);
-  const [customHours, setCustomHours] = useState("");
-  const [customMinutes, setCustomMinutes] = useState("");
-  const [shortcutsOpen, setShortcutsOpen] = useState(false);
-
   useEffect(() => {
     todayMinutesRef.current = focusMinutesToday;
   }, [focusMinutesToday]);
@@ -400,22 +388,6 @@ export function FocusTimer({
     }
   }, [isStopwatch, remainingSeconds, mode, elapsedSeconds, isRunning]);
 
-  const durationMinutes = Math.round(durationSeconds / 60);
-  const durationPresets =
-    mode === "focus" ? FOCUS_DURATION_PRESETS : BREAK_DURATION_PRESETS[mode];
-  const presetMatch = durationPresets.some(
-    (preset) => preset.minutes === durationMinutes,
-  );
-
-  function secondsFromCustom() {
-    const hours = Number(customHours || 0);
-    const minutes = Number(customMinutes || 0);
-    if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return null;
-    const seconds = Math.round(hours * 3600 + minutes * 60);
-    if (seconds < 60 || seconds > FOCUS_MAX_SECONDS) return null;
-    return seconds;
-  }
-
   function sealStopwatch(actual: number) {
     const {
       progressBaseSeconds,
@@ -582,9 +554,8 @@ export function FocusTimer({
   }
 
   function handleStart() {
-    const custom = isStopwatch ? undefined : secondsFromCustom();
     void requestFocusNotifyPermission();
-    start(custom ?? undefined);
+    start();
   }
 
   function handlePause() {
@@ -707,12 +678,6 @@ export function FocusTimer({
     function onKey(e: KeyboardEvent) {
       if (isTypingTarget(e.target)) return;
 
-      if (e.key === "?" && !e.metaKey && !e.ctrlKey) {
-        e.preventDefault();
-        setShortcutsOpen((open) => !open);
-        return;
-      }
-
       if (e.code === "Space") {
         e.preventDefault();
         handleToggle();
@@ -764,13 +729,6 @@ export function FocusTimer({
 
   const ringRadius = 45.5;
   const ringCircumference = 2 * Math.PI * ringRadius;
-  const setupSummary = isStopwatch
-    ? "Count up · until you stop"
-    : [
-        activeProfile?.label ?? "Custom",
-        FOCUS_PRESETS[mode].label,
-        formatFocusClock(durationSeconds),
-      ].join(" · ");
 
   const runningLabel = isStopwatch
     ? "Count up"
@@ -894,8 +852,11 @@ export function FocusTimer({
             </div>
           </div>
 
-          <div className="w-full pt-2">
-            <FocusSounds />
+          <div className="flex w-full justify-center pt-2">
+            <FocusSettings
+              dailyGoalMinutes={dailyGoalMinutes}
+              onClockChange={handleClockChange}
+            />
           </div>
         </div>
       ) : (
@@ -1106,233 +1067,16 @@ export function FocusTimer({
                         ? "Begin session · Space"
                         : "Start break · Space"}
                 </p>
-                <button
-                  type="button"
-                  onClick={() => setShortcutsOpen((open) => !open)}
-                  className="inline-flex items-center gap-1 text-[11px] text-muted-foreground/80 transition-colors hover:text-foreground"
-                  aria-expanded={shortcutsOpen}
-                >
-                  <CircleHelp className="size-3.5" />
-                  Shortcuts
-                </button>
-                {shortcutsOpen ? (
-                  <p className="text-center text-[11px] leading-relaxed text-muted-foreground">
-                    Space · play/pause
-                    <br />
-                    {isStopwatch
-                      ? "R · seal · ↺ discard"
-                      : "S · skip · R · reset"}
-                  </p>
-                ) : null}
+                <FocusSettings
+                  dailyGoalMinutes={dailyGoalMinutes}
+                  onClockChange={handleClockChange}
+                  align="start"
+                  className="lg:justify-start"
+                />
               </div>
-
-              <details className="group/setup w-full">
-                <summary className="flex cursor-pointer list-none items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground lg:justify-start [&::-webkit-details-marker]:hidden">
-                  <span className="tabular-nums max-sm:text-xs">
-                    Setup · {setupSummary}
-                  </span>
-                  <ChevronDown className="size-3.5 shrink-0 transition-transform duration-200 group-open/setup:rotate-180" />
-                </summary>
-
-                <div className="mt-4 space-y-4 p-1">
-                  <div
-                    className="flex w-full justify-center gap-1 rounded-full bg-muted/30 p-1"
-                    role="tablist"
-                    aria-label="Clock style"
-                  >
-                    {CLOCKS.map((item) => {
-                      const active = clock === item.id;
-                      return (
-                        <button
-                          key={item.id}
-                          type="button"
-                          role="tab"
-                          aria-selected={active}
-                          onClick={() => handleClockChange(item.id)}
-                          className={cn(
-                            "min-w-0 flex-1 rounded-full px-3 py-2 text-left transition-colors sm:text-center",
-                            active
-                              ? "bg-background font-medium text-foreground shadow-sm"
-                              : "text-muted-foreground hover:text-foreground",
-                          )}
-                        >
-                          <span className="block text-sm">{item.label}</span>
-                          <span
-                            className={cn(
-                              "block text-[11px]",
-                              active
-                                ? "text-foreground/60"
-                                : "text-muted-foreground",
-                            )}
-                          >
-                            {item.hint}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {isStopwatch ? (
-                    <p className="text-center text-xs text-muted-foreground lg:text-left">
-                      Starts at 00:00 · R seals when done · ↺ discards
-                    </p>
-                  ) : (
-                    <>
-                      <div className="grid grid-cols-3 gap-2">
-                        {FOCUS_PROFILES.map((profile) => {
-                          const active = profileId === profile.id;
-                          return (
-                            <button
-                              key={profile.id}
-                              type="button"
-                              onClick={() => {
-                                setCustomHours("");
-                                setCustomMinutes("");
-                                applyProfile(profile.id);
-                              }}
-                              className={cn(
-                                "rounded-xl px-2.5 py-2 text-left transition-colors",
-                                active
-                                  ? "bg-foreground text-background"
-                                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
-                              )}
-                              aria-pressed={active}
-                            >
-                              <span className="block text-sm font-medium">
-                                {profile.label}
-                              </span>
-                              <span
-                                className={cn(
-                                  "mt-0.5 block text-[11px] tabular-nums",
-                                  active
-                                    ? "text-background/70"
-                                    : "text-muted-foreground",
-                                )}
-                              >
-                                {profile.hint}
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      <div
-                        className="flex w-full justify-center gap-1 rounded-full bg-muted/30 p-1"
-                        role="tablist"
-                        aria-label="Timer mode"
-                      >
-                        {MODES.map((m) => {
-                          const isActive = mode === m;
-                          return (
-                            <button
-                              key={m}
-                              type="button"
-                              role="tab"
-                              aria-selected={isActive}
-                              onClick={() => {
-                                setCustomHours("");
-                                setCustomMinutes("");
-                                setMode(m);
-                              }}
-                              className={cn(
-                                "min-w-0 flex-1 rounded-full px-3 py-1.5 text-sm transition-colors",
-                                isActive
-                                  ? "bg-background font-medium text-foreground shadow-sm"
-                                  : "text-muted-foreground hover:text-foreground",
-                              )}
-                            >
-                              {FOCUS_PRESETS[m].label}
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      <div className="flex flex-col items-center gap-3 lg:items-start">
-                        <div className="flex flex-wrap items-center justify-center gap-2 lg:justify-start">
-                          {durationPresets.map((preset) => {
-                            const active =
-                              !customHours &&
-                              !customMinutes &&
-                              durationMinutes === preset.minutes;
-                            return (
-                              <button
-                                key={preset.minutes}
-                                type="button"
-                                onClick={() => {
-                                  setCustomHours("");
-                                  setCustomMinutes("");
-                                  setDuration(preset.minutes * 60);
-                                }}
-                                className={cn(
-                                  "rounded-full px-3 py-1 text-sm tabular-nums transition-colors",
-                                  active
-                                    ? "bg-foreground text-background"
-                                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
-                                )}
-                              >
-                                {preset.label}
-                              </button>
-                            );
-                          })}
-                        </div>
-                        {mode === "focus" ? (
-                          <div className="flex items-center gap-2 text-sm">
-                            <Input
-                              type="number"
-                              min={0}
-                              max={12}
-                              inputMode="numeric"
-                              placeholder="hrs"
-                              aria-label="Custom hours"
-                              value={customHours}
-                              onChange={(e) => setCustomHours(e.target.value)}
-                              className="h-9 w-16 rounded-xl border-border/40 bg-transparent text-center"
-                            />
-                            <span className="text-muted-foreground">:</span>
-                            <Input
-                              type="number"
-                              min={0}
-                              max={59}
-                              inputMode="numeric"
-                              placeholder="min"
-                              aria-label="Custom minutes"
-                              value={customMinutes}
-                              onChange={(e) => setCustomMinutes(e.target.value)}
-                              className="h-9 w-16 rounded-xl border-border/40 bg-transparent text-center"
-                            />
-                            {!presetMatch && !customHours && !customMinutes ? (
-                              <span className="text-xs tabular-nums text-muted-foreground">
-                                {formatFocusClock(durationSeconds)}
-                              </span>
-                            ) : null}
-                          </div>
-                        ) : null}
-                      </div>
-
-                      <div className="flex justify-center lg:justify-start">
-                        <button
-                          type="button"
-                          onClick={() => setAutoStartNext(!autoStartNext)}
-                          className={cn(
-                            "rounded-full px-3 py-1 text-xs transition-colors",
-                            autoStartNext
-                              ? "bg-foreground text-background"
-                              : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
-                          )}
-                        >
-                          Auto-start {autoStartNext ? "on" : "off"}
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </details>
             </div>
           </div>
 
-          <div className="w-full">
-            <FocusSounds />
-          </div>
         </div>
       )}
     </section>

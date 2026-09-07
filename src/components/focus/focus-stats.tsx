@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight, Moon, Play, Sun, Sunrise } from "lucide-react";
+import { ChevronLeft, ChevronRight, Moon, Play, Sun, Sunrise } from "lucide-react";
 
 import { updateDailyFocusGoal } from "@/actions/focus";
 import { useDocumentVisible } from "@/hooks/use-document-visible";
@@ -32,7 +32,6 @@ import {
   clampDailyFocusGoal,
   FOCUS_DAILY_GOAL_DEFAULT,
   FOCUS_DAILY_GOAL_KEY,
-  FOCUS_DAILY_GOAL_PRESETS,
   formatFocusDuration,
   formatFocusMinutes,
   formatFocusMinutesCompact,
@@ -696,7 +695,6 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
   const pageVisible = useDocumentVisible();
   const [goalMinutes, setGoalMinutes] = useState(dailyGoal.minutes);
   const [ready, setReady] = useState(false);
-  const [goalOpen, setGoalOpen] = useState(false);
   const [weekOffset, setWeekOffset] = useState(0);
   const [mobileLayout, setMobileLayout] = useState(false);
   const [skySessionSeconds, setSkySessionSeconds] = useState(0);
@@ -788,16 +786,6 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
       ) ?? false;
     if (inStats) clearSealPulse();
   }, [sealPulse, stats.today_marks, clearSealPulse]);
-
-  function updateGoal(minutes: number) {
-    const next = clampDailyFocusGoal(minutes);
-    setGoalMinutes(next);
-    window.localStorage.setItem(FOCUS_DAILY_GOAL_KEY, String(next));
-    setGoalOpen(false);
-    startGoalTransition(async () => {
-      await updateDailyFocusGoal(next);
-    });
-  }
 
   const stopwatchSession =
     clock === "up" && skySessionSeconds > 0 ? skySessionSeconds : 0;
@@ -1049,44 +1037,9 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
                 </div>
               ) : null}
 
-              <div className="text-center lg:text-left">
-                <button
-                  type="button"
-                  onClick={() => setGoalOpen((value) => !value)}
-                  className="inline-flex items-center gap-1 text-xs text-muted-foreground/80 transition-colors hover:text-foreground"
-                  aria-expanded={goalOpen}
-                >
-                  Goal · {goalLabel}
-                  <ChevronDown
-                    className={cn(
-                      "size-3.5 transition-transform duration-200",
-                      goalOpen && "rotate-180",
-                    )}
-                  />
-                </button>
-                {goalOpen ? (
-                  <div className="mt-3 flex flex-wrap justify-center gap-1.5 lg:justify-start">
-                    {FOCUS_DAILY_GOAL_PRESETS.map((preset) => {
-                      const active = goalMinutes === preset.minutes;
-                      return (
-                        <button
-                          key={preset.minutes}
-                          type="button"
-                          onClick={() => updateGoal(preset.minutes)}
-                          className={cn(
-                            "rounded-full px-2.5 py-1 text-[11px] tabular-nums transition-colors",
-                            active
-                              ? "bg-foreground text-background"
-                              : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
-                          )}
-                        >
-                          {preset.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : null}
-              </div>
+              <p className="text-center text-xs text-muted-foreground lg:text-left">
+                Goal · {goalLabel}
+              </p>
 
               <div className="w-full border-t border-border/30 pt-5">
                 <div className="flex items-center justify-between gap-2">
