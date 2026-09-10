@@ -27,7 +27,7 @@ export function DashboardAtmosphere({ children }: DashboardAtmosphereProps) {
       if (!cancelled) setGrainReady(true);
     };
 
-    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+    if (typeof window.requestIdleCallback === "function") {
       const id = window.requestIdleCallback(enable, { timeout: 1200 });
       return () => {
         cancelled = true;
