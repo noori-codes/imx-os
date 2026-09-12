@@ -9,14 +9,98 @@ type FocusSoundsProps = {
   compact?: boolean;
 };
 
+function VolumeControls({
+  volume,
+  setVolume,
+}: {
+  volume: number;
+  setVolume: (volume: number) => void;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={() => setVolume(volume > 0 ? 0 : 0.55)}
+        className="flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground"
+        aria-label={volume > 0 ? "Mute ambient" : "Unmute ambient"}
+      >
+        {volume > 0 ? (
+          <Volume2 className="size-3.5" />
+        ) : (
+          <VolumeX className="size-3.5" />
+        )}
+      </button>
+      <input
+        type="range"
+        min={0}
+        max={1}
+        step={0.05}
+        value={volume}
+        onChange={(e) => setVolume(Number(e.target.value))}
+        className="h-1 w-16 accent-foreground sm:w-20"
+        aria-label="Volume"
+      />
+    </div>
+  );
+}
+
 export function FocusSounds({ compact = false }: FocusSoundsProps) {
   const { activeId, playing, volume, toggle, setVolume } = useFocusSound();
   const active =
     FOCUS_TRACKS.find((track) => track.id === activeId) ?? FOCUS_TRACKS[3];
 
+  if (compact) {
+    return (
+      <div className="focus-sound-dock focus-sound-dock-live relative flex w-full items-center justify-center gap-3 sm:gap-4">
+        <VolumeControls volume={volume} setVolume={setVolume} />
+        <div
+          className="flex items-center gap-2.5 sm:gap-3"
+          role="listbox"
+          aria-label="Ambient tracks"
+        >
+          {FOCUS_TRACKS.map((track) => {
+            const isLive = playing && activeId === track.id;
+            return (
+              <button
+                key={track.id}
+                type="button"
+                role="option"
+                aria-label={track.hint}
+                aria-selected={isLive}
+                onClick={() => void toggle(track.id)}
+                className="group/orb relative flex size-9 items-center justify-center sm:size-10"
+              >
+                {isLive ? (
+                  <span
+                    className="absolute inset-0 animate-ping rounded-full bg-foreground/10"
+                    aria-hidden
+                  />
+                ) : null}
+                <span
+                  className={cn(
+                    "relative size-7 rounded-full bg-linear-to-br shadow-[inset_0_1px_0_rgba(255,255,255,0.14)] transition-all duration-300 sm:size-8",
+                    track.tone,
+                    isLive
+                      ? "scale-110 ring-2 ring-foreground/40"
+                      : "opacity-55 group-hover/orb:scale-105 group-hover/orb:opacity-100",
+                  )}
+                />
+              </button>
+            );
+          })}
+        </div>
+        {playing ? (
+          <p className="hidden min-w-0 truncate text-[11px] tracking-wide text-muted-foreground sm:block">
+            {active.hint}
+          </p>
+        ) : null}
+      </div>
+    );
+  }
+
   return (
     <div className="focus-sound-dock relative w-full">
-      {playing && !compact ? (
+      {playing ? (
         <div
           className="pointer-events-none absolute inset-x-8 -top-10 h-20 rounded-full opacity-70 blur-2xl"
           style={{
@@ -58,37 +142,11 @@ export function FocusSounds({ compact = false }: FocusSoundsProps) {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setVolume(volume > 0 ? 0 : 0.55)}
-            className="flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground"
-            aria-label={volume > 0 ? "Mute ambient" : "Unmute ambient"}
-          >
-            {volume > 0 ? (
-              <Volume2 className="size-3.5" />
-            ) : (
-              <VolumeX className="size-3.5" />
-            )}
-          </button>
-          <input
-            type="range"
-            min={0}
-            max={1}
-            step={0.05}
-            value={volume}
-            onChange={(e) => setVolume(Number(e.target.value))}
-            className="h-1 w-16 accent-foreground sm:w-20"
-            aria-label="Volume"
-          />
-        </div>
+        <VolumeControls volume={volume} setVolume={setVolume} />
       </div>
 
       <div
-        className={cn(
-          "relative grid grid-cols-4",
-          compact ? "mt-3 gap-2 sm:gap-3" : "mt-5 gap-3 sm:gap-4",
-        )}
+        className="relative mt-5 grid grid-cols-4 gap-3 sm:gap-4"
         role="listbox"
         aria-label="Ambient tracks"
       >
@@ -101,19 +159,9 @@ export function FocusSounds({ compact = false }: FocusSoundsProps) {
               role="option"
               aria-selected={isLive}
               onClick={() => void toggle(track.id)}
-              className={cn(
-                "group/orb flex flex-col items-center text-center",
-                compact ? "gap-1.5" : "gap-2.5",
-              )}
+              className="group/orb flex flex-col items-center gap-2.5 text-center"
             >
-              <span
-                className={cn(
-                  "relative flex items-center justify-center",
-                  compact
-                    ? "size-11 sm:size-12"
-                    : "size-14 sm:size-16",
-                )}
-              >
+              <span className="relative flex size-14 items-center justify-center sm:size-16">
                 {isLive ? (
                   <span
                     className="absolute inset-0 animate-ping rounded-full bg-foreground/10"
@@ -122,8 +170,7 @@ export function FocusSounds({ compact = false }: FocusSoundsProps) {
                 ) : null}
                 <span
                   className={cn(
-                    "relative rounded-full bg-linear-to-br shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] transition-all duration-300",
-                    compact ? "size-9 sm:size-10" : "size-11 sm:size-12",
+                    "relative size-11 rounded-full bg-linear-to-br shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] transition-all duration-300 sm:size-12",
                     track.tone,
                     isLive
                       ? "scale-110 ring-2 ring-foreground/35"
@@ -140,11 +187,9 @@ export function FocusSounds({ compact = false }: FocusSoundsProps) {
                 >
                   {track.hint}
                 </span>
-                {!compact ? (
-                  <span className="block text-[10px] text-muted-foreground/70">
-                    {isLive ? "Playing" : "Cue"}
-                  </span>
-                ) : null}
+                <span className="block text-[10px] text-muted-foreground/70">
+                  {isLive ? "Playing" : "Cue"}
+                </span>
               </span>
             </button>
           );

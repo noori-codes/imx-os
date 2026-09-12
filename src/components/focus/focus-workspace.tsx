@@ -37,9 +37,11 @@ export function FocusWorkspace({ timer, sky, sessions }: FocusWorkspaceProps) {
         ) : null}
       </div>
 
-      <div className="mt-12 w-full sm:mt-14" id="focus-recent-sessions">
-        {sessions}
-      </div>
+      {!isRunning ? (
+        <div className="mt-12 w-full sm:mt-14" id="focus-recent-sessions">
+          {sessions}
+        </div>
+      ) : null}
 
       <FocusContinueBar />
     </>

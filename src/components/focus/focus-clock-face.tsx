@@ -9,6 +9,20 @@ import {
   type FocusMode,
 } from "@/types/focus";
 
+const CLOCK_TICKS = Array.from({ length: 12 }, (_, i) => {
+  const rad = ((i * 30 - 90) * Math.PI) / 180;
+  const outer = 48.4;
+  const inner = i % 3 === 0 ? 45.1 : 46.6;
+  return {
+    i,
+    major: i % 3 === 0,
+    x1: 50 + Math.cos(rad) * inner,
+    y1: 50 + Math.sin(rad) * inner,
+    x2: 50 + Math.cos(rad) * outer,
+    y2: 50 + Math.sin(rad) * outer,
+  };
+});
+
 type FocusClockFaceProps = {
   isRunning: boolean;
   isStopwatch: boolean;
@@ -60,10 +74,40 @@ export function FocusClockFace({
   return (
     <>
       <svg
-        className="absolute inset-0 size-full -rotate-90"
+        className="absolute inset-0 size-full overflow-visible"
         viewBox="0 0 100 100"
         aria-hidden
       >
+        {isRunning ? (
+          <>
+            <circle
+              cx="50"
+              cy="50"
+              r="38.5"
+              fill="none"
+              className="focus-clock-core"
+            />
+            <circle
+              cx="50"
+              cy="50"
+              r="48.8"
+              fill="none"
+              className="focus-clock-orbit"
+            />
+            {CLOCK_TICKS.map((tick) => (
+              <line
+                key={tick.i}
+                x1={tick.x1}
+                y1={tick.y1}
+                x2={tick.x2}
+                y2={tick.y2}
+                className={
+                  tick.major ? "focus-clock-tick-major" : "focus-clock-tick"
+                }
+              />
+            ))}
+          </>
+        ) : null}
         <circle
           cx="50"
           cy="50"
@@ -72,38 +116,45 @@ export function FocusClockFace({
           className="stroke-muted/50"
           strokeWidth="1"
         />
-        <circle
-          cx="50"
-          cy="50"
-          r={ringRadius}
-          fill="none"
-          className="focus-clock-halo"
-          strokeWidth="2.75"
-          strokeDasharray="1.2 2.4"
-          opacity={0.35}
-        />
-        {!isStopwatch ? (
+        <g transform="rotate(-90 50 50)">
           <circle
             cx="50"
             cy="50"
             r={ringRadius}
             fill="none"
-            className="focus-clock-progress"
-            strokeWidth="2.75"
-            strokeLinecap="round"
-            strokeDasharray={ringCircumference}
-            strokeDashoffset={ringCircumference * (1 - progress / 100)}
+            className="focus-clock-halo"
+            strokeWidth={isRunning ? 2.2 : 2.75}
+            strokeDasharray="1.2 2.4"
+            opacity={0.35}
           />
-        ) : null}
+          {!isStopwatch ? (
+            <circle
+              cx="50"
+              cy="50"
+              r={ringRadius}
+              fill="none"
+              className="focus-clock-progress"
+              strokeWidth={isRunning ? 2.35 : 2.75}
+              strokeLinecap="round"
+              strokeDasharray={ringCircumference}
+              strokeDashoffset={ringCircumference * (1 - progress / 100)}
+            />
+          ) : null}
+        </g>
       </svg>
 
       <div className="relative px-8 text-center">
         <p
           className={cn(
             "focus-clock text-foreground",
+            isRunning && "focus-clock-live",
             shownSeconds >= 3600
-              ? "text-[clamp(2.25rem,6.5vw,3.75rem)]"
-              : "text-[clamp(2.75rem,8vw,4.75rem)]",
+              ? isRunning
+                ? "text-[clamp(2.5rem,7vw,4.35rem)]"
+                : "text-[clamp(2.25rem,6.5vw,3.75rem)]"
+              : isRunning
+                ? "text-[clamp(3.15rem,9.5vw,5.65rem)]"
+                : "text-[clamp(2.75rem,8vw,4.75rem)]",
           )}
         >
           {formatFocusClock(shownSeconds)}
@@ -117,7 +168,7 @@ export function FocusClockFace({
         )}
         {compactHints ? null : isRunning ? (
           <div className="mt-4 space-y-1">
-            <p className="mx-auto max-w-[14rem] truncate text-sm text-foreground/85">
+            <p className="mx-auto max-w-56 truncate text-sm text-foreground/85">
               {isStopwatch
                 ? subject ?? "Focus"
                 : mode === "focus"

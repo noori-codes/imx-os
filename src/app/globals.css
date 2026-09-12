@@ -305,9 +305,10 @@
 
 .focus-stage[data-running="true"] .focus-stage-glow {
   opacity: 1;
-  top: 42%;
-  width: min(42rem, 100%);
-  height: min(42rem, 100%);
+  top: 40%;
+  width: min(46rem, 110%);
+  height: min(46rem, 110%);
+  animation: focus-glow-breathe 7.5s ease-in-out infinite;
 }
 
 .dark .focus-stage[data-mode="focus"] {
@@ -395,6 +396,198 @@
 
 .focus-stage[data-sound] .focus-clock-halo {
   stroke: var(--focus-accent);
+}
+
+.focus-stage[data-running="true"] {
+  box-shadow: inset 0 0 120px color-mix(in oklab, var(--background) 55%, transparent);
+}
+
+.focus-stage-vignette,
+.focus-stage-grain,
+.focus-stage-glow-soft {
+  display: none;
+}
+
+.focus-stage[data-running="true"] .focus-stage-vignette {
+  display: block;
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      ellipse 70% 60% at 50% 42%,
+      transparent 30%,
+      color-mix(in oklab, var(--background) 55%, transparent) 100%
+    );
+  z-index: 0;
+}
+
+.focus-stage[data-running="true"] .focus-stage-grain {
+  display: block;
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.045;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.dark .focus-stage[data-running="true"] .focus-stage-grain {
+  opacity: 0.07;
+  mix-blend-mode: soft-light;
+}
+
+.focus-stage[data-running="true"] .focus-stage-glow-soft {
+  display: block;
+  pointer-events: none;
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  width: min(54rem, 130%);
+  height: min(54rem, 130%);
+  translate: -50% -50%;
+  border-radius: 9999px;
+  background: radial-gradient(
+    circle at center,
+    color-mix(in oklab, var(--focus-glow) 55%, transparent) 0%,
+    transparent 72%
+  );
+  opacity: 0.55;
+  animation: focus-glow-drift 11s ease-in-out infinite;
+}
+
+.focus-clock-core {
+  fill: transparent;
+}
+
+.focus-stage[data-running="true"] .focus-clock-core {
+  fill: color-mix(in oklab, var(--focus-accent) 9%, transparent);
+}
+
+.focus-clock-orbit {
+  stroke: color-mix(in oklab, var(--focus-accent) 22%, transparent);
+  stroke-width: 0.35;
+}
+
+.focus-clock-tick {
+  stroke: color-mix(in oklab, var(--foreground) 22%, transparent);
+  stroke-width: 0.32;
+  stroke-linecap: round;
+}
+
+.focus-clock-tick-major {
+  stroke: color-mix(in oklab, var(--foreground) 42%, transparent);
+  stroke-width: 0.48;
+  stroke-linecap: round;
+}
+
+.focus-stage[data-running="true"] .focus-clock-progress {
+  filter: drop-shadow(
+    0 0 1.6px color-mix(in oklab, var(--focus-accent) 80%, transparent)
+  );
+}
+
+.focus-clock-live {
+  text-shadow: 0 0 42px color-mix(in oklab, var(--focus-accent) 28%, transparent);
+}
+
+.focus-live-dot {
+  display: none;
+}
+
+.focus-stage[data-running="true"] .focus-live-dot {
+  display: block;
+  width: 5px;
+  height: 5px;
+  border-radius: 9999px;
+  background: var(--focus-accent);
+  box-shadow: 0 0 10px color-mix(in oklab, var(--focus-accent) 70%, transparent);
+  animation: focus-live-pulse 2.4s ease-in-out infinite;
+}
+
+.focus-clock-spin {
+  display: none;
+}
+
+.focus-stage[data-running="true"] .focus-clock-spin {
+  display: block;
+  pointer-events: none;
+  position: absolute;
+  inset: -7%;
+  border-radius: 9999px;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0 72%,
+    color-mix(in oklab, var(--focus-accent) 38%, transparent) 88%,
+    transparent 100%
+  );
+  mask: radial-gradient(circle, transparent 67%, black 68.5%, black 70%, transparent 71.5%);
+  animation: focus-orbit-spin 42s linear infinite;
+  opacity: 0.7;
+}
+
+.focus-run-pause {
+  background: var(--foreground);
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--foreground) 12%, transparent),
+    0 0 36px color-mix(in oklab, var(--focus-accent) 32%, transparent);
+}
+
+.focus-run-controls {
+  transition: opacity 400ms ease;
+}
+
+.focus-stage[data-running="true"] .focus-run-dock {
+  opacity: 0.72;
+  transition: opacity 400ms ease;
+}
+
+.focus-stage[data-running="true"]:hover .focus-run-dock,
+.focus-stage[data-running="true"]:focus-within .focus-run-dock {
+  opacity: 1;
+}
+
+@keyframes focus-glow-breathe {
+  0%,
+  100% {
+    opacity: 0.82;
+    scale: 1;
+  }
+  50% {
+    opacity: 1;
+    scale: 1.055;
+  }
+}
+
+@keyframes focus-glow-drift {
+  0%,
+  100% {
+    opacity: 0.4;
+    scale: 1;
+  }
+  50% {
+    opacity: 0.7;
+    scale: 1.08;
+  }
+}
+
+@keyframes focus-orbit-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes focus-live-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.92);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @keyframes focus-seal-flash {
@@ -875,8 +1068,17 @@
 
 @media (prefers-reduced-motion: reduce) {
   .focus-eq-bar,
-  .focus-stage[data-running="true"] .focus-stage-glow {
+  .focus-stage[data-running="true"] .focus-stage-glow,
+  .focus-stage[data-running="true"] .focus-stage-glow-soft,
+  .focus-stage[data-running="true"] .focus-clock-spin,
+  .focus-live-dot,
+  .focus-stage[data-running="true"] .focus-stage-grain {
     animation: none !important;
+  }
+
+  .focus-stage[data-running="true"] .focus-clock-spin,
+  .focus-stage[data-running="true"] .focus-stage-grain {
+    display: none !important;
   }
 
   .focus-progress[data-sealed="true"] .focus-progress-hero,
