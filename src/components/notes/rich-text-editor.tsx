@@ -11,7 +11,6 @@ import {
   Quote,
 } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 type RichTextEditorProps = {
@@ -32,7 +31,7 @@ export function RichTextEditor({
     editorProps: {
       attributes: {
         class:
-          "note-editor min-h-[280px] px-0 py-3 text-sm leading-relaxed focus:outline-none",
+          "note-editor min-h-72 px-3 py-4 text-[15px] leading-7 focus:outline-none sm:min-h-96 sm:px-4 sm:py-5 sm:text-base sm:leading-8",
       },
     },
     onUpdate: ({ editor: ed }) => {
@@ -42,7 +41,7 @@ export function RichTextEditor({
 
   if (!editor) {
     return (
-      <div className="min-h-[320px] border-y border-border/60 py-4 text-sm text-muted-foreground">
+      <div className="min-h-80 rounded-xl border border-border/40 px-4 py-5 text-sm text-muted-foreground">
         Loading editor…
       </div>
     );
@@ -51,8 +50,8 @@ export function RichTextEditor({
   const isEmpty = editor.isEmpty;
 
   return (
-    <div className="border-y border-border/60">
-      <div className="flex flex-wrap gap-1 border-b border-border/60 py-1.5">
+    <div className="notes-rte mt-4 overflow-hidden rounded-xl border border-border/40 bg-background/40">
+      <div className="flex flex-wrap gap-0.5 border-b border-border/40 px-2 py-1.5">
         <ToolbarButton
           active={editor.isActive("bold")}
           onClick={() => editor.chain().focus().toggleBold().run()}
@@ -101,7 +100,7 @@ export function RichTextEditor({
 
       <div className="relative">
         {isEmpty ? (
-          <p className="pointer-events-none absolute left-0 top-3 text-sm text-muted-foreground">
+          <p className="pointer-events-none absolute top-4 left-3 text-[15px] text-muted-foreground sm:top-5 sm:left-4 sm:text-base">
             {placeholder}
           </p>
         ) : null}
@@ -123,15 +122,17 @@ function ToolbarButton({
   label: string;
 }) {
   return (
-    <Button
+    <button
       type="button"
-      size="icon"
-      variant="ghost"
-      className={cn("size-8", active && "bg-muted text-foreground")}
+      className={cn(
+        "inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+        active && "bg-muted text-foreground",
+      )}
       onClick={onClick}
       aria-label={label}
+      aria-pressed={active}
     >
       {children}
-    </Button>
+    </button>
   );
 }

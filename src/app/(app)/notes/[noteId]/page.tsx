@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getNote } from "@/actions/notes";
 import { Header } from "@/components/layout/header";
 import { NoteEditor } from "@/components/notes/note-editor";
+import { NotesStage } from "@/components/notes/notes-stage";
 import { AppPageFrame } from "@/components/shared/app-page-frame";
 import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 
@@ -20,22 +21,21 @@ export default async function NoteDetailPage({ params }: NoteDetailPageProps) {
 
   return (
     <>
-      <Header
-        title={note.type === "journal" ? "Journal" : "Note"}
-        description={
-          note.type === "journal" && note.journal_date
-            ? `Daily journal · ${note.journal_date}`
-            : "Edit and save your writing"
-        }
-      />
-      <AppPageFrame>
-        <Breadcrumbs
-          items={[
-            { label: "Notes", href: "/notes" },
-            { label: note.title || "Untitled" },
-          ]}
-        />
-        <NoteEditor note={note} />
+      <Header title={note.type === "journal" ? "Journal" : "Note"} />
+      <AppPageFrame className="max-w-3xl gap-6 md:py-8">
+        <NotesStage>
+          <div className="notes-reveal">
+            <Breadcrumbs
+              items={[
+                { label: "Notes", href: "/notes" },
+                { label: note.title || "Untitled" },
+              ]}
+            />
+          </div>
+          <div className="notes-reveal notes-reveal-delay-1">
+            <NoteEditor note={note} />
+          </div>
+        </NotesStage>
       </AppPageFrame>
     </>
   );
