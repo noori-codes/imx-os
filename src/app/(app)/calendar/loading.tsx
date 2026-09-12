@@ -1,5 +1,5 @@
-import { AppRouteSkeleton } from "@/components/shared/app-route-skeleton";
+import { CalendarSkeleton } from "@/components/calendar/calendar-skeleton";
 
 export default function CalendarLoading() {
-  return <AppRouteSkeleton title="Calendar" description="Month and week view" />;
+  return <CalendarSkeleton />;
 }

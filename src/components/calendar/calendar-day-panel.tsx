@@ -1,13 +1,23 @@
 import Link from "next/link";
-import { BookOpen, Calendar, CheckCircle2, Circle, Clock, Trash2 } from "lucide-react";
+import {
+  BookOpen,
+  CheckCircle2,
+  Circle,
+  Clock,
+  Trash2,
+} from "lucide-react";
 
 import { deleteCalendarEvent } from "@/actions/calendar";
 import { toggleTaskComplete } from "@/actions/tasks";
 import { EventForm } from "@/components/calendar/event-form";
 import { TaskForm } from "@/components/tasks/task-form";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { formatTime, formatWeekdayLong, parseDateString } from "@/lib/date-utils";
+import {
+  formatTime,
+  formatWeekdayLong,
+  parseDateString,
+  toDateString,
+} from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
 import type { CalendarDayItems } from "@/types/calendar";
 
@@ -18,60 +28,80 @@ type CalendarDayPanelProps = {
 
 export function CalendarDayPanel({ date, items }: CalendarDayPanelProps) {
   const heading = formatWeekdayLong(parseDateString(date));
-  const hasItems =
-    items.events.length > 0 ||
-    items.tasks.length > 0 ||
-    items.journals.length > 0;
+  const isToday = date === toDateString(new Date());
+  const openTasks = items.tasks.filter((task) => !task.completed).length;
+  const total =
+    items.events.length + items.tasks.length + items.journals.length;
 
   return (
-    <aside className="rounded-xl border bg-card p-4 shadow-sm">
-      <div className="flex items-start gap-2">
-        <Calendar className="mt-0.5 size-4 text-muted-foreground" />
-        <div>
-          <h2 className="text-sm font-semibold leading-snug">{heading}</h2>
-          <p className="text-xs text-muted-foreground">
-            {hasItems
-              ? `${items.events.length} events · ${items.tasks.length} tasks`
-              : "Nothing scheduled"}
-          </p>
-        </div>
+    <aside className="cal-dock flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-border/50 bg-card/80">
+      <div className="border-b border-border/40 px-5 py-4">
+        <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+          {isToday ? "Today" : "Selected day"}
+        </p>
+        <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">
+          {heading}
+        </h2>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {total === 0
+            ? "Nothing scheduled"
+            : `${items.events.length} event${items.events.length === 1 ? "" : "s"} · ${openTasks} open task${openTasks === 1 ? "" : "s"}`}
+        </p>
       </div>
 
-      <div className="mt-4 space-y-4">
-        {items.journals.map((note) => (
-          <Link
-            key={note.id}
-            href={`/notes/${note.id}`}
-            className="flex items-center gap-2 rounded-lg border bg-amber-500/10 px-3 py-2 text-sm hover:bg-amber-500/15"
-          >
-            <BookOpen className="size-4 shrink-0 text-amber-600 dark:text-amber-400" />
-            <span className="truncate font-medium">{note.title}</span>
-          </Link>
-        ))}
-
-        {items.events.length > 0 ? (
-          <section>
-            <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Events
+      <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-5 py-4">
+        {items.journals.length > 0 ? (
+          <section className="space-y-2">
+            <h3 className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+              Journal
             </h3>
+            <ul className="space-y-2">
+              {items.journals.map((note) => (
+                <li key={note.id}>
+                  <Link
+                    href={`/notes/${note.id}`}
+                    className="flex items-center gap-2.5 rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2.5 text-sm transition-colors hover:bg-amber-500/15"
+                  >
+                    <BookOpen className="size-4 shrink-0 text-amber-700 dark:text-amber-400" />
+                    <span className="truncate font-medium">{note.title}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
+        <section className="space-y-2">
+          <h3 className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+            Events
+          </h3>
+          {items.events.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No events</p>
+          ) : (
             <ul className="space-y-2">
               {items.events.map((event) => (
                 <li
                   key={event.id}
-                  className="flex items-start gap-2 rounded-lg border px-3 py-2"
+                  className="flex items-start gap-2 rounded-xl border border-border/50 bg-background/40 px-3 py-2.5"
                 >
+                  <span
+                    className="mt-1.5 size-2 shrink-0 rounded-full bg-sky-500/80"
+                    aria-hidden
+                  />
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium">{event.title}</p>
-                    {event.start_time ? (
-                      <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
-                        <Clock className="size-3" />
-                        {formatTime(event.start_time)}
-                      </p>
-                    ) : (
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        All day
-                      </p>
-                    )}
+                    <p className="text-sm font-medium text-foreground">
+                      {event.title}
+                    </p>
+                    <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                      {event.start_time ? (
+                        <>
+                          <Clock className="size-3" />
+                          {formatTime(event.start_time)}
+                        </>
+                      ) : (
+                        "All day"
+                      )}
+                    </p>
                     {event.description ? (
                       <p className="mt-1 text-xs text-muted-foreground">
                         {event.description}
@@ -92,19 +122,21 @@ export function CalendarDayPanel({ date, items }: CalendarDayPanelProps) {
                 </li>
               ))}
             </ul>
-          </section>
-        ) : null}
+          )}
+        </section>
 
-        {items.tasks.length > 0 ? (
-          <section>
-            <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Tasks due
-            </h3>
+        <section className="space-y-2">
+          <h3 className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+            Tasks due
+          </h3>
+          {items.tasks.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nothing due</p>
+          ) : (
             <ul className="space-y-2">
               {items.tasks.map((task) => (
                 <li
                   key={task.id}
-                  className="flex items-start gap-2 rounded-lg border px-3 py-2"
+                  className="flex items-start gap-1 rounded-xl border border-border/50 bg-background/40 px-2 py-2"
                 >
                   <form
                     action={toggleTaskComplete.bind(
@@ -123,18 +155,18 @@ export function CalendarDayPanel({ date, items }: CalendarDayPanelProps) {
                       }
                     >
                       {task.completed ? (
-                        <CheckCircle2 className="size-4 text-primary" />
+                        <CheckCircle2 className="size-4 text-foreground/70" />
                       ) : (
                         <Circle className="size-4 text-muted-foreground" />
                       )}
                     </Button>
                   </form>
-                  <div className="min-w-0 flex-1">
+                  <div className="min-w-0 flex-1 py-1.5 pr-2">
                     <p
                       className={cn(
-                        "text-sm font-medium",
+                        "text-sm font-medium text-foreground",
                         task.completed &&
-                          "text-muted-foreground line-through",
+                          "text-muted-foreground/70 line-through",
                       )}
                     >
                       {task.title}
@@ -158,13 +190,15 @@ export function CalendarDayPanel({ date, items }: CalendarDayPanelProps) {
                 </li>
               ))}
             </ul>
-          </section>
-        ) : null}
+          )}
+        </section>
 
-        <Separator />
-        <EventForm date={date} />
-        <Separator />
-        <TaskForm defaultDueDate={date} compact />
+        <div className="mt-auto space-y-5 border-t border-border/40 pt-5">
+          <EventForm date={date} />
+          <div className="border-t border-border/40 pt-5">
+            <TaskForm defaultDueDate={date} compact />
+          </div>
+        </div>
       </div>
     </aside>
   );

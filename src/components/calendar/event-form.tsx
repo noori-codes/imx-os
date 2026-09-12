@@ -33,33 +33,52 @@ export function EventForm({ date }: EventFormProps) {
     <form ref={formRef} action={formAction} className="space-y-3">
       <input type="hidden" name="event_date" value={date} />
 
+      <div>
+        <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+          New event
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Lands on the selected day
+        </p>
+      </div>
+
       <div className="flex flex-col gap-2">
-        <Label htmlFor="event-title">New event</Label>
+        <Label htmlFor="event-title" className="sr-only">
+          Title
+        </Label>
         <Input
           id="event-title"
           name="title"
           placeholder="e.g. Dentist appointment"
           required
           autoComplete="off"
+          className="bg-background/50"
         />
       </div>
 
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="event-time">Time (optional)</Label>
-        <Input id="event-time" name="start_time" type="time" />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="event-time">Time</Label>
+          <Input
+            id="event-time"
+            name="start_time"
+            type="time"
+            className="bg-background/50"
+          />
+        </div>
+        <div className="flex flex-col gap-2 sm:col-span-1">
+          <Label htmlFor="event-description">Notes</Label>
+          <Textarea
+            id="event-description"
+            name="description"
+            rows={1}
+            placeholder="Optional"
+            className="min-h-9 resize-none bg-background/50"
+          />
+        </div>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="event-description">Notes (optional)</Label>
-        <Textarea
-          id="event-description"
-          name="description"
-          rows={2}
-          placeholder="Location or details"
-        />
-      </div>
-
-      <Button type="submit" disabled={pending} size="sm">
+      <Button type="submit" disabled={pending} size="sm" className="rounded-xl">
         <Plus className="size-4" />
         {pending ? "Adding..." : "Add event"}
       </Button>
