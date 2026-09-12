@@ -5,14 +5,18 @@ import { Volume2, VolumeX } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FOCUS_TRACKS, useFocusSound } from "@/stores/focus-sound";
 
-export function FocusSounds() {
+type FocusSoundsProps = {
+  compact?: boolean;
+};
+
+export function FocusSounds({ compact = false }: FocusSoundsProps) {
   const { activeId, playing, volume, toggle, setVolume } = useFocusSound();
   const active =
     FOCUS_TRACKS.find((track) => track.id === activeId) ?? FOCUS_TRACKS[3];
 
   return (
     <div className="focus-sound-dock relative w-full">
-      {playing ? (
+      {playing && !compact ? (
         <div
           className="pointer-events-none absolute inset-x-8 -top-10 h-20 rounded-full opacity-70 blur-2xl"
           style={{
@@ -31,7 +35,10 @@ export function FocusSounds() {
           <p className="mt-1 truncate text-xs text-muted-foreground">
             {playing ? (
               <span className="inline-flex items-center gap-2">
-                <span className="inline-flex h-3.5 items-end gap-0.5" aria-hidden>
+                <span
+                  className="inline-flex h-3.5 items-end gap-0.5"
+                  aria-hidden
+                >
                   {[0, 1, 2, 3, 4].map((i) => (
                     <span
                       key={i}
@@ -78,7 +85,10 @@ export function FocusSounds() {
       </div>
 
       <div
-        className="relative mt-5 grid grid-cols-4 gap-3 sm:gap-4"
+        className={cn(
+          "relative grid grid-cols-4",
+          compact ? "mt-3 gap-2 sm:gap-3" : "mt-5 gap-3 sm:gap-4",
+        )}
         role="listbox"
         aria-label="Ambient tracks"
       >
@@ -91,9 +101,19 @@ export function FocusSounds() {
               role="option"
               aria-selected={isLive}
               onClick={() => void toggle(track.id)}
-              className="group/orb flex flex-col items-center gap-2.5 text-center"
+              className={cn(
+                "group/orb flex flex-col items-center text-center",
+                compact ? "gap-1.5" : "gap-2.5",
+              )}
             >
-              <span className="relative flex size-14 items-center justify-center sm:size-16">
+              <span
+                className={cn(
+                  "relative flex items-center justify-center",
+                  compact
+                    ? "size-11 sm:size-12"
+                    : "size-14 sm:size-16",
+                )}
+              >
                 {isLive ? (
                   <span
                     className="absolute inset-0 animate-ping rounded-full bg-foreground/10"
@@ -102,7 +122,8 @@ export function FocusSounds() {
                 ) : null}
                 <span
                   className={cn(
-                    "relative size-11 rounded-full bg-linear-to-br shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] transition-all duration-300 sm:size-12",
+                    "relative rounded-full bg-linear-to-br shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] transition-all duration-300",
+                    compact ? "size-9 sm:size-10" : "size-11 sm:size-12",
                     track.tone,
                     isLive
                       ? "scale-110 ring-2 ring-foreground/35"
@@ -119,9 +140,11 @@ export function FocusSounds() {
                 >
                   {track.hint}
                 </span>
-                <span className="block text-[10px] text-muted-foreground/70">
-                  {isLive ? "Playing" : "Cue"}
-                </span>
+                {!compact ? (
+                  <span className="block text-[10px] text-muted-foreground/70">
+                    {isLive ? "Playing" : "Cue"}
+                  </span>
+                ) : null}
               </span>
             </button>
           );

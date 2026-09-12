@@ -10,6 +10,7 @@ import { logFocusSession, updateFocusSession } from "@/actions/focus";
 import { toggleTaskComplete } from "@/actions/tasks";
 import { FocusClockFace } from "@/components/focus/focus-clock-face";
 import { FocusSettings } from "@/components/focus/focus-settings";
+import { FocusSounds } from "@/components/focus/focus-sounds";
 import { showFocusSealToast } from "@/components/focus/focus-seal-toast";
 import { confirm } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
@@ -29,7 +30,7 @@ import {
   continueSubject,
 } from "@/lib/focus-continue";
 import { cn } from "@/lib/utils";
-import { stopFocusSound } from "@/stores/focus-sound";
+import { stopFocusSound, useFocusSound } from "@/stores/focus-sound";
 import { nextFocusMode, useFocusTimer, canContinueFocusSession } from "@/stores/focus-timer";
 import {
   FOCUS_MAX_SECONDS,
@@ -113,6 +114,8 @@ export function FocusTimer({
   const skip = useFocusTimer((s) => s.skip);
   const advance = useFocusTimer((s) => s.advance);
   const tick = useFocusTimer((s) => s.tick);
+  const soundPlaying = useFocusSound((s) => s.playing);
+  const soundId = useFocusSound((s) => s.activeId);
 
   const linkedTask =
     tasks.find((task) => task.id === linkedTaskId) ?? null;
@@ -745,6 +748,7 @@ export function FocusTimer({
   return (
     <section
       data-mode={mode}
+      data-sound={soundPlaying ? soundId : undefined}
       data-running={isRunning && pageVisible ? "true" : "false"}
       data-visible={pageVisible ? "true" : "false"}
       className={cn(
@@ -758,7 +762,7 @@ export function FocusTimer({
       <div className="focus-stage-glow" aria-hidden />
 
       {isRunning ? (
-        <div className="relative z-[1] flex w-full max-w-xl flex-col items-center gap-12 sm:gap-14">
+        <div className="relative z-[1] flex w-full max-w-xl flex-col items-center gap-10 sm:gap-12">
           <div className="flex w-full max-w-md flex-col items-center gap-10 sm:max-w-lg sm:gap-12">
             <div className="flex w-full flex-col items-center gap-3 text-center">
               <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
@@ -852,16 +856,17 @@ export function FocusTimer({
             </div>
           </div>
 
-          <div className="flex w-full justify-center pt-2">
+          <div className="flex w-full max-w-md flex-col items-center gap-6 pt-2 sm:max-w-lg">
             <FocusSettings
               dailyGoalMinutes={dailyGoalMinutes}
               onClockChange={handleClockChange}
             />
+            <FocusSounds compact />
           </div>
         </div>
       ) : (
         <div className="relative z-[1] flex w-full flex-col gap-10">
-          <div className="grid w-full gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-center lg:gap-10 xl:gap-12">
+          <div className="grid w-full gap-8 lg:grid-cols-2 lg:items-center lg:gap-8 xl:gap-10">
             <div className="flex min-w-0 flex-col gap-3">
               <div className="text-center lg:text-left">
                 <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
@@ -886,7 +891,7 @@ export function FocusTimer({
               </div>
 
               <div className="flex flex-col items-center gap-3 lg:items-start">
-                <div className="relative flex size-[14.5rem] items-center justify-center sm:size-[16.5rem] lg:size-[18.5rem]">
+                <div className="relative flex size-[16rem] items-center justify-center sm:size-[18.5rem] lg:size-[22rem]">
                   <FocusClockFace
                     isRunning={isRunning}
                     isStopwatch={isStopwatch}
@@ -1073,6 +1078,9 @@ export function FocusTimer({
                   align="start"
                   className="lg:justify-start"
                 />
+                <div className="w-full pt-2 lg:pt-3">
+                  <FocusSounds />
+                </div>
               </div>
             </div>
           </div>

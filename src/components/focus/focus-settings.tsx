@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { Settings2 } from "lucide-react";
 
 import { updateDailyFocusGoal } from "@/actions/focus";
-import { FocusSounds } from "@/components/focus/focus-sounds";
 import { Input } from "@/components/ui/input";
 import {
   Sheet,
@@ -144,7 +143,7 @@ export function FocusSettings({
         <SheetHeader className="border-b border-border/40 pb-4 pt-5">
           <SheetTitle>Focus settings</SheetTitle>
           <SheetDescription>
-            Session setup, daily goal, and atmosphere.
+            Session setup and daily goal.
           </SheetDescription>
         </SheetHeader>
 
@@ -373,10 +372,6 @@ export function FocusSettings({
             <p className="text-xs text-muted-foreground">
               Target · {formatFocusMinutes(goalMinutes)} focused today
             </p>
-          </section>
-
-          <section className="space-y-3">
-            <FocusSounds />
           </section>
 
           <section className="space-y-2 border-t border-border/40 pt-5">

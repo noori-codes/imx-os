@@ -77,7 +77,7 @@ export function FocusClockFace({
           cy="50"
           r={ringRadius}
           fill="none"
-          className="stroke-muted/80"
+          className="focus-clock-halo"
           strokeWidth="2.75"
           strokeDasharray="1.2 2.4"
           opacity={0.35}
@@ -88,7 +88,7 @@ export function FocusClockFace({
             cy="50"
             r={ringRadius}
             fill="none"
-            className="stroke-foreground transition-[stroke-dashoffset] duration-500 ease-linear"
+            className="focus-clock-progress"
             strokeWidth="2.75"
             strokeLinecap="round"
             strokeDasharray={ringCircumference}

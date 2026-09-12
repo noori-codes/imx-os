@@ -11,7 +11,7 @@ function Bone({ className }: { className?: string }) {
 export function FocusTimerChunkFallback() {
   return (
     <div
-      className="imx-skeleton grid w-full gap-8 px-1 py-4 sm:px-2 sm:py-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-center lg:gap-10"
+      className="imx-skeleton grid w-full gap-8 px-1 py-4 sm:px-2 sm:py-6 lg:grid-cols-2 lg:items-center lg:gap-8 xl:gap-10"
       role="status"
       aria-label="Loading timer"
     >
@@ -20,7 +20,7 @@ export function FocusTimerChunkFallback() {
           <Bone className="mx-auto h-2.5 w-14 lg:mx-0" />
           <Bone className="mx-auto mt-2 h-4 w-28 opacity-60 lg:mx-0" />
         </div>
-        <Bone className="mx-auto size-[14.5rem] rounded-full sm:size-[16.5rem] lg:mx-0 lg:size-[18.5rem]" />
+        <Bone className="mx-auto size-[16rem] rounded-full sm:size-[18.5rem] lg:mx-0 lg:size-[22rem]" />
       </div>
       <div className="flex flex-col gap-5">
         <Bone className="mx-auto h-8 w-28 lg:mx-0" />
