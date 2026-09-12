@@ -6,12 +6,12 @@ import { toggleHabitToday } from "@/actions/habits";
 import { toggleTaskComplete } from "@/actions/tasks";
 import { DashboardAtmosphere } from "@/components/dashboard/dashboard-atmosphere";
 import { DashboardInsightStrip } from "@/components/dashboard/dashboard-insight-strip";
-import { DashboardHero } from "@/components/dashboard/dashboard-hero";
+import { DashboardKpiRow } from "@/components/dashboard/dashboard-kpi-row";
+import { DashboardWelcome } from "@/components/dashboard/dashboard-welcome";
 import { GoalProgressList } from "@/components/dashboard/goal-progress-list";
 import { HabitsToday } from "@/components/dashboard/habits-today";
 import { TodayFocus } from "@/components/dashboard/today-focus";
 import { WeekOverview } from "@/components/dashboard/week-overview";
-import { pickHeadlineQuad } from "@/lib/dashboard-headline";
 import { isOverdue, startOfDay, toDateString } from "@/lib/date-utils";
 import type {
   DashboardData,
@@ -117,17 +117,6 @@ export function DashboardStage({ name, greeting, data }: DashboardStageProps) {
   const activeDaysWeek = data.activity.days
     .slice(-7)
     .filter((day) => day.count > 0).length;
-  const headlineQuad = pickHeadlineQuad({
-    overdue,
-    dueToday,
-    openTaskCount: openTasks.length,
-    taskCount: optimisticTasks.length,
-    habitsDone,
-    habitsTotal: optimisticHabits.length,
-    focusMinutes: data.stats.focus_minutes_today,
-    week: optimisticWeek,
-    goals: data.goals,
-  });
 
   function onTaskToggle(taskId: string, completed: boolean) {
     const after = applyTaskToggle(optimisticTasks, { id: taskId, completed });
@@ -151,64 +140,55 @@ export function DashboardStage({ name, greeting, data }: DashboardStageProps) {
 
   return (
     <DashboardAtmosphere>
-      <DashboardHero
-        name={name}
-        greeting={greeting}
-        intent={data.review.intent}
-        dueToday={dueToday}
-        overdue={overdue}
-        focusMinutes={data.stats.focus_minutes_today}
-        focusSessions={data.focus_today.sessions}
-        habitsDone={habitsDone}
-        habitsTotal={optimisticHabits.length}
-        streak={data.stats.activity_streak}
-        attention={dueToday + overdue}
-      />
+      <div className="dash-reveal">
+        <DashboardWelcome
+          name={name}
+          greeting={greeting}
+          intent={data.review.intent}
+        />
+      </div>
 
-      <div className="dash-quad-shell">
-        <div className="dash-quad grid grid-cols-1 lg:grid-cols-2 lg:grid-rows-[1fr_1fr]">
-          <div
-            className="dash-quad-cell"
-            data-quad="tasks"
-            data-headline={headlineQuad === "tasks" ? "true" : undefined}
-          >
-            <TodayFocus tasks={optimisticTasks} onToggle={onTaskToggle} />
-          </div>
-          <div
-            className="dash-quad-cell"
-            data-quad="habits"
-            data-headline={headlineQuad === "habits" ? "true" : undefined}
-          >
+      <div className="dash-reveal dash-reveal-delay-1">
+        <DashboardKpiRow
+          dueToday={dueToday}
+          overdue={overdue}
+          focusMinutes={data.stats.focus_minutes_today}
+          habitsDone={habitsDone}
+          habitsTotal={optimisticHabits.length}
+          streak={data.stats.activity_streak}
+        />
+      </div>
+
+      <div className="dash-bento dash-reveal dash-reveal-delay-2">
+        <div className="dash-bento-today min-h-88 lg:min-h-112">
+          <TodayFocus tasks={optimisticTasks} onToggle={onTaskToggle} />
+        </div>
+        <div className="dash-bento-side flex min-h-0 flex-col gap-4">
+          <div className="min-h-44 flex-1">
             <HabitsToday
               habits={optimisticHabits}
               onToggle={onHabitToggle}
             />
           </div>
-          <div
-            className="dash-quad-cell"
-            data-quad="week"
-            data-headline={headlineQuad === "week" ? "true" : undefined}
-          >
-            <WeekOverview week={optimisticWeek} />
-          </div>
-          <div
-            className="dash-quad-cell"
-            data-quad="goals"
-            data-headline={headlineQuad === "goals" ? "true" : undefined}
-          >
+          <div className="min-h-48 flex-1">
             <GoalProgressList goals={data.goals} />
           </div>
         </div>
+        <div className="dash-bento-week">
+          <WeekOverview week={optimisticWeek} />
+        </div>
       </div>
 
-      <DashboardInsightStrip
-        focusMinutes={data.stats.focus_minutes_today}
-        tasksDoneToday={tasksDoneToday}
-        habitsDone={habitsDone}
-        habitsTotal={optimisticHabits.length}
-        streak={data.stats.activity_streak}
-        activeDaysWeek={activeDaysWeek}
-      />
+      <div className="dash-reveal dash-reveal-delay-3">
+        <DashboardInsightStrip
+          focusMinutes={data.stats.focus_minutes_today}
+          tasksDoneToday={tasksDoneToday}
+          habitsDone={habitsDone}
+          habitsTotal={optimisticHabits.length}
+          streak={data.stats.activity_streak}
+          activeDaysWeek={activeDaysWeek}
+        />
+      </div>
     </DashboardAtmosphere>
   );
 }

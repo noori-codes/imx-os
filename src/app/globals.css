@@ -221,14 +221,13 @@
   );
 }
 
-/* Dashboard skeleton — layout only, no atmosphere or entrance motion */
+/* Dashboard skeleton — layout only, no entrance motion */
 .dashboard-skeleton .dash-reveal,
 .dashboard-skeleton .dash-reveal-delay-1,
 .dashboard-skeleton .dash-reveal-delay-2,
-.dashboard-skeleton .dash-quad-cell,
+.dashboard-skeleton .dash-reveal-delay-3,
 .dashboard-skeleton .dash-stagger > *,
-.dashboard-skeleton .dash-heat-jewel,
-.dashboard-skeleton .dash-heat-dot {
+.dashboard-skeleton .dash-bar-rise {
   animation: none !important;
   opacity: 1 !important;
   transform: none !important;
@@ -1202,47 +1201,14 @@ html[data-focus-session] body {
   }
 }
 
-/* Dashboard — page atmosphere */
+/* Dashboard — command center shell */
 .dash-page-atmosphere {
-  --dash-page-wash: oklch(0.74 0.035 235 / 0.14);
   position: relative;
   isolation: isolate;
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 2.5rem;
-}
-
-.dash-page-atmosphere[data-phase="morning"] {
-  --dash-page-wash: oklch(0.86 0.07 58 / 0.18);
-}
-
-.dash-page-atmosphere[data-phase="afternoon"] {
-  --dash-page-wash: oklch(0.78 0.04 220 / 0.13);
-}
-
-.dash-page-atmosphere[data-phase="evening"] {
-  --dash-page-wash: oklch(0.64 0.06 40 / 0.16);
-}
-
-.dash-page-atmosphere[data-phase="night"] {
-  --dash-page-wash: oklch(0.56 0.07 275 / 0.18);
-}
-
-.dark .dash-page-atmosphere[data-phase="morning"] {
-  --dash-page-wash: oklch(0.42 0.06 58 / 0.28);
-}
-
-.dark .dash-page-atmosphere[data-phase="afternoon"] {
-  --dash-page-wash: oklch(0.36 0.04 220 / 0.24);
-}
-
-.dark .dash-page-atmosphere[data-phase="evening"] {
-  --dash-page-wash: oklch(0.34 0.05 40 / 0.26);
-}
-
-.dark .dash-page-atmosphere[data-phase="night"] {
-  --dash-page-wash: oklch(0.3 0.06 275 / 0.3);
+  gap: 1.5rem;
 }
 
 .dash-page-wash {
@@ -1251,55 +1217,22 @@ html[data-focus-session] body {
   top: -1.5rem;
   left: 50%;
   z-index: 0;
-  width: min(110%, 48rem);
-  height: min(46vh, 22rem);
+  width: min(100%, 48rem);
+  height: 14rem;
   transform: translateX(-50%);
-  transform-origin: center top;
-  animation: dash-page-wash-breathe 7s ease-in-out infinite;
   background: radial-gradient(
-    ellipse 85% 72% at 50% 0%,
-    var(--dash-page-wash) 0%,
+    ellipse 70% 80% at 50% 0%,
+    color-mix(in oklab, var(--foreground) 4.5%, transparent) 0%,
     transparent 72%
   );
 }
 
-@keyframes dash-page-wash-breathe {
-  0%,
-  100% {
-    opacity: 0.82;
-    transform: translateX(-50%) scale(0.96);
-  }
-  50% {
-    opacity: 1;
-    transform: translateX(-50%) scale(1.06);
-  }
-}
-
-.dash-page-grain {
-  pointer-events: none;
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  opacity: 0.02;
-  mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
-}
-
-.dark .dash-page-grain {
-  opacity: 0.03;
-  mix-blend-mode: soft-light;
-}
-
-@media (max-width: 767px) {
-  .dash-page-grain {
-    display: none;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .dash-page-grain {
-    display: none;
-  }
+.dark .dash-page-wash {
+  background: radial-gradient(
+    ellipse 70% 80% at 50% 0%,
+    color-mix(in oklab, var(--foreground) 6%, transparent) 0%,
+    transparent 72%
+  );
 }
 
 .dash-page-content {
@@ -1308,54 +1241,151 @@ html[data-focus-session] body {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 2.5rem;
+  gap: 1.5rem;
+}
+
+.dash-panel {
+  height: 100%;
+  overflow: hidden;
+  border-radius: 1rem;
+  border: 1px solid color-mix(in oklab, var(--border) 80%, transparent);
+  background: color-mix(in oklab, var(--card) 88%, transparent);
+}
+
+.dark .dash-panel {
+  background: color-mix(in oklab, var(--card) 72%, transparent);
+}
+
+.dash-kpi {
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--foreground) 4%, transparent);
+}
+
+.dash-kpi-row > *:nth-child(1) {
+  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 40ms;
+}
+.dash-kpi-row > *:nth-child(2) {
+  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 80ms;
+}
+.dash-kpi-row > *:nth-child(3) {
+  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 120ms;
+}
+.dash-kpi-row > *:nth-child(4) {
+  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 160ms;
+}
+
+.dash-bento {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 1024px) {
+  .dash-bento {
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    gap: 1rem;
+  }
+
+  .dash-bento-today {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .dash-bento-side {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .dash-bento-week {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
 }
 
 .dash-insight-strip {
-  box-shadow:
-    inset 0 1px 0 color-mix(in oklab, var(--foreground) 6%, transparent),
-    0 8px 28px -22px oklch(0 0 0 / 0.2);
+  border-color: color-mix(in oklab, var(--foreground) 8%, transparent);
+  background: color-mix(in oklab, var(--card) 55%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--foreground) 4%, transparent);
 }
 
 .dark .dash-insight-strip {
-  box-shadow:
-    inset 0 1px 0 color-mix(in oklab, var(--foreground) 10%, transparent),
-    0 12px 32px -24px oklch(0 0 0 / 0.45);
+  background: color-mix(in oklab, var(--card) 40%, transparent);
 }
 
 /* Dashboard — today's stage */
 .dash-stage {
-  --dash-glow: oklch(0.62 0.04 235 / 0.18);
-  --dash-wash: oklch(0.72 0.03 235 / 0.07);
+  --dash-glow: oklch(0.62 0.04 235 / 0.22);
+  --dash-wash: oklch(0.72 0.03 235 / 0.09);
   isolation: isolate;
   position: relative;
   overflow: hidden;
-  border-radius: 1.35rem;
+  border-radius: 1.5rem;
   background: color-mix(in oklab, var(--dash-wash) 100%, transparent);
+  box-shadow: inset 0 0 80px color-mix(in oklab, var(--background) 35%, transparent);
+}
+
+.dash-stage-hero {
+  min-height: min(52vh, 28rem);
+}
+
+.dash-stage-vignette {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(
+      ellipse 88% 78% at 38% 42%,
+      transparent 38%,
+      color-mix(in oklab, var(--background) 28%, transparent) 100%
+    ),
+    radial-gradient(
+      circle at 0% 0%,
+      color-mix(in oklab, var(--background) 58%, transparent) 0%,
+      transparent 44%
+    ),
+    radial-gradient(
+      circle at 100% 0%,
+      color-mix(in oklab, var(--background) 58%, transparent) 0%,
+      transparent 44%
+    ),
+    radial-gradient(
+      circle at 0% 100%,
+      color-mix(in oklab, var(--background) 48%, transparent) 0%,
+      transparent 40%
+    ),
+    radial-gradient(
+      circle at 100% 100%,
+      color-mix(in oklab, var(--background) 48%, transparent) 0%,
+      transparent 40%
+    );
 }
 
 .dash-hero-sky {
   pointer-events: none;
   position: absolute;
   z-index: 1;
-  right: 0.35rem;
-  bottom: 0.15rem;
-  width: min(56%, 21.5rem);
-  opacity: 0.5;
+  right: -2%;
+  bottom: -4%;
+  width: min(68%, 28rem);
+  opacity: 0.58;
   transform-origin: center bottom;
-  animation: dash-hero-sky-drift 9s ease-in-out infinite;
+  animation: dash-hero-sky-drift 10s ease-in-out infinite;
   transition: opacity 420ms ease;
   -webkit-mask-image: linear-gradient(
-    100deg,
+    110deg,
     transparent 0%,
-    #000 18%,
+    #000 16%,
     #000 100%
   );
-  mask-image: linear-gradient(100deg, transparent 0%, #000 18%, #000 100%);
+  mask-image: linear-gradient(110deg, transparent 0%, #000 16%, #000 100%);
 }
 
 .dash-hero-sky-active {
-  opacity: 0.78;
+  opacity: 0.88;
 }
 
 .dash-hero-sky-svg {
@@ -1366,12 +1396,12 @@ html[data-focus-session] body {
 }
 
 .dash-hero-sky-fill {
-  opacity: 0.85;
+  opacity: 0.9;
   animation: dash-hero-sky-breathe 8s ease-in-out infinite;
 }
 
 .dash-hero-sky-arc {
-  opacity: 0.9;
+  opacity: 0.95;
   animation: dash-hero-arc-shimmer 12s ease-in-out infinite;
 }
 
@@ -1383,7 +1413,7 @@ html[data-focus-session] body {
 }
 
 .dash-hero-sky-star-lit {
-  fill: color-mix(in oklab, var(--foreground) 72%, transparent);
+  fill: color-mix(in oklab, var(--foreground) 78%, transparent);
   transform-box: fill-box;
   transform-origin: center;
   animation: dash-hero-star-twinkle 4.8s ease-in-out infinite;
@@ -1470,26 +1500,26 @@ html[data-focus-session] body {
 @media (max-width: 639px) {
   .dash-hero-sky {
     right: 50%;
-    bottom: -0.1rem;
-    width: min(78%, 17.5rem);
+    bottom: -0.35rem;
+    width: min(92%, 22rem);
     transform: translateX(50%);
     transform-origin: center bottom;
-    opacity: 0.4;
+    opacity: 0.48;
     -webkit-mask-image: linear-gradient(
       180deg,
       transparent 0%,
-      #000 22%,
+      #000 18%,
       #000 100%
     );
-    mask-image: linear-gradient(180deg, transparent 0%, #000 22%, #000 100%);
+    mask-image: linear-gradient(180deg, transparent 0%, #000 18%, #000 100%);
   }
 
   .dash-hero-sky-active {
-    opacity: 0.62;
+    opacity: 0.72;
   }
 
   .dash-hero-sky {
-    animation: dash-hero-sky-drift-mobile 9s ease-in-out infinite;
+    animation: dash-hero-sky-drift-mobile 10s ease-in-out infinite;
   }
 }
 
@@ -1547,9 +1577,9 @@ html[data-focus-session] body {
   pointer-events: none;
   position: absolute;
   z-index: 0;
-  left: 8%;
-  top: 12%;
-  width: min(18rem, 52%);
+  left: 6%;
+  top: 8%;
+  width: min(22rem, 58%);
   aspect-ratio: 1;
   height: auto;
   border-radius: 9999px;
@@ -1558,18 +1588,18 @@ html[data-focus-session] body {
     var(--dash-glow) 0%,
     transparent 68%
   );
-  opacity: 0.9;
+  opacity: 0.95;
   transform-origin: center;
-  animation: dash-glow-breathe 5s ease-in-out infinite;
+  animation: dash-glow-breathe 6s ease-in-out infinite;
 }
 
 .dash-stage-glow-secondary {
   pointer-events: none;
   position: absolute;
   z-index: 0;
-  right: 8%;
-  bottom: 6%;
-  width: min(13rem, 38%);
+  right: 4%;
+  bottom: 4%;
+  width: min(16rem, 44%);
   aspect-ratio: 1;
   height: auto;
   border-radius: 9999px;
@@ -1578,9 +1608,9 @@ html[data-focus-session] body {
     var(--dash-glow) 0%,
     transparent 70%
   );
-  opacity: 0.55;
+  opacity: 0.6;
   transform-origin: center;
-  animation: dash-glow-breathe-secondary 6.5s ease-in-out infinite;
+  animation: dash-glow-breathe-secondary 7.5s ease-in-out infinite;
   animation-delay: -2.5s;
 }
 
@@ -2004,10 +2034,19 @@ html[data-focus-session] body {
 }
 
 .dash-focus-cta {
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--foreground) 8%, transparent),
+    0 10px 32px oklch(0 0 0 / 0.14);
   transition:
     transform 200ms ease,
     opacity 200ms ease,
     box-shadow 200ms ease;
+}
+
+.dark .dash-focus-cta {
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--background) 20%, transparent),
+    0 12px 36px oklch(0 0 0 / 0.5);
 }
 
 .dash-focus-cta:hover {
@@ -2067,26 +2106,67 @@ html[data-focus-session] body {
   opacity: 0.35;
 }
 
+.dash-hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--muted-foreground) 88%, transparent);
+}
+
+.dash-hero-greeting {
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.dash-hero-cta-wrap {
+  opacity: 0.78;
+  transition: opacity 280ms ease;
+}
+
+.dash-hero-cta-wrap:hover,
+.dash-hero-cta-wrap:focus-within {
+  opacity: 1;
+}
+
+.dash-hero-instrument {
+  padding-top: 0.35rem;
+  border-top: 1px solid color-mix(in oklab, var(--foreground) 7%, transparent);
+}
+
+@media (min-width: 640px) {
+  .dash-hero-instrument {
+    border-top: none;
+    padding-top: 0;
+    padding-left: 1.5rem;
+    border-left: 1px solid color-mix(in oklab, var(--foreground) 8%, transparent);
+  }
+}
+
 .dash-hero-label {
   font-size: 0.625rem;
   font-weight: 500;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
   color: color-mix(in oklab, var(--muted-foreground) 86%, transparent);
 }
 
 .dash-hero-stat {
-  margin-top: 0.5rem;
-  font-size: 3.75rem;
+  margin-top: 0.55rem;
+  font-size: 4rem;
   font-weight: 500;
-  letter-spacing: -0.035em;
-  line-height: 0.95;
+  letter-spacing: -0.04em;
+  line-height: 0.92;
   font-variant-numeric: tabular-nums lining-nums;
+  text-shadow: 0 0 48px color-mix(in oklab, var(--foreground) 12%, transparent);
 }
 
 @media (min-width: 640px) {
   .dash-hero-stat {
-    font-size: 4.5rem;
+    font-size: 5rem;
   }
 }
 
@@ -2254,22 +2334,22 @@ html[data-focus-session] body {
 .dash-quad-label {
   font-size: 0.625rem;
   font-weight: 500;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: color-mix(in oklab, var(--muted-foreground) 72%, transparent);
+  color: color-mix(in oklab, var(--muted-foreground) 78%, transparent);
 }
 
 .dash-quad-stat {
-  font-size: 1.875rem;
+  font-size: 2rem;
   font-weight: 500;
-  letter-spacing: -0.025em;
-  line-height: 1.05;
+  letter-spacing: -0.03em;
+  line-height: 1.02;
   font-variant-numeric: tabular-nums lining-nums;
 }
 
 @media (min-width: 640px) {
   .dash-quad-stat {
-    font-size: 2rem;
+    font-size: 2.15rem;
   }
 }
 
@@ -2280,27 +2360,28 @@ html[data-focus-session] body {
 }
 
 .dash-quad-shell {
-  --dash-quad-surface: color-mix(in oklab, var(--card) 88%, transparent);
-  --dash-quad-edge: color-mix(in oklab, var(--foreground) 7%, transparent);
-  --dash-quad-highlight: color-mix(in oklab, var(--foreground) 9%, transparent);
+  --dash-quad-surface: color-mix(in oklab, var(--card) 78%, transparent);
+  --dash-quad-edge: color-mix(in oklab, var(--foreground) 8%, transparent);
+  --dash-quad-highlight: color-mix(in oklab, var(--foreground) 10%, transparent);
   isolation: isolate;
   position: relative;
   overflow: hidden;
-  border-radius: 1.35rem;
+  border-radius: 1.5rem;
   border: 1px solid var(--dash-quad-edge);
   background: var(--dash-quad-surface);
+  backdrop-filter: blur(10px);
   box-shadow:
     inset 0 1px 0 var(--dash-quad-highlight),
-    0 10px 40px -24px oklch(0 0 0 / 0.18);
+    0 18px 50px -30px oklch(0 0 0 / 0.28);
 }
 
 .dark .dash-quad-shell {
-  --dash-quad-surface: color-mix(in oklab, var(--card) 62%, transparent);
-  --dash-quad-edge: color-mix(in oklab, var(--foreground) 11%, transparent);
+  --dash-quad-surface: color-mix(in oklab, var(--card) 48%, transparent);
+  --dash-quad-edge: color-mix(in oklab, var(--foreground) 12%, transparent);
   --dash-quad-highlight: color-mix(in oklab, var(--foreground) 14%, transparent);
   box-shadow:
     inset 0 1px 0 var(--dash-quad-highlight),
-    0 18px 48px -28px oklch(0 0 0 / 0.55);
+    0 24px 60px -32px oklch(0 0 0 / 0.65);
 }
 
 .dash-quad {
@@ -2312,7 +2393,7 @@ html[data-focus-session] body {
   min-height: 0;
   min-width: 0;
   position: relative;
-  border-bottom: 1px solid color-mix(in oklab, var(--foreground) 6%, transparent);
+  border-bottom: 1px solid color-mix(in oklab, var(--foreground) 5%, transparent);
   transition:
     background-color 280ms ease,
     box-shadow 280ms ease;
@@ -2334,7 +2415,7 @@ html[data-focus-session] body {
 
 @media (min-width: 1024px) {
   .dash-quad-cell:nth-child(odd) {
-    border-right: 1px solid color-mix(in oklab, var(--foreground) 6%, transparent);
+    border-right: 1px solid color-mix(in oklab, var(--foreground) 5%, transparent);
   }
 
   .dash-quad-cell:nth-child(n + 3) {
@@ -2356,8 +2437,10 @@ html[data-focus-session] body {
 
 .dash-quad-cell[data-headline="true"] {
   --dash-headline-accent: color-mix(in oklab, var(--foreground) 42%, transparent);
-  background: color-mix(in oklab, var(--foreground) 3.8%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--foreground) 11%, transparent);
+  background: color-mix(in oklab, var(--foreground) 4.5%, transparent);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklab, var(--foreground) 12%, transparent),
+    inset 0 0 48px color-mix(in oklab, var(--dash-headline-accent) 12%, transparent);
 }
 
 .dash-quad-cell[data-headline="true"]::before {
@@ -2426,85 +2509,37 @@ html[data-focus-session] body {
 
 .dash-quad-cell > * {
   display: flex;
-  min-height: 13.5rem;
+  min-height: 14.5rem;
   width: 100%;
   flex: 1;
   flex-direction: column;
-  padding: 1.35rem 1.15rem 1.35rem;
+  padding: 1.5rem 1.25rem 1.5rem;
 }
 
 @media (min-width: 1024px) {
   .dash-quad-cell > * {
-    min-height: 15rem;
-    padding: 1.5rem 1.65rem;
+    min-height: 16.25rem;
+    padding: 1.75rem 1.85rem;
   }
 }
 
 /* Dashboard always animates — GNOME "enable-animations: false" sets prefers-reduced-motion */
 @media (prefers-reduced-motion: reduce) {
-  .dash-page-atmosphere .dash-page-wash {
-    animation: dash-page-wash-breathe 7s ease-in-out infinite !important;
-  }
-
-  .dash-page-atmosphere .dash-stage-glow {
-    animation: dash-glow-breathe 5s ease-in-out infinite !important;
-  }
-
-  .dash-page-atmosphere .dash-stage-glow-secondary {
-    animation: dash-glow-breathe-secondary 6.5s ease-in-out infinite !important;
-    animation-delay: -2.5s !important;
-  }
-
   .dash-page-atmosphere .dash-reveal {
     animation: dash-reveal-up 520ms cubic-bezier(0.22, 1, 0.36, 1) both !important;
   }
 
-  .dash-page-atmosphere .dash-stagger > * {
+  .dash-page-atmosphere .dash-stagger > *,
+  .dash-page-atmosphere .dash-kpi-row > * {
     animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both !important;
-    animation-delay: calc(var(--i, 0) * 55ms) !important;
   }
 
-  .dash-page-atmosphere .dash-quad-cell {
-    animation: dash-reveal-up 520ms cubic-bezier(0.22, 1, 0.36, 1) both !important;
-  }
-
-  .dash-page-atmosphere .dash-heat-dot,
-  .dash-page-atmosphere .dash-heat-jewel {
-    animation: dash-heat-pop 560ms cubic-bezier(0.22, 1, 0.36, 1) both !important;
-    animation-delay: calc(var(--i, 0) * 45ms) !important;
-  }
-
-  .dash-page-atmosphere .dash-hero-sky {
-    animation: dash-hero-sky-drift 9s ease-in-out infinite !important;
-  }
-
-  .dash-page-atmosphere .dash-hero-sky-fill {
-    animation: dash-hero-sky-breathe 8s ease-in-out infinite !important;
-  }
-
-  .dash-page-atmosphere .dash-hero-sky-arc {
-    animation: dash-hero-arc-shimmer 12s ease-in-out infinite !important;
-  }
-
-  .dash-page-atmosphere .dash-hero-sky-star-lit,
-  .dash-page-atmosphere .dash-hero-sky-star-dust {
-    animation: dash-hero-star-twinkle 4.8s ease-in-out infinite !important;
-  }
-
-  .dash-page-atmosphere .dash-hero-sky-now {
-    animation: dash-hero-now-core 3.2s ease-in-out infinite !important;
-  }
-
-  .dash-page-atmosphere .dash-hero-sky-now-halo {
-    animation: dash-hero-now-pulse 3.6s ease-in-out infinite !important;
+  .dash-page-atmosphere .dash-bar-rise {
+    animation: dash-bar-rise 700ms cubic-bezier(0.22, 1, 0.36, 1) both !important;
   }
 
   .dash-page-atmosphere .dash-focus-live-dot {
     animation: dash-focus-live-pulse 2.4s ease-in-out infinite !important;
-  }
-
-  .dash-page-atmosphere .dash-quad-cell[data-headline="true"]::before {
-    animation: dash-headline-bar-pulse 3.2s ease-in-out infinite !important;
   }
 }
 

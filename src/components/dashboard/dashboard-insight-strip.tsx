@@ -25,11 +25,11 @@ function InsightItem({
   return (
     <span
       className={cn(
-        "tabular-nums",
+        "tabular-nums tracking-wide",
         highlight
           ? "font-medium text-amber-700 dark:text-amber-400"
           : muted
-            ? "text-muted-foreground/75"
+            ? "text-muted-foreground/70"
             : "text-muted-foreground",
       )}
     >
@@ -93,33 +93,38 @@ export function DashboardInsightStrip({
   return (
     <Link
       href="/analytics"
-      className="dash-insight-strip group block rounded-2xl border border-border/40 bg-card/45 px-4 py-3.5 backdrop-blur-sm transition-colors hover:border-border/60 hover:bg-card/65 sm:px-5"
+      className="dash-insight-strip group block rounded-2xl border px-5 py-4 transition-colors hover:border-border/55 hover:bg-card/55 sm:px-6"
     >
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-        <p className="min-w-0 text-xs leading-relaxed">
-          {empty ? (
-            <span className="text-muted-foreground">
-              Your week at a glance
-            </span>
-          ) : (
-            <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-              {items.map((item, index) => (
-                <span key={index} className="inline-flex items-center gap-2">
-                  {index > 0 ? (
-                    <span
-                      className="text-muted-foreground/35"
-                      aria-hidden="true"
-                    >
-                      ·
-                    </span>
-                  ) : null}
-                  {item}
-                </span>
-              ))}
-            </span>
-          )}
-        </p>
-        <span className="shrink-0 text-xs font-medium text-muted-foreground transition-colors group-hover:text-foreground">
+      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+        <div className="min-w-0">
+          <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground/70">
+            This week
+          </p>
+          <p className="mt-1.5 text-xs leading-relaxed">
+            {empty ? (
+              <span className="text-muted-foreground">
+                Quiet so far · room to begin
+              </span>
+            ) : (
+              <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                {items.map((item, index) => (
+                  <span key={index} className="inline-flex items-center gap-2">
+                    {index > 0 ? (
+                      <span
+                        className="text-muted-foreground/30"
+                        aria-hidden="true"
+                      >
+                        ·
+                      </span>
+                    ) : null}
+                    {item}
+                  </span>
+                ))}
+              </span>
+            )}
+          </p>
+        </div>
+        <span className="shrink-0 text-xs font-medium tracking-wide text-muted-foreground transition-colors group-hover:text-foreground">
           Analytics →
         </span>
       </div>

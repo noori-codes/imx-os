@@ -15,6 +15,7 @@ export function HabitsToday({ habits, onToggle }: HabitsTodayProps) {
   const done = habits.filter((h) => h.completed_today).length;
   const total = habits.length;
   const clear = total > 0 && done === total;
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
   const [burstId, setBurstId] = useState<string | null>(null);
   const [celebrateSealed, setCelebrateSealed] = useState(false);
   const prevClear = useRef(clear);
@@ -44,117 +45,107 @@ export function HabitsToday({ habits, onToggle }: HabitsTodayProps) {
   }
 
   return (
-    <section className="min-w-0">
-      <div className="flex items-baseline justify-between gap-3">
-        <p className="dash-quad-label">
-          Habits
-        </p>
+    <section
+      className={cn(
+        "dash-panel flex h-full min-h-0 flex-col",
+        celebrateSealed && "dash-signal-celebrate",
+      )}
+    >
+      <div className="flex items-center justify-between gap-3 border-b border-border/40 px-5 py-4">
+        <div>
+          <h3 className="text-sm font-semibold text-foreground">Habits</h3>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {total === 0
+              ? "No habits yet"
+              : clear
+                ? "All sealed"
+                : `${done} of ${total} done`}
+          </p>
+        </div>
         <Link
           href="/habits"
-          className="text-[11px] text-muted-foreground transition-colors hover:text-foreground"
+          className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
-          All
+          View all
         </Link>
-      </div>
-
-      <div
-        className={cn(
-          "dash-reveal mt-4",
-          celebrateSealed && "dash-signal-celebrate",
-        )}
-      >
-        <p
-          className={cn(
-            "dash-signal-value dash-quad-stat transition-all duration-200",
-            total === 0 || clear
-              ? celebrateSealed
-                ? "text-foreground"
-                : "text-muted-foreground"
-              : "text-foreground",
-          )}
-        >
-          {total === 0 ? "—" : (
-            <>
-              {done}
-              <span className="dash-quad-stat-fraction">/{total}</span>
-            </>
-          )}
-        </p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          {total === 0 ? "No habits yet" : clear ? "Sealed" : "done today"}
-        </p>
       </div>
 
       {total === 0 ? (
-        <Link
-          href="/habits"
-          className="mt-auto pt-6 text-sm text-muted-foreground transition-colors hover:text-foreground"
-        >
-          Add a habit
-        </Link>
+        <div className="flex flex-1 flex-col items-start justify-center px-5 py-6">
+          <Link
+            href="/habits"
+            className="text-sm font-medium text-foreground underline-offset-4 hover:underline"
+          >
+            Add a habit
+          </Link>
+        </div>
       ) : (
-        <ul className="dash-stagger mt-5 flex flex-wrap gap-x-3 gap-y-4 border-t border-border/30 pt-5">
-          {habits.slice(0, 8).map((habit, index) => (
-            <li
-              key={habit.id}
-              className="w-17 sm:w-18"
-              style={{ ["--i" as string]: index }}
-            >
-              <button
-                type="button"
-                onClick={() => handleToggle(habit.id, !habit.completed_today)}
-                className="group flex w-full flex-col items-center gap-1.5"
-                aria-label={
-                  habit.completed_today
-                    ? `Undo ${habit.title}`
-                    : `Complete ${habit.title}`
-                }
-                aria-pressed={habit.completed_today}
-              >
-                <span
-                  className={cn(
-                    "dash-habit-seal relative flex size-11 items-center justify-center rounded-full border-2 transition-all duration-150 group-hover:scale-105 group-active:scale-95 sm:size-12",
-                    habit.completed_today && "text-white",
-                    burstId === habit.id && "dash-habit-seal-burst",
-                  )}
-                  data-burst={burstId === habit.id ? "true" : undefined}
-                  style={
-                    habit.completed_today
-                      ? {
-                          backgroundColor: habit.color,
-                          borderColor: habit.color,
-                          boxShadow: `0 0 0 3px color-mix(in oklab, ${habit.color} 28%, transparent)`,
-                          ["--habit-burst" as string]: `color-mix(in oklab, ${habit.color} 45%, transparent)`,
-                        }
-                      : { borderColor: habit.color }
+        <div className="flex flex-1 flex-col gap-4 px-5 py-4">
+          <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-foreground transition-[width] duration-500 ease-out"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+
+          <ul className="dash-stagger flex flex-wrap gap-3">
+            {habits.slice(0, 8).map((habit, index) => (
+              <li key={habit.id} style={{ ["--i" as string]: index }}>
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleToggle(habit.id, !habit.completed_today)
                   }
+                  className="group flex w-17 flex-col items-center gap-1.5"
+                  aria-label={
+                    habit.completed_today
+                      ? `Undo ${habit.title}`
+                      : `Complete ${habit.title}`
+                  }
+                  aria-pressed={habit.completed_today}
                 >
                   <span
                     className={cn(
-                      "text-sm font-bold leading-none transition-all duration-150",
+                      "dash-habit-seal relative flex size-10 items-center justify-center rounded-full border-2 transition-all duration-150 group-hover:scale-105 group-active:scale-95",
+                      habit.completed_today && "text-white",
+                      burstId === habit.id && "dash-habit-seal-burst",
+                    )}
+                    data-burst={burstId === habit.id ? "true" : undefined}
+                    style={
                       habit.completed_today
-                        ? "scale-100 opacity-100"
-                        : "scale-50 opacity-0",
+                        ? {
+                            backgroundColor: habit.color,
+                            borderColor: habit.color,
+                            boxShadow: `0 0 0 3px color-mix(in oklab, ${habit.color} 28%, transparent)`,
+                            ["--habit-burst" as string]: `color-mix(in oklab, ${habit.color} 45%, transparent)`,
+                          }
+                        : { borderColor: habit.color }
+                    }
+                  >
+                    <span
+                      className={cn(
+                        "text-sm font-bold leading-none transition-all duration-150",
+                        habit.completed_today
+                          ? "scale-100 opacity-100"
+                          : "scale-50 opacity-0",
+                      )}
+                    >
+                      ✓
+                    </span>
+                  </span>
+                  <span
+                    className={cn(
+                      "w-full truncate text-center text-[11px] leading-tight text-foreground",
+                      habit.completed_today && "text-muted-foreground",
                     )}
                   >
-                    ✓
+                    {habit.title}
                   </span>
-                </span>
-                <span
-                  className={cn(
-                    "w-full truncate text-center text-[11px] leading-tight text-foreground transition-colors duration-150",
-                    habit.completed_today && "text-muted-foreground",
-                  )}
-                >
-                  {habit.title}
-                </span>
-                <span className="h-3 text-[10px] leading-none tabular-nums text-muted-foreground/70">
-                  {habit.current_streak > 0 ? `${habit.current_streak}d` : ""}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </section>
   );

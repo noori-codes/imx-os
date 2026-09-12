@@ -33,12 +33,14 @@ function TaskRow({
       ? "Everyday"
       : task.recurrence === "weekdays"
         ? "Weekdays"
-        : null;
+        : task.context
+          ? task.context
+          : null;
 
   return (
     <li
       className={cn(
-        "group flex items-center gap-2.5 rounded-md py-2 transition-colors",
+        "group flex items-center gap-3 rounded-xl px-2 py-2.5 transition-colors hover:bg-muted/40",
         flash && "dash-task-row-done",
       )}
       style={{ ["--i" as string]: index }}
@@ -46,36 +48,37 @@ function TaskRow({
       <button
         type="button"
         onClick={() => onToggle(task.id, !task.completed)}
-        className="flex size-6 shrink-0 items-center justify-center text-muted-foreground/70 transition-colors hover:text-foreground active:scale-95"
+        className="flex size-7 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground active:scale-95"
         aria-label={task.completed ? "Mark incomplete" : "Mark complete"}
         aria-pressed={task.completed}
       >
         {task.completed ? (
-          <CheckCircle2 className="size-4 text-foreground/70" />
+          <CheckCircle2 className="size-5 text-foreground/75" />
         ) : (
-          <Circle className="size-4 transition-colors group-hover:text-foreground" />
+          <Circle className="size-5 transition-colors group-hover:text-foreground" />
         )}
       </button>
 
-      <p
-        className={cn(
-          "min-w-0 flex-1 truncate text-sm text-foreground transition-colors duration-150",
-          task.completed && "text-muted-foreground/70 line-through",
-        )}
-      >
-        {task.title}
-      </p>
-
-      {tag ? (
-        <span
+      <div className="min-w-0 flex-1">
+        <p
           className={cn(
-            "shrink-0 text-[10px] uppercase tracking-[0.12em] text-muted-foreground/70",
-            overdue && "text-destructive/80",
+            "truncate text-sm font-medium text-foreground transition-colors duration-150",
+            task.completed && "text-muted-foreground/70 line-through",
           )}
         >
-          {tag}
-        </span>
-      ) : null}
+          {task.title}
+        </p>
+        {tag ? (
+          <p
+            className={cn(
+              "mt-0.5 truncate text-[11px] text-muted-foreground",
+              overdue && "text-destructive/80",
+            )}
+          >
+            {tag}
+          </p>
+        ) : null}
+      </div>
     </li>
   );
 }
@@ -112,52 +115,45 @@ export function TodayFocus({ tasks, onToggle }: TodayFocusProps) {
   }
 
   return (
-    <section className="min-w-0">
-      <div className="flex items-baseline justify-between gap-3">
-        <p className="dash-quad-label">
-          Tasks
-        </p>
+    <section
+      className={cn(
+        "dash-panel flex h-full min-h-0 flex-col",
+        celebrateClear && "dash-signal-celebrate",
+      )}
+    >
+      <div className="flex items-center justify-between gap-3 border-b border-border/40 px-5 py-4">
+        <div>
+          <h3 className="text-sm font-semibold text-foreground">Today</h3>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {tasks.length === 0
+              ? "Nothing due"
+              : clear
+                ? "All clear"
+                : `${openCount} open`}
+          </p>
+        </div>
         <Link
           href="/tasks"
-          className="text-[11px] text-muted-foreground transition-colors hover:text-foreground"
+          className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
-          All
+          View all
         </Link>
-      </div>
-
-      <div
-        className={cn("dash-reveal mt-4", celebrateClear && "dash-signal-celebrate")}
-      >
-        <p
-          className={cn(
-            "dash-signal-value dash-quad-stat transition-all duration-200",
-            tasks.length === 0 || clear
-              ? celebrateClear
-                ? "text-foreground"
-                : "text-muted-foreground"
-              : "text-foreground",
-          )}
-        >
-          {tasks.length === 0 ? "—" : clear ? "Clear" : openCount}
-        </p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          {tasks.length === 0
-            ? "Nothing due"
-            : clear
-              ? "Clear for today"
-              : "open"}
-        </p>
       </div>
 
       {tasks.length === 0 ? (
-        <Link
-          href="/tasks"
-          className="mt-auto pt-6 text-sm text-muted-foreground transition-colors hover:text-foreground"
-        >
-          Add a task
-        </Link>
+        <div className="flex flex-1 flex-col items-start justify-center px-5 py-8">
+          <p className="text-sm text-muted-foreground">
+            No tasks lined up for today.
+          </p>
+          <Link
+            href="/tasks"
+            className="mt-3 text-sm font-medium text-foreground underline-offset-4 hover:underline"
+          >
+            Add a task
+          </Link>
+        </div>
       ) : (
-        <ul className="dash-stagger mt-5 min-h-0 flex-1 border-t border-border/30 pt-1">
+        <ul className="dash-stagger min-h-0 flex-1 space-y-0.5 overflow-y-auto px-3 py-3">
           {tasks.map((task, index) => (
             <TaskRow
               key={task.id}

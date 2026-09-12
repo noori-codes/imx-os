@@ -29,6 +29,13 @@ type DashboardHeroProps = {
 
 type Phase = DashboardPhase;
 
+const PHASE_LABEL: Record<Phase, string> = {
+  morning: "Morning light",
+  afternoon: "Afternoon calm",
+  evening: "Evening hush",
+  night: "Night room",
+};
+
 function phaseFromHour(hour: number): Phase {
   return dashboardPhaseFromHour(hour);
 }
@@ -94,8 +101,7 @@ export function DashboardHero({
   const attention = attentionOverride ?? dueToday + overdue;
   const story = intent?.trim() || null;
 
-  const heroKind: "due" | "focus" =
-    attention > 0 ? "due" : "focus";
+  const heroKind: "due" | "focus" = attention > 0 ? "due" : "focus";
 
   const dueDisplay = useCountUp(attention, heroKind === "due");
   const focusDisplay = useCountUp(focusMinutes, heroKind === "focus");
@@ -110,9 +116,10 @@ export function DashboardHero({
 
   return (
     <section
-      className="dash-stage px-5 py-6 sm:px-7 sm:py-8"
+      className="dash-stage dash-stage-hero px-6 py-8 sm:px-8 sm:py-10 lg:px-10 lg:py-12"
       data-phase={phase}
     >
+      <div className="dash-stage-vignette" aria-hidden="true" />
       <div className="dash-stage-glow" aria-hidden="true" />
       <div className="dash-stage-glow-secondary" aria-hidden="true" />
       <DashboardHeroSky
@@ -121,31 +128,45 @@ export function DashboardHero({
         emphasize={heroKind === "focus"}
       />
 
-      <div className="relative z-[2] space-y-8">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+      <div className="relative z-[2] flex min-h-[min(42vh,22rem)] flex-col justify-between gap-10 sm:min-h-[24rem] sm:gap-12">
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
           <div className="dash-reveal min-w-0 text-center sm:text-left">
-            <h2 className="text-xl font-medium tracking-tight text-foreground sm:text-2xl">
+            <p className="dash-hero-eyebrow">
+              <span>{PHASE_LABEL[phase]}</span>
+              {dateLabel ? (
+                <>
+                  <span className="text-muted-foreground/40" aria-hidden>
+                    ·
+                  </span>
+                  <span>{dateLabel}</span>
+                </>
+              ) : null}
+            </p>
+            <h2 className="dash-hero-greeting mt-3 text-2xl font-medium tracking-tight text-foreground sm:text-3xl">
               {greeting}, {name}
             </h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {dateLabel ? <span>{dateLabel}</span> : null}
-            </p>
             {story ? (
-              <p className="mt-3 max-w-md text-sm leading-snug text-muted-foreground">
+              <p className="mt-3 max-w-md text-sm leading-relaxed text-muted-foreground/90">
                 {story}
               </p>
-            ) : null}
+            ) : (
+              <p className="mt-3 max-w-sm text-sm text-muted-foreground/70">
+                One clear room for what matters today.
+              </p>
+            )}
           </div>
 
           <div className="dash-reveal dash-reveal-delay-1 flex flex-col items-center gap-3 sm:items-end">
             {streak >= 7 ? (
               <StreakPill streak={streakDisplay} tier={streakLevel} />
             ) : null}
-            <DashboardFocusCta />
+            <div className="dash-hero-cta-wrap">
+              <DashboardFocusCta />
+            </div>
           </div>
         </div>
 
-        <div className="dash-reveal dash-reveal-delay-2 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between sm:gap-10">
+        <div className="dash-reveal dash-reveal-delay-2 flex flex-col gap-8 sm:flex-row sm:items-end sm:justify-between sm:gap-12">
           <div className="relative text-center sm:text-left">
             <p className="dash-hero-label">
               {heroKind === "due" ? "Needs you" : "Focus today"}
@@ -167,17 +188,17 @@ export function DashboardHero({
                 : formatFocusMinutes(focusDisplay)}
             </p>
             {heroKind === "due" && overdue > 0 ? (
-              <p className="mt-2 text-xs tabular-nums text-muted-foreground">
+              <p className="mt-2.5 text-xs tabular-nums tracking-wide text-muted-foreground">
                 {dueToday} today · {overdue} overdue
               </p>
             ) : heroKind === "focus" && focusSessions > 0 ? (
-              <p className="mt-2 text-xs tabular-nums text-muted-foreground">
+              <p className="mt-2.5 text-xs tabular-nums tracking-wide text-muted-foreground">
                 {focusSessions} {focusSessions === 1 ? "star" : "stars"} lit
               </p>
             ) : null}
           </div>
 
-          <div className="grid grid-cols-3 gap-4 sm:min-w-[16.5rem] sm:gap-6">
+          <div className="dash-hero-instrument grid grid-cols-3 gap-5 sm:min-w-[17.5rem] sm:gap-7">
             {heroKind === "due" ? (
               <SecondaryStat
                 label="Focus"
@@ -194,9 +215,7 @@ export function DashboardHero({
             )}
             <SecondaryStat
               label="Habits"
-              value={
-                habitsTotal > 0 ? `${habitsDone}/${habitsTotal}` : "—"
-              }
+              value={habitsTotal > 0 ? `${habitsDone}/${habitsTotal}` : "—"}
               muted={habitsTotal <= 0}
             />
             <StreakStat streak={streakDisplay} tier={streakLevel} />
@@ -248,7 +267,10 @@ function StreakStat({
 
   return (
     <div
-      className={cn("dash-hero-streak text-center sm:text-left", active && "dash-hero-streak-active")}
+      className={cn(
+        "dash-hero-streak text-center sm:text-left",
+        active && "dash-hero-streak-active",
+      )}
       data-tier={active ? tier : "none"}
     >
       <p className="dash-hero-streak-label">

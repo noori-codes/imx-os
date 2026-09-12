@@ -34,7 +34,7 @@ export default async function DashboardPage() {
   return (
     <>
       <Header title="Dashboard" />
-      <AppPageFrame className="max-w-5xl gap-10 md:py-8">
+      <AppPageFrame className="max-w-6xl gap-8 md:py-8">
         <DashboardStage
           name={name}
           greeting={getGreeting()}
