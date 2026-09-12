@@ -1,4 +1,5 @@
 import {
+  BookOpen,
   Calendar,
   ChartColumn,
   CheckSquare,
@@ -66,6 +67,13 @@ const NOTES: NavItem = {
   description: "Notes and journaling",
 };
 
+const BOOKS: NavItem = {
+  title: "Books",
+  href: "/books",
+  icon: BookOpen,
+  description: "Reading shelf and finished books",
+};
+
 const CALENDAR: NavItem = {
   title: "Calendar",
   href: "/calendar",
@@ -101,7 +109,7 @@ export const NAV_GROUPS: NavGroup[] = [
   },
   {
     label: "Build",
-    items: [GOALS, HABITS, NOTES],
+    items: [GOALS, HABITS, NOTES, BOOKS],
   },
   {
     label: "Reflect",

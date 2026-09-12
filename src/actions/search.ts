@@ -87,6 +87,16 @@ async function fallbackSearch(
     .select("id, title, event_date")
     .ilike("title", pattern)
     .limit(10);
+  let booksTitleQ = supabase
+    .from("books")
+    .select("id, title, author, status")
+    .ilike("title", pattern)
+    .limit(10);
+  let booksAuthorQ = supabase
+    .from("books")
+    .select("id, title, author, status")
+    .ilike("author", pattern)
+    .limit(10);
 
   if (userId) {
     tasksQ = tasksQ.eq("user_id", userId);
@@ -95,16 +105,30 @@ async function fallbackSearch(
     notesQ = notesQ.eq("user_id", userId);
     habitsQ = habitsQ.eq("user_id", userId);
     eventsQ = eventsQ.eq("user_id", userId);
+    booksTitleQ = booksTitleQ.eq("user_id", userId);
+    booksAuthorQ = booksAuthorQ.eq("user_id", userId);
   }
 
-  const [tasks, goals, projects, notes, habits, events] = await Promise.all([
-    tasksQ,
-    goalsQ,
-    projectsQ,
-    notesQ,
-    habitsQ,
-    eventsQ,
-  ]);
+  const [tasks, goals, projects, notes, habits, events, booksByTitle, booksByAuthor] =
+    await Promise.all([
+      tasksQ,
+      goalsQ,
+      projectsQ,
+      notesQ,
+      habitsQ,
+      eventsQ,
+      booksTitleQ,
+      booksAuthorQ,
+    ]);
+
+  const booksById = new Map<
+    string,
+    { id: string; title: string; author: string | null; status: string }
+  >();
+  for (const book of [...(booksByTitle.data ?? []), ...(booksByAuthor.data ?? [])]) {
+    booksById.set(book.id, book);
+  }
+  const books = { data: [...booksById.values()] };
 
   const results: SearchResult[] = [];
 
@@ -177,6 +201,27 @@ async function fallbackSearch(
       title: event.title,
       subtitle: `Event · ${event.event_date}`,
       href: `/calendar?date=${event.event_date}`,
+      rank: 0.5,
+    });
+  }
+
+  for (const book of books.data ?? []) {
+    const statusLabel =
+      book.status === "reading"
+        ? "Reading"
+        : book.status === "finished"
+          ? "Finished"
+          : book.status === "abandoned"
+            ? "Abandoned"
+            : "Want to read";
+    results.push({
+      id: book.id,
+      entity_type: "book",
+      title: book.title,
+      subtitle: book.author
+        ? `${statusLabel} · ${book.author}`
+        : statusLabel,
+      href: "/books",
       rank: 0.5,
     });
   }

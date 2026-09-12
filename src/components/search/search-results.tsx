@@ -1,5 +1,6 @@
 import Link from "next/link";
 import {
+  BookOpen,
   Calendar,
   CheckSquare,
   FileText,
@@ -21,6 +22,7 @@ const ENTITY_META: Record<
   note: { label: "Note", icon: FileText },
   habit: { label: "Habit", icon: CheckSquare },
   event: { label: "Event", icon: Calendar },
+  book: { label: "Book", icon: BookOpen },
 };
 
 type SearchResultsProps = {
@@ -34,7 +36,7 @@ export function SearchResults({ query, results }: SearchResultsProps) {
       <div className="rounded-xl border border-dashed bg-muted/30 px-6 py-12 text-center">
         <p className="text-sm text-muted-foreground">
           Type at least 2 characters to search across tasks, notes, goals,
-          projects, habits, and events.
+          projects, habits, events, and books.
         </p>
       </div>
     );
@@ -67,6 +69,7 @@ export function SearchResults({ query, results }: SearchResultsProps) {
     "note",
     "habit",
     "event",
+    "book",
   ];
 
   return (

@@ -4,7 +4,8 @@ export type SearchEntityType =
   | "project"
   | "note"
   | "habit"
-  | "event";
+  | "event"
+  | "book";
 
 export type SearchResult = {
   id: string;

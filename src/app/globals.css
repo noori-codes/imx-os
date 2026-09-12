@@ -2818,3 +2818,91 @@ html[data-focus-session] body {
     animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both !important;
   }
 }
+
+/* Books — reading shelf */
+.books-skeleton .books-reveal,
+.books-skeleton .books-reveal-delay-1,
+.books-skeleton .books-reveal-delay-2,
+.books-skeleton .books-stats > * {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+.books-stage {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.books-stage-wash {
+  pointer-events: none;
+  position: absolute;
+  top: -1.5rem;
+  left: 50%;
+  z-index: 0;
+  width: min(100%, 42rem);
+  height: 14rem;
+  transform: translateX(-50%);
+  background: radial-gradient(
+    ellipse 70% 80% at 50% 0%,
+    color-mix(in oklab, var(--foreground) 4.5%, transparent) 0%,
+    transparent 72%
+  );
+}
+
+.dark .books-stage-wash {
+  background: radial-gradient(
+    ellipse 70% 80% at 50% 0%,
+    color-mix(in oklab, var(--foreground) 6%, transparent) 0%,
+    transparent 72%
+  );
+}
+
+.books-stage-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.books-reveal {
+  animation: dash-reveal-up 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.books-reveal-delay-1 {
+  animation-delay: 60ms;
+}
+
+.books-reveal-delay-2 {
+  animation-delay: 120ms;
+}
+
+.books-stats > *:nth-child(1) {
+  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 40ms;
+}
+.books-stats > *:nth-child(2) {
+  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 80ms;
+}
+.books-stats > *:nth-child(3) {
+  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 120ms;
+}
+.books-stats > *:nth-child(4) {
+  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 160ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .books-stage .books-reveal,
+  .books-stage .books-stats > * {
+    animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both !important;
+  }
+}

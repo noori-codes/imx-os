@@ -12,6 +12,7 @@ import {
 import { useRouter } from "next/navigation";
 import {
   ArrowRight,
+  BookOpen,
   Calendar,
   CheckSquare,
   CornerDownLeft,
@@ -47,6 +48,7 @@ const ENTITY_META: Record<
   note: { label: "Notes", icon: FileText },
   habit: { label: "Habits", icon: CheckSquare },
   event: { label: "Events", icon: Calendar },
+  book: { label: "Books", icon: BookOpen },
 };
 
 const ENTITY_ORDER: SearchEntityType[] = [
@@ -56,13 +58,14 @@ const ENTITY_ORDER: SearchEntityType[] = [
   "note",
   "habit",
   "event",
+  "book",
 ];
 
 const SUGGESTIONS = [
   { label: "Tasks", icon: ListTodo },
   { label: "Notes", icon: FileText },
+  { label: "Books", icon: BookOpen },
   { label: "Goals", icon: Target },
-  { label: "Habits", icon: CheckSquare },
 ] as const;
 
 export function SearchDialog() {
@@ -220,7 +223,7 @@ export function SearchDialog() {
         <DialogHeader className="sr-only">
           <DialogTitle>Search</DialogTitle>
           <DialogDescription>
-            Search tasks, notes, goals, projects, habits, and events.
+            Search tasks, notes, books, goals, projects, habits, and events.
           </DialogDescription>
         </DialogHeader>
 
