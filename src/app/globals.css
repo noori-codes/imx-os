@@ -450,13 +450,34 @@
   pointer-events: none;
   position: absolute;
   inset: 0;
+  z-index: 0;
+  /* Soft corner fade — room dissolves into the page black */
   background:
     radial-gradient(
-      ellipse 90% 80% at 42% 48%,
-      transparent 35%,
-      color-mix(in oklab, var(--background) 28%, transparent) 100%
+      ellipse 86% 78% at 42% 48%,
+      transparent 36%,
+      color-mix(in oklab, var(--background) 32%, transparent) 100%
+    ),
+    radial-gradient(
+      circle at 0% 0%,
+      color-mix(in oklab, var(--background) 72%, transparent) 0%,
+      transparent 48%
+    ),
+    radial-gradient(
+      circle at 100% 0%,
+      color-mix(in oklab, var(--background) 72%, transparent) 0%,
+      transparent 48%
+    ),
+    radial-gradient(
+      circle at 0% 100%,
+      color-mix(in oklab, var(--background) 72%, transparent) 0%,
+      transparent 48%
+    ),
+    radial-gradient(
+      circle at 100% 100%,
+      color-mix(in oklab, var(--background) 72%, transparent) 0%,
+      transparent 48%
     );
-  z-index: 0;
 }
 
 html[data-focus-session] header {

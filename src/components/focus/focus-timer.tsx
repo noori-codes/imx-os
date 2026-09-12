@@ -766,7 +766,7 @@ export function FocusTimer({
 
       {isRunning ? (
         <div className="focus-run relative z-1 mx-auto grid w-full max-w-5xl grid-cols-1 items-center gap-8 px-1 lg:grid-cols-[1.15fr_0.85fr] lg:gap-10 xl:gap-14">
-          <div className="flex min-w-0 flex-col items-center text-center lg:items-start lg:text-left">
+          <div className="flex min-w-0 flex-col items-center justify-center text-center">
             <div className="flex items-center gap-2.5">
               <span className="focus-live-dot" aria-hidden />
               <p className="text-[10px] font-medium uppercase tracking-[0.32em] text-muted-foreground">
@@ -795,7 +795,7 @@ export function FocusTimer({
             </div>
           </div>
 
-          <div className="flex min-w-0 flex-col items-center gap-6 text-center lg:items-start lg:gap-7 lg:text-left">
+          <div className="flex min-w-0 flex-col items-center justify-center gap-6 text-center lg:gap-7">
             {runningDetail ? (
               <p className="max-w-[20rem] truncate text-[13px] tracking-[0.04em] text-foreground/70 sm:max-w-[24rem]">
                 {runningDetail}
@@ -808,7 +808,7 @@ export function FocusTimer({
 
             {!isStopwatch ? (
               <div
-                className="flex items-center gap-2.5"
+                className="flex items-center justify-center gap-2.5"
                 aria-label={`${dots} of ${FOCUS_POMODOROS_PER_LONG_BREAK} toward a long break`}
               >
                 {Array.from({ length: FOCUS_POMODOROS_PER_LONG_BREAK }).map(
@@ -827,7 +827,7 @@ export function FocusTimer({
               </div>
             ) : null}
 
-            <div className="focus-run-controls flex items-center gap-4 sm:gap-5">
+            <div className="focus-run-controls flex items-center justify-center gap-4 sm:gap-5">
               <button
                 type="button"
                 onClick={handleReset}
@@ -871,13 +871,12 @@ export function FocusTimer({
               )}
             </div>
 
-            <div className="focus-run-dock flex w-full max-w-sm flex-col items-center gap-4 lg:items-start">
+            <div className="focus-run-dock flex w-full max-w-sm flex-col items-center gap-4">
               <FocusSounds compact />
               <FocusSettings
                 dailyGoalMinutes={dailyGoalMinutes}
                 onClockChange={handleClockChange}
-                align="start"
-                className="opacity-55 hover:opacity-100 lg:justify-start"
+                className="opacity-55 hover:opacity-100"
               />
             </div>
           </div>

@@ -7,13 +7,13 @@ import { Settings2 } from "lucide-react";
 import { updateDailyFocusGoal } from "@/actions/focus";
 import { Input } from "@/components/ui/input";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { useFocusTimer } from "@/stores/focus-timer";
 import {
@@ -119,8 +119,8 @@ export function FocusSettings({
   }
 
   return (
-    <Sheet>
-      <SheetTrigger asChild>
+    <Dialog>
+      <DialogTrigger asChild>
         <button
           type="button"
           className={cn(
@@ -134,20 +134,21 @@ export function FocusSettings({
             Settings · {summary}
           </span>
         </button>
-      </SheetTrigger>
+      </DialogTrigger>
 
-      <SheetContent
-        side="bottom"
-        className="max-h-[min(88vh,40rem)] gap-0 overflow-y-auto rounded-t-2xl border-border/60 p-0 sm:max-w-lg sm:mx-auto sm:inset-x-0 sm:left-1/2 sm:-translate-x-1/2"
+      <DialogContent
+        className={cn(
+          "top-1/2 max-h-[min(86vh,36rem)] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 gap-0 overflow-hidden border-border/60 p-0 shadow-2xl sm:max-w-lg",
+        )}
       >
-        <SheetHeader className="border-b border-border/40 pb-4 pt-5">
-          <SheetTitle>Focus settings</SheetTitle>
-          <SheetDescription>
+        <DialogHeader className="border-b border-border/40 px-5 pb-4 pt-5 pr-12">
+          <DialogTitle>Focus settings</DialogTitle>
+          <DialogDescription>
             Session setup and daily goal.
-          </SheetDescription>
-        </SheetHeader>
+          </DialogDescription>
+        </DialogHeader>
 
-        <div className="space-y-8 px-4 py-5 pb-8">
+        <div className="max-h-[min(calc(86vh-5.5rem),30.5rem)] space-y-8 overflow-y-auto px-5 py-5 pb-7">
           <section className="space-y-3">
             <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
               Clock
@@ -387,7 +388,7 @@ export function FocusSettings({
             </p>
           </section>
         </div>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }
