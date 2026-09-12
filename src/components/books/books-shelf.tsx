@@ -15,7 +15,9 @@ import { cn } from "@/lib/utils";
 import {
   BOOK_STATUSES,
   bookProgressPercent,
+  bookReadingDays,
   bookStatusLabel,
+  formatBookReadingDays,
   type Book,
   type BookStatus,
 } from "@/types/book";
@@ -26,11 +28,52 @@ type BooksShelfProps = {
   books: Book[];
 };
 
-function formatUpdated(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, {
+function formatShortDate(iso: string) {
+  return new Date(`${iso}T12:00:00`).toLocaleDateString(undefined, {
     month: "short",
     day: "numeric",
   });
+}
+
+function DatesCell({ book }: { book: Book }) {
+  const days = bookReadingDays(book);
+  const daysLabel = formatBookReadingDays(days);
+
+  if (!book.started_at && !book.finished_at) {
+    return <span className="text-xs text-muted-foreground">—</span>;
+  }
+
+  return (
+    <div className="min-w-30">
+      <p className="text-xs tabular-nums text-muted-foreground">
+        {book.started_at ? formatShortDate(book.started_at) : "—"}
+        {book.finished_at ? (
+          <>
+            {" → "}
+            {formatShortDate(book.finished_at)}
+          </>
+        ) : book.status === "reading" && book.started_at ? (
+          <span className="text-muted-foreground/70"> → now</span>
+        ) : null}
+      </p>
+      {daysLabel ? (
+        <p
+          className={cn(
+            "mt-0.5 text-xs font-medium tabular-nums",
+            book.status === "finished"
+              ? "text-foreground"
+              : "text-muted-foreground",
+          )}
+        >
+          {book.status === "finished"
+            ? `Finished in ${daysLabel}`
+            : book.status === "reading"
+              ? `${daysLabel} so far`
+              : daysLabel}
+        </p>
+      ) : null}
+    </div>
+  );
 }
 
 function StatusBadge({ status }: { status: BookStatus }) {
@@ -215,7 +258,7 @@ export function BooksShelf({ books }: BooksShelfProps) {
                   <th className="px-4 py-3 font-medium">Status</th>
                   <th className="px-4 py-3 font-medium">Progress</th>
                   <th className="px-4 py-3 font-medium">Rating</th>
-                  <th className="px-4 py-3 font-medium">Updated</th>
+                  <th className="px-4 py-3 font-medium">Dates</th>
                   <th className="px-4 py-3 font-medium">
                     <span className="sr-only">Actions</span>
                   </th>
@@ -284,8 +327,8 @@ export function BooksShelf({ books }: BooksShelfProps) {
                     <td className="px-4 py-3">
                       <RatingStars rating={book.rating} />
                     </td>
-                    <td className="px-4 py-3 text-xs tabular-nums text-muted-foreground">
-                      {formatUpdated(book.updated_at)}
+                    <td className="px-4 py-3">
+                      <DatesCell book={book} />
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
@@ -373,9 +416,9 @@ export function BooksShelf({ books }: BooksShelfProps) {
                 </div>
 
                 <div className="mt-3 flex items-center justify-between border-t border-border/40 pt-3">
-                  <span className="text-xs tabular-nums text-muted-foreground">
-                    Updated {formatUpdated(book.updated_at)}
-                  </span>
+                  <div className="min-w-0 pr-2">
+                    <DatesCell book={book} />
+                  </div>
                   <div className="flex gap-1">
                     <button
                       type="button"

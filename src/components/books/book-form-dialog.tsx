@@ -162,6 +162,27 @@ export function BookFormDialog({
             </div>
           </div>
 
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="book-started">Start date</Label>
+              <Input
+                id="book-started"
+                name="started_at"
+                type="date"
+                defaultValue={book?.started_at ?? ""}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="book-finished">Finish date</Label>
+              <Input
+                id="book-finished"
+                name="finished_at"
+                type="date"
+                defaultValue={book?.finished_at ?? ""}
+              />
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="book-notes">Notes</Label>
             <Textarea

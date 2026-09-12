@@ -50,9 +50,19 @@ function parseStatus(value: FormDataEntryValue | null): BookStatus {
     : "want_to_read";
 }
 
+function parseOptionalDate(value: FormDataEntryValue | null): string | null {
+  if (value == null || value === "") return null;
+  const raw = String(value).trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) return null;
+  return raw;
+}
+
 function statusPatch(
   status: BookStatus,
-  current: Pick<Book, "started_at" | "finished_at" | "current_page" | "total_pages">,
+  current: Pick<
+    Book,
+    "started_at" | "finished_at" | "current_page" | "total_pages"
+  >,
 ): Partial<Book> {
   const today = toDateString(new Date());
   const patch: Partial<Book> = { status };
@@ -63,7 +73,7 @@ function statusPatch(
   }
 
   if (status === "finished") {
-    patch.finished_at = today;
+    if (!current.finished_at) patch.finished_at = today;
     if (!current.started_at) patch.started_at = today;
     if (current.total_pages != null) {
       patch.current_page = current.total_pages;
@@ -75,10 +85,69 @@ function statusPatch(
   }
 
   if (status === "abandoned") {
-    patch.finished_at = null;
+    // Keep started_at; clear finish unless already set by user elsewhere
+    if (!current.finished_at) patch.finished_at = null;
   }
 
   return patch;
+}
+
+/**
+ * Merge form dates with status auto-fill.
+ * Empty form fields (null) allow status to populate started/finished.
+ */
+function resolveDates(
+  status: BookStatus,
+  current: Pick<
+    Book,
+    "started_at" | "finished_at" | "current_page" | "total_pages"
+  >,
+  formStart: string | null,
+  formFinish: string | null,
+): Partial<Book> & { started_at: string | null; finished_at: string | null } {
+  const seed: typeof current = {
+    ...current,
+    started_at: formStart ?? current.started_at,
+    finished_at: formFinish ?? current.finished_at,
+  };
+
+  const patch = statusPatch(status, {
+    ...seed,
+    // Pretend empty so auto-fill can run when form left blank
+    started_at: formStart ?? null,
+    finished_at: formFinish ?? null,
+  });
+
+  let started_at = formStart ?? patch.started_at ?? current.started_at ?? null;
+  let finished_at =
+    formFinish ??
+    (patch.finished_at !== undefined
+      ? patch.finished_at
+      : current.finished_at) ??
+    null;
+
+  if (!formStart && patch.started_at) {
+    started_at = patch.started_at;
+  }
+  if (!formFinish && status === "finished") {
+    finished_at = formFinish ?? patch.finished_at ?? toDateString(new Date());
+  }
+  if (status === "want_to_read" && !formFinish) {
+    finished_at = null;
+  }
+  if (status === "reading" && !formFinish) {
+    finished_at = null;
+  }
+
+  if (started_at && finished_at && finished_at < started_at) {
+    finished_at = started_at;
+  }
+
+  return {
+    ...patch,
+    started_at,
+    finished_at,
+  };
 }
 
 export async function getBooks(): Promise<Book[]> {
@@ -120,30 +189,36 @@ export async function createBook(
   let currentPage = parseOptionalInt(formData.get("current_page")) ?? 0;
   const rating = parseOptionalRating(formData.get("rating"));
   const notes = ((formData.get("notes") as string) || "").trim() || null;
+  const formStart = parseOptionalDate(formData.get("started_at"));
+  const formFinish = parseOptionalDate(formData.get("finished_at"));
 
   if (totalPages != null && currentPage > totalPages) {
     currentPage = totalPages;
   }
 
-  const base = {
-    started_at: null as string | null,
-    finished_at: null as string | null,
-    current_page: currentPage,
-    total_pages: totalPages,
-  };
-  const patch = statusPatch(status, base);
+  const dates = resolveDates(
+    status,
+    {
+      started_at: null,
+      finished_at: null,
+      current_page: currentPage,
+      total_pages: totalPages,
+    },
+    formStart,
+    formFinish,
+  );
 
   const { error } = await supabase.from("books").insert({
     user_id: user.id,
     title,
     author,
     status,
-    current_page: patch.current_page ?? currentPage,
+    current_page: dates.current_page ?? currentPage,
     total_pages: totalPages,
     rating,
     notes,
-    started_at: patch.started_at ?? null,
-    finished_at: patch.finished_at ?? null,
+    started_at: dates.started_at,
+    finished_at: dates.finished_at,
   });
 
   if (error) {
@@ -183,17 +258,24 @@ export async function updateBook(
   let currentPage = parseOptionalInt(formData.get("current_page")) ?? 0;
   const rating = parseOptionalRating(formData.get("rating"));
   const notes = ((formData.get("notes") as string) || "").trim() || null;
+  const formStart = parseOptionalDate(formData.get("started_at"));
+  const formFinish = parseOptionalDate(formData.get("finished_at"));
 
   if (totalPages != null && currentPage > totalPages) {
     currentPage = totalPages;
   }
 
-  const patch = statusPatch(status, {
-    started_at: existing.started_at,
-    finished_at: existing.finished_at,
-    current_page: currentPage,
-    total_pages: totalPages,
-  });
+  const dates = resolveDates(
+    status,
+    {
+      started_at: existing.started_at,
+      finished_at: existing.finished_at,
+      current_page: currentPage,
+      total_pages: totalPages,
+    },
+    formStart,
+    formFinish,
+  );
 
   const { error } = await supabase
     .from("books")
@@ -201,18 +283,12 @@ export async function updateBook(
       title,
       author,
       status,
-      current_page: patch.current_page ?? currentPage,
+      current_page: dates.current_page ?? currentPage,
       total_pages: totalPages,
       rating,
       notes,
-      started_at:
-        patch.started_at !== undefined
-          ? patch.started_at
-          : existing.started_at,
-      finished_at:
-        patch.finished_at !== undefined
-          ? patch.finished_at
-          : existing.finished_at,
+      started_at: dates.started_at,
+      finished_at: dates.finished_at,
     })
     .eq("id", bookId);
 
