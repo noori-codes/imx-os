@@ -13,6 +13,7 @@ import { FocusSettings } from "@/components/focus/focus-settings";
 import { FocusSounds } from "@/components/focus/focus-sounds";
 import { showFocusSealToast } from "@/components/focus/focus-seal-toast";
 import { confirm } from "@/components/ui/confirm-dialog";
+import { BrandSelect } from "@/components/ui/brand-select";
 import { Input } from "@/components/ui/input";
 import {
   notifyFocusPhase,
@@ -996,30 +997,29 @@ export function FocusTimer({
                       className="h-12 w-full rounded-2xl border-border/40 bg-transparent px-4 text-center text-lg font-medium tracking-tight shadow-none placeholder:font-normal placeholder:text-muted-foreground/70 focus-visible:ring-1 lg:text-left"
                     />
                     {tasks.length > 0 ? (
-                      <select
+                      <BrandSelect
                         value={linkedTaskId ?? ""}
-                        onChange={(e) => {
-                          const nextId = e.target.value || null;
-                          setLinkedTaskId(nextId);
-                          if (nextId && !intention.trim()) {
-                            const task = tasks.find(
-                              (item) => item.id === nextId,
-                            );
+                        aria-label="Link a task"
+                        className="h-9 border-transparent bg-muted/30 text-center hover:bg-muted/50 lg:text-left"
+                        placeholder="Optional · link an open task"
+                        options={[
+                          { value: "", label: "Optional · link an open task" },
+                          ...tasks.map((task) => ({
+                            value: task.id,
+                            label: task.context
+                              ? `${task.title} · ${task.context}`
+                              : task.title,
+                          })),
+                        ]}
+                        onValueChange={(nextId) => {
+                          const id = nextId || null;
+                          setLinkedTaskId(id);
+                          if (id && !intention.trim()) {
+                            const task = tasks.find((item) => item.id === id);
                             if (task) setIntention(task.title);
                           }
                         }}
-                        aria-label="Link a task"
-                        className="h-9 w-full rounded-xl border border-transparent bg-muted/30 px-3 text-center text-sm text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground focus:border-border/50 focus:outline-none lg:text-left"
-                      >
-                        <option value="">Optional · link an open task</option>
-                        {tasks.map((task) => (
-                          <option key={task.id} value={task.id}>
-                            {task.context
-                              ? `${task.title} · ${task.context}`
-                              : task.title}
-                          </option>
-                        ))}
-                      </select>
+                      />
                     ) : null}
                   </>
                 ) : (

@@ -10,6 +10,7 @@ import {
 } from "@/actions/books";
 import { BookFormDialog } from "@/components/books/book-form-dialog";
 import { EmptyState } from "@/components/shared/empty-state";
+import { BrandSelect } from "@/components/ui/brand-select";
 import { confirm } from "@/components/ui/confirm-dialog";
 import { cn } from "@/lib/utils";
 import {
@@ -281,23 +282,19 @@ export function BooksShelf({ books }: BooksShelfProps) {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <select
+                      <BrandSelect
+                        size="sm"
                         value={book.status}
-                        onChange={(event) =>
-                          onStatusChange(
-                            book.id,
-                            event.target.value as BookStatus,
-                          )
-                        }
-                        className="h-8 max-w-[9.5rem] rounded-md border border-border/50 bg-transparent px-2 text-xs outline-none"
                         aria-label={`Status for ${book.title}`}
-                      >
-                        {BOOK_STATUSES.map((item) => (
-                          <option key={item.value} value={item.value}>
-                            {item.label}
-                          </option>
-                        ))}
-                      </select>
+                        className="max-w-38 bg-transparent"
+                        options={BOOK_STATUSES.map((item) => ({
+                          value: item.value,
+                          label: item.label,
+                        }))}
+                        onValueChange={(next) =>
+                          onStatusChange(book.id, next as BookStatus)
+                        }
+                      />
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
@@ -380,23 +377,19 @@ export function BooksShelf({ books }: BooksShelfProps) {
                 </div>
 
                 <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <select
+                  <BrandSelect
+                    size="sm"
                     value={book.status}
-                    onChange={(event) =>
-                      onStatusChange(
-                        book.id,
-                        event.target.value as BookStatus,
-                      )
-                    }
-                    className="h-8 flex-1 rounded-md border border-border/50 bg-transparent px-2 text-xs outline-none"
                     aria-label={`Status for ${book.title}`}
-                  >
-                    {BOOK_STATUSES.map((item) => (
-                      <option key={item.value} value={item.value}>
-                        {item.label}
-                      </option>
-                    ))}
-                  </select>
+                    className="min-w-0 flex-1 bg-transparent"
+                    options={BOOK_STATUSES.map((item) => ({
+                      value: item.value,
+                      label: item.label,
+                    }))}
+                    onValueChange={(next) =>
+                      onStatusChange(book.id, next as BookStatus)
+                    }
+                  />
                   {(book.status === "reading" ||
                     book.status === "want_to_read") && (
                     <input
@@ -408,7 +401,7 @@ export function BooksShelf({ books }: BooksShelfProps) {
                       onBlur={(event) =>
                         onProgressSubmit(book.id, event.target.value)
                       }
-                      className="h-8 w-16 rounded-md border border-border/50 bg-transparent px-2 text-xs tabular-nums outline-none"
+                      className="h-8 w-16 rounded-lg border border-border/50 bg-transparent px-2 text-xs tabular-nums outline-none"
                       aria-label={`Current page for ${book.title}`}
                     />
                   )}

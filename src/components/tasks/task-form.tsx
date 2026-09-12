@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { ChevronDown, Plus } from "lucide-react";
 
 import { createTask, type TaskActionState } from "@/actions/tasks";
+import { BrandSelect } from "@/components/ui/brand-select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { addDays, startOfDay, toDateString } from "@/lib/date-utils";
@@ -177,19 +178,19 @@ export function TaskForm({
               >
                 Project
               </label>
-              <select
+              <BrandSelect
                 id="task-project-card"
                 name="project_id"
                 defaultValue=""
-                className="border-input bg-background h-9 w-full rounded-md border px-3 text-sm"
-              >
-                <option value="">Inbox (no project)</option>
-                {projects.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.label}
-                  </option>
-                ))}
-              </select>
+                placeholder="Inbox (no project)"
+                options={[
+                  { value: "", label: "Inbox (no project)" },
+                  ...projects.map((p) => ({
+                    value: p.id,
+                    label: p.label,
+                  })),
+                ]}
+              />
             </div>
           ) : null}
         </div>
@@ -306,19 +307,20 @@ export function TaskForm({
           <label htmlFor="task-project" className="sr-only">
             Project
           </label>
-          <select
+          <BrandSelect
             id="task-project"
             name="project_id"
             defaultValue=""
-            className="border-input bg-background/70 h-10 w-full rounded-xl border border-border/50 px-3 text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
-          >
-            <option value="">Inbox (no project)</option>
-            {projects.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.label}
-              </option>
-            ))}
-          </select>
+            placeholder="Inbox (no project)"
+            className="h-10"
+            options={[
+              { value: "", label: "Inbox (no project)" },
+              ...projects.map((p) => ({
+                value: p.id,
+                label: p.label,
+              })),
+            ]}
+          />
         </div>
       ) : null}
 

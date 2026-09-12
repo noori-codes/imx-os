@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 
 import { deleteTask, toggleTaskComplete, updateTask } from "@/actions/tasks";
+import { BrandSelect } from "@/components/ui/brand-select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { isOverdue, isToday } from "@/lib/date-utils";
@@ -196,22 +197,21 @@ export function TaskItem({
               className="w-full sm:w-40"
               aria-label="Due date"
             />
-            <select
+            <BrandSelect
               value={recurrence ?? ""}
-              onChange={(e) =>
+              aria-label="Repeat"
+              className="w-full sm:w-40"
+              options={[
+                { value: "", label: "Doesn’t repeat" },
+                { value: "daily", label: "Everyday" },
+                { value: "weekdays", label: "Weekdays" },
+              ]}
+              onValueChange={(next) =>
                 setRecurrence(
-                  e.target.value === "daily" || e.target.value === "weekdays"
-                    ? e.target.value
-                    : null,
+                  next === "daily" || next === "weekdays" ? next : null,
                 )
               }
-              className="border-input bg-background h-9 w-full rounded-md border px-3 text-sm sm:w-40"
-              aria-label="Repeat"
-            >
-              <option value="">Doesn’t repeat</option>
-              <option value="daily">Everyday</option>
-              <option value="weekdays">Weekdays</option>
-            </select>
+            />
             <div className="flex gap-2">
               <Button type="button" size="sm" onClick={saveEdit}>
                 Save

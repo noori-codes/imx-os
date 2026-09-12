@@ -9,6 +9,7 @@ import {
   type BookActionState,
 } from "@/actions/books";
 import { Button } from "@/components/ui/button";
+import { BrandSelect } from "@/components/ui/brand-select";
 import {
   Dialog,
   DialogContent,
@@ -107,34 +108,31 @@ export function BookFormDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="book-status">Status</Label>
-              <select
+              <BrandSelect
                 id="book-status"
                 name="status"
                 defaultValue={book?.status ?? "want_to_read"}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-              >
-                {BOOK_STATUSES.map((item) => (
-                  <option key={item.value} value={item.value}>
-                    {item.label}
-                  </option>
-                ))}
-              </select>
+                options={BOOK_STATUSES.map((item) => ({
+                  value: item.value,
+                  label: item.label,
+                }))}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="book-rating">Rating</Label>
-              <select
+              <BrandSelect
                 id="book-rating"
                 name="rating"
                 defaultValue={book?.rating?.toString() ?? ""}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-              >
-                <option value="">None</option>
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <option key={n} value={n}>
-                    {n} ★
-                  </option>
-                ))}
-              </select>
+                placeholder="None"
+                options={[
+                  { value: "", label: "None" },
+                  ...[1, 2, 3, 4, 5].map((n) => ({
+                    value: String(n),
+                    label: `${n} ★`,
+                  })),
+                ]}
+              />
             </div>
           </div>
 

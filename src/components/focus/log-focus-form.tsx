@@ -8,6 +8,7 @@ import {
   logManualFocusSession,
   type FocusActionState,
 } from "@/actions/focus";
+import { BrandSelect } from "@/components/ui/brand-select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { celebrateMarathonSessionIfNeeded } from "@/lib/focus-celebrate";
@@ -183,21 +184,22 @@ export function LogFocusForm({
           </div>
 
           {tasks.length > 0 ? (
-            <select
+            <BrandSelect
               name="task_id"
               defaultValue=""
               aria-label="Link a task"
-              className="h-10 w-full rounded-xl border border-border/40 bg-transparent px-3 text-sm text-foreground"
-            >
-              <option value="">Optional · link a task</option>
-              {tasks.map((task) => (
-                <option key={task.id} value={task.id}>
-                  {task.context
+              className="h-10 bg-transparent"
+              placeholder="Optional · link a task"
+              options={[
+                { value: "", label: "Optional · link a task" },
+                ...tasks.map((task) => ({
+                  value: task.id,
+                  label: task.context
                     ? `${task.title} · ${task.context}`
-                    : task.title}
-                </option>
-              ))}
-            </select>
+                    : task.title,
+                })),
+              ]}
+            />
           ) : null}
 
           <Input
