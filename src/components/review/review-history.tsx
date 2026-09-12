@@ -8,26 +8,34 @@ import type { DailyReview } from "@/types/review";
 
 type ReviewHistoryProps = {
   selectedDate: string;
-  recent: Pick<DailyReview, "id" | "review_date" | "mood">[];
+  recent: Pick<DailyReview, "id" | "review_date" | "mood" | "energy">[];
 };
 
 export function ReviewHistory({ selectedDate, recent }: ReviewHistoryProps) {
   return (
-    <div className="rounded-xl border bg-card p-4 shadow-sm">
-      <h2 className="text-sm font-semibold">Recent reviews</h2>
+    <section className="review-history overflow-hidden rounded-2xl border border-border/50 bg-card/80">
+      <div className="border-b border-border/40 px-5 py-4">
+        <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+          Archive
+        </p>
+        <h3 className="mt-1 text-sm font-semibold text-foreground">
+          Recent reviews
+        </h3>
+      </div>
+
       {recent.length === 0 ? (
-        <div className="mt-6 flex flex-col items-center py-4 text-center">
-          <Moon className="mb-2 size-8 text-muted-foreground" />
+        <div className="flex flex-col items-center px-5 py-10 text-center">
+          <Moon className="mb-2 size-7 text-muted-foreground/70" />
           <p className="text-sm text-muted-foreground">
-            Saved reviews will show up here.
+            Saved reviews appear here as a trail.
           </p>
         </div>
       ) : (
-        <ul className="mt-3 space-y-1">
+        <ul className="divide-y divide-border/30">
           {recent.map((item) => {
             const selected = item.review_date === selectedDate;
             const label = parseDateString(item.review_date).toLocaleDateString(
-              "en-US",
+              undefined,
               { weekday: "short", month: "short", day: "numeric" },
             );
 
@@ -36,24 +44,30 @@ export function ReviewHistory({ selectedDate, recent }: ReviewHistoryProps) {
                 <Link
                   href={reviewHref(item.review_date)}
                   className={cn(
-                    "flex items-center justify-between rounded-md px-2 py-1.5 text-sm",
+                    "flex items-center justify-between gap-3 px-5 py-3 text-sm transition-colors",
                     selected
-                      ? "bg-accent font-medium"
-                      : "hover:bg-accent/50",
+                      ? "bg-muted/50 font-medium text-foreground"
+                      : "text-foreground hover:bg-muted/40",
                   )}
                 >
                   <span>{label}</span>
-                  {item.mood ? (
-                    <span className="text-xs text-muted-foreground">
-                      mood {item.mood}
-                    </span>
-                  ) : null}
+                  <span className="flex items-center gap-2 text-xs tabular-nums text-muted-foreground">
+                    {item.mood != null ? (
+                      <span title="Mood">M{item.mood}</span>
+                    ) : null}
+                    {item.energy != null ? (
+                      <span title="Energy">E{item.energy}</span>
+                    ) : null}
+                    {item.mood == null && item.energy == null ? (
+                      <span>—</span>
+                    ) : null}
+                  </span>
                 </Link>
               </li>
             );
           })}
         </ul>
       )}
-    </div>
+    </section>
   );
 }

@@ -57,7 +57,7 @@ export async function getReviewPageData(date: string): Promise<ReviewPageData> {
       .maybeSingle(),
     supabase
       .from("daily_reviews")
-      .select("id, review_date, mood")
+      .select("id, review_date, mood, energy")
       .order("review_date", { ascending: false })
       .limit(14),
     supabase

@@ -42,5 +42,5 @@ export type ReviewRecap = {
 export type ReviewPageData = {
   recap: ReviewRecap;
   review: DailyReview | null;
-  recent: Pick<DailyReview, "id" | "review_date" | "mood">[];
+  recent: Pick<DailyReview, "id" | "review_date" | "mood" | "energy">[];
 };

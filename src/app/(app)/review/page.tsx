@@ -4,6 +4,9 @@ import { ReviewForm } from "@/components/review/review-form";
 import { ReviewHistory } from "@/components/review/review-history";
 import { ReviewNav } from "@/components/review/review-nav";
 import { ReviewRecapCard } from "@/components/review/review-recap";
+import { ReviewStage } from "@/components/review/review-stage";
+import { ReviewStats } from "@/components/review/review-stats";
+import { AppPageFrame } from "@/components/shared/app-page-frame";
 import { toDateString } from "@/lib/date-utils";
 
 type ReviewPageProps = {
@@ -24,23 +27,26 @@ export default async function ReviewPage({ searchParams }: ReviewPageProps) {
 
   return (
     <>
-      <Header
-        title="Review"
-        description="End-of-day reflection and recap"
-      />
-      <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
-        <ReviewNav date={date} />
+      <Header title="Review" />
+      <AppPageFrame className="max-w-5xl gap-8 md:py-8">
+        <ReviewStage>
+          <div className="review-reveal">
+            <ReviewNav date={date} hasReview={Boolean(review)} />
+          </div>
 
-        <div className="grid gap-6 lg:grid-cols-5">
-          <div className="space-y-6 lg:col-span-3">
+          <div className="review-reveal review-reveal-delay-1">
+            <ReviewStats recap={recap} review={review} />
+          </div>
+
+          <div className="review-reveal review-reveal-delay-2 grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(17rem,0.85fr)] lg:items-start">
             <ReviewForm key={date} date={date} review={review} />
+            <div className="flex flex-col gap-4">
+              <ReviewRecapCard recap={recap} />
+              <ReviewHistory selectedDate={date} recent={recent} />
+            </div>
           </div>
-          <div className="space-y-6 lg:col-span-2">
-            <ReviewRecapCard recap={recap} />
-            <ReviewHistory selectedDate={date} recent={recent} />
-          </div>
-        </div>
-      </div>
+        </ReviewStage>
+      </AppPageFrame>
     </>
   );
 }

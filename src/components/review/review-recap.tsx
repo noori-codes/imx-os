@@ -1,11 +1,8 @@
 import Link from "next/link";
 import {
   BookOpen,
-  Calendar,
   CheckCircle2,
   Circle,
-  ListTodo,
-  Timer,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -19,139 +16,128 @@ export function ReviewRecapCard({ recap }: ReviewRecapCardProps) {
   const openDue = recap.tasks_due.filter((task) => !task.completed);
 
   return (
-    <div className="space-y-4 rounded-xl border bg-card p-4 shadow-sm">
-      <h2 className="text-sm font-semibold">Today at a glance</h2>
-
-      <div className="grid grid-cols-2 gap-3">
-        <Stat
-          label="Tasks completed"
-          value={recap.tasks_completed.length}
-          icon={ListTodo}
-        />
-        <Stat
-          label="Habits"
-          value={`${recap.habits_done}/${recap.habits_total}`}
-          icon={CheckCircle2}
-        />
-        <Stat
-          label="Focus minutes"
-          value={recap.focus_minutes}
-          icon={Timer}
-        />
-        <Stat
-          label="Events"
-          value={recap.events_count}
-          icon={Calendar}
-        />
+    <aside className="review-recap overflow-hidden rounded-2xl border border-border/50 bg-card/80">
+      <div className="border-b border-border/40 px-5 py-4">
+        <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+          Day pulse
+        </p>
+        <h3 className="mt-1 text-sm font-semibold text-foreground">
+          At a glance
+        </h3>
       </div>
 
-      {recap.has_journal && recap.journal_id ? (
-        <Link
-          href={`/notes/${recap.journal_id}`}
-          className="flex items-center gap-2 rounded-lg border bg-amber-500/10 px-3 py-2 text-sm hover:bg-amber-500/15"
-        >
-          <BookOpen className="size-4 text-amber-600 dark:text-amber-400" />
-          Open today's journal
-        </Link>
-      ) : (
-        <Link
-          href="/notes"
-          className="flex items-center gap-2 rounded-lg border px-3 py-2 text-sm text-muted-foreground hover:bg-accent/40"
-        >
-          <BookOpen className="size-4" />
-          No journal yet — write one in Notes
-        </Link>
-      )}
-
-      {recap.habits.length > 0 ? (
-        <section>
-          <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Habits
-          </h3>
-          <ul className="space-y-1.5">
-            {recap.habits.map((habit) => (
-              <li key={habit.id} className="flex items-center gap-2 text-sm">
-                {habit.completed ? (
-                  <CheckCircle2
-                    className="size-4 shrink-0"
-                    style={{ color: habit.color }}
-                  />
-                ) : (
-                  <Circle className="size-4 shrink-0 text-muted-foreground" />
-                )}
-                <span
-                  className={cn(
-                    habit.completed ? "" : "text-muted-foreground",
-                  )}
-                >
-                  {habit.title}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
-      {openDue.length > 0 ? (
-        <section>
-          <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Still due
-          </h3>
-          <ul className="space-y-1.5">
-            {openDue.map((task) => (
-              <li key={task.id} className="flex items-center gap-2 text-sm">
-                <Circle className="size-3.5 shrink-0 text-muted-foreground" />
-                <span>{task.title}</span>
-              </li>
-            ))}
-          </ul>
+      <div className="space-y-5 px-5 py-4">
+        {recap.has_journal && recap.journal_id ? (
           <Link
-            href="/tasks"
-            className="mt-2 inline-block text-xs text-primary hover:underline"
+            href={`/notes/${recap.journal_id}`}
+            className="flex items-center gap-2.5 rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2.5 text-sm font-medium transition-colors hover:bg-amber-500/15"
           >
-            Open tasks
+            <BookOpen className="size-4 shrink-0 text-amber-700 dark:text-amber-400" />
+            Open today&apos;s journal
           </Link>
-        </section>
-      ) : null}
+        ) : (
+          <Link
+            href="/notes"
+            className="flex items-center gap-2.5 rounded-xl border border-border/50 px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:border-border hover:text-foreground"
+          >
+            <BookOpen className="size-4 shrink-0" />
+            Write a journal entry
+          </Link>
+        )}
 
-      {recap.tasks_completed.length > 0 ? (
-        <section>
-          <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Completed
-          </h3>
-          <ul className="space-y-1.5">
-            {recap.tasks_completed.slice(0, 8).map((task) => (
-              <li
-                key={task.id}
-                className="flex items-center gap-2 text-sm text-muted-foreground"
+        {recap.events_count > 0 ? (
+          <p className="text-xs text-muted-foreground">
+            {recap.events_count} calendar event
+            {recap.events_count === 1 ? "" : "s"} today
+          </p>
+        ) : null}
+
+        {recap.habits.length > 0 ? (
+          <section>
+            <h4 className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+              Habits
+            </h4>
+            <ul className="mt-2.5 space-y-2">
+              {recap.habits.map((habit) => (
+                <li key={habit.id} className="flex items-center gap-2.5 text-sm">
+                  {habit.completed ? (
+                    <CheckCircle2
+                      className="size-4 shrink-0"
+                      style={{ color: habit.color }}
+                    />
+                  ) : (
+                    <Circle className="size-4 shrink-0 text-muted-foreground/50" />
+                  )}
+                  <span
+                    className={cn(
+                      habit.completed
+                        ? "text-foreground"
+                        : "text-muted-foreground",
+                    )}
+                  >
+                    {habit.title}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
+        {openDue.length > 0 ? (
+          <section>
+            <div className="flex items-center justify-between gap-2">
+              <h4 className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                Still due
+              </h4>
+              <Link
+                href="/tasks"
+                className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
               >
-                <CheckCircle2 className="size-3.5 shrink-0 text-primary" />
-                <span className="line-through">{task.title}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-    </div>
-  );
-}
+                Tasks
+              </Link>
+            </div>
+            <ul className="mt-2.5 space-y-2">
+              {openDue.map((task) => (
+                <li
+                  key={task.id}
+                  className="flex items-center gap-2.5 text-sm text-foreground"
+                >
+                  <Circle className="size-3.5 shrink-0 text-muted-foreground" />
+                  <span className="truncate">{task.title}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
-function Stat({
-  label,
-  value,
-  icon: Icon,
-}: {
-  label: string;
-  value: string | number;
-  icon: typeof ListTodo;
-}) {
-  return (
-    <div className="rounded-lg border bg-background/60 p-3">
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-xs text-muted-foreground">{label}</p>
-        <Icon className="size-3.5 text-muted-foreground" />
+        {recap.tasks_completed.length > 0 ? (
+          <section>
+            <h4 className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+              Completed
+            </h4>
+            <ul className="mt-2.5 space-y-2">
+              {recap.tasks_completed.slice(0, 8).map((task) => (
+                <li
+                  key={task.id}
+                  className="flex items-center gap-2.5 text-sm text-muted-foreground"
+                >
+                  <CheckCircle2 className="size-3.5 shrink-0 text-foreground/55" />
+                  <span className="truncate line-through">{task.title}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
+        {recap.habits.length === 0 &&
+        openDue.length === 0 &&
+        recap.tasks_completed.length === 0 &&
+        !recap.has_journal ? (
+          <p className="text-sm text-muted-foreground">
+            Quiet day so far — room to begin.
+          </p>
+        ) : null}
       </div>
-      <p className="mt-1 text-xl font-semibold tracking-tight">{value}</p>
-    </div>
+    </aside>
   );
 }

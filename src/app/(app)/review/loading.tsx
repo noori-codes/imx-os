@@ -1,10 +1,11 @@
-import { AppRouteSkeleton } from "@/components/shared/app-route-skeleton";
+import { Header } from "@/components/layout/header";
+import { ReviewSkeleton } from "@/components/review/review-skeleton";
 
 export default function ReviewLoading() {
   return (
-    <AppRouteSkeleton
-      title="Review"
-      description="End-of-day reflection and recap"
-    />
+    <>
+      <Header title="Review" />
+      <ReviewSkeleton />
+    </>
   );
 }
