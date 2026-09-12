@@ -150,10 +150,10 @@ export function FocusClockFace({
             isRunning && "focus-clock-live",
             shownSeconds >= 3600
               ? isRunning
-                ? "text-[clamp(2.5rem,7vw,4.35rem)]"
+                ? "text-[clamp(2.15rem,5.5vw,3.75rem)]"
                 : "text-[clamp(2.25rem,6.5vw,3.75rem)]"
               : isRunning
-                ? "text-[clamp(3.15rem,9.5vw,5.65rem)]"
+                ? "text-[clamp(2.65rem,7vw,4.75rem)]"
                 : "text-[clamp(2.75rem,8vw,4.75rem)]",
           )}
         >

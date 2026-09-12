@@ -754,7 +754,7 @@ export function FocusTimer({
       className={cn(
         "focus-stage group relative flex w-full flex-col overflow-hidden",
         isRunning
-          ? "min-h-[min(86vh,52rem)] items-center justify-center px-6 py-12 sm:px-10 sm:py-16"
+          ? "h-full min-h-0 flex-1 items-center justify-center px-5 py-5 sm:px-8 sm:py-6"
           : "px-1 py-4 sm:px-2 sm:py-6",
       )}
       id="focus-timer"
@@ -765,8 +765,8 @@ export function FocusTimer({
       <div className="focus-stage-glow" aria-hidden />
 
       {isRunning ? (
-        <div className="focus-run relative z-[1] flex w-full max-w-xl flex-col items-center">
-          <div className="flex w-full flex-col items-center text-center">
+        <div className="focus-run relative z-1 mx-auto grid w-full max-w-5xl grid-cols-1 items-center gap-8 px-1 lg:grid-cols-[1.15fr_0.85fr] lg:gap-10 xl:gap-14">
+          <div className="flex min-w-0 flex-col items-center text-center lg:items-start lg:text-left">
             <div className="flex items-center gap-2.5">
               <span className="focus-live-dot" aria-hidden />
               <p className="text-[10px] font-medium uppercase tracking-[0.32em] text-muted-foreground">
@@ -774,7 +774,7 @@ export function FocusTimer({
               </p>
             </div>
 
-            <div className="focus-clock-jewel relative mt-8 flex size-[min(78vw,22rem)] items-center justify-center sm:mt-10 sm:size-[24rem] lg:size-[26rem]">
+            <div className="focus-clock-jewel relative mt-5 flex size-[min(62vw,16.5rem)] items-center justify-center sm:mt-6 sm:size-[19rem] lg:mt-8 lg:size-[22rem]">
               <div className="focus-clock-spin" aria-hidden />
               <FocusClockFace
                 isRunning={isRunning}
@@ -793,16 +793,22 @@ export function FocusTimer({
                 compactHints
               />
             </div>
+          </div>
 
+          <div className="flex min-w-0 flex-col items-center gap-6 text-center lg:items-start lg:gap-7 lg:text-left">
             {runningDetail ? (
-              <p className="mt-6 max-w-[20rem] truncate text-[13px] tracking-[0.04em] text-foreground/70 sm:max-w-[24rem]">
+              <p className="max-w-[20rem] truncate text-[13px] tracking-[0.04em] text-foreground/70 sm:max-w-[24rem]">
                 {runningDetail}
               </p>
-            ) : null}
+            ) : (
+              <p className="text-[13px] tracking-[0.04em] text-muted-foreground">
+                In session
+              </p>
+            )}
 
             {!isStopwatch ? (
               <div
-                className="mt-4 flex items-center gap-2.5"
+                className="flex items-center gap-2.5"
                 aria-label={`${dots} of ${FOCUS_POMODOROS_PER_LONG_BREAK} toward a long break`}
               >
                 {Array.from({ length: FOCUS_POMODOROS_PER_LONG_BREAK }).map(
@@ -820,59 +826,60 @@ export function FocusTimer({
                 )}
               </div>
             ) : null}
-          </div>
 
-          <div className="focus-run-controls mt-10 flex items-center gap-5 sm:mt-12 sm:gap-6">
-            <button
-              type="button"
-              onClick={handleReset}
-              className="flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
-              aria-label={
-                canSealStopwatch ? "Discard session" : "Reset timer"
-              }
-            >
-              <RotateCcw className="size-4" />
-            </button>
-            <button
-              type="button"
-              onClick={handleToggle}
-              className="focus-run-pause flex size-[4.75rem] items-center justify-center rounded-full text-background transition-transform hover:scale-[1.03] active:scale-95"
-              aria-label="Pause timer"
-            >
-              <Pause className="size-6 fill-current" />
-            </button>
-            {!isStopwatch ? (
+            <div className="focus-run-controls flex items-center gap-4 sm:gap-5">
               <button
                 type="button"
-                onClick={handleSkip}
+                onClick={handleReset}
                 className="flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
-                aria-label="Skip to next phase"
+                aria-label={
+                  canSealStopwatch ? "Discard session" : "Reset timer"
+                }
               >
-                <SkipForward className="size-4" />
+                <RotateCcw className="size-4" />
               </button>
-            ) : (
               <button
                 type="button"
-                onClick={handleSealStopwatch}
-                disabled={!canSealStopwatch}
-                className={cn(
-                  "flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground",
-                  !canSealStopwatch && "pointer-events-none opacity-30",
-                )}
-                aria-label="Seal session"
+                onClick={handleToggle}
+                className="focus-run-pause flex size-[4.5rem] items-center justify-center rounded-full text-background transition-transform hover:scale-[1.03] active:scale-95"
+                aria-label="Pause timer"
               >
-                <CircleCheck className="size-4" />
+                <Pause className="size-6 fill-current" />
               </button>
-            )}
-          </div>
+              {!isStopwatch ? (
+                <button
+                  type="button"
+                  onClick={handleSkip}
+                  className="flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+                  aria-label="Skip to next phase"
+                >
+                  <SkipForward className="size-4" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleSealStopwatch}
+                  disabled={!canSealStopwatch}
+                  className={cn(
+                    "flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground",
+                    !canSealStopwatch && "pointer-events-none opacity-30",
+                  )}
+                  aria-label="Seal session"
+                >
+                  <CircleCheck className="size-4" />
+                </button>
+              )}
+            </div>
 
-          <div className="focus-run-dock mt-10 flex w-full max-w-md flex-col items-center gap-5 sm:mt-12">
-            <FocusSounds compact />
-            <FocusSettings
-              dailyGoalMinutes={dailyGoalMinutes}
-              onClockChange={handleClockChange}
-              className="opacity-55 hover:opacity-100"
-            />
+            <div className="focus-run-dock flex w-full max-w-sm flex-col items-center gap-4 lg:items-start">
+              <FocusSounds compact />
+              <FocusSettings
+                dailyGoalMinutes={dailyGoalMinutes}
+                onClockChange={handleClockChange}
+                align="start"
+                className="opacity-55 hover:opacity-100 lg:justify-start"
+              />
+            </div>
           </div>
         </div>
       ) : (

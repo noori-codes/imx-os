@@ -278,6 +278,7 @@
 
 .focus-stage[data-running="true"] {
   background: color-mix(in oklab, var(--focus-wash) 100%, transparent);
+  box-shadow: inset 0 0 120px color-mix(in oklab, var(--background) 55%, transparent);
 }
 
 .focus-stage-glow {
@@ -305,10 +306,23 @@
 
 .focus-stage[data-running="true"] .focus-stage-glow {
   opacity: 1;
-  top: 40%;
-  width: min(46rem, 110%);
-  height: min(46rem, 110%);
+  top: 46%;
+  left: 36%;
+  width: min(36rem, 88%);
+  height: min(36rem, 88%);
   animation: focus-glow-breathe 7.5s ease-in-out infinite;
+}
+
+@media (max-width: 1023px) {
+  .focus-stage[data-running="true"] .focus-stage-glow {
+    left: 50%;
+    top: 34%;
+  }
+
+  .focus-stage[data-running="true"] .focus-stage-glow-soft {
+    left: 50%;
+    top: 34%;
+  }
 }
 
 .dark .focus-stage[data-mode="focus"] {
@@ -398,8 +412,31 @@
   stroke: var(--focus-accent);
 }
 
-.focus-stage[data-running="true"] {
-  box-shadow: inset 0 0 120px color-mix(in oklab, var(--background) 55%, transparent);
+.focus-session-lock {
+  max-width: none;
+}
+
+.focus-session-lock .focus-stage {
+  border-radius: 0;
+  width: 100%;
+  min-height: 100%;
+  height: 100%;
+}
+
+@media (max-height: 720px) {
+  .focus-session-lock .focus-run {
+    gap: 1.25rem;
+  }
+
+  .focus-session-lock .focus-clock-jewel {
+    margin-top: 0.75rem !important;
+    width: min(52vw, 14.5rem) !important;
+    height: min(52vw, 14.5rem) !important;
+  }
+
+  .focus-session-lock .focus-run-dock {
+    gap: 0.75rem;
+  }
 }
 
 .focus-stage-vignette,
@@ -415,11 +452,20 @@
   inset: 0;
   background:
     radial-gradient(
-      ellipse 70% 60% at 50% 42%,
-      transparent 30%,
-      color-mix(in oklab, var(--background) 55%, transparent) 100%
+      ellipse 90% 80% at 42% 48%,
+      transparent 35%,
+      color-mix(in oklab, var(--background) 28%, transparent) 100%
     );
   z-index: 0;
+}
+
+html[data-focus-session] header {
+  border-bottom-color: color-mix(in oklab, var(--border) 35%, transparent);
+  background: color-mix(in oklab, var(--background) 72%, transparent);
+}
+
+html[data-focus-session] body {
+  overflow: hidden;
 }
 
 .focus-stage[data-running="true"] .focus-stage-grain {
@@ -442,10 +488,10 @@
   display: block;
   pointer-events: none;
   position: absolute;
-  left: 50%;
-  top: 40%;
-  width: min(54rem, 130%);
-  height: min(54rem, 130%);
+  left: 36%;
+  top: 46%;
+  width: min(44rem, 110%);
+  height: min(44rem, 110%);
   translate: -50% -50%;
   border-radius: 9999px;
   background: radial-gradient(
