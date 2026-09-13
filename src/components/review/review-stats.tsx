@@ -1,3 +1,4 @@
+import { energyOption, moodOption } from "@/lib/review-scale";
 import type { DailyReview, ReviewRecap } from "@/types/review";
 
 type ReviewStatsProps = {
@@ -19,7 +20,7 @@ function Stat({
       <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
         {label}
       </p>
-      <p className="mt-1.5 text-2xl font-semibold tracking-tight tabular-nums text-foreground sm:text-3xl">
+      <p className="mt-1.5 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
         {value}
       </p>
       <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
@@ -29,6 +30,8 @@ function Stat({
 
 export function ReviewStats({ recap, review }: ReviewStatsProps) {
   const openDue = recap.tasks_due.filter((task) => !task.completed).length;
+  const mood = moodOption(review?.mood);
+  const energy = energyOption(review?.energy);
 
   return (
     <div className="review-stats grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
@@ -69,10 +72,10 @@ export function ReviewStats({ recap, review }: ReviewStatsProps) {
       />
       <Stat
         label="Mood"
-        value={review?.mood != null ? `${review.mood}/5` : "—"}
+        value={mood?.label ?? "—"}
         hint={
-          review?.energy != null
-            ? `Energy ${review.energy}/5`
+          energy
+            ? `Energy · ${energy.label}`
             : review
               ? "Logged"
               : "Not set yet"

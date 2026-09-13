@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Moon } from "lucide-react";
 
 import { reviewHref } from "@/components/review/review-nav";
+import { energyOption, moodOption } from "@/lib/review-scale";
 import { parseDateString } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
 import type { DailyReview } from "@/types/review";
@@ -38,6 +39,10 @@ export function ReviewHistory({ selectedDate, recent }: ReviewHistoryProps) {
               undefined,
               { weekday: "short", month: "short", day: "numeric" },
             );
+            const mood = moodOption(item.mood);
+            const energy = energyOption(item.energy);
+            const MoodIcon = mood?.icon;
+            const EnergyIcon = energy?.icon;
 
             return (
               <li key={item.id}>
@@ -51,16 +56,30 @@ export function ReviewHistory({ selectedDate, recent }: ReviewHistoryProps) {
                   )}
                 >
                   <span>{label}</span>
-                  <span className="flex items-center gap-2 text-xs tabular-nums text-muted-foreground">
-                    {item.mood != null ? (
-                      <span title="Mood">M{item.mood}</span>
+                  <span className="flex items-center gap-2.5 text-muted-foreground">
+                    {MoodIcon ? (
+                      <span
+                        className="inline-flex items-center gap-1"
+                        title={`Mood · ${mood?.label}`}
+                      >
+                        <MoodIcon className="size-3.5" />
+                        <span className="hidden text-[11px] sm:inline">
+                          {mood?.label}
+                        </span>
+                      </span>
                     ) : null}
-                    {item.energy != null ? (
-                      <span title="Energy">E{item.energy}</span>
+                    {EnergyIcon ? (
+                      <span
+                        className="inline-flex items-center gap-1"
+                        title={`Energy · ${energy?.label}`}
+                      >
+                        <EnergyIcon className="size-3.5" />
+                        <span className="hidden text-[11px] sm:inline">
+                          {energy?.label}
+                        </span>
+                      </span>
                     ) : null}
-                    {item.mood == null && item.energy == null ? (
-                      <span>—</span>
-                    ) : null}
+                    {!mood && !energy ? <span>—</span> : null}
                   </span>
                 </Link>
               </li>

@@ -1,8 +1,13 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import { saveDailyReview, type ReviewActionState } from "@/actions/review";
+import {
+  ENERGY_SCALE,
+  MOOD_SCALE,
+  type ReviewScaleOption,
+} from "@/lib/review-scale";
 import { cn } from "@/lib/utils";
 import type { DailyReview } from "@/types/review";
 
@@ -10,8 +15,6 @@ type ReviewFormProps = {
   date: string;
   review: DailyReview | null;
 };
-
-const SCALE = [1, 2, 3, 4, 5] as const;
 
 export function ReviewForm({ date, review }: ReviewFormProps) {
   const saveForDate = saveDailyReview.bind(null, date);
@@ -36,19 +39,23 @@ export function ReviewForm({ date, review }: ReviewFormProps) {
           {review ? "Edit this day" : "Close the loop"}
         </h3>
         <p className="mt-1 text-sm text-muted-foreground">
-          Mood, energy, and three prompts. Save anytime — you can return.
+          How did the day feel — then three honest prompts.
         </p>
       </div>
 
-      <div className="space-y-6 px-5 py-5 sm:px-6">
-        <div className="grid gap-5 sm:grid-cols-2">
-          <ScaleField name="mood" label="Mood" defaultValue={review?.mood} />
-          <ScaleField
-            name="energy"
-            label="Energy"
-            defaultValue={review?.energy}
-          />
-        </div>
+      <div className="space-y-7 px-5 py-5 sm:px-6">
+        <FeelingScale
+          name="mood"
+          legend="Mood"
+          options={MOOD_SCALE}
+          defaultValue={review?.mood}
+        />
+        <FeelingScale
+          name="energy"
+          legend="Energy"
+          options={ENERGY_SCALE}
+          defaultValue={review?.energy}
+        />
 
         <PromptField
           id="went_well"
@@ -103,44 +110,92 @@ export function ReviewForm({ date, review }: ReviewFormProps) {
   );
 }
 
-function ScaleField({
+function FeelingScale({
   name,
-  label,
+  legend,
+  options,
   defaultValue,
 }: {
   name: string;
-  label: string;
+  legend: string;
+  options: ReviewScaleOption[];
   defaultValue: number | null | undefined;
 }) {
+  const [selected, setSelected] = useState<number | null>(
+    defaultValue ?? null,
+  );
+  const active = options.find((item) => item.value === selected) ?? null;
+
   return (
-    <fieldset>
-      <legend className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-        {label}
-      </legend>
-      <div className="mt-2.5 flex gap-2">
-        {SCALE.map((value) => (
-          <label key={value} className="min-w-0 flex-1 cursor-pointer">
-            <input
-              type="radio"
-              name={name}
-              value={value}
-              defaultChecked={defaultValue === value}
-              className="peer sr-only"
-            />
-            <span
-              className={cn(
-                "flex h-11 items-center justify-center rounded-xl border border-border/50 text-sm font-semibold tabular-nums transition-colors",
-                "hover:border-border hover:bg-muted/40",
-                "peer-checked:border-foreground peer-checked:bg-foreground peer-checked:text-background",
-                "peer-focus-visible:ring-2 peer-focus-visible:ring-ring/40",
-              )}
-            >
-              {value}
-            </span>
-          </label>
-        ))}
+    <fieldset className="review-feeling">
+      <div className="flex items-end justify-between gap-3">
+        <legend className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+          {legend}
+        </legend>
+        {active ? (
+          <p className="text-xs text-muted-foreground">{active.hint}</p>
+        ) : (
+          <p className="text-xs text-muted-foreground/70">Pick one</p>
+        )}
       </div>
-      <p className="mt-1.5 text-[11px] text-muted-foreground">1 low · 5 high</p>
+
+      <div className="review-feeling-grid mt-3 grid grid-cols-5 gap-2">
+        {options.map((option) => {
+          const Icon = option.icon;
+          const isOn = selected === option.value;
+
+          return (
+            <label
+              key={option.value}
+              className="review-feeling-option group relative min-w-0 cursor-pointer"
+              style={{ ["--i" as string]: option.value }}
+            >
+              <input
+                type="radio"
+                name={name}
+                value={option.value}
+                checked={selected === option.value}
+                onChange={() => setSelected(option.value)}
+                className="peer sr-only"
+              />
+              <span
+                className={cn(
+                  "flex flex-col items-center gap-1.5 rounded-2xl border px-1.5 py-3 transition-all duration-200",
+                  "border-border/45 bg-background/35",
+                  "hover:-translate-y-0.5 hover:border-border hover:bg-muted/45",
+                  "peer-focus-visible:ring-2 peer-focus-visible:ring-ring/40",
+                  isOn &&
+                    "review-feeling-on -translate-y-0.5 border-foreground bg-foreground text-background shadow-[0_10px_28px_oklch(0_0_0/0.14)]",
+                )}
+                data-level={option.value}
+              >
+                <span
+                  className={cn(
+                    "flex size-9 items-center justify-center rounded-xl transition-colors",
+                    isOn ? "bg-background/15" : "bg-muted/50",
+                  )}
+                >
+                  <Icon
+                    className={cn(
+                      "size-4 transition-transform duration-200",
+                      isOn && "scale-110",
+                    )}
+                    strokeWidth={isOn ? 2.25 : 1.75}
+                  />
+                </span>
+                <span
+                  className={cn(
+                    "text-[10px] font-semibold tracking-wide",
+                    isOn ? "text-background" : "text-muted-foreground",
+                  )}
+                >
+                  {option.label}
+                </span>
+              </span>
+            </label>
+          );
+        })}
+      </div>
     </fieldset>
   );
 }
