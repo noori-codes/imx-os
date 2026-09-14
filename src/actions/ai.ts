@@ -5,35 +5,56 @@ import {
   buildActivitySnapshot,
   snapshotToPromptText,
 } from "@/lib/ai/activity-snapshot";
+import {
+  AI_COACH_PROMPTS,
+  type AiCoachPromptId,
+} from "@/lib/ai/coach-prompts";
 import { groqChatCompletion } from "@/lib/ai/groq";
 import { createClient } from "@/lib/supabase/server";
 
-const COOLDOWN_MS = 6 * 60 * 60 * 1000;
+/** Short gap between asks — free-tier friendly for suggested prompts. */
+const COOLDOWN_MS = 2 * 60 * 1000;
 
-export type WeeklyInsight = {
+export type CoachReply = {
   summary: string;
   suggestions: string[];
 };
 
-export type WeeklyInsightResult =
-  | { ok: true; insight: WeeklyInsight; generatedAt: string }
+export type CoachAskResult =
+  | {
+      ok: true;
+      promptId: AiCoachPromptId;
+      promptLabel: string;
+      reply: CoachReply;
+      generatedAt: string;
+    }
   | {
       ok: false;
       error: string;
-      code?: "auth" | "missing_key" | "rate_limit" | "cooldown" | "upstream";
+      code?:
+        | "auth"
+        | "invalid_prompt"
+        | "missing_key"
+        | "rate_limit"
+        | "cooldown"
+        | "upstream";
       retryAfterMs?: number;
     };
 
-const SYSTEM_PROMPT = `You are a concise personal productivity coach for IMX OS, a private life-management app.
-Given a JSON activity snapshot for the last 7 days, reply with ONLY valid JSON (no markdown fences) in this shape:
-{"summary":"2-4 sentences about how the week went","suggestions":["actionable tip 1","actionable tip 2","actionable tip 3"]}
+const SYSTEM_PROMPT = `You are a concise personal productivity coach inside IMX OS.
+Given a JSON activity snapshot for the last 7 days and a user question, reply with ONLY valid JSON (no markdown fences):
+{"summary":"2-4 sentences answering the question","suggestions":["actionable tip 1","actionable tip 2","actionable tip 3"]}
 Rules:
-- Be specific to the numbers (focus, habits, tasks, mood/energy if present).
-- Suggestions must be concrete and doable this week (max 3).
+- Answer the asked question directly using the snapshot numbers.
+- Suggestions must be concrete and doable soon (max 3).
 - No fluff, no emojis, no medical advice.
-- If data is sparse, say so honestly and suggest one simple habit to start logging.`;
+- If data is sparse, say so honestly.`;
 
-function parseInsight(raw: string): WeeklyInsight | null {
+function resolvePrompt(id: string) {
+  return AI_COACH_PROMPTS.find((prompt) => prompt.id === id) ?? null;
+}
+
+function parseReply(raw: string): CoachReply | null {
   const trimmed = raw.trim();
   const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/);
   const candidate = fenced?.[1]?.trim() ?? trimmed;
@@ -57,14 +78,14 @@ function parseInsight(raw: string): WeeklyInsight | null {
       suggestions:
         suggestions.length > 0
           ? suggestions
-          : ["Review your dashboard and pick one priority for tomorrow."],
+          : ["Pick one priority on your dashboard and start a short focus block."],
     };
   } catch {
     return null;
   }
 }
 
-function fallbackInsight(raw: string): WeeklyInsight {
+function fallbackReply(raw: string): CoachReply {
   const text = raw.trim();
   const lines = text
     .split(/\n+/)
@@ -74,14 +95,34 @@ function fallbackInsight(raw: string): WeeklyInsight {
     summary: lines[0] ?? text.slice(0, 400),
     suggestions: lines.slice(1, 4).length
       ? lines.slice(1, 4)
-      : ["Protect one short focus block tomorrow.", "Check off one overdue task.", "Log tonight’s daily review."],
+      : [
+          "Protect one short focus block tomorrow.",
+          "Clear one overdue task.",
+          "Log tonight’s daily review.",
+        ],
   };
 }
 
-export async function generateWeeklyInsight(): Promise<WeeklyInsightResult> {
+/** @deprecated Prefer askCoachQuestion — kept for compatibility. */
+export async function generateWeeklyInsight() {
+  return askCoachQuestion("week_overview");
+}
+
+export async function askCoachQuestion(
+  promptId: string,
+): Promise<CoachAskResult> {
+  const prompt = resolvePrompt(promptId);
+  if (!prompt) {
+    return {
+      ok: false,
+      code: "invalid_prompt",
+      error: "That question isn’t available.",
+    };
+  }
+
   const user = await getVerifiedUser();
   if (!user) {
-    return { ok: false, code: "auth", error: "Sign in to get a weekly insight." };
+    return { ok: false, code: "auth", error: "Sign in to ask the coach." };
   }
 
   const supabase = await createClient();
@@ -100,7 +141,7 @@ export async function generateWeeklyInsight(): Promise<WeeklyInsightResult> {
       return {
         ok: false,
         code: "cooldown",
-        error: "You can generate another insight in a few hours (6h cooldown).",
+        error: "Give the coach a moment before the next question.",
         retryAfterMs: COOLDOWN_MS - elapsed,
       };
     }
@@ -112,7 +153,7 @@ export async function generateWeeklyInsight(): Promise<WeeklyInsightResult> {
       { role: "system", content: SYSTEM_PROMPT },
       {
         role: "user",
-        content: `Activity snapshot:\n${snapshotToPromptText(snapshot)}`,
+        content: `Question: ${prompt.label}\nGuidance: ${prompt.hint}\n\nActivity snapshot:\n${snapshotToPromptText(snapshot)}`,
       },
     ],
     { temperature: 0.35, maxTokens: 650 },
@@ -126,8 +167,8 @@ export async function generateWeeklyInsight(): Promise<WeeklyInsightResult> {
     };
   }
 
-  const insight =
-    parseInsight(completion.content) ?? fallbackInsight(completion.content);
+  const reply =
+    parseReply(completion.content) ?? fallbackReply(completion.content);
   const generatedAt = new Date().toISOString();
 
   const { error: upsertError } = await supabase.from("user_settings").upsert(
@@ -145,5 +186,11 @@ export async function generateWeeklyInsight(): Promise<WeeklyInsightResult> {
     console.error("[ai] cooldown upsert:", upsertError.message);
   }
 
-  return { ok: true, insight, generatedAt };
+  return {
+    ok: true,
+    promptId: prompt.id,
+    promptLabel: prompt.label,
+    reply,
+    generatedAt,
+  };
 }

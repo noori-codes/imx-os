@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 
+import { ImxChat } from "@/components/ai/imx-chat";
 import { FocusAudioHost } from "@/components/focus/focus-audio-host";
 import { NavigationProgress } from "@/components/layout/navigation-progress";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -28,6 +29,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           {children}
         </div>
       </div>
+      <ImxChat />
     </UserProvider>
   );
 }
