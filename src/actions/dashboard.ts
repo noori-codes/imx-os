@@ -6,6 +6,11 @@ import { getCurrentUser } from "@/lib/auth";
 import { CACHE_TTL, cacheTags, cachedQuery } from "@/lib/cache";
 import {
   computeStreaks,
+  formatShortDate,
+  formatShortWeekday,
+  getWeekDays,
+  startOfDay,
+  startOfWeekSaturday,
   toDateString,
 } from "@/lib/date-utils";
 import { createAdminClient, hasAdminClient } from "@/lib/supabase/admin";
@@ -13,9 +18,9 @@ import { createClient } from "@/lib/supabase/server";
 import { scheduleRecurringTaskSync } from "@/actions/tasks";
 import {
   buildActivitySummary,
-  buildDashboardData,
   buildGoalProgressList,
   emptyActivity,
+  mapTask,
   type ActivitySummary,
   type DashboardData,
   type DashboardHabit,
@@ -133,11 +138,6 @@ async function loadDashboardExtras(
     .eq("archived", false)
     .order("created_at", { ascending: true });
 
-  let habitLogsQuery = supabase
-    .from("habit_logs")
-    .select("habit_id, logged_on")
-    .gte("logged_on", toDateString(new Date(Date.now() - 90 * 86400000)));
-
   let focusQuery = supabase
     .from("focus_sessions")
     .select("actual_seconds")
@@ -156,20 +156,38 @@ async function loadDashboardExtras(
 
   if (userId) {
     habitsQuery = habitsQuery.eq("user_id", userId);
-    habitLogsQuery = habitLogsQuery.eq("user_id", userId);
     focusQuery = focusQuery.eq("user_id", userId);
     todayReviewQuery = todayReviewQuery.eq("user_id", userId);
     intentReviewQuery = intentReviewQuery.eq("user_id", userId);
   }
 
-  const [habitsResult, logsResult, focusResult, todayReview, intentReview] =
+  const [habitsResult, focusResult, todayReview, intentReview] =
     await Promise.all([
       habitsQuery,
-      habitLogsQuery,
       focusQuery,
       todayReviewQuery.maybeSingle(),
       intentReviewQuery.maybeSingle(),
     ]);
+
+  const habits = habitsResult.data ?? [];
+  const habitIds = habits.map((habit) => habit.id);
+
+  let habitLogsQuery = supabase
+    .from("habit_logs")
+    .select("habit_id, logged_on")
+    .gte("logged_on", toDateString(new Date(Date.now() - 90 * 86400000)));
+
+  if (userId) {
+    habitLogsQuery = habitLogsQuery.eq("user_id", userId);
+  }
+  if (habitIds.length > 0) {
+    habitLogsQuery = habitLogsQuery.in("habit_id", habitIds);
+  }
+
+  const logsResult =
+    habitIds.length > 0
+      ? await habitLogsQuery
+      : { data: [] as { habit_id: string; logged_on: string }[], error: null };
 
   const logsByHabit = new Map<string, string[]>();
   for (const log of logsResult.data ?? []) {
@@ -178,28 +196,24 @@ async function loadDashboardExtras(
     logsByHabit.set(log.habit_id, list);
   }
 
-  const habits_today: DashboardHabit[] = (habitsResult.data ?? []).map(
-    (habit) => {
-      const dates = logsByHabit.get(habit.id) ?? [];
-      const { current_streak, longest_streak } = computeStreaks(dates, today);
-      return {
-        id: habit.id,
-        title: habit.title,
-        color: habit.color,
-        completed_today: dates.includes(today),
-        current_streak,
-        longest_streak,
-      };
-    },
-  );
+  const habits_today: DashboardHabit[] = habits.map((habit) => {
+    const dates = logsByHabit.get(habit.id) ?? [];
+    const { current_streak, longest_streak } = computeStreaks(dates, today);
+    return {
+      id: habit.id,
+      title: habit.title,
+      color: habit.color,
+      completed_today: dates.includes(today),
+      current_streak,
+      longest_streak,
+    };
+  });
 
   const focus_minutes = Math.round(
     (focusResult.data ?? []).reduce((sum, s) => sum + s.actual_seconds, 0) / 60,
   );
 
-  const intent =
-    intentReview.data?.tomorrow_focus?.trim() ||
-    null;
+  const intent = intentReview.data?.tomorrow_focus?.trim() || null;
 
   return {
     habits_today,
@@ -214,6 +228,24 @@ async function loadDashboardExtras(
   };
 }
 
+const DASH_TASK_SELECT = `
+  id,
+  user_id,
+  project_id,
+  title,
+  completed,
+  due_date,
+  recurrence,
+  created_at,
+  updated_at,
+  projects (
+    id,
+    title,
+    goal_id,
+    goals ( id, title )
+  )
+`;
+
 async function loadDashboardData(
   userId: string | null,
 ): Promise<DashboardData> {
@@ -224,82 +256,194 @@ async function loadDashboardData(
   // Cookie-bound client for after() sync (cookies aren't available inside after).
   scheduleRecurringTaskSync(await createClient());
 
-  let tasksQuery = supabase
-    .from("tasks")
-    .select(
-      `
-      *,
-      projects (
-        id,
-        title,
-        goal_id,
-        goals ( id, title )
-      )
-    `,
-    )
-    .order("due_date", { ascending: true, nullsFirst: false });
+  const todayStr = toDateString(startOfDay(new Date()));
+  const weekStart = startOfWeekSaturday(new Date());
+  const weekDays = getWeekDays(weekStart);
+  const weekStartStr = toDateString(weekDays[0]!);
+  const weekEndStr = toDateString(weekDays[6]!);
 
   let goalsQuery = supabase
     .from("goals")
     .select("id, title")
     .order("created_at", { ascending: false });
-
   let projectsQuery = supabase.from("projects").select("id, goal_id");
+  let projectTasksQuery = supabase
+    .from("tasks")
+    .select("project_id, completed")
+    .not("project_id", "is", null);
+
+  let activeCountQ = supabase
+    .from("tasks")
+    .select("id", { count: "exact", head: true })
+    .eq("completed", false);
+  let completedCountQ = supabase
+    .from("tasks")
+    .select("id", { count: "exact", head: true })
+    .eq("completed", true);
+  let dueTodayCountQ = supabase
+    .from("tasks")
+    .select("id", { count: "exact", head: true })
+    .eq("completed", false)
+    .eq("due_date", todayStr);
+  let overdueCountQ = supabase
+    .from("tasks")
+    .select("id", { count: "exact", head: true })
+    .eq("completed", false)
+    .lt("due_date", todayStr)
+    .not("due_date", "is", null);
+
+  let todayOpenQ = supabase
+    .from("tasks")
+    .select(DASH_TASK_SELECT)
+    .eq("completed", false)
+    .not("due_date", "is", null)
+    .lte("due_date", todayStr)
+    .order("due_date", { ascending: true })
+    .limit(8);
+  let todayDoneQ = supabase
+    .from("tasks")
+    .select(DASH_TASK_SELECT)
+    .eq("completed", true)
+    .eq("due_date", todayStr)
+    .order("updated_at", { ascending: false })
+    .limit(8);
+  let overdueListQ = supabase
+    .from("tasks")
+    .select(DASH_TASK_SELECT)
+    .eq("completed", false)
+    .lt("due_date", todayStr)
+    .not("due_date", "is", null)
+    .order("due_date", { ascending: true })
+    .limit(5);
+  let nextTasksQ = supabase
+    .from("tasks")
+    .select(DASH_TASK_SELECT)
+    .eq("completed", false)
+    .or(`due_date.is.null,due_date.gt.${todayStr}`)
+    .order("due_date", { ascending: true, nullsFirst: false })
+    .limit(5);
+  let weekOpenQ = supabase
+    .from("tasks")
+    .select("due_date")
+    .eq("completed", false)
+    .not("due_date", "is", null)
+    .gte("due_date", weekStartStr)
+    .lte("due_date", weekEndStr);
 
   if (scopedUserId) {
-    tasksQuery = tasksQuery.eq("user_id", scopedUserId);
     goalsQuery = goalsQuery.eq("user_id", scopedUserId);
     projectsQuery = projectsQuery.eq("user_id", scopedUserId);
+    projectTasksQuery = projectTasksQuery.eq("user_id", scopedUserId);
+    activeCountQ = activeCountQ.eq("user_id", scopedUserId);
+    completedCountQ = completedCountQ.eq("user_id", scopedUserId);
+    dueTodayCountQ = dueTodayCountQ.eq("user_id", scopedUserId);
+    overdueCountQ = overdueCountQ.eq("user_id", scopedUserId);
+    todayOpenQ = todayOpenQ.eq("user_id", scopedUserId);
+    todayDoneQ = todayDoneQ.eq("user_id", scopedUserId);
+    overdueListQ = overdueListQ.eq("user_id", scopedUserId);
+    nextTasksQ = nextTasksQ.eq("user_id", scopedUserId);
+    weekOpenQ = weekOpenQ.eq("user_id", scopedUserId);
   }
 
-  const [tasksResult, goalsResult, projectsResult, activity, extras] =
-    await Promise.all([
-      tasksQuery,
-      goalsQuery,
-      projectsQuery,
-      loadActivity(supabase, scopedUserId),
-      loadDashboardExtras(supabase, scopedUserId),
-    ]);
+  const [
+    goalsResult,
+    projectsResult,
+    projectTasksResult,
+    activeCount,
+    completedCount,
+    dueTodayCount,
+    overdueCount,
+    todayOpenResult,
+    todayDoneResult,
+    overdueListResult,
+    nextTasksResult,
+    weekOpenResult,
+    activity,
+    extras,
+  ] = await Promise.all([
+    goalsQuery,
+    projectsQuery,
+    projectTasksQuery,
+    activeCountQ,
+    completedCountQ,
+    dueTodayCountQ,
+    overdueCountQ,
+    todayOpenQ,
+    todayDoneQ,
+    overdueListQ,
+    nextTasksQ,
+    weekOpenQ,
+    loadActivity(supabase, scopedUserId),
+    loadDashboardExtras(supabase, scopedUserId),
+  ]);
 
-  if (tasksResult.error) {
-    console.error("[dashboard] getDashboardData:", tasksResult.error.message);
-  }
   if (goalsResult.error) {
     console.error("[dashboard] goals:", goalsResult.error.message);
   }
   if (projectsResult.error) {
     console.error("[dashboard] projects:", projectsResult.error.message);
   }
+  if (projectTasksResult.error) {
+    console.error("[dashboard] project tasks:", projectTasksResult.error.message);
+  }
 
-  const goalRows = goalsResult.data ?? [];
-  const projectRows = projectsResult.data ?? [];
-  const taskRows = tasksResult.data ?? [];
+  type DashTaskRow = Parameters<typeof mapTask>[0];
+  const mapRows = (rows: unknown) =>
+    ((rows ?? []) as DashTaskRow[]).map(mapTask);
 
-  const base = buildDashboardData(
-    taskRows,
-    goalRows.length,
-    projectRows.length,
+  const today_tasks = [
+    ...mapRows(todayOpenResult.data),
+    ...mapRows(todayDoneResult.data),
+  ].slice(0, 8);
+
+  const weekCounts = new Map<string, number>();
+  for (const row of weekOpenResult.data ?? []) {
+    if (!row.due_date) continue;
+    weekCounts.set(row.due_date, (weekCounts.get(row.due_date) ?? 0) + 1);
+  }
+
+  const week = weekDays.map((day) => {
+    const dateStr = toDateString(day);
+    return {
+      date: dateStr,
+      label: formatShortDate(day),
+      day_label: formatShortWeekday(day),
+      task_count: weekCounts.get(dateStr) ?? 0,
+      is_today: dateStr === todayStr,
+    };
+  });
+
+  const goals = buildGoalProgressList(
+    goalsResult.data ?? [],
+    projectsResult.data ?? [],
+    projectTasksResult.data ?? [],
   );
-
-  const goals = buildGoalProgressList(goalRows, projectRows, taskRows);
 
   const habits_done = extras.habits_today.filter((h) => h.completed_today)
     .length;
 
   return {
-    ...base,
-    goals,
-    activity,
-    habits_today: extras.habits_today,
-    focus_today: extras.focus_today,
-    review: extras.review,
     stats: {
-      ...base.stats,
+      active_tasks: activeCount.count ?? 0,
+      completed_tasks: completedCount.count ?? 0,
+      due_today: dueTodayCount.count ?? 0,
+      overdue: overdueCount.count ?? 0,
+      goals: (goalsResult.data ?? []).length,
+      projects: (projectsResult.data ?? []).length,
       focus_minutes_today: extras.focus_today.focus_minutes,
       habits_done,
       habits_total: extras.habits_today.length,
       activity_streak: activity.current_streak,
     },
+    today_tasks,
+    overdue_tasks: mapRows(overdueListResult.data),
+    next_tasks: mapRows(nextTasksResult.data),
+    week,
+    goals,
+    activity,
+    habits_today: extras.habits_today,
+    focus_today: extras.focus_today,
+    review: extras.review,
   };
 }
 

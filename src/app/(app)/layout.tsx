@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { ImxChat } from "@/components/ai/imx-chat";
 import { FocusAudioHost } from "@/components/focus/focus-audio-host";
+import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
 import { NavigationProgress } from "@/components/layout/navigation-progress";
 import { Sidebar } from "@/components/layout/sidebar";
 import { UserProvider } from "@/components/providers/user-provider";
@@ -29,6 +30,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           {children}
         </div>
       </div>
+      <MobileTabBar />
       <ImxChat />
     </UserProvider>
   );

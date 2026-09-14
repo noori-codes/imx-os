@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { Play } from "lucide-react";
 
 import {
@@ -39,6 +40,14 @@ export function FocusContinueBar() {
     progressBaseSeconds,
   });
 
+  useEffect(() => {
+    if (!canContinue) return;
+    document.documentElement.dataset.focusContinue = "true";
+    return () => {
+      delete document.documentElement.dataset.focusContinue;
+    };
+  }, [canContinue]);
+
   if (!canContinue) return null;
 
   // Bar only shows while paused — frozen elapsed, no 1 Hz tick.
@@ -63,14 +72,14 @@ export function FocusContinueBar() {
   return (
     <div
       className={cn(
-        "focus-continue-bar fixed inset-x-0 bottom-0 z-20 lg:hidden",
+        "focus-continue-bar fixed inset-x-0 z-20 lg:hidden",
         "border-t border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80",
       )}
       style={{
-        paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))",
+        bottom: "var(--mobile-tab-h)",
       }}
     >
-      <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3">
+      <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3 max-md:pb-3">
         <button
           type="button"
           onClick={handleContinue}

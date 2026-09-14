@@ -35,6 +35,47 @@
   --activity-2: oklch(0.64 0.09 255);
   --activity-3: oklch(0.48 0.12 255);
   --activity-4: oklch(0.34 0.13 255);
+
+  /* Mobile chrome stack — tab bar + optional Focus Continue */
+  --mobile-tab-h: 0px;
+  --mobile-continue-h: 0px;
+  --mobile-chrome-bottom: calc(
+    var(--mobile-tab-h) + var(--mobile-continue-h)
+  );
+}
+
+@media (max-width: 767px) {
+  :root {
+    --mobile-tab-h: calc(3.5rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+html[data-focus-continue="true"] {
+  --mobile-continue-h: 4.75rem;
+}
+
+@media (min-width: 1024px) {
+  html[data-focus-continue="true"] {
+    --mobile-continue-h: 0px;
+  }
+}
+
+.mobile-tab-bar {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.mobile-tab-bar-inner {
+  height: 3.5rem;
+}
+
+html[data-focus-session="true"] .mobile-tab-bar,
+html[data-focus-session="true"] .imx-chat-dock {
+  display: none !important;
+}
+
+html[data-focus-session="true"] {
+  --mobile-tab-h: 0px;
+  --mobile-continue-h: 0px;
 }
 
 .dark {
@@ -931,10 +972,18 @@ html[data-focus-session] body {
 
   .focus-continue-bar {
     box-shadow: 0 -8px 24px oklch(0 0 0 / 0.06);
+    /* Tab bar owns home-indicator inset on phones; tablets still need it. */
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
   }
 
   .dark .focus-continue-bar {
     box-shadow: 0 -8px 28px oklch(0 0 0 / 0.35);
+  }
+}
+
+@media (max-width: 767px) {
+  .focus-continue-bar {
+    padding-bottom: 0.75rem;
   }
 }
 

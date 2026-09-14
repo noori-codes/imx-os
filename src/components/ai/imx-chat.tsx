@@ -10,6 +10,7 @@ import {
   type AiCoachPromptId,
 } from "@/lib/ai/coach-prompts";
 import { cn } from "@/lib/utils";
+import { useFocusTimer } from "@/stores/focus-timer";
 
 type ChatMessage =
   | { id: string; role: "assistant"; kind: "welcome" }
@@ -85,6 +86,7 @@ export function ImxChat() {
   const [error, setError] = useState<string | null>(null);
   const [usedPromptIds, setUsedPromptIds] = useState<AiCoachPromptId[]>([]);
   const scrollerRef = useRef<HTMLDivElement>(null);
+  const isRunning = useFocusTimer((s) => s.isRunning);
 
   const availablePrompts = AI_COACH_PROMPTS.filter(
     (prompt) => !usedPromptIds.includes(prompt.id),
@@ -149,16 +151,19 @@ export function ImxChat() {
     });
   }
 
-  if (!mounted) return null;
+  if (!mounted || isRunning) return null;
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-end p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-5">
+    <div
+      className="imx-chat-dock pointer-events-none fixed inset-x-0 z-40 flex justify-end p-4 sm:p-5"
+      style={{ bottom: "var(--mobile-chrome-bottom)" }}
+    >
       <div className="pointer-events-auto flex flex-col items-end gap-3">
         {open ? (
           <div
             role="dialog"
             aria-label="IMX chat"
-            className="imx-chat-panel relative flex h-[min(34rem,calc(100dvh-6.5rem))] w-[min(25rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-[1.35rem]"
+            className="imx-chat-panel relative flex h-[min(34rem,calc(100dvh-6.5rem-var(--mobile-chrome-bottom)))] w-[min(25rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-[1.35rem]"
           >
             <div className="imx-chat-wash" aria-hidden />
 

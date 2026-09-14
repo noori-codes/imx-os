@@ -11,13 +11,14 @@ import {
   parseTaskRecurrence,
   resetDueForRecurrence,
 } from "@/lib/task-recurrence";
-import { toDateString, startOfDay } from "@/lib/date-utils";
+import { addDays, toDateString, startOfDay } from "@/lib/date-utils";
 import { createClient } from "@/lib/supabase/server";
 import type {
   FocusLinkableTask,
   Task,
   TaskProjectOption,
   TaskRecurrence,
+  TaskView,
   TaskWithContext,
 } from "@/types/task";
 
@@ -165,23 +166,202 @@ export async function getStandaloneTasks(): Promise<Task[]> {
   }));
 }
 
-export async function getAllTasks(): Promise<TaskWithContext[]> {
+const OPEN_LIMIT = 150;
+const DONE_LIMIT = 50;
+
+function mapTaskRows(data: unknown): TaskWithContext[] {
+  return ((data ?? []) as unknown as TaskRow[]).map(mapTask);
+}
+
+/** Bounded fetch for a tasks board view — never loads the full table. */
+export async function getTasksForView(
+  view: TaskView,
+): Promise<TaskWithContext[]> {
   const supabase = await createClient();
   scheduleRecurringTaskSync(supabase);
 
-  const { data, error } = await supabase
-    .from("tasks")
-    .select(TASK_SELECT)
-    .order("completed", { ascending: true })
-    .order("due_date", { ascending: true, nullsFirst: false })
-    .order("created_at", { ascending: false });
+  const today = toDateString(startOfDay(new Date()));
+  const weekEnd = toDateString(addDays(startOfDay(new Date()), 7));
 
-  if (error) {
-    console.error("[tasks] getAllTasks:", error.message);
+  try {
+    switch (view) {
+      case "inbox": {
+        const [open, done] = await Promise.all([
+          supabase
+            .from("tasks")
+            .select(TASK_SELECT)
+            .eq("completed", false)
+            .is("project_id", null)
+            .order("due_date", { ascending: true, nullsFirst: false })
+            .order("created_at", { ascending: false })
+            .limit(OPEN_LIMIT),
+          supabase
+            .from("tasks")
+            .select(TASK_SELECT)
+            .eq("completed", true)
+            .is("project_id", null)
+            .order("updated_at", { ascending: false })
+            .limit(DONE_LIMIT),
+        ]);
+        if (open.error) console.error("[tasks] inbox open:", open.error.message);
+        if (done.error) console.error("[tasks] inbox done:", done.error.message);
+        return [...mapTaskRows(open.data), ...mapTaskRows(done.data)];
+      }
+      case "today": {
+        const [open, done] = await Promise.all([
+          supabase
+            .from("tasks")
+            .select(TASK_SELECT)
+            .eq("completed", false)
+            .not("due_date", "is", null)
+            .lte("due_date", today)
+            .order("due_date", { ascending: true, nullsFirst: false })
+            .order("created_at", { ascending: false })
+            .limit(OPEN_LIMIT),
+          supabase
+            .from("tasks")
+            .select(TASK_SELECT)
+            .eq("completed", true)
+            .eq("due_date", today)
+            .order("updated_at", { ascending: false })
+            .limit(DONE_LIMIT),
+        ]);
+        if (open.error) console.error("[tasks] today open:", open.error.message);
+        if (done.error) console.error("[tasks] today done:", done.error.message);
+        return [...mapTaskRows(open.data), ...mapTaskRows(done.data)];
+      }
+      case "week": {
+        const { data, error } = await supabase
+          .from("tasks")
+          .select(TASK_SELECT)
+          .eq("completed", false)
+          .not("due_date", "is", null)
+          .lt("due_date", weekEnd)
+          .order("due_date", { ascending: true, nullsFirst: false })
+          .order("created_at", { ascending: false })
+          .limit(OPEN_LIMIT);
+        if (error) console.error("[tasks] week:", error.message);
+        return mapTaskRows(data);
+      }
+      case "upcoming": {
+        const { data, error } = await supabase
+          .from("tasks")
+          .select(TASK_SELECT)
+          .eq("completed", false)
+          .gt("due_date", today)
+          .order("due_date", { ascending: true, nullsFirst: false })
+          .order("created_at", { ascending: false })
+          .limit(OPEN_LIMIT);
+        if (error) console.error("[tasks] upcoming:", error.message);
+        return mapTaskRows(data);
+      }
+      case "all": {
+        const [open, done] = await Promise.all([
+          supabase
+            .from("tasks")
+            .select(TASK_SELECT)
+            .eq("completed", false)
+            .order("due_date", { ascending: true, nullsFirst: false })
+            .order("created_at", { ascending: false })
+            .limit(OPEN_LIMIT),
+          supabase
+            .from("tasks")
+            .select(TASK_SELECT)
+            .eq("completed", true)
+            .order("updated_at", { ascending: false })
+            .limit(DONE_LIMIT),
+        ]);
+        if (open.error) console.error("[tasks] all open:", open.error.message);
+        if (done.error) console.error("[tasks] all done:", done.error.message);
+        return [...mapTaskRows(open.data), ...mapTaskRows(done.data)];
+      }
+    }
+  } catch (error) {
+    console.error("[tasks] getTasksForView:", error);
     return [];
   }
+}
 
-  return ((data ?? []) as unknown as TaskRow[]).map(mapTask);
+export type TaskBoardStats = {
+  openCount: number;
+  overdueCount: number;
+  doneToday: number;
+  counts: Record<TaskView, number>;
+};
+
+/** Head-only counts for tabs and stats — no row payloads. */
+export async function getTaskBoardStats(): Promise<TaskBoardStats> {
+  const supabase = await createClient();
+  const today = toDateString(startOfDay(new Date()));
+  const weekEnd = toDateString(addDays(startOfDay(new Date()), 7));
+
+  const [
+    open,
+    overdue,
+    doneToday,
+    inbox,
+    todayCount,
+    week,
+    upcoming,
+  ] = await Promise.all([
+    supabase
+      .from("tasks")
+      .select("id", { count: "exact", head: true })
+      .eq("completed", false),
+    supabase
+      .from("tasks")
+      .select("id", { count: "exact", head: true })
+      .eq("completed", false)
+      .not("due_date", "is", null)
+      .lt("due_date", today),
+    supabase
+      .from("tasks")
+      .select("id", { count: "exact", head: true })
+      .eq("completed", true)
+      .eq("due_date", today),
+    supabase
+      .from("tasks")
+      .select("id", { count: "exact", head: true })
+      .eq("completed", false)
+      .is("project_id", null),
+    supabase
+      .from("tasks")
+      .select("id", { count: "exact", head: true })
+      .eq("completed", false)
+      .not("due_date", "is", null)
+      .lte("due_date", today),
+    supabase
+      .from("tasks")
+      .select("id", { count: "exact", head: true })
+      .eq("completed", false)
+      .not("due_date", "is", null)
+      .lt("due_date", weekEnd),
+    supabase
+      .from("tasks")
+      .select("id", { count: "exact", head: true })
+      .eq("completed", false)
+      .gt("due_date", today),
+  ]);
+
+  const openCount = open.count ?? 0;
+
+  return {
+    openCount,
+    overdueCount: overdue.count ?? 0,
+    doneToday: doneToday.count ?? 0,
+    counts: {
+      inbox: inbox.count ?? 0,
+      today: todayCount.count ?? 0,
+      week: week.count ?? 0,
+      upcoming: upcoming.count ?? 0,
+      all: openCount,
+    },
+  };
+}
+
+/** @deprecated Prefer getTasksForView — kept for callers that need a capped all-list. */
+export async function getAllTasks(): Promise<TaskWithContext[]> {
+  return getTasksForView("all");
 }
 
 export async function getProjectTasks(

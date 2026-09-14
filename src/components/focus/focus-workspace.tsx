@@ -64,7 +64,7 @@ export function FocusWorkspace({
           className={cn(
             "focus-studio-content flex w-full flex-col gap-6",
             continueBarVisible &&
-              "pb-[calc(5.5rem+env(safe-area-inset-bottom))]",
+              "pb-[calc(var(--mobile-continue-h)+0.75rem)]",
           )}
         >
           {header ? (

@@ -12,7 +12,7 @@ export function AppPageFrame({ children, className }: AppPageFrameProps) {
   return (
     <div
       className={cn(
-        "mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-6 md:px-8 md:py-8",
+        "mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 pt-6 pb-[calc(1.5rem+var(--mobile-tab-h))] md:px-8 md:py-8",
         className,
       )}
     >

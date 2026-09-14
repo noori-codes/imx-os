@@ -4,26 +4,18 @@ import { TasksBoard } from "@/components/tasks/tasks-board";
 import { TasksStage } from "@/components/tasks/tasks-stage";
 import { TasksStats } from "@/components/tasks/tasks-stats";
 import { getTodayTaskFocus } from "@/actions/focus";
-import { getAllTasks, getTaskProjectOptions } from "@/actions/tasks";
-import { parseDefaultTaskViewCookie } from "@/lib/app-preferences";
-import { isOverdue, isToday } from "@/lib/date-utils";
 import {
-  filterTasksForView,
-  parseTaskView,
-} from "@/lib/task-views";
-import type { TaskView } from "@/types/task";
+  getTaskBoardStats,
+  getTaskProjectOptions,
+  getTasksForView,
+} from "@/actions/tasks";
+import { parseDefaultTaskViewCookie } from "@/lib/app-preferences";
+import { parseTaskView } from "@/lib/task-views";
 import { cookies } from "next/headers";
 
 type TasksPageProps = {
   searchParams: Promise<{ view?: string }>;
 };
-
-function countForView(
-  tasks: Awaited<ReturnType<typeof getAllTasks>>,
-  view: TaskView,
-) {
-  return filterTasksForView(tasks, view).filter((t) => !t.completed).length;
-}
 
 export default async function TasksPage({ searchParams }: TasksPageProps) {
   const params = await searchParams;
@@ -32,31 +24,16 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
     cookieStore.get("imx-tasks-default-view")?.value,
   );
   const view = parseTaskView(params.view ?? preferred ?? undefined);
-  const [tasks, projects, todayFocus] = await Promise.all([
-    getAllTasks(),
+  const [tasks, stats, projects, todayFocus] = await Promise.all([
+    getTasksForView(view),
+    getTaskBoardStats(),
     getTaskProjectOptions(),
     getTodayTaskFocus(),
   ]);
-  const filtered = filterTasksForView(tasks, view);
 
-  const openAll = tasks.filter((t) => !t.completed);
-  const overdueCount = openAll.filter(
-    (t) => t.due_date && isOverdue(t.due_date),
-  ).length;
-  const doneToday = tasks.filter(
-    (t) => t.completed && t.due_date && isToday(t.due_date),
-  ).length;
   const focusMinutes = Math.round(
     Object.values(todayFocus).reduce((sum, seconds) => sum + seconds, 0) / 60,
   );
-
-  const counts = {
-    inbox: countForView(tasks, "inbox"),
-    today: countForView(tasks, "today"),
-    week: countForView(tasks, "week"),
-    upcoming: countForView(tasks, "upcoming"),
-    all: countForView(tasks, "all"),
-  } satisfies Record<TaskView, number>;
 
   return (
     <>
@@ -79,18 +56,18 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
 
           <div className="tasks-reveal tasks-reveal-delay-1">
             <TasksStats
-              openCount={openAll.length}
-              overdueCount={overdueCount}
-              doneToday={doneToday}
+              openCount={stats.openCount}
+              overdueCount={stats.overdueCount}
+              doneToday={stats.doneToday}
               focusMinutes={focusMinutes}
             />
           </div>
 
           <div className="tasks-reveal tasks-reveal-delay-2">
             <TasksBoard
-              tasks={filtered}
+              tasks={tasks}
               view={view}
-              counts={counts}
+              counts={stats.counts}
               projects={projects}
               todayFocus={todayFocus}
             />

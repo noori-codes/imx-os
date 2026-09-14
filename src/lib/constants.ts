@@ -117,6 +117,20 @@ export const NAV_GROUPS: NavGroup[] = [
   },
 ];
 
+/** Primary destinations for the mobile bottom tab bar. */
+export const MOBILE_TAB_ITEMS: NavItem[] = [DASHBOARD, TASKS, FOCUS, NOTES];
+
+/** Secondary routes shown in the mobile “More” sheet. */
+export const MOBILE_MORE_ITEMS: NavItem[] = [
+  CALENDAR,
+  GOALS,
+  HABITS,
+  BOOKS,
+  REVIEW,
+  ANALYTICS,
+  NAV_SETTINGS,
+];
+
 /** Flat list for search / anything that needs every route. */
 export const NAV_ITEMS: NavItem[] = [
   ...NAV_GROUPS.flatMap((group) => group.items),
