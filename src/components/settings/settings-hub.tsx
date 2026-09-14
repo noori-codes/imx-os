@@ -15,6 +15,7 @@ import {
 
 import { updateDailyFocusGoal } from "@/actions/focus";
 import { SignOutButton } from "@/components/auth/sign-out-button";
+import { FocusSounds } from "@/components/focus/focus-sounds";
 import { SettingsStats } from "@/components/settings/settings-stats";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -416,6 +417,16 @@ export function SettingsHub({
               writeBoolPref(PREF_CELEBRATE, next);
             }}
           />
+
+          <div className="space-y-2 border-t border-border/40 pt-5">
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="text-sm font-medium text-foreground">Atmosphere</p>
+              <p className="text-xs text-muted-foreground">
+                Ambient while focusing
+              </p>
+            </div>
+            <FocusSounds embedded />
+          </div>
 
           <div className="flex flex-wrap gap-2 pt-1">
             <Button

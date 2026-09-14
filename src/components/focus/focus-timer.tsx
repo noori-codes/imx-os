@@ -8,13 +8,13 @@ import {
 } from "react";
 
 import { useDocumentVisible } from "@/hooks/use-document-visible";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CircleCheck, Pause, Play, RotateCcw, SkipForward } from "lucide-react";
 
 import { logFocusSession, updateFocusSession } from "@/actions/focus";
 import { toggleTaskComplete } from "@/actions/tasks";
 import { FocusClockFace } from "@/components/focus/focus-clock-face";
-import { FocusSettings } from "@/components/focus/focus-settings";
 import { FocusSounds } from "@/components/focus/focus-sounds";
 import { showFocusSealToast } from "@/components/focus/focus-seal-toast";
 import { confirm } from "@/components/ui/confirm-dialog";
@@ -894,20 +894,17 @@ export function FocusTimer({
 
           <div className="focus-run-dock flex w-full max-w-sm flex-col items-center gap-3 opacity-70 transition-opacity hover:opacity-100 focus-within:opacity-100">
             <FocusSounds compact />
-            <FocusSettings
-              dailyGoalMinutes={dailyGoalMinutes}
-              onClockChange={handleClockChange}
-            />
           </div>
         </div>
       ) : (
         <div className="focus-launch relative z-1 w-full overflow-hidden rounded-2xl border border-border/50 bg-card/80">
           <div className="focus-launch-glow" aria-hidden />
-          <div className="relative grid gap-8 p-5 sm:p-7 lg:grid-cols-[0.95fr_1.05fr] lg:items-center lg:gap-10 lg:p-8">
-            <div className="flex flex-col items-center gap-4 lg:items-start">
-              <div className="text-center lg:text-left">
+          <div className="relative grid items-start gap-8 p-5 sm:p-7 lg:grid-cols-2 lg:gap-12 lg:p-8">
+            {/* Visual column */}
+            <div className="flex flex-col items-center gap-5 lg:items-start">
+              <div className="w-full text-center lg:text-left">
                 <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-                  {canContinue ? "Paused thread" : "Launch"}
+                  {canContinue ? "Paused" : "Launch"}
                 </p>
                 <p className="mt-1.5 text-sm text-muted-foreground">
                   {isStopwatch
@@ -922,7 +919,7 @@ export function FocusTimer({
                 </p>
               </div>
 
-              <div className="relative flex size-[min(58vw,14.5rem)] items-center justify-center sm:size-[16.5rem] lg:size-[18rem]">
+              <div className="relative mx-auto flex size-[min(58vw,15rem)] items-center justify-center sm:size-60 lg:mx-0 lg:size-64">
                 <FocusClockFace
                   isRunning={isRunning}
                   isStopwatch={isStopwatch}
@@ -943,7 +940,7 @@ export function FocusTimer({
 
               {!isStopwatch ? (
                 <div
-                  className="flex items-center gap-2"
+                  className="flex items-center justify-center gap-2 lg:justify-start"
                   aria-label={`${dots} of ${FOCUS_POMODOROS_PER_LONG_BREAK} toward a long break`}
                 >
                   {Array.from({
@@ -963,8 +960,9 @@ export function FocusTimer({
               ) : null}
             </div>
 
+            {/* Action column */}
             <div className="flex min-w-0 flex-col gap-5">
-              <div className="text-center lg:text-left">
+              <div>
                 <p
                   className={cn(
                     "font-semibold leading-none tracking-tight text-foreground",
@@ -990,8 +988,35 @@ export function FocusTimer({
                 </p>
               </div>
 
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => handleClockChange("down")}
+                  className={cn(
+                    "rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors",
+                    !isStopwatch
+                      ? "bg-foreground text-background"
+                      : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground",
+                  )}
+                >
+                  Timed
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleClockChange("up")}
+                  className={cn(
+                    "rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors",
+                    isStopwatch
+                      ? "bg-foreground text-background"
+                      : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground",
+                  )}
+                >
+                  Count up
+                </button>
+              </div>
+
               {mode === "focus" || isStopwatch ? (
-                <div className="space-y-3">
+                <div className="space-y-2.5">
                   <Input
                     value={intention}
                     onChange={(e) => setIntention(e.target.value)}
@@ -1001,13 +1026,13 @@ export function FocusTimer({
                         : "What deserves your focus?"
                     }
                     aria-label="What are you focusing on"
-                    className="h-12 w-full rounded-xl border-border/50 bg-muted/40 px-4 text-base font-medium tracking-tight shadow-none placeholder:font-normal focus-visible:ring-1"
+                    className="h-11 w-full rounded-xl border-border/50 bg-muted/40 px-4 text-sm font-medium tracking-tight shadow-none placeholder:font-normal focus-visible:ring-1"
                   />
                   {tasks.length > 0 ? (
                     <BrandSelect
                       value={linkedTaskId ?? ""}
                       aria-label="Link a task"
-                      className="h-9 border-border/40 bg-muted/30"
+                      className="h-9 w-full border-border/40 bg-muted/30"
                       placeholder="Optional · link an open task"
                       options={[
                         { value: "", label: "Optional · link an open task" },
@@ -1031,22 +1056,22 @@ export function FocusTimer({
                 </div>
               ) : null}
 
-              <div className="flex flex-col items-center gap-3 sm:items-stretch">
-                <div className="flex items-center justify-center gap-3 sm:justify-start sm:gap-4">
+              <div className="flex flex-col gap-2.5">
+                <div className="flex items-center gap-3">
                   <button
                     type="button"
                     onClick={handleReset}
-                    className="flex size-12 items-center justify-center rounded-full text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+                    className="flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                     aria-label={
                       canSealStopwatch ? "Discard session" : "Reset timer"
                     }
                   >
-                    <RotateCcw className="size-5" />
+                    <RotateCcw className="size-4" />
                   </button>
                   <button
                     type="button"
                     onClick={handleToggle}
-                    className="flex h-14 min-w-[9.5rem] items-center justify-center gap-2 rounded-full bg-foreground px-6 text-sm font-medium text-background transition-transform hover:scale-[1.02] active:scale-95"
+                    className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-foreground px-5 text-sm font-medium text-background transition-transform hover:scale-[1.01] active:scale-[0.99]"
                     aria-label={
                       canContinue
                         ? "Continue session"
@@ -1068,10 +1093,10 @@ export function FocusTimer({
                     <button
                       type="button"
                       onClick={handleSkip}
-                      className="flex size-12 items-center justify-center rounded-full text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+                      className="flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                       aria-label="Skip to next phase"
                     >
-                      <SkipForward className="size-5" />
+                      <SkipForward className="size-4" />
                     </button>
                   ) : (
                     <button
@@ -1079,28 +1104,25 @@ export function FocusTimer({
                       onClick={handleSealStopwatch}
                       disabled={!canSealStopwatch}
                       className={cn(
-                        "flex size-12 items-center justify-center rounded-full text-muted-foreground transition-all hover:bg-muted hover:text-foreground",
+                        "flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
                         !canSealStopwatch && "pointer-events-none opacity-30",
                       )}
                       aria-label="Seal session"
                     >
-                      <CircleCheck className="size-5" />
+                      <CircleCheck className="size-4" />
                     </button>
                   )}
                 </div>
-                <p className="text-center text-xs text-muted-foreground sm:text-left">
+                <p className="text-xs text-muted-foreground">
                   Space to {canContinue ? "continue" : "begin"} · R to reset
+                  {" · "}
+                  <Link
+                    href="/settings"
+                    className="underline-offset-2 hover:text-foreground hover:underline"
+                  >
+                    Timer prefs
+                  </Link>
                 </p>
-              </div>
-
-              <div className="flex flex-col gap-3 border-t border-border/40 pt-4">
-                <FocusSettings
-                  dailyGoalMinutes={dailyGoalMinutes}
-                  onClockChange={handleClockChange}
-                  align="start"
-                  className="justify-start"
-                />
-                <FocusSounds />
               </div>
             </div>
           </div>

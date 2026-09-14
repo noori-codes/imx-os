@@ -7,6 +7,8 @@ import { FOCUS_TRACKS, useFocusSound } from "@/stores/focus-sound";
 
 type FocusSoundsProps = {
   compact?: boolean;
+  /** Settings panel: no Atmosphere chrome, denser layout. */
+  embedded?: boolean;
 };
 
 function VolumeControls({
@@ -44,7 +46,10 @@ function VolumeControls({
   );
 }
 
-export function FocusSounds({ compact = false }: FocusSoundsProps) {
+export function FocusSounds({
+  compact = false,
+  embedded = false,
+}: FocusSoundsProps) {
   const { activeId, playing, volume, toggle, setVolume } = useFocusSound();
   const active =
     FOCUS_TRACKS.find((track) => track.id === activeId) ?? FOCUS_TRACKS[3];
@@ -94,6 +99,64 @@ export function FocusSounds({ compact = false }: FocusSoundsProps) {
             {active.hint}
           </p>
         ) : null}
+      </div>
+    );
+  }
+
+  if (embedded) {
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs text-muted-foreground">
+            {playing ? `${active.hint} room` : "Choose a texture for the room"}
+          </p>
+          <VolumeControls volume={volume} setVolume={setVolume} />
+        </div>
+        <div
+          className="grid grid-cols-4 gap-2 sm:gap-3"
+          role="listbox"
+          aria-label="Ambient tracks"
+        >
+          {FOCUS_TRACKS.map((track) => {
+            const isLive = playing && activeId === track.id;
+            return (
+              <button
+                key={track.id}
+                type="button"
+                role="option"
+                aria-selected={isLive}
+                onClick={() => void toggle(track.id)}
+                className="group/orb flex flex-col items-center gap-2 text-center"
+              >
+                <span className="relative flex size-11 items-center justify-center sm:size-12">
+                  {isLive ? (
+                    <span
+                      className="absolute inset-0 animate-ping rounded-full bg-foreground/10"
+                      aria-hidden
+                    />
+                  ) : null}
+                  <span
+                    className={cn(
+                      "relative size-9 rounded-full bg-linear-to-br shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] transition-all duration-300 sm:size-10",
+                      track.tone,
+                      isLive
+                        ? "scale-110 ring-2 ring-foreground/35"
+                        : "opacity-70 group-hover/orb:scale-105 group-hover/orb:opacity-100",
+                    )}
+                  />
+                </span>
+                <span
+                  className={cn(
+                    "text-[11px] font-medium tracking-wide",
+                    isLive ? "text-foreground" : "text-muted-foreground",
+                  )}
+                >
+                  {track.hint}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
     );
   }
