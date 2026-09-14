@@ -3326,3 +3326,134 @@ html[data-focus-session] body {
     animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both !important;
   }
 }
+
+/* Habits — daily pulse */
+.habits-skeleton .habits-reveal,
+.habits-skeleton .habits-reveal-delay-1,
+.habits-skeleton .habits-reveal-delay-2,
+.habits-skeleton .habits-stats > *,
+.habits-skeleton .habits-card {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+.habits-stage {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.habits-stage-wash {
+  pointer-events: none;
+  position: absolute;
+  top: -1.5rem;
+  left: 50%;
+  z-index: 0;
+  width: min(100%, 42rem);
+  height: 14rem;
+  transform: translateX(-50%);
+  background: radial-gradient(
+    ellipse 70% 80% at 50% 0%,
+    color-mix(in oklab, var(--foreground) 4.5%, transparent) 0%,
+    transparent 72%
+  );
+}
+
+.dark .habits-stage-wash {
+  background: radial-gradient(
+    ellipse 70% 80% at 50% 0%,
+    color-mix(in oklab, var(--foreground) 6%, transparent) 0%,
+    transparent 72%
+  );
+}
+
+.habits-stage-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.habits-reveal {
+  animation: dash-reveal-up 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.habits-reveal-delay-1 {
+  animation-delay: 60ms;
+}
+
+.habits-reveal-delay-2 {
+  animation-delay: 120ms;
+}
+
+.habits-stats > *:nth-child(1) {
+  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 40ms;
+}
+.habits-stats > *:nth-child(2) {
+  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 80ms;
+}
+.habits-stats > *:nth-child(3) {
+  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 120ms;
+}
+.habits-stats > *:nth-child(4) {
+  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 160ms;
+}
+
+.habits-pulse {
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--foreground) 4%, transparent);
+}
+
+.habits-pulse-glow {
+  pointer-events: none;
+  position: absolute;
+  right: -10%;
+  top: -45%;
+  width: min(24rem, 72%);
+  height: 150%;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 6%, transparent) 0%,
+    transparent 68%
+  );
+  opacity: 0.9;
+}
+
+.dark .habits-pulse-glow {
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 9%, transparent) 0%,
+    transparent 68%
+  );
+}
+
+.habits-composer {
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--foreground) 4%, transparent);
+}
+
+.habits-card {
+  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--i, 0) * 40ms);
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--foreground) 3.5%, transparent);
+}
+
+.habits-card-done {
+  opacity: 0.78;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .habits-stage .habits-reveal,
+  .habits-stage .habits-stats > *,
+  .habits-stage .habits-card {
+    animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both !important;
+  }
+}

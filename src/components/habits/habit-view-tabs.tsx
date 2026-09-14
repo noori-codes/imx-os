@@ -31,10 +31,7 @@ export function HabitViewTabs({
     ];
 
   return (
-    <nav
-      className="flex gap-1 border-b border-border/60"
-      aria-label="Habit views"
-    >
+    <nav className="flex flex-wrap gap-1.5" aria-label="Habit views">
       {tabs.map((tab) => {
         const isActive = active === tab.id;
         return (
@@ -42,21 +39,23 @@ export function HabitViewTabs({
             key={tab.id}
             href={tab.href}
             className={cn(
-              "relative shrink-0 px-3 py-2.5 text-sm transition-colors",
+              "rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors",
               isActive
-                ? "font-medium text-foreground"
-                : "text-muted-foreground hover:text-foreground",
+                ? "bg-foreground text-background"
+                : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground",
             )}
             aria-current={isActive ? "page" : undefined}
           >
             {tab.label}
             {tab.count > 0 ? (
-              <span className="ml-1.5 tabular-nums text-muted-foreground">
+              <span
+                className={cn(
+                  "ml-1.5 tabular-nums",
+                  isActive ? "text-background/70" : "text-muted-foreground",
+                )}
+              >
                 {tab.count}
               </span>
-            ) : null}
-            {isActive ? (
-              <span className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-foreground" />
             ) : null}
           </Link>
         );

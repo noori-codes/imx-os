@@ -1,6 +1,6 @@
 "use client";
 
-import { useOptimistic, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import {
   Archive,
   ArchiveRestore,
@@ -20,20 +20,29 @@ import { Button } from "@/components/ui/button";
 import { confirm } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { toDateString } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
 import { HABIT_COLORS, type HabitWithStats } from "@/types/habit";
 
 type HabitItemProps = {
   habit: HabitWithStats;
+  index?: number;
   archivedView?: boolean;
   onOptimisticRemove: (id: string) => void;
+  onOptimisticToggle?: (id: string, completed: boolean) => void;
 };
+
+function weekdayLabel(date: string) {
+  return new Date(`${date}T12:00:00`).toLocaleDateString(undefined, {
+    weekday: "narrow",
+  });
+}
 
 export function HabitItem({
   habit,
+  index = 0,
   archivedView = false,
   onOptimisticRemove,
+  onOptimisticToggle,
 }: HabitItemProps) {
   const [, startTransition] = useTransition();
   const [editing, setEditing] = useState(false);
@@ -42,34 +51,13 @@ export function HabitItem({
   const [color, setColor] = useState(habit.color);
   const [error, setError] = useState<string | null>(null);
 
-  const [optimistic, setOptimistic] = useOptimistic(
-    habit,
-    (state, completed: boolean) => {
-      const today = toDateString(new Date());
-      let current_streak = state.current_streak;
-
-      if (!state.completed_today && completed) current_streak += 1;
-      if (state.completed_today && !completed) {
-        current_streak = Math.max(0, current_streak - 1);
-      }
-
-      return {
-        ...state,
-        completed_today: completed,
-        current_streak,
-        longest_streak: Math.max(state.longest_streak, current_streak),
-        week: state.week.map((day) =>
-          day.date === today ? { ...day, completed } : day,
-        ),
-      };
-    },
-  );
+  const optimistic = habit;
 
   function onToggle() {
     if (archivedView) return;
     const next = !optimistic.completed_today;
     startTransition(async () => {
-      setOptimistic(next);
+      onOptimisticToggle?.(optimistic.id, next);
       await toggleHabitToday(optimistic.id, next);
     });
   }
@@ -127,7 +115,10 @@ export function HabitItem({
 
   if (editing) {
     return (
-      <li className="border-b border-border/50 py-4">
+      <li
+        className="habits-card rounded-2xl border border-border/50 bg-card/80 p-4"
+        style={{ ["--i" as string]: index }}
+      >
         <div className="space-y-3">
           <Input
             value={title}
@@ -189,11 +180,18 @@ export function HabitItem({
   return (
     <li
       className={cn(
-        "group border-b border-border/50 py-3.5",
-        optimistic.completed_today && !archivedView && "opacity-70",
+        "habits-card group relative overflow-hidden rounded-2xl border border-border/50 bg-card/80 p-4 transition-colors hover:border-border",
+        optimistic.completed_today && !archivedView && "habits-card-done",
       )}
+      style={{ ["--i" as string]: index }}
     >
-      <div className="flex items-start gap-3">
+      <div
+        className="habits-card-accent absolute inset-y-0 left-0 w-1"
+        style={{ backgroundColor: optimistic.color }}
+        aria-hidden
+      />
+
+      <div className="flex items-start gap-3 pl-2">
         <Button
           type="button"
           variant="outline"
@@ -201,8 +199,8 @@ export function HabitItem({
           onClick={onToggle}
           disabled={archivedView}
           className={cn(
-            "mt-0.5 size-8 shrink-0 rounded-full border-2 transition-all duration-150",
-            optimistic.completed_today && "text-white",
+            "mt-0.5 size-10 shrink-0 rounded-full border-2 transition-all duration-150",
+            optimistic.completed_today && "text-white shadow-sm",
             archivedView && "opacity-50",
           )}
           style={
@@ -222,7 +220,7 @@ export function HabitItem({
         >
           <span
             className={cn(
-              "text-[10px] font-bold transition-all duration-150",
+              "text-sm font-bold transition-all duration-150",
               optimistic.completed_today
                 ? "scale-100 opacity-100"
                 : "scale-50 opacity-0",
@@ -233,23 +231,81 @@ export function HabitItem({
         </Button>
 
         <div className="min-w-0 flex-1">
-          <p
-            className={cn(
-              "text-sm font-medium leading-snug",
-              optimistic.completed_today &&
-                !archivedView &&
-                "text-muted-foreground line-through",
-            )}
-          >
-            {optimistic.title}
-          </p>
-          {optimistic.description ? (
-            <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
-              {optimistic.description}
-            </p>
-          ) : null}
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <p
+                className={cn(
+                  "text-sm font-semibold leading-snug tracking-tight",
+                  optimistic.completed_today &&
+                    !archivedView &&
+                    "text-muted-foreground line-through",
+                )}
+              >
+                {optimistic.title}
+              </p>
+              {optimistic.description ? (
+                <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+                  {optimistic.description}
+                </p>
+              ) : null}
+            </div>
 
-          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+            <div className="flex shrink-0 opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+              {!archivedView ? (
+                <>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-8 text-muted-foreground"
+                    onClick={() => {
+                      setTitle(optimistic.title);
+                      setDescription(optimistic.description ?? "");
+                      setColor(optimistic.color);
+                      setError(null);
+                      setEditing(true);
+                    }}
+                    aria-label="Edit habit"
+                  >
+                    <Pencil className="size-3.5" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-8 text-muted-foreground"
+                    onClick={handleArchive}
+                    aria-label="Archive habit"
+                  >
+                    <Archive className="size-3.5" />
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-8 text-muted-foreground"
+                  onClick={handleRestore}
+                  aria-label="Restore habit"
+                >
+                  <ArchiveRestore className="size-3.5" />
+                </Button>
+              )}
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-8 text-muted-foreground hover:text-destructive"
+                onClick={handleDelete}
+                aria-label="Delete habit"
+              >
+                <Trash2 className="size-3.5" />
+              </Button>
+            </div>
+          </div>
+
+          <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
             <span
               className={cn(
                 "inline-flex items-center gap-1 tabular-nums",
@@ -263,84 +319,37 @@ export function HabitItem({
                   optimistic.current_streak > 0 && "fill-current",
                 )}
               />
-              {optimistic.current_streak}d
+              {optimistic.current_streak}d streak
             </span>
             <span className="tabular-nums">
               Best {optimistic.longest_streak}d
             </span>
           </div>
 
-          <div className="mt-2.5 flex max-w-xs gap-1">
+          <div className="mt-3 flex gap-1.5">
             {optimistic.week.map((day) => (
               <div
                 key={day.date}
                 title={day.date}
-                className={cn(
-                  "h-1.5 flex-1 rounded-sm transition-colors",
-                  !day.completed && "bg-muted",
-                )}
-                style={
-                  day.completed
-                    ? { backgroundColor: optimistic.color }
-                    : undefined
-                }
-              />
+                className="flex min-w-0 flex-1 flex-col items-center gap-1"
+              >
+                <span className="text-[10px] uppercase tracking-wide text-muted-foreground/80">
+                  {weekdayLabel(day.date)}
+                </span>
+                <div
+                  className={cn(
+                    "h-2 w-full rounded-full transition-colors",
+                    !day.completed && "bg-muted",
+                  )}
+                  style={
+                    day.completed
+                      ? { backgroundColor: optimistic.color }
+                      : undefined
+                  }
+                />
+              </div>
             ))}
           </div>
-        </div>
-
-        <div className="flex shrink-0 opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
-          {!archivedView ? (
-            <>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="size-8 text-muted-foreground"
-                onClick={() => {
-                  setTitle(optimistic.title);
-                  setDescription(optimistic.description ?? "");
-                  setColor(optimistic.color);
-                  setError(null);
-                  setEditing(true);
-                }}
-                aria-label="Edit habit"
-              >
-                <Pencil className="size-3.5" />
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="size-8 text-muted-foreground"
-                onClick={handleArchive}
-                aria-label="Archive habit"
-              >
-                <Archive className="size-3.5" />
-              </Button>
-            </>
-          ) : (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="size-8 text-muted-foreground"
-              onClick={handleRestore}
-              aria-label="Restore habit"
-            >
-              <ArchiveRestore className="size-3.5" />
-            </Button>
-          )}
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="size-8 text-muted-foreground hover:text-destructive"
-            onClick={handleDelete}
-            aria-label="Delete habit"
-          >
-            <Trash2 className="size-3.5" />
-          </Button>
         </div>
       </div>
     </li>

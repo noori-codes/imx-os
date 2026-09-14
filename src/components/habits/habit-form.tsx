@@ -10,10 +10,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { HABIT_COLORS } from "@/types/habit";
 
-export function HabitForm() {
+type HabitFormProps = {
+  variant?: "default" | "composer";
+};
+
+export function HabitForm({ variant = "default" }: HabitFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const titleRef = useRef<HTMLInputElement>(null);
   const [moreOpen, setMoreOpen] = useState(false);
+  const isComposer = variant === "composer";
 
   const [state, formAction, pending] = useActionState<
     HabitActionState | null,
@@ -45,7 +50,7 @@ export function HabitForm() {
     <form
       ref={formRef}
       action={formAction}
-      className="border-b border-border/60 pb-5"
+      className={cn(!isComposer && "border-b border-border/60 pb-5")}
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative min-w-0 flex-1">
@@ -56,7 +61,10 @@ export function HabitForm() {
             placeholder="New daily habit"
             required
             autoComplete="off"
-            className="h-10 border-0 bg-muted/40 pl-9 shadow-none focus-visible:ring-1"
+            className={cn(
+              "h-10 border-0 pl-9 shadow-none focus-visible:ring-1",
+              isComposer ? "bg-muted/50" : "bg-muted/40",
+            )}
             aria-label="New habit"
           />
         </div>
