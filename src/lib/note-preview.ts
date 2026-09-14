@@ -17,3 +17,14 @@ export function countNoteWords(html: string) {
   if (!text) return 0;
   return text.split(/\s+/).filter(Boolean).length;
 }
+
+const PREVIEW_MAX = 280;
+
+/** Persistable list fields derived from rich HTML content. */
+export function buildNoteListFields(html: string) {
+  const text = stripNoteHtml(html);
+  return {
+    preview: text.slice(0, PREVIEW_MAX),
+    word_count: text ? text.split(/\s+/).filter(Boolean).length : 0,
+  };
+}

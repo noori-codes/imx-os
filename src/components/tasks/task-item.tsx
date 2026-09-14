@@ -257,7 +257,7 @@ export function TaskItem({
   return (
     <li
       className={cn(
-        "group flex items-center gap-3 border-b border-border/40 px-3 py-2.5 last:border-b-0 sm:px-4",
+        "group flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-border/40 px-3 py-2.5 last:border-b-0 sm:flex-nowrap sm:px-4",
         task.completed && "opacity-55",
         task.due_date && !task.completed && isOverdue(task.due_date) && "bg-destructive/[0.03]",
       )}
@@ -314,7 +314,12 @@ export function TaskItem({
       </div>
 
       {!task.completed ? (
-        <div className="hidden shrink-0 items-center gap-1 opacity-0 transition-opacity sm:flex sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+        <div
+          className={cn(
+            "order-last flex w-full shrink-0 items-center gap-1 pl-11 sm:order-0 sm:w-auto sm:pl-0",
+            "sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100",
+          )}
+        >
           <button
             type="button"
             onClick={() => scheduleDue(today)}

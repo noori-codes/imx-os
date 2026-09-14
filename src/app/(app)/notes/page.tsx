@@ -6,7 +6,6 @@ import { NoteLibrary } from "@/components/notes/note-library";
 import { NoteStats } from "@/components/notes/note-stats";
 import { NotesStage } from "@/components/notes/notes-stage";
 import { AppPageFrame } from "@/components/shared/app-page-frame";
-import { countNoteWords } from "@/lib/note-preview";
 
 export default async function NotesPage() {
   const [notes, todayJournal] = await Promise.all([
@@ -16,10 +15,7 @@ export default async function NotesPage() {
 
   const journals = notes.filter((note) => note.type === "journal").length;
   const plainNotes = notes.length - journals;
-  const words = notes.reduce(
-    (sum, note) => sum + countNoteWords(note.content),
-    0,
-  );
+  const words = notes.reduce((sum, note) => sum + note.word_count, 0);
 
   return (
     <>

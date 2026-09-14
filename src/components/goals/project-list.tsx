@@ -5,6 +5,7 @@ import { useOptimistic, useState, useTransition } from "react";
 import { FolderKanban, Pencil, Trash2, X } from "lucide-react";
 
 import { deleteProject, updateProject } from "@/actions/projects";
+import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
 import { confirm } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
@@ -30,13 +31,12 @@ export function ProjectList({ goalId, projects }: ProjectListProps) {
 
   if (optimisticProjects.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/60 px-6 py-12 text-center">
-        <FolderKanban className="mb-3 size-8 text-muted-foreground" />
-        <h3 className="text-base font-medium">No projects yet</h3>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Add a project to break this goal into chunks.
-        </p>
-      </div>
+      <EmptyState
+        icon={FolderKanban}
+        title="No projects yet"
+        description="Add a project to break this goal into chunks."
+        className="py-12"
+      />
     );
   }
 

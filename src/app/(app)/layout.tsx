@@ -1,13 +1,21 @@
 import { Suspense } from "react";
+import dynamic from "next/dynamic";
 import { redirect } from "next/navigation";
 
-import { ImxChat } from "@/components/ai/imx-chat";
 import { FocusAudioHost } from "@/components/focus/focus-audio-host";
 import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
 import { NavigationProgress } from "@/components/layout/navigation-progress";
 import { Sidebar } from "@/components/layout/sidebar";
 import { UserProvider } from "@/components/providers/user-provider";
 import { getCurrentUser } from "@/lib/auth";
+
+const ImxChat = dynamic(
+  () =>
+    import("@/components/ai/imx-chat").then((m) => ({
+      default: m.ImxChat,
+    })),
+  { loading: () => null },
+);
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
   const user = await getCurrentUser();

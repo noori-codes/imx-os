@@ -13,6 +13,7 @@ import {
 
 import { deleteGoal, updateGoal } from "@/actions/goals";
 import { GoalForm } from "@/components/goals/goal-form";
+import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
 import { confirm } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
@@ -181,17 +182,16 @@ export function GoalsBoard({ goals }: GoalsBoardProps) {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/60 px-6 py-16 text-center">
-          <Target className="mb-3 size-8 text-muted-foreground" />
-          <h3 className="text-base font-medium">
-            {optimisticGoals.length === 0 ? "No goals yet" : "Nothing matches"}
-          </h3>
-          <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-            {optimisticGoals.length === 0
+        <EmptyState
+          icon={Target}
+          title={optimisticGoals.length === 0 ? "No goals yet" : "Nothing matches"}
+          description={
+            optimisticGoals.length === 0
               ? "Goals are outcomes. Break them into projects, then tasks."
-              : "Try another filter or clear the search."}
-          </p>
-        </div>
+              : "Try another filter or clear the search."
+          }
+          className="py-16"
+        />
       ) : (
         <ul className="goals-grid grid gap-3 sm:grid-cols-2">
           {filtered.map((goal, index) => (

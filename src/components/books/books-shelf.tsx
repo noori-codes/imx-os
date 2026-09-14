@@ -244,9 +244,7 @@ export function BooksShelf({ books }: BooksShelfProps) {
       </div>
 
       {filtered.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-border/60 px-5 py-10 text-center text-sm text-muted-foreground">
-          Nothing matches that filter.
-        </p>
+        <EmptyState title="Nothing matches that filter." className="py-10" />
       ) : (
         <>
           {/* Desktop table */}

@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Search } from "lucide-react";
+import { ChevronDown, ListTodo, Search } from "lucide-react";
 
 import { TaskItem, useTaskOptimistic } from "@/components/tasks/task-item";
+import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
 import {
   groupActiveTasks,
@@ -25,7 +26,7 @@ type TaskListProps = {
   optimistic?: TaskOptimisticApi;
 };
 
-function GhostEmpty({
+function ListEmpty({
   view,
   searching,
 }: {
@@ -34,23 +35,21 @@ function GhostEmpty({
 }) {
   if (searching) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/60 px-6 py-14 text-center">
-        <Search className="mb-3 size-7 text-muted-foreground" />
-        <p className="text-base font-medium text-foreground/90">No matches</p>
-        <p className="mt-1.5 text-sm text-muted-foreground">
-          Try another search in this view.
-        </p>
-      </div>
+      <EmptyState
+        icon={Search}
+        title="No matches"
+        description="Try another search in this view."
+      />
     );
   }
 
   const empty = viewEmptyCopy(view);
-
   return (
-    <div className="rounded-2xl border border-dashed border-border/60 px-6 py-14 text-center sm:text-left">
-      <p className="text-base font-medium text-foreground/90">{empty.title}</p>
-      <p className="mt-1.5 text-sm text-muted-foreground">{empty.description}</p>
-    </div>
+    <EmptyState
+      icon={ListTodo}
+      title={empty.title}
+      description={empty.description}
+    />
   );
 }
 
@@ -83,7 +82,12 @@ export function TaskList({
   });
 
   if (optimisticTasks.length === 0) {
-    return <GhostEmpty view={mode === "project" ? "all" : view} searching={searching} />;
+    return (
+      <ListEmpty
+        view={mode === "project" ? "all" : view}
+        searching={searching}
+      />
+    );
   }
 
   const groups =

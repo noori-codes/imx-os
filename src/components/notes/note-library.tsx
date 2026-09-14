@@ -5,14 +5,13 @@ import { useMemo, useState } from "react";
 import { BookOpen, FileText, NotebookPen, Search } from "lucide-react";
 
 import { EmptyState } from "@/components/shared/empty-state";
-import { stripNoteHtml } from "@/lib/note-preview";
 import { cn } from "@/lib/utils";
-import type { Note, NoteType } from "@/types/note";
+import type { NoteListItem, NoteType } from "@/types/note";
 
 type Filter = "all" | NoteType;
 
 type NoteLibraryProps = {
-  notes: Note[];
+  notes: NoteListItem[];
 };
 
 function formatUpdated(iso: string) {
@@ -41,10 +40,9 @@ export function NoteLibrary({ notes }: NoteLibraryProps) {
     return notes.filter((note) => {
       if (filter !== "all" && note.type !== filter) return false;
       if (!q) return true;
-      const preview = stripNoteHtml(note.content).toLowerCase();
       return (
         note.title.toLowerCase().includes(q) ||
-        preview.includes(q) ||
+        note.preview.toLowerCase().includes(q) ||
         (note.journal_date?.includes(q) ?? false)
       );
     });
@@ -99,13 +97,11 @@ export function NoteLibrary({ notes }: NoteLibraryProps) {
       </div>
 
       {filtered.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-border/60 px-5 py-10 text-center text-sm text-muted-foreground">
-          Nothing matches that filter.
-        </p>
+        <EmptyState title="Nothing matches that filter." className="py-10" />
       ) : (
         <ul className="notes-grid grid gap-3 sm:grid-cols-2">
           {filtered.map((note, index) => {
-            const preview = stripNoteHtml(note.content);
+            const preview = note.preview;
             const isJournal = note.type === "journal";
             const Icon = isJournal ? BookOpen : FileText;
 

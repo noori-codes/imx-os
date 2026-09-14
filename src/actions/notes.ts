@@ -7,9 +7,10 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { CACHE_TTL, cacheTags, cachedQuery, revalidateUserCaches } from "@/lib/cache";
 import { toDateString } from "@/lib/date-utils";
+import { buildNoteListFields } from "@/lib/note-preview";
 import { createAdminClient, hasAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import type { Note, NoteType } from "@/types/note";
+import type { Note, NoteListItem, NoteType } from "@/types/note";
 
 export type NoteActionState = {
   error?: string;
@@ -18,6 +19,9 @@ export type NoteActionState = {
 type QueryClient =
   | Awaited<ReturnType<typeof createClient>>
   | ReturnType<typeof createAdminClient>;
+
+const NOTES_LIST_SELECT =
+  "id, user_id, title, type, journal_date, created_at, updated_at, preview, word_count";
 
 async function revalidateNotes(noteId?: string) {
   revalidatePath("/notes");
@@ -39,15 +43,39 @@ function notesClient(userId: string | null): QueryClient | Promise<QueryClient> 
   return createClient();
 }
 
+function mapListItem(row: {
+  id: string;
+  user_id: string;
+  title: string;
+  type: NoteType;
+  journal_date: string | null;
+  created_at: string;
+  updated_at: string;
+  preview?: string | null;
+  word_count?: number | null;
+}): NoteListItem {
+  return {
+    id: row.id,
+    user_id: row.user_id,
+    title: row.title,
+    type: row.type,
+    journal_date: row.journal_date,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+    preview: row.preview ?? "",
+    word_count: row.word_count ?? 0,
+  };
+}
+
 async function loadNotes(
   userId: string | null,
   type?: NoteType,
-): Promise<Note[]> {
+): Promise<NoteListItem[]> {
   const supabase = await notesClient(userId);
 
   let query = supabase
     .from("notes")
-    .select("*")
+    .select(NOTES_LIST_SELECT)
     .order("updated_at", { ascending: false });
 
   if (userId && hasAdminClient()) {
@@ -65,7 +93,7 @@ async function loadNotes(
     return [];
   }
 
-  return data ?? [];
+  return (data ?? []).map(mapListItem);
 }
 
 async function loadNote(
@@ -90,13 +118,15 @@ async function loadNote(
   return data;
 }
 
-async function loadTodayJournal(userId: string | null): Promise<Note | null> {
+async function loadTodayJournal(
+  userId: string | null,
+): Promise<NoteListItem | null> {
   const supabase = await notesClient(userId);
   const today = toDateString(new Date());
 
   let query = supabase
     .from("notes")
-    .select("*")
+    .select(NOTES_LIST_SELECT)
     .eq("type", "journal")
     .eq("journal_date", today);
 
@@ -111,11 +141,11 @@ async function loadTodayJournal(userId: string | null): Promise<Note | null> {
     return null;
   }
 
-  return data;
+  return data ? mapListItem(data) : null;
 }
 
 /** Notes list — request memoized; cross-request cached when service role is set. */
-export const getNotes = cache(async (type?: NoteType): Promise<Note[]> => {
+export const getNotes = cache(async (type?: NoteType): Promise<NoteListItem[]> => {
   const user = await getCurrentUser();
   if (!user) {
     return [];
@@ -123,7 +153,7 @@ export const getNotes = cache(async (type?: NoteType): Promise<Note[]> => {
 
   if (hasAdminClient()) {
     return cachedQuery(
-      ["notes", user.id, type ?? "all", "v1"],
+      ["notes", user.id, type ?? "all", "list-v2"],
       [cacheTags.notes(user.id)],
       CACHE_TTL.notes,
       async () => loadNotes(user.id, type),
@@ -152,8 +182,8 @@ export const getNote = cache(async (noteId: string): Promise<Note | null> => {
   return loadNote(null, noteId);
 });
 
-/** Today's journal — request memoized; cross-request cached when service role is set. */
-export const getTodayJournal = cache(async (): Promise<Note | null> => {
+/** Today's journal (list fields only) — for spotlight / existence checks. */
+export const getTodayJournal = cache(async (): Promise<NoteListItem | null> => {
   const user = await getCurrentUser();
   if (!user) {
     return null;
@@ -163,7 +193,7 @@ export const getTodayJournal = cache(async (): Promise<Note | null> => {
 
   if (hasAdminClient()) {
     return cachedQuery(
-      ["notes", user.id, "journal", today, "v1"],
+      ["notes", user.id, "journal", today, "list-v2"],
       [cacheTags.notes(user.id)],
       CACHE_TTL.notes,
       async () => loadTodayJournal(user.id),
@@ -197,6 +227,8 @@ export async function createNote(type: NoteType = "note") {
         user_id: user.id,
         title: `Journal · ${today}`,
         content: "",
+        preview: "",
+        word_count: 0,
         type: "journal",
         journal_date: today,
       })
@@ -218,6 +250,8 @@ export async function createNote(type: NoteType = "note") {
       user_id: user.id,
       title: "Untitled",
       content: "",
+      preview: "",
+      word_count: 0,
       type: "note",
       journal_date: null,
     })
@@ -242,12 +276,15 @@ export async function updateNote(
 
   const title = ((formData.get("title") as string) || "Untitled").trim();
   const content = (formData.get("content") as string) ?? "";
+  const { preview, word_count } = buildNoteListFields(content);
 
   const { error } = await supabase
     .from("notes")
     .update({
       title: title || "Untitled",
       content,
+      preview,
+      word_count,
     })
     .eq("id", noteId);
 

@@ -6,6 +6,7 @@ import { CheckSquare } from "lucide-react";
 import { HabitForm } from "@/components/habits/habit-form";
 import { HabitItem } from "@/components/habits/habit-item";
 import { HabitViewTabs } from "@/components/habits/habit-view-tabs";
+import { EmptyState } from "@/components/shared/empty-state";
 import { toDateString } from "@/lib/date-utils";
 import type { HabitView, HabitWithStats } from "@/types/habit";
 
@@ -196,17 +197,16 @@ export function HabitsBoard({
       ) : null}
 
       {ordered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/60 px-6 py-16 text-center">
-          <CheckSquare className="mb-3 size-8 text-muted-foreground" />
-          <h3 className="text-base font-medium">
-            {view === "archived" ? "No archived habits" : "No habits yet"}
-          </h3>
-          <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-            {view === "archived"
+        <EmptyState
+          icon={CheckSquare}
+          title={view === "archived" ? "No archived habits" : "No habits yet"}
+          description={
+            view === "archived"
               ? "Archived habits will show up here."
-              : "Add a daily habit above, then check it off to build a streak."}
-          </p>
-        </div>
+              : "Add a daily habit above, then check it off to build a streak."
+          }
+          className="py-16"
+        />
       ) : (
         <ul className="habits-grid grid gap-3 sm:grid-cols-2">
           {ordered.map((habit, index) => (

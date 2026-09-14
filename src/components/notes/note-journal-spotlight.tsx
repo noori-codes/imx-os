@@ -2,16 +2,15 @@ import Link from "next/link";
 import { BookOpen, Plus } from "lucide-react";
 
 import { createNote } from "@/actions/notes";
-import { stripNoteHtml } from "@/lib/note-preview";
 import { cn } from "@/lib/utils";
-import type { Note } from "@/types/note";
+import type { NoteListItem } from "@/types/note";
 
 type NoteJournalSpotlightProps = {
-  journal: Note | null;
+  journal: NoteListItem | null;
 };
 
 export function NoteJournalSpotlight({ journal }: NoteJournalSpotlightProps) {
-  const preview = journal ? stripNoteHtml(journal.content) : "";
+  const preview = journal?.preview ?? "";
   const hasWriting = preview.length > 0;
 
   return (
