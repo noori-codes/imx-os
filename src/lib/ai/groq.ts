@@ -8,9 +8,9 @@ export type GroqChatResult =
   | { ok: false; error: string; code?: "missing_key" | "rate_limit" | "upstream" };
 
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
-/** Free-tier chat model available on current Groq accounts. */
-const DEFAULT_MODEL = "allam-2-7b";
-const TIMEOUT_MS = 25_000;
+/** Prefer a strong free chat model; override with GROQ_MODEL if needed. */
+const DEFAULT_MODEL = "openai/gpt-oss-20b";
+const TIMEOUT_MS = 35_000;
 
 export function getGroqModel() {
   return process.env.GROQ_MODEL?.trim() || DEFAULT_MODEL;
@@ -22,7 +22,11 @@ export function hasGroqApiKey() {
 
 export async function groqChatCompletion(
   messages: GroqChatMessage[],
-  options?: { temperature?: number; maxTokens?: number },
+  options?: {
+    temperature?: number;
+    maxTokens?: number;
+    jsonMode?: boolean;
+  },
 ): Promise<GroqChatResult> {
   const apiKey = process.env.GROQ_API_KEY?.trim();
   if (!apiKey) {
@@ -38,20 +42,38 @@ export async function groqChatCompletion(
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
+    const body: Record<string, unknown> = {
+      model: getGroqModel(),
+      temperature: options?.temperature ?? 0.4,
+      max_tokens: options?.maxTokens ?? 700,
+      messages,
+    };
+    if (options?.jsonMode) {
+      body.response_format = { type: "json_object" };
+    }
+
     const response = await fetch(GROQ_URL, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        model: getGroqModel(),
-        temperature: options?.temperature ?? 0.4,
-        max_tokens: options?.maxTokens ?? 700,
-        messages,
-      }),
+      body: JSON.stringify(body),
       signal: controller.signal,
     });
+
+    // Some models reject json_object — retry once without it.
+    if (
+      options?.jsonMode &&
+      !response.ok &&
+      (response.status === 400 || response.status === 422)
+    ) {
+      clearTimeout(timer);
+      return groqChatCompletion(messages, {
+        ...options,
+        jsonMode: false,
+      });
+    }
 
     if (response.status === 429) {
       return {
@@ -89,8 +111,10 @@ export async function groqChatCompletion(
       }[];
     };
     const message = data.choices?.[0]?.message;
+    // Prefer visible content; reasoning models may fill reasoning instead.
     const content =
       message?.content?.trim() ||
+      (options?.jsonMode ? "" : message?.reasoning?.trim()) ||
       message?.reasoning?.trim() ||
       "";
     if (!content) {

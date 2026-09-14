@@ -90,5 +90,31 @@ export async function buildActivitySnapshot(
 }
 
 export function snapshotToPromptText(snapshot: ActivitySnapshot): string {
-  return JSON.stringify(snapshot, null, 2);
+  const { summary } = snapshot;
+  const habitLines =
+    snapshot.habit_streaks.length > 0
+      ? snapshot.habit_streaks
+          .map(
+            (habit) =>
+              `- ${habit.title}: streak ${habit.current_streak}d, ${habit.completion_rate}% of days`,
+          )
+          .join("\n")
+      : "- No habits logged";
+
+  const mood =
+    summary.avg_mood != null ? `avg mood ${summary.avg_mood}/5` : "mood n/a";
+  const energy =
+    summary.avg_energy != null
+      ? `avg energy ${summary.avg_energy}/5`
+      : "energy n/a";
+
+  return [
+    `Last ${snapshot.range_days} days:`,
+    `Focus: ${summary.focus_minutes} minutes across ${summary.focus_sessions} sessions; hit daily goal on ${summary.focus_goal_hit_days}/${snapshot.range_days} days (goal ${summary.daily_focus_goal_minutes}m). Strong focus days: ${snapshot.strong_focus_days}. Quiet days: ${snapshot.quiet_days}.`,
+    `Tasks: ${summary.tasks_completed} completed; ${snapshot.open_tasks_overdue} overdue open; ${snapshot.open_tasks_due_today} due today.`,
+    `Habits: average completion ${summary.habits_avg_rate}%; best streak ${summary.best_habit_streak}d.`,
+    habitLines,
+    `Reviews: ${summary.reviews_logged} logged (${mood}, ${energy}).`,
+  ].join("\n");
 }
+

@@ -12,8 +12,8 @@ import {
 import { groqChatCompletion } from "@/lib/ai/groq";
 import { createClient } from "@/lib/supabase/server";
 
-/** Short gap between asks — free-tier friendly for suggested prompts. */
-const COOLDOWN_MS = 2 * 60 * 1000;
+/** Light anti-spam only — chat chips should feel snappy. */
+const COOLDOWN_MS = 8_000;
 
 export type CoachReply = {
   summary: string;
@@ -41,31 +41,54 @@ export type CoachAskResult =
       retryAfterMs?: number;
     };
 
-const SYSTEM_PROMPT = `You are a concise personal productivity coach inside IMX OS.
-Given a JSON activity snapshot for the last 7 days and a user question, reply with ONLY valid JSON (no markdown fences):
-{"summary":"2-4 sentences answering the question","suggestions":["actionable tip 1","actionable tip 2","actionable tip 3"]}
-Rules:
-- Answer the asked question directly using the snapshot numbers.
-- Suggestions must be concrete and doable soon (max 3).
-- No fluff, no emojis, no medical advice.
-- If data is sparse, say so honestly.`;
+const SYSTEM_PROMPT = `You are IMX, a concise personal productivity coach.
+You receive a plain-language activity briefing and a question.
+Respond with ONLY a single JSON object (no markdown, no code fences, no extra keys):
+{"summary":"<2-4 full sentences of prose>","suggestions":["<tip>","<tip>","<tip>"]}
+
+Hard rules:
+- "summary" MUST be a string of normal English sentences. Never put numbers-only objects, nested JSON, or the briefing text inside summary.
+- Do NOT repeat or paste the briefing. Interpret it.
+- Exactly 3 short actionable suggestions as strings.
+- No emojis. No medical advice.`;
 
 function resolvePrompt(id: string) {
   return AI_COACH_PROMPTS.find((prompt) => prompt.id === id) ?? null;
 }
 
+function looksLikeRawDataDump(text: string) {
+  return (
+    text.trimStart().startsWith("{") ||
+    /"focus_minutes"|"habit_streaks"|"generated_at"/.test(text)
+  );
+}
+
+function extractJsonObject(raw: string): string | null {
+  const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+  const body = (fenced?.[1] ?? raw).trim();
+  if (body.startsWith("{") && body.endsWith("}")) return body;
+  const start = body.indexOf("{");
+  const end = body.lastIndexOf("}");
+  if (start >= 0 && end > start) return body.slice(start, end + 1);
+  return null;
+}
+
 function parseReply(raw: string): CoachReply | null {
-  const trimmed = raw.trim();
-  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/);
-  const candidate = fenced?.[1]?.trim() ?? trimmed;
+  const candidate = extractJsonObject(raw);
+  if (!candidate) return null;
   try {
     const parsed = JSON.parse(candidate) as {
       summary?: unknown;
       suggestions?: unknown;
     };
-    if (typeof parsed.summary !== "string" || !parsed.summary.trim()) {
-      return null;
-    }
+
+    let summary =
+      typeof parsed.summary === "string" ? parsed.summary.trim() : "";
+
+    // Model sometimes nests prose wrong — reject data dumps.
+    if (!summary || looksLikeRawDataDump(summary)) return null;
+    if (summary.length < 24) return null;
+
     const suggestions = Array.isArray(parsed.suggestions)
       ? parsed.suggestions
           .filter((item): item is string => typeof item === "string")
@@ -73,12 +96,17 @@ function parseReply(raw: string): CoachReply | null {
           .filter(Boolean)
           .slice(0, 3)
       : [];
+
     return {
-      summary: parsed.summary.trim(),
+      summary,
       suggestions:
         suggestions.length > 0
           ? suggestions
-          : ["Pick one priority on your dashboard and start a short focus block."],
+          : [
+              "Protect one short focus block tomorrow.",
+              "Clear one overdue task.",
+              "Log tonight’s daily review.",
+            ],
     };
   } catch {
     return null;
@@ -86,13 +114,26 @@ function parseReply(raw: string): CoachReply | null {
 }
 
 function fallbackReply(raw: string): CoachReply {
+  if (looksLikeRawDataDump(raw)) {
+    return {
+      summary:
+        "I couldn’t shape that into a clear answer. Try the same question once more.",
+      suggestions: [
+        "Ask “How was my week?” again.",
+        "Or try “What should I focus on next?”",
+        "Surprise me can also work after a moment.",
+      ],
+    };
+  }
+
   const text = raw.trim();
   const lines = text
     .split(/\n+/)
     .map((line) => line.replace(/^[-*•\d.)\s]+/, "").trim())
-    .filter(Boolean);
+    .filter((line) => line && !looksLikeRawDataDump(line));
+
   return {
-    summary: lines[0] ?? text.slice(0, 400),
+    summary: lines[0] ?? "Here’s a quick take based on your recent activity.",
     suggestions: lines.slice(1, 4).length
       ? lines.slice(1, 4)
       : [
@@ -141,22 +182,28 @@ export async function askCoachQuestion(
       return {
         ok: false,
         code: "cooldown",
-        error: "Give the coach a moment before the next question.",
+        error: "One sec — IMX is catching up.",
         retryAfterMs: COOLDOWN_MS - elapsed,
       };
     }
   }
 
   const snapshot = await buildActivitySnapshot(user.id);
+  const briefing = snapshotToPromptText(snapshot);
+
   const completion = await groqChatCompletion(
     [
       { role: "system", content: SYSTEM_PROMPT },
       {
         role: "user",
-        content: `Question: ${prompt.label}\nGuidance: ${prompt.hint}\n\nActivity snapshot:\n${snapshotToPromptText(snapshot)}`,
+        content: `Question: ${prompt.label}\nWhat to emphasize: ${prompt.hint}\n\nActivity briefing:\n${briefing}\n\nRemember: reply with JSON only. summary must be prose sentences, never raw data.`,
       },
     ],
-    { temperature: 0.35, maxTokens: 650 },
+    {
+      temperature: 0.3,
+      maxTokens: 900,
+      jsonMode: true,
+    },
   );
 
   if (!completion.ok) {
@@ -167,8 +214,30 @@ export async function askCoachQuestion(
     };
   }
 
-  const reply =
-    parseReply(completion.content) ?? fallbackReply(completion.content);
+  let reply = parseReply(completion.content);
+  if (!reply) {
+    // One repair pass if the model drifted.
+    const repair = await groqChatCompletion(
+      [
+        {
+          role: "system",
+          content:
+            'Convert the assistant draft into JSON only: {"summary":"prose sentences","suggestions":["tip","tip","tip"]}. summary must be English sentences, never JSON/data.',
+        },
+        {
+          role: "user",
+          content: `Question was: ${prompt.label}\nDraft:\n${completion.content.slice(0, 2000)}`,
+        },
+      ],
+      { temperature: 0.1, maxTokens: 500, jsonMode: true },
+    );
+    if (repair.ok) {
+      reply = parseReply(repair.content) ?? fallbackReply(repair.content);
+    } else {
+      reply = fallbackReply(completion.content);
+    }
+  }
+
   const generatedAt = new Date().toISOString();
 
   const { error: upsertError } = await supabase.from("user_settings").upsert(
