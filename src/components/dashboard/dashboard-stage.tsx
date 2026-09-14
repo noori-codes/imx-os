@@ -4,6 +4,7 @@ import { useOptimistic, useTransition } from "react";
 
 import { toggleHabitToday } from "@/actions/habits";
 import { toggleTaskComplete } from "@/actions/tasks";
+import { DashboardAiInsight } from "@/components/dashboard/dashboard-ai-insight";
 import { DashboardAtmosphere } from "@/components/dashboard/dashboard-atmosphere";
 import { DashboardInsightStrip } from "@/components/dashboard/dashboard-insight-strip";
 import { DashboardKpiRow } from "@/components/dashboard/dashboard-kpi-row";
@@ -157,6 +158,10 @@ export function DashboardStage({ name, greeting, data }: DashboardStageProps) {
           habitsTotal={optimisticHabits.length}
           streak={data.stats.activity_streak}
         />
+      </div>
+
+      <div className="dash-reveal dash-reveal-delay-2">
+        <DashboardAiInsight />
       </div>
 
       <div className="dash-bento dash-reveal dash-reveal-delay-2">
