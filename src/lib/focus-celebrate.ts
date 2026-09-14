@@ -173,6 +173,11 @@ async function burst(
 /** Fire goal confetti onto a dedicated full-viewport canvas. */
 export function fireFocusGoalConfetti(intensity: "full" | "light" = "full") {
   if (typeof window === "undefined") return;
+  try {
+    if (window.localStorage.getItem("imx-focus-celebrate") === "0") return;
+  } catch {
+    /* ignore */
+  }
 
   void (async () => {
     const confetti = await getConfetti();

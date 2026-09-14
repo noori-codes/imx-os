@@ -5,12 +5,14 @@ import { TasksStage } from "@/components/tasks/tasks-stage";
 import { TasksStats } from "@/components/tasks/tasks-stats";
 import { getTodayTaskFocus } from "@/actions/focus";
 import { getAllTasks, getTaskProjectOptions } from "@/actions/tasks";
+import { parseDefaultTaskViewCookie } from "@/lib/app-preferences";
 import { isOverdue, isToday } from "@/lib/date-utils";
 import {
   filterTasksForView,
   parseTaskView,
 } from "@/lib/task-views";
 import type { TaskView } from "@/types/task";
+import { cookies } from "next/headers";
 
 type TasksPageProps = {
   searchParams: Promise<{ view?: string }>;
@@ -25,7 +27,11 @@ function countForView(
 
 export default async function TasksPage({ searchParams }: TasksPageProps) {
   const params = await searchParams;
-  const view = parseTaskView(params.view);
+  const cookieStore = await cookies();
+  const preferred = parseDefaultTaskViewCookie(
+    cookieStore.get("imx-tasks-default-view")?.value,
+  );
+  const view = parseTaskView(params.view ?? preferred ?? undefined);
   const [tasks, projects, todayFocus] = await Promise.all([
     getAllTasks(),
     getTaskProjectOptions(),

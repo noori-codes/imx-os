@@ -2,6 +2,11 @@
 
 export function playFocusChime() {
   if (typeof window === "undefined") return;
+  try {
+    if (window.localStorage.getItem("imx-focus-chime") === "0") return;
+  } catch {
+    /* ignore */
+  }
 
   const AudioCtx =
     window.AudioContext ||

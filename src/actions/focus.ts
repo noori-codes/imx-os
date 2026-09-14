@@ -275,6 +275,8 @@ export async function updateDailyFocusGoal(minutes: number) {
   }
 
   revalidatePath("/focus");
+  revalidatePath("/settings");
+  revalidatePath("/analytics");
   return {};
 }
 

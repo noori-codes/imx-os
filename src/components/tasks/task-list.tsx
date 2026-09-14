@@ -13,12 +13,16 @@ import { isToday } from "@/lib/date-utils";
 import type { TaskFocusToday } from "@/types/focus";
 import type { TaskView, TaskWithContext } from "@/types/task";
 
+type TaskOptimisticApi = ReturnType<typeof useTaskOptimistic>;
+
 type TaskListProps = {
   tasks: TaskWithContext[];
   view?: TaskView;
   mode?: "smart" | "project";
   todayFocus?: TaskFocusToday;
   searching?: boolean;
+  /** When provided (Tasks board), share optimistic state with Focus Next. */
+  optimistic?: TaskOptimisticApi;
 };
 
 function GhostEmpty({
@@ -56,13 +60,19 @@ export function TaskList({
   mode = "smart",
   todayFocus,
   searching = false,
+  optimistic: optimisticProp,
 }: TaskListProps) {
-  const {
-    optimisticTasks,
-    onOptimisticToggle,
-    onOptimisticDelete,
-    onOptimisticUpdate,
-  } = useTaskOptimistic(tasks);
+  const localOptimistic = useTaskOptimistic(tasks);
+  const onOptimisticToggle =
+    optimisticProp?.onOptimisticToggle ?? localOptimistic.onOptimisticToggle;
+  const onOptimisticDelete =
+    optimisticProp?.onOptimisticDelete ?? localOptimistic.onOptimisticDelete;
+  const onOptimisticUpdate =
+    optimisticProp?.onOptimisticUpdate ?? localOptimistic.onOptimisticUpdate;
+  // When board owns optimistic state, `tasks` is already the filtered snapshot.
+  const optimisticTasks = optimisticProp
+    ? tasks
+    : localOptimistic.optimisticTasks;
 
   const [completedOpen, setCompletedOpen] = useState(false);
   const active = optimisticTasks.filter((t) => !t.completed);

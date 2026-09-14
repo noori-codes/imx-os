@@ -6,6 +6,7 @@ import { ArrowUpRight, Search, Timer } from "lucide-react";
 
 import { TaskForm } from "@/components/tasks/task-form";
 import { TaskList } from "@/components/tasks/task-list";
+import { useTaskOptimistic } from "@/components/tasks/task-item";
 import { TasksViewTabs } from "@/components/tasks/tasks-view-tabs";
 import { Input } from "@/components/ui/input";
 import { isOverdue, isToday } from "@/lib/date-utils";
@@ -72,16 +73,17 @@ export function TasksBoard({
   todayFocus,
 }: TasksBoardProps) {
   const [query, setQuery] = useState("");
+  const optimistic = useTaskOptimistic(tasks);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return tasks;
-    return tasks.filter(
+    if (!q) return optimistic.optimisticTasks;
+    return optimistic.optimisticTasks.filter(
       (task) =>
         task.title.toLowerCase().includes(q) ||
         (task.context?.toLowerCase().includes(q) ?? false),
     );
-  }, [tasks, query]);
+  }, [optimistic.optimisticTasks, query]);
 
   const focusNext = useMemo(() => pickFocusNext(filtered), [filtered]);
 
@@ -121,6 +123,7 @@ export function TasksBoard({
         mode="smart"
         todayFocus={todayFocus}
         searching={query.trim().length > 0}
+        optimistic={optimistic}
       />
     </div>
   );
