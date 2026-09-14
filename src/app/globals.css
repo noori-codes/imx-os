@@ -238,8 +238,10 @@
 }
 
 .focus-stage[data-running="true"] {
-  background: color-mix(in oklab, var(--focus-wash) 100%, transparent);
-  box-shadow: inset 0 0 120px color-mix(in oklab, var(--background) 55%, transparent);
+  --focus-progress: 0;
+  background: color-mix(in oklab, var(--background) 94%, var(--focus-wash));
+  box-shadow: none;
+  transition: background 1s ease;
 }
 
 .focus-stage-glow {
@@ -265,25 +267,11 @@
     top 700ms ease;
 }
 
-.focus-stage[data-running="true"] .focus-stage-glow {
-  opacity: 1;
-  top: 46%;
-  left: 36%;
-  width: min(36rem, 88%);
-  height: min(36rem, 88%);
-  animation: focus-glow-breathe 7.5s ease-in-out infinite;
-}
-
-@media (max-width: 1023px) {
-  .focus-stage[data-running="true"] .focus-stage-glow {
-    left: 50%;
-    top: 34%;
-  }
-
-  .focus-stage[data-running="true"] .focus-stage-glow-soft {
-    left: 50%;
-    top: 34%;
-  }
+/* Idle only — focusing uses the chamber layers below */
+.focus-stage[data-running="true"] .focus-stage-glow,
+.focus-stage[data-running="true"] .focus-stage-glow-soft {
+  display: none !important;
+  animation: none !important;
 }
 
 .dark .focus-stage[data-mode="focus"] {
@@ -400,10 +388,167 @@
   }
 }
 
+.focus-stage-sky,
+.focus-stage-aurora,
+.focus-stage-floor,
+.focus-stage-motes,
 .focus-stage-vignette,
 .focus-stage-grain,
 .focus-stage-glow-soft {
   display: none;
+}
+
+/* Quiet twilight chamber — sky, aurora, floor. No orbs behind the clock. */
+.focus-stage[data-running="true"] .focus-stage-sky {
+  display: block;
+  pointer-events: none;
+  position: absolute;
+  inset: 0 0 auto;
+  height: 62%;
+  z-index: 0;
+  opacity: calc(0.7 + (var(--focus-progress) * 0.2));
+  background:
+    radial-gradient(
+      ellipse 95% 70% at 50% -5%,
+      color-mix(in oklab, var(--focus-glow) 70%, transparent) 0%,
+      transparent 68%
+    ),
+    radial-gradient(
+      ellipse 50% 40% at 12% 18%,
+      color-mix(in oklab, var(--focus-wash) 55%, transparent) 0%,
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 45% 36% at 88% 12%,
+      color-mix(in oklab, var(--focus-wash) 40%, transparent) 0%,
+      transparent 68%
+    );
+  animation: focus-sky-shift 28s ease-in-out infinite;
+}
+
+.focus-stage[data-running="true"] .focus-stage-aurora {
+  display: block;
+  pointer-events: none;
+  position: absolute;
+  left: -20%;
+  right: -20%;
+  top: 28%;
+  height: 38%;
+  z-index: 0;
+  opacity: calc(0.28 + (var(--focus-progress) * 0.42));
+  filter: blur(40px);
+  background: linear-gradient(
+    95deg,
+    transparent 0%,
+    color-mix(in oklab, var(--focus-glow) 55%, transparent) 28%,
+    color-mix(in oklab, var(--focus-wash) 70%, transparent) 52%,
+    color-mix(in oklab, var(--focus-glow) 35%, transparent) 74%,
+    transparent 100%
+  );
+  transform: skewY(-4deg);
+  animation: focus-aurora-drift 20s ease-in-out infinite;
+  transition: opacity 1.4s ease;
+}
+
+.focus-stage[data-running="true"] .focus-stage-floor {
+  display: block;
+  pointer-events: none;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(36% + (var(--focus-progress) * 10%));
+  z-index: 0;
+  opacity: calc(0.55 + (var(--focus-progress) * 0.3));
+  background:
+    radial-gradient(
+      ellipse 80% 55% at 50% 100%,
+      color-mix(in oklab, var(--focus-glow) 50%, transparent) 0%,
+      transparent 72%
+    ),
+    linear-gradient(
+      180deg,
+      transparent 0%,
+      color-mix(in oklab, var(--focus-wash) 35%, transparent) 100%
+    );
+  transition: height 1.4s ease, opacity 1.4s ease;
+  animation: focus-floor-breathe 16s ease-in-out infinite;
+}
+
+.focus-stage[data-running="true"] .focus-stage-motes {
+  display: block;
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.focus-stage[data-running="true"] .focus-stage-motes span {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  border-radius: 9999px;
+  background: color-mix(in oklab, var(--focus-accent) 55%, white);
+  opacity: 0;
+  animation: focus-mote-float 14s ease-in-out infinite;
+}
+
+.focus-stage[data-running="true"] .focus-stage-motes span:nth-child(1) {
+  left: 12%;
+  top: 62%;
+  animation-delay: 0s;
+  animation-duration: 16s;
+}
+.focus-stage[data-running="true"] .focus-stage-motes span:nth-child(2) {
+  left: 22%;
+  top: 38%;
+  width: 1.5px;
+  height: 1.5px;
+  animation-delay: -3s;
+  animation-duration: 18s;
+}
+.focus-stage[data-running="true"] .focus-stage-motes span:nth-child(3) {
+  left: 48%;
+  top: 72%;
+  animation-delay: -6s;
+  animation-duration: 15s;
+}
+.focus-stage[data-running="true"] .focus-stage-motes span:nth-child(4) {
+  left: 68%;
+  top: 44%;
+  width: 1.5px;
+  height: 1.5px;
+  animation-delay: -2s;
+  animation-duration: 19s;
+}
+.focus-stage[data-running="true"] .focus-stage-motes span:nth-child(5) {
+  left: 82%;
+  top: 58%;
+  animation-delay: -8s;
+  animation-duration: 17s;
+}
+.focus-stage[data-running="true"] .focus-stage-motes span:nth-child(6) {
+  left: 34%;
+  top: 22%;
+  width: 1.5px;
+  height: 1.5px;
+  animation-delay: -5s;
+  animation-duration: 21s;
+}
+.focus-stage[data-running="true"] .focus-stage-motes span:nth-child(7) {
+  left: 76%;
+  top: 28%;
+  animation-delay: -9s;
+  animation-duration: 14s;
+}
+.focus-stage[data-running="true"] .focus-stage-motes span:nth-child(8) {
+  left: 58%;
+  top: 18%;
+  width: 1.5px;
+  height: 1.5px;
+  animation-delay: -4s;
+  animation-duration: 20s;
 }
 
 .focus-stage[data-running="true"] .focus-stage-vignette {
@@ -412,32 +557,20 @@
   position: absolute;
   inset: 0;
   z-index: 0;
-  /* Soft corner fade — room dissolves into the page black */
   background:
-    radial-gradient(
-      ellipse 86% 78% at 42% 48%,
-      transparent 36%,
-      color-mix(in oklab, var(--background) 32%, transparent) 100%
-    ),
-    radial-gradient(
-      circle at 0% 0%,
+    linear-gradient(
+      90deg,
       color-mix(in oklab, var(--background) 72%, transparent) 0%,
-      transparent 48%
+      transparent 16%,
+      transparent 84%,
+      color-mix(in oklab, var(--background) 72%, transparent) 100%
     ),
-    radial-gradient(
-      circle at 100% 0%,
-      color-mix(in oklab, var(--background) 72%, transparent) 0%,
-      transparent 48%
-    ),
-    radial-gradient(
-      circle at 0% 100%,
-      color-mix(in oklab, var(--background) 72%, transparent) 0%,
-      transparent 48%
-    ),
-    radial-gradient(
-      circle at 100% 100%,
-      color-mix(in oklab, var(--background) 72%, transparent) 0%,
-      transparent 48%
+    linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--background) 42%, transparent) 0%,
+      transparent 18%,
+      transparent 78%,
+      color-mix(in oklab, var(--background) 58%, transparent) 100%
     );
 }
 
@@ -456,33 +589,14 @@ html[data-focus-session] body {
   position: absolute;
   inset: 0;
   z-index: 0;
-  opacity: 0.045;
+  opacity: 0.04;
   mix-blend-mode: overlay;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 .dark .focus-stage[data-running="true"] .focus-stage-grain {
-  opacity: 0.07;
+  opacity: 0.065;
   mix-blend-mode: soft-light;
-}
-
-.focus-stage[data-running="true"] .focus-stage-glow-soft {
-  display: block;
-  pointer-events: none;
-  position: absolute;
-  left: 36%;
-  top: 46%;
-  width: min(44rem, 110%);
-  height: min(44rem, 110%);
-  translate: -50% -50%;
-  border-radius: 9999px;
-  background: radial-gradient(
-    circle at center,
-    color-mix(in oklab, var(--focus-glow) 55%, transparent) 0%,
-    transparent 72%
-  );
-  opacity: 0.55;
-  animation: focus-glow-drift 11s ease-in-out infinite;
 }
 
 .focus-clock-core {
@@ -597,6 +711,56 @@ html[data-focus-session] body {
   50% {
     opacity: 0.7;
     scale: 1.08;
+  }
+}
+
+@keyframes focus-sky-shift {
+  0%,
+  100% {
+    opacity: calc(0.68 + (var(--focus-progress) * 0.18));
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    opacity: calc(0.78 + (var(--focus-progress) * 0.18));
+    transform: translate3d(0, 1.2%, 0);
+  }
+}
+
+@keyframes focus-aurora-drift {
+  0%,
+  100% {
+    transform: skewY(-4deg) translate3d(-3%, 0, 0);
+  }
+  50% {
+    transform: skewY(-3deg) translate3d(4%, -2%, 0);
+  }
+}
+
+@keyframes focus-floor-breathe {
+  0%,
+  100% {
+    opacity: calc(0.5 + (var(--focus-progress) * 0.28));
+  }
+  50% {
+    opacity: calc(0.64 + (var(--focus-progress) * 0.28));
+  }
+}
+
+@keyframes focus-mote-float {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0);
+  }
+  18% {
+    opacity: 0.55;
+  }
+  55% {
+    opacity: 0.35;
+    transform: translate3d(6px, -28px, 0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(-4px, -52px, 0);
   }
 }
 
@@ -1096,8 +1260,10 @@ html[data-focus-session] body {
 
 @media (prefers-reduced-motion: reduce) {
   .focus-eq-bar,
-  .focus-stage[data-running="true"] .focus-stage-glow,
-  .focus-stage[data-running="true"] .focus-stage-glow-soft,
+  .focus-stage[data-running="true"] .focus-stage-sky,
+  .focus-stage[data-running="true"] .focus-stage-aurora,
+  .focus-stage[data-running="true"] .focus-stage-floor,
+  .focus-stage[data-running="true"] .focus-stage-motes span,
   .focus-stage[data-running="true"] .focus-clock-spin,
   .focus-live-dot,
   .focus-stage[data-running="true"] .focus-stage-grain {
@@ -1105,6 +1271,7 @@ html[data-focus-session] body {
   }
 
   .focus-stage[data-running="true"] .focus-clock-spin,
+  .focus-stage[data-running="true"] .focus-stage-motes,
   .focus-stage[data-running="true"] .focus-stage-grain {
     display: none !important;
   }

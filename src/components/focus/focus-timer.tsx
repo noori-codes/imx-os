@@ -1,6 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useTransition } from "react";
+import {
+  useEffect,
+  useRef,
+  useTransition,
+  type CSSProperties,
+} from "react";
 
 import { useDocumentVisible } from "@/hooks/use-document-visible";
 import { useRouter } from "next/navigation";
@@ -746,6 +751,15 @@ export function FocusTimer({
     runningHint ??
     (!isStopwatch ? `Up next · ${FOCUS_PRESETS[upcoming].label}` : null);
 
+  const sessionProgress = isStopwatch
+    ? Math.min(1, elapsedSeconds / 1500)
+    : durationSeconds > 0
+      ? Math.min(
+          1,
+          Math.max(0, (durationSeconds - remainingSeconds) / durationSeconds),
+        )
+      : 0;
+
   return (
     <section
       data-mode={mode}
@@ -759,9 +773,29 @@ export function FocusTimer({
           : "px-1 py-4 sm:px-2 sm:py-6",
       )}
       id="focus-timer"
+      style={
+        isRunning
+          ? ({
+              ["--focus-progress" as string]: sessionProgress.toFixed(3),
+            } as CSSProperties)
+          : undefined
+      }
     >
-      <div className="focus-stage-vignette" aria-hidden />
+      <div className="focus-stage-sky" aria-hidden />
+      <div className="focus-stage-aurora" aria-hidden />
+      <div className="focus-stage-floor" aria-hidden />
+      <div className="focus-stage-motes" aria-hidden>
+        <span />
+        <span />
+        <span />
+        <span />
+        <span />
+        <span />
+        <span />
+        <span />
+      </div>
       <div className="focus-stage-grain" aria-hidden />
+      <div className="focus-stage-vignette" aria-hidden />
       <div className="focus-stage-glow-soft" aria-hidden />
       <div className="focus-stage-glow" aria-hidden />
 
