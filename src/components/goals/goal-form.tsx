@@ -9,10 +9,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
-export function GoalForm() {
+type GoalFormProps = {
+  variant?: "default" | "composer";
+};
+
+export function GoalForm({ variant = "default" }: GoalFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const titleRef = useRef<HTMLInputElement>(null);
   const [moreOpen, setMoreOpen] = useState(false);
+  const isComposer = variant === "composer";
 
   const [state, formAction, pending] = useActionState<
     GoalActionState | null,
@@ -44,7 +49,7 @@ export function GoalForm() {
     <form
       ref={formRef}
       action={formAction}
-      className="border-b border-border/60 pb-5"
+      className={cn(!isComposer && "border-b border-border/60 pb-5")}
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative min-w-0 flex-1">
@@ -55,7 +60,10 @@ export function GoalForm() {
             placeholder="What are you working toward?"
             required
             autoComplete="off"
-            className="h-10 border-0 bg-muted/40 pl-9 shadow-none focus-visible:ring-1"
+            className={cn(
+              "h-10 border-0 pl-9 shadow-none focus-visible:ring-1",
+              isComposer ? "bg-muted/50" : "bg-muted/40",
+            )}
             aria-label="New goal"
           />
         </div>

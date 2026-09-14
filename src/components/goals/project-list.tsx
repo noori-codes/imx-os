@@ -30,7 +30,7 @@ export function ProjectList({ goalId, projects }: ProjectListProps) {
 
   if (optimisticProjects.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center px-6 py-12 text-center">
+      <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/60 px-6 py-12 text-center">
         <FolderKanban className="mb-3 size-8 text-muted-foreground" />
         <h3 className="text-base font-medium">No projects yet</h3>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -41,7 +41,7 @@ export function ProjectList({ goalId, projects }: ProjectListProps) {
   }
 
   return (
-    <ul className="border-t border-border/60">
+    <ul className="grid gap-3 sm:grid-cols-2">
       {optimisticProjects.map((project) => (
         <ProjectRow
           key={project.id}
@@ -116,7 +116,7 @@ function ProjectRow({
 
   if (editing) {
     return (
-      <li className="border-b border-border/50 py-4">
+      <li className="rounded-2xl border border-border/50 bg-card/80 p-4">
         <div className="space-y-3">
           <Input
             value={title}
@@ -158,7 +158,7 @@ function ProjectRow({
   }
 
   return (
-    <li className="group border-b border-border/50 py-4">
+    <li className="group rounded-2xl border border-border/50 bg-card/80 p-4 transition-colors hover:border-border">
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
           <Link
@@ -178,7 +178,7 @@ function ProjectRow({
               : `${project.completed_task_count}/${project.task_count} tasks · ${progress}%`}
           </p>
           {project.task_count > 0 ? (
-            <div className="mt-2 h-1 max-w-xs overflow-hidden rounded-full bg-muted">
+            <div className="mt-2 h-1.5 max-w-xs overflow-hidden rounded-full bg-muted">
               <div
                 className="h-full rounded-full bg-foreground/80 transition-all"
                 style={{ width: `${progress}%` }}

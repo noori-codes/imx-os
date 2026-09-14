@@ -11,12 +11,17 @@ import { cn } from "@/lib/utils";
 
 type ProjectFormProps = {
   goalId: string;
+  variant?: "default" | "composer";
 };
 
-export function ProjectForm({ goalId }: ProjectFormProps) {
+export function ProjectForm({
+  goalId,
+  variant = "default",
+}: ProjectFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const titleRef = useRef<HTMLInputElement>(null);
   const [moreOpen, setMoreOpen] = useState(false);
+  const isComposer = variant === "composer";
   const createProjectForGoal = createProject.bind(null, goalId);
 
   const [state, formAction, pending] = useActionState<
@@ -49,7 +54,7 @@ export function ProjectForm({ goalId }: ProjectFormProps) {
     <form
       ref={formRef}
       action={formAction}
-      className="border-b border-border/60 pb-5"
+      className={cn(!isComposer && "border-b border-border/60 pb-5")}
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative min-w-0 flex-1">

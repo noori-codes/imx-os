@@ -60,7 +60,7 @@ export function EntityHeader({
 
   if (editing) {
     return (
-      <div className="space-y-3 border-b border-border/60 pb-6">
+      <div className="space-y-3 rounded-2xl border border-border/50 bg-card/80 p-5 sm:p-6">
         <Input
           value={draftTitle}
           onChange={(e) => setDraftTitle(e.target.value)}
@@ -101,7 +101,7 @@ export function EntityHeader({
   }
 
   return (
-    <div className="group border-b border-border/60 pb-6">
+    <div className="group rounded-2xl border border-border/50 bg-card/80 p-5 sm:p-6">
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
           <h2 className="text-2xl font-semibold tracking-tight">{title}</h2>
@@ -114,7 +114,7 @@ export function EntityHeader({
             <p className="mt-3 text-xs text-muted-foreground">{meta}</p>
           ) : null}
           {progress != null && progress >= 0 ? (
-            <div className="mt-3 h-1 max-w-sm overflow-hidden rounded-full bg-muted">
+            <div className="mt-4 h-1.5 max-w-sm overflow-hidden rounded-full bg-muted">
               <div
                 className="h-full rounded-full bg-foreground/80 transition-all"
                 style={{ width: `${progress}%` }}
