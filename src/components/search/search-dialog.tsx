@@ -12,20 +12,14 @@ import {
 import { useRouter } from "next/navigation";
 import {
   ArrowRight,
-  BookOpen,
-  Calendar,
-  CheckSquare,
+  Clock3,
   CornerDownLeft,
-  FileText,
-  FolderKanban,
-  ListTodo,
   Loader2,
   Moon,
   Plus,
   Search,
-  Target,
   Timer,
-  type LucideIcon,
+  X,
 } from "lucide-react";
 
 import { searchQuery } from "@/actions/search";
@@ -38,31 +32,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  getHighlightParts,
+  pushRecentSearch,
+  readRecentSearches,
+  SEARCH_ENTITY_META,
+  SEARCH_ENTITY_ORDER,
+  SEARCH_JUMP_LINKS,
+} from "@/lib/search-ui";
 import { cn } from "@/lib/utils";
 import type { SearchEntityType, SearchResult } from "@/types/search";
-
-const ENTITY_META: Record<
-  SearchEntityType,
-  { label: string; icon: LucideIcon }
-> = {
-  task: { label: "Tasks", icon: ListTodo },
-  goal: { label: "Goals", icon: Target },
-  project: { label: "Projects", icon: FolderKanban },
-  note: { label: "Notes", icon: FileText },
-  habit: { label: "Habits", icon: CheckSquare },
-  event: { label: "Events", icon: Calendar },
-  book: { label: "Books", icon: BookOpen },
-};
-
-const ENTITY_ORDER: SearchEntityType[] = [
-  "task",
-  "goal",
-  "project",
-  "note",
-  "habit",
-  "event",
-  "book",
-];
 
 type CommandAction = {
   id: string;
@@ -70,7 +49,7 @@ type CommandAction = {
   description: string;
   href: string;
   keywords: string[];
-  icon: LucideIcon;
+  icon: typeof Plus;
 };
 
 const COMMAND_ACTIONS: CommandAction[] = [
@@ -102,7 +81,9 @@ const COMMAND_ACTIONS: CommandAction[] = [
 
 type PaletteItem =
   | { kind: "action"; action: CommandAction }
-  | { kind: "result"; result: SearchResult };
+  | { kind: "result"; result: SearchResult }
+  | { kind: "recent"; query: string }
+  | { kind: "jump"; href: string; label: string };
 
 function matchActions(query: string): CommandAction[] {
   const q = query.trim().toLowerCase();
@@ -116,6 +97,22 @@ function matchActions(query: string): CommandAction[] {
   });
 }
 
+function Highlighted({ text, query }: { text: string; query: string }) {
+  return (
+    <>
+      {getHighlightParts(text, query).map((part) =>
+        part.type === "mark" ? (
+          <mark key={part.key} className="search-hit">
+            {part.value}
+          </mark>
+        ) : (
+          <span key={part.key}>{part.value}</span>
+        ),
+      )}
+    </>
+  );
+}
+
 export function SearchDialog() {
   const router = useRouter();
   const listId = useId();
@@ -127,6 +124,10 @@ export function SearchDialog() {
   const [pending, startTransition] = useTransition();
   const [activeIndex, setActiveIndex] = useState(0);
   const [modKey, setModKey] = useState("⌘");
+  const [entityFilter, setEntityFilter] = useState<SearchEntityType | "all">(
+    "all",
+  );
+  const [recents, setRecents] = useState<string[]>([]);
 
   useEffect(() => {
     const isApple = /Mac|iPhone|iPad|iPod/.test(navigator.platform);
@@ -147,11 +148,11 @@ export function SearchDialog() {
 
   useEffect(() => {
     if (!open) return;
+    setRecents(readRecentSearches());
 
     const q = query.trim();
     if (q.length < 2) {
       setResults([]);
-      setActiveIndex(0);
       return;
     }
 
@@ -161,7 +162,6 @@ export function SearchDialog() {
         const response = await searchQuery(q);
         if (id !== requestId.current) return;
         setResults(response.results);
-        setActiveIndex(0);
       });
     }, 220);
 
@@ -173,36 +173,66 @@ export function SearchDialog() {
       setQuery("");
       setResults([]);
       setActiveIndex(0);
+      setEntityFilter("all");
     }
   }, [open]);
 
-  const orderedResults = useMemo(() => {
+  const filteredResults = useMemo(() => {
+    const scoped =
+      entityFilter === "all"
+        ? results
+        : results.filter((item) => item.entity_type === entityFilter);
     const list: SearchResult[] = [];
-    for (const type of ENTITY_ORDER) {
-      const items = results.filter((item) => item.entity_type === type);
-      list.push(...items);
+    for (const type of SEARCH_ENTITY_ORDER) {
+      list.push(...scoped.filter((item) => item.entity_type === type));
     }
     return list;
-  }, [results]);
+  }, [results, entityFilter]);
 
   const grouped = useMemo(() => {
     const map = {} as Partial<Record<SearchEntityType, SearchResult[]>>;
-    for (const item of orderedResults) {
+    for (const item of filteredResults) {
       const list = map[item.entity_type] ?? [];
       list.push(item);
       map[item.entity_type] = list;
     }
     return map;
-  }, [orderedResults]);
+  }, [filteredResults]);
 
   const matchedActions = useMemo(() => matchActions(query), [query]);
+  const trimmed = query.trim();
+  const showIdle = trimmed.length === 0;
 
   const paletteItems = useMemo((): PaletteItem[] => {
+    if (showIdle) {
+      return [
+        ...matchedActions.map((action) => ({
+          kind: "action" as const,
+          action,
+        })),
+        ...recents.map((recent) => ({
+          kind: "recent" as const,
+          query: recent,
+        })),
+        ...SEARCH_JUMP_LINKS.map((link) => ({
+          kind: "jump" as const,
+          href: link.href,
+          label: link.label,
+        })),
+      ];
+    }
+
     return [
-      ...matchedActions.map((action) => ({ kind: "action" as const, action })),
-      ...orderedResults.map((result) => ({ kind: "result" as const, result })),
+      ...matchedActions.map((action) => ({
+        kind: "action" as const,
+        action,
+      })),
+      ...filteredResults.map((result) => ({
+        kind: "result" as const,
+        result,
+      })),
     ];
-  }, [matchedActions, orderedResults]);
+  }, [showIdle, matchedActions, recents, filteredResults]);
 
   const indexByKey = useMemo(() => {
     const map = new Map<string, number>();
@@ -210,13 +240,22 @@ export function SearchDialog() {
       const key =
         item.kind === "action"
           ? `action-${item.action.id}`
-          : `result-${item.result.entity_type}-${item.result.id}`;
+          : item.kind === "result"
+            ? `result-${item.result.entity_type}-${item.result.id}`
+            : item.kind === "recent"
+              ? `recent-${item.query}`
+              : `jump-${item.href}`;
       map.set(key, index);
     });
     return map;
   }, [paletteItems]);
 
-  function goTo(href: string) {
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [query, entityFilter, filteredResults.length, matchedActions.length]);
+
+  function goTo(href: string, saveQuery?: string) {
+    if (saveQuery) pushRecentSearch(saveQuery);
     setOpen(false);
     router.push(href);
   }
@@ -228,7 +267,15 @@ export function SearchDialog() {
       goTo(item.action.href);
       return;
     }
-    goTo(item.result.href);
+    if (item.kind === "result") {
+      goTo(item.result.href, trimmed);
+      return;
+    }
+    if (item.kind === "recent") {
+      setQuery(item.query);
+      return;
+    }
+    goTo(item.href);
   }
 
   function onKeyDown(event: ReactKeyboardEvent<HTMLInputElement>) {
@@ -248,25 +295,31 @@ export function SearchDialog() {
       return;
     }
 
-    if (event.key === "Enter" && paletteItems[activeIndex]) {
+    if (event.key === "Enter") {
       event.preventDefault();
-      runActive();
+      if (paletteItems[activeIndex]) {
+        runActive();
+        return;
+      }
+      if (trimmed.length >= 2) {
+        goTo(`/search?q=${encodeURIComponent(trimmed)}`, trimmed);
+      }
     }
   }
 
-  const trimmed = query.trim();
-  const showIdle = trimmed.length === 0;
-  const showActions = matchedActions.length > 0;
   const showEmpty =
     !pending &&
     trimmed.length >= 2 &&
-    orderedResults.length === 0 &&
+    filteredResults.length === 0 &&
     matchedActions.length === 0;
-  const showResults = orderedResults.length > 0;
-
-  useEffect(() => {
-    setActiveIndex(0);
-  }, [matchedActions.length, orderedResults.length, query]);
+  const showResults = filteredResults.length > 0;
+  const resultCounts = useMemo(() => {
+    const counts = {} as Partial<Record<SearchEntityType, number>>;
+    for (const item of results) {
+      counts[item.entity_type] = (counts[item.entity_type] ?? 0) + 1;
+    }
+    return counts;
+  }, [results]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -281,19 +334,19 @@ export function SearchDialog() {
       </Button>
       <Button
         variant="outline"
-        className="hidden h-9 w-[13.5rem] justify-start gap-2 border-dashed text-muted-foreground sm:inline-flex"
+        className="search-trigger hidden h-9 w-[14rem] justify-start gap-2 border-border/60 bg-card/50 text-muted-foreground sm:inline-flex"
         onClick={() => setOpen(true)}
       >
         <Search className="size-3.5 opacity-70" />
-        <span className="flex-1 truncate text-left text-sm">Search…</span>
-        <kbd className="pointer-events-none inline-flex h-5 items-center gap-0.5 rounded border bg-muted/80 px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+        <span className="flex-1 truncate text-left text-sm">Search IMX…</span>
+        <kbd className="pointer-events-none inline-flex h-5 items-center gap-0.5 rounded-md border border-border/70 bg-muted/70 px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
           {modKey}K
         </kbd>
       </Button>
 
       <DialogContent
         showCloseButton={false}
-        className="top-[12vh] max-w-xl translate-y-0 gap-0 overflow-hidden border-border/80 bg-popover p-0 shadow-2xl ring-1 ring-black/5 dark:ring-white/10 sm:top-[14vh]"
+        className="search-palette top-[10vh] max-w-2xl translate-y-0 gap-0 overflow-hidden border-border/70 bg-background p-0 shadow-2xl ring-1 ring-black/5 dark:ring-white/10 sm:top-[12vh]"
         onOpenAutoFocus={(event) => {
           event.preventDefault();
           inputRef.current?.focus();
@@ -306,7 +359,9 @@ export function SearchDialog() {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex items-center gap-3 border-b border-border/80 px-4">
+        <div className="search-palette-wash" aria-hidden />
+
+        <div className="relative z-[1] flex items-center gap-3 border-b border-border/60 px-4">
           {pending ? (
             <Loader2 className="size-4 shrink-0 animate-spin text-muted-foreground" />
           ) : (
@@ -317,22 +372,69 @@ export function SearchDialog() {
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             onKeyDown={onKeyDown}
-            placeholder="Search or jump to an action…"
-            className="h-14 w-full bg-transparent text-[15px] outline-none placeholder:text-muted-foreground/70"
+            placeholder="Search or jump…"
+            className="h-14 w-full bg-transparent text-[15px] outline-none placeholder:text-muted-foreground/65"
             aria-label="Search or run a command"
             aria-controls={listId}
             aria-autocomplete="list"
             autoComplete="off"
             spellCheck={false}
           />
+          {query ? (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              className="inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              aria-label="Clear search"
+            >
+              <X className="size-3.5" />
+            </button>
+          ) : null}
         </div>
 
-        <ScrollArea className="max-h-[min(22rem,52vh)]">
+        {trimmed.length >= 2 ? (
+          <div className="relative z-[1] flex gap-1.5 overflow-x-auto border-b border-border/50 px-3 py-2.5">
+            <button
+              type="button"
+              onClick={() => setEntityFilter("all")}
+              className={cn(
+                "shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors",
+                entityFilter === "all"
+                  ? "bg-foreground text-background"
+                  : "bg-muted/60 text-muted-foreground hover:text-foreground",
+              )}
+            >
+              All · {results.length}
+            </button>
+            {SEARCH_ENTITY_ORDER.map((type) => {
+              const count = resultCounts[type] ?? 0;
+              if (count === 0) return null;
+              const meta = SEARCH_ENTITY_META[type];
+              return (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setEntityFilter(type)}
+                  className={cn(
+                    "shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors",
+                    entityFilter === type
+                      ? "bg-foreground text-background"
+                      : "bg-muted/60 text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {meta.plural} · {count}
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
+
+        <ScrollArea className="relative z-[1] max-h-[min(26rem,56vh)]">
           <div id={listId} className="px-2 py-2" role="listbox">
-            {showActions ? (
+            {matchedActions.length > 0 ? (
               <div className="mb-1">
                 <div className="flex items-center gap-1.5 px-3 pb-1.5 pt-2">
-                  <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                  <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
                     Actions
                   </span>
                 </div>
@@ -350,36 +452,43 @@ export function SearchDialog() {
                           role="option"
                           aria-selected={active}
                           className={cn(
-                            "group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
+                            "search-palette-row group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors",
                             active
-                              ? "bg-accent text-accent-foreground"
-                              : "hover:bg-muted/60",
+                              ? "bg-foreground text-background"
+                              : "hover:bg-muted/70",
                           )}
                           onMouseEnter={() => setActiveIndex(index)}
                           onClick={() => goTo(action.href)}
                         >
                           <div
                             className={cn(
-                              "flex size-8 shrink-0 items-center justify-center rounded-md border",
+                              "flex size-9 shrink-0 items-center justify-center rounded-xl border",
                               active
-                                ? "border-transparent bg-background/80"
+                                ? "border-transparent bg-background/15"
                                 : "border-border/60 bg-muted/50",
                             )}
                           >
-                            <Icon className="size-3.5 opacity-80" />
+                            <Icon className="size-3.5 opacity-90" />
                           </div>
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-medium leading-snug">
                               {action.label}
                             </p>
-                            <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                            <p
+                              className={cn(
+                                "mt-0.5 truncate text-xs",
+                                active
+                                  ? "text-background/70"
+                                  : "text-muted-foreground",
+                              )}
+                            >
                               {action.description}
                             </p>
                           </div>
                           <ArrowRight
                             className={cn(
-                              "size-3.5 shrink-0 text-muted-foreground transition-opacity",
-                              active ? "opacity-70" : "opacity-0",
+                              "size-3.5 shrink-0 transition-opacity",
+                              active ? "opacity-80" : "opacity-0",
                             )}
                           />
                         </button>
@@ -390,39 +499,123 @@ export function SearchDialog() {
               </div>
             ) : null}
 
-            {showIdle ? (
-              <p className="mt-1 px-3 pb-2 text-center text-xs text-muted-foreground/80">
-                Type to search · ↑↓ to navigate · Enter to run
-              </p>
+            {showIdle && recents.length > 0 ? (
+              <div className="mb-1">
+                <div className="flex items-center gap-1.5 px-3 pb-1.5 pt-2">
+                  <Clock3 className="size-3 text-muted-foreground" />
+                  <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                    Recent
+                  </span>
+                </div>
+                <ul className="space-y-0.5">
+                  {recents.map((recent) => {
+                    const key = `recent-${recent}`;
+                    const index = indexByKey.get(key) ?? 0;
+                    const active = index === activeIndex;
+                    return (
+                      <li key={key}>
+                        <button
+                          type="button"
+                          role="option"
+                          aria-selected={active}
+                          className={cn(
+                            "search-palette-row flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm transition-colors",
+                            active
+                              ? "bg-foreground text-background"
+                              : "text-muted-foreground hover:bg-muted/70 hover:text-foreground",
+                          )}
+                          onMouseEnter={() => setActiveIndex(index)}
+                          onClick={() => setQuery(recent)}
+                        >
+                          <Search className="size-3.5 shrink-0 opacity-70" />
+                          <span className="truncate">{recent}</span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
             ) : null}
 
-            {showEmpty ? (
-              <div className="flex flex-col items-center gap-2 px-4 py-12 text-center">
-                <div className="flex size-10 items-center justify-center rounded-full bg-muted">
-                  <Search className="size-4 text-muted-foreground" />
+            {showIdle ? (
+              <div className="mb-1 px-2 pb-2 pt-2">
+                <div className="mb-2 px-1 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                  Jump to
                 </div>
-                <div>
-                  <p className="text-sm font-medium">No results</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Nothing matched “{trimmed}”
-                  </p>
+                <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+                  {SEARCH_JUMP_LINKS.map((link) => {
+                    const key = `jump-${link.href}`;
+                    const index = indexByKey.get(key) ?? 0;
+                    const active = index === activeIndex;
+                    return (
+                      <button
+                        key={link.href}
+                        type="button"
+                        role="option"
+                        aria-selected={active}
+                        onMouseEnter={() => setActiveIndex(index)}
+                        onClick={() => goTo(link.href)}
+                        className={cn(
+                          "rounded-xl border px-3 py-2.5 text-left transition-colors",
+                          active
+                            ? "border-foreground/30 bg-foreground text-background"
+                            : "border-border/50 bg-card/70 hover:border-border hover:bg-muted/50",
+                        )}
+                      >
+                        <p className="text-sm font-medium">{link.label}</p>
+                        <p
+                          className={cn(
+                            "mt-0.5 text-[11px]",
+                            active
+                              ? "text-background/70"
+                              : "text-muted-foreground",
+                          )}
+                        >
+                          {link.hint}
+                        </p>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             ) : null}
 
+            {showEmpty ? (
+              <div className="flex flex-col items-center gap-2 px-4 py-12 text-center">
+                <div className="flex size-11 items-center justify-center rounded-2xl border border-dashed border-border/60 bg-muted/40">
+                  <Search className="size-4 text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">No matches</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Nothing matched “{trimmed}”
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="mt-2 text-xs font-medium text-foreground underline-offset-2 hover:underline"
+                  onClick={() =>
+                    goTo(`/search?q=${encodeURIComponent(trimmed)}`, trimmed)
+                  }
+                >
+                  Open full search
+                </button>
+              </div>
+            ) : null}
+
             {showResults
-              ? ENTITY_ORDER.map((type) => {
+              ? SEARCH_ENTITY_ORDER.map((type) => {
                   const items = grouped[type];
                   if (!items?.length) return null;
-                  const meta = ENTITY_META[type];
+                  const meta = SEARCH_ENTITY_META[type];
                   const Icon = meta.icon;
 
                   return (
                     <div key={type} className="mb-1">
                       <div className="flex items-center gap-1.5 px-3 pb-1.5 pt-2">
                         <Icon className="size-3 text-muted-foreground" />
-                        <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                          {meta.label}
+                        <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                          {meta.plural}
                         </span>
                         <span className="text-[11px] text-muted-foreground/60">
                           {items.length}
@@ -441,38 +634,48 @@ export function SearchDialog() {
                                 role="option"
                                 aria-selected={active}
                                 className={cn(
-                                  "group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
+                                  "search-palette-row group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors",
                                   active
-                                    ? "bg-accent text-accent-foreground"
-                                    : "hover:bg-muted/60",
+                                    ? "bg-foreground text-background"
+                                    : "hover:bg-muted/70",
                                 )}
                                 onMouseEnter={() => setActiveIndex(index)}
-                                onClick={() => goTo(item.href)}
+                                onClick={() => goTo(item.href, trimmed)}
                               >
                                 <div
                                   className={cn(
-                                    "flex size-8 shrink-0 items-center justify-center rounded-md border",
+                                    "flex size-9 shrink-0 items-center justify-center rounded-xl border",
                                     active
-                                      ? "border-transparent bg-background/80"
+                                      ? "border-transparent bg-background/15"
                                       : "border-border/60 bg-muted/50",
                                   )}
                                 >
-                                  <Icon className="size-3.5 opacity-80" />
+                                  <Icon className="size-3.5 opacity-90" />
                                 </div>
                                 <div className="min-w-0 flex-1">
                                   <p className="truncate text-sm font-medium leading-snug">
-                                    {item.title}
+                                    <Highlighted
+                                      text={item.title}
+                                      query={trimmed}
+                                    />
                                   </p>
                                   {item.subtitle ? (
-                                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                                    <p
+                                      className={cn(
+                                        "mt-0.5 truncate text-xs",
+                                        active
+                                          ? "text-background/70"
+                                          : "text-muted-foreground",
+                                      )}
+                                    >
                                       {item.subtitle}
                                     </p>
                                   ) : null}
                                 </div>
                                 <ArrowRight
                                   className={cn(
-                                    "size-3.5 shrink-0 text-muted-foreground transition-opacity",
-                                    active ? "opacity-70" : "opacity-0",
+                                    "size-3.5 shrink-0 transition-opacity",
+                                    active ? "opacity-80" : "opacity-0",
                                   )}
                                 />
                               </button>
@@ -487,7 +690,7 @@ export function SearchDialog() {
           </div>
         </ScrollArea>
 
-        <div className="flex items-center justify-between gap-3 border-t border-border/80 bg-muted/30 px-4 py-2.5 text-[11px] text-muted-foreground">
+        <div className="relative z-[1] flex items-center justify-between gap-3 border-t border-border/60 bg-muted/25 px-4 py-2.5 text-[11px] text-muted-foreground">
           <div className="flex items-center gap-3">
             <span className="inline-flex items-center gap-1">
               <kbd className="rounded border bg-background px-1 py-0.5 font-mono text-[10px]">
@@ -499,15 +702,23 @@ export function SearchDialog() {
               <kbd className="inline-flex items-center rounded border bg-background px-1 py-0.5 font-mono text-[10px]">
                 <CornerDownLeft className="size-2.5" />
               </kbd>
-              run
+              open
             </span>
           </div>
-          <span className="inline-flex items-center gap-1">
-            <kbd className="rounded border bg-background px-1 py-0.5 font-mono text-[10px]">
-              esc
-            </kbd>
-            close
-          </span>
+          <button
+            type="button"
+            className="transition-colors hover:text-foreground"
+            onClick={() =>
+              goTo(
+                trimmed.length >= 2
+                  ? `/search?q=${encodeURIComponent(trimmed)}`
+                  : "/search",
+                trimmed.length >= 2 ? trimmed : undefined,
+              )
+            }
+          >
+            Full page ↗
+          </button>
         </div>
       </DialogContent>
     </Dialog>
