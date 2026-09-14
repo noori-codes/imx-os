@@ -18,6 +18,8 @@ type TaskFormProps = {
   compact?: boolean;
   projects?: TaskProjectOption[];
   variant?: "card" | "quick" | "compact";
+  /** Focus the title field on mount (e.g. ⌘K → Add task). */
+  autoFocusTitle?: boolean;
 };
 
 type ScheduleChip = "none" | "today" | "tomorrow" | "daily" | "weekdays";
@@ -56,6 +58,7 @@ export function TaskForm({
   compact = false,
   projects = [],
   variant,
+  autoFocusTitle = false,
 }: TaskFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const titleRef = useRef<HTMLInputElement>(null);
@@ -83,6 +86,17 @@ export function TaskForm({
     }
     return result;
   }, null);
+
+  useEffect(() => {
+    if (!autoFocusTitle) return;
+    const frame = window.requestAnimationFrame(() => {
+      titleRef.current?.focus();
+      document
+        .getElementById("tasks-composer")
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [autoFocusTitle]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {

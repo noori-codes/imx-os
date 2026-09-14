@@ -6,10 +6,13 @@ import {
   FileText,
   FolderKanban,
   ListTodo,
+  Search,
   Target,
   type LucideIcon,
 } from "lucide-react";
 
+import { EmptyState } from "@/components/shared/empty-state";
+import { cn } from "@/lib/utils";
 import type { SearchEntityType, SearchResult } from "@/types/search";
 
 const ENTITY_META: Record<
@@ -33,22 +36,21 @@ type SearchResultsProps = {
 export function SearchResults({ query, results }: SearchResultsProps) {
   if (query.length < 2) {
     return (
-      <div className="rounded-xl border border-dashed bg-muted/30 px-6 py-12 text-center">
-        <p className="text-sm text-muted-foreground">
-          Type at least 2 characters to search across tasks, notes, goals,
-          projects, habits, events, and books.
-        </p>
-      </div>
+      <EmptyState
+        icon={Search}
+        title="Start a search"
+        description="Type at least 2 characters to look across tasks, notes, goals, projects, habits, events, and books."
+      />
     );
   }
 
   if (results.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed bg-muted/30 px-6 py-12 text-center">
-        <p className="text-sm text-muted-foreground">
-          No results for <span className="font-medium text-foreground">“{query}”</span>
-        </p>
-      </div>
+      <EmptyState
+        icon={Search}
+        title="No matches"
+        description={`Nothing matched “${query}”. Try another word or check spelling.`}
+      />
     );
   }
 
@@ -86,26 +88,45 @@ export function SearchResults({ query, results }: SearchResultsProps) {
         const Icon = meta.icon;
 
         return (
-          <section key={type}>
-            <h2 className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              <Icon className="size-3.5" />
-              {meta.label}s · {items.length}
-            </h2>
-            <ul className="space-y-2">
-              {items.map((item) => (
-                <li key={`${item.entity_type}-${item.id}`}>
+          <section
+            key={type}
+            className="overflow-hidden rounded-2xl border border-border/50 bg-card/80"
+          >
+            <div className="flex items-baseline justify-between gap-3 border-b border-border/40 px-4 py-3">
+              <h2 className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                <Icon className="size-3.5 opacity-80" />
+                {meta.label}s
+              </h2>
+              <span className="text-[11px] tabular-nums text-muted-foreground">
+                {items.length}
+              </span>
+            </div>
+            <ul>
+              {items.map((item, index) => (
+                <li
+                  key={`${item.entity_type}-${item.id}`}
+                  className="search-result-row"
+                  style={{ ["--i" as string]: index }}
+                >
                   <Link
                     href={item.href}
-                    className="flex items-start gap-3 rounded-xl border bg-card p-3 shadow-sm transition-colors hover:bg-accent/30"
+                    className={cn(
+                      "flex items-start gap-3 border-b border-border/40 px-4 py-3 transition-colors last:border-b-0",
+                      "hover:bg-muted/40",
+                    )}
                   >
-                    <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted">
-                      <Icon className="size-4" />
+                    <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+                      <Icon className="size-3.5" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{item.title}</p>
-                      <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                        {item.subtitle}
+                      <p className="truncate text-sm font-medium text-foreground">
+                        {item.title}
                       </p>
+                      {item.subtitle ? (
+                        <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                          {item.subtitle}
+                        </p>
+                      ) : null}
                     </div>
                   </Link>
                 </li>

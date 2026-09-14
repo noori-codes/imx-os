@@ -14,7 +14,7 @@ import { parseTaskView } from "@/lib/task-views";
 import { cookies } from "next/headers";
 
 type TasksPageProps = {
-  searchParams: Promise<{ view?: string }>;
+  searchParams: Promise<{ view?: string; compose?: string }>;
 };
 
 export default async function TasksPage({ searchParams }: TasksPageProps) {
@@ -24,6 +24,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
     cookieStore.get("imx-tasks-default-view")?.value,
   );
   const view = parseTaskView(params.view ?? preferred ?? undefined);
+  const compose = params.compose === "1";
   const [tasks, stats, projects, todayFocus] = await Promise.all([
     getTasksForView(view),
     getTaskBoardStats(),
@@ -70,6 +71,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
               counts={stats.counts}
               projects={projects}
               todayFocus={todayFocus}
+              compose={compose}
             />
           </div>
         </TasksStage>

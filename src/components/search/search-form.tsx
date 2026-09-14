@@ -45,19 +45,28 @@ export function SearchForm({
       className={cn("flex items-center gap-2", className)}
     >
       <div className="relative flex-1">
-        <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder={compact ? "Search…" : "Search tasks, notes, goals…"}
-          className="pl-8"
+          placeholder={
+            compact ? "Search…" : "Search tasks, notes, goals, books…"
+          }
+          className={cn(
+            "h-11 border-border/50 bg-background/60 pl-10",
+            compact && "h-9 pl-9",
+          )}
           autoFocus={autoFocus}
           name="q"
           aria-label="Search"
         />
       </div>
       {!compact ? (
-        <Button type="submit" disabled={query.trim().length < 2 || pending}>
+        <Button
+          type="submit"
+          className="h-11 rounded-xl px-5"
+          disabled={query.trim().length < 2 || pending}
+        >
           {pending ? "Searching…" : "Search"}
         </Button>
       ) : (

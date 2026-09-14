@@ -20,8 +20,11 @@ import {
   FolderKanban,
   ListTodo,
   Loader2,
+  Moon,
+  Plus,
   Search,
   Target,
+  Timer,
   type LucideIcon,
 } from "lucide-react";
 
@@ -61,12 +64,57 @@ const ENTITY_ORDER: SearchEntityType[] = [
   "book",
 ];
 
-const SUGGESTIONS = [
-  { label: "Tasks", icon: ListTodo },
-  { label: "Notes", icon: FileText },
-  { label: "Books", icon: BookOpen },
-  { label: "Goals", icon: Target },
-] as const;
+type CommandAction = {
+  id: string;
+  label: string;
+  description: string;
+  href: string;
+  keywords: string[];
+  icon: LucideIcon;
+};
+
+const COMMAND_ACTIONS: CommandAction[] = [
+  {
+    id: "add-task",
+    label: "Add task",
+    description: "Open capture on the tasks board",
+    href: "/tasks?compose=1",
+    keywords: ["add", "task", "new", "create", "todo", "capture"],
+    icon: Plus,
+  },
+  {
+    id: "start-focus",
+    label: "Start focus",
+    description: "Jump to the timer",
+    href: "/focus",
+    keywords: ["focus", "timer", "pomodoro", "start", "session"],
+    icon: Timer,
+  },
+  {
+    id: "review",
+    label: "Daily review",
+    description: "Reflect on the day",
+    href: "/review",
+    keywords: ["review", "reflect", "journal", "daily"],
+    icon: Moon,
+  },
+];
+
+type PaletteItem =
+  | { kind: "action"; action: CommandAction }
+  | { kind: "result"; result: SearchResult };
+
+function matchActions(query: string): CommandAction[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return COMMAND_ACTIONS;
+  return COMMAND_ACTIONS.filter((action) => {
+    if (action.label.toLowerCase().includes(q)) return true;
+    if (action.description.toLowerCase().includes(q)) return true;
+    return action.keywords.some(
+      (keyword) => keyword.includes(q) || q.includes(keyword),
+    );
+  });
+}
 
 export function SearchDialog() {
   const router = useRouter();
@@ -147,26 +195,49 @@ export function SearchDialog() {
     return map;
   }, [orderedResults]);
 
-  const indexById = useMemo(() => {
+  const matchedActions = useMemo(() => matchActions(query), [query]);
+
+  const paletteItems = useMemo((): PaletteItem[] => {
+    return [
+      ...matchedActions.map((action) => ({ kind: "action" as const, action })),
+      ...orderedResults.map((result) => ({ kind: "result" as const, result })),
+    ];
+  }, [matchedActions, orderedResults]);
+
+  const indexByKey = useMemo(() => {
     const map = new Map<string, number>();
-    orderedResults.forEach((item, index) => {
-      map.set(`${item.entity_type}-${item.id}`, index);
+    paletteItems.forEach((item, index) => {
+      const key =
+        item.kind === "action"
+          ? `action-${item.action.id}`
+          : `result-${item.result.entity_type}-${item.result.id}`;
+      map.set(key, index);
     });
     return map;
-  }, [orderedResults]);
+  }, [paletteItems]);
 
   function goTo(href: string) {
     setOpen(false);
     router.push(href);
   }
 
+  function runActive() {
+    const item = paletteItems[activeIndex];
+    if (!item) return;
+    if (item.kind === "action") {
+      goTo(item.action.href);
+      return;
+    }
+    goTo(item.result.href);
+  }
+
   function onKeyDown(event: ReactKeyboardEvent<HTMLInputElement>) {
     if (event.key === "ArrowDown") {
       event.preventDefault();
       setActiveIndex((index) =>
-        orderedResults.length === 0
+        paletteItems.length === 0
           ? 0
-          : Math.min(index + 1, orderedResults.length - 1),
+          : Math.min(index + 1, paletteItems.length - 1),
       );
       return;
     }
@@ -177,17 +248,25 @@ export function SearchDialog() {
       return;
     }
 
-    if (event.key === "Enter" && orderedResults[activeIndex]) {
+    if (event.key === "Enter" && paletteItems[activeIndex]) {
       event.preventDefault();
-      goTo(orderedResults[activeIndex].href);
+      runActive();
     }
   }
 
   const trimmed = query.trim();
-  const showIdle = trimmed.length < 2;
+  const showIdle = trimmed.length === 0;
+  const showActions = matchedActions.length > 0;
   const showEmpty =
-    !pending && trimmed.length >= 2 && orderedResults.length === 0;
+    !pending &&
+    trimmed.length >= 2 &&
+    orderedResults.length === 0 &&
+    matchedActions.length === 0;
   const showResults = orderedResults.length > 0;
+
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [matchedActions.length, orderedResults.length, query]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -221,9 +300,9 @@ export function SearchDialog() {
         }}
       >
         <DialogHeader className="sr-only">
-          <DialogTitle>Search</DialogTitle>
+          <DialogTitle>Command palette</DialogTitle>
           <DialogDescription>
-            Search tasks, notes, books, goals, projects, habits, and events.
+            Run actions or search tasks, notes, books, goals, and more.
           </DialogDescription>
         </DialogHeader>
 
@@ -238,9 +317,9 @@ export function SearchDialog() {
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             onKeyDown={onKeyDown}
-            placeholder="Search across IMX OS…"
+            placeholder="Search or jump to an action…"
             className="h-14 w-full bg-transparent text-[15px] outline-none placeholder:text-muted-foreground/70"
-            aria-label="Search"
+            aria-label="Search or run a command"
             aria-controls={listId}
             aria-autocomplete="list"
             autoComplete="off"
@@ -250,26 +329,71 @@ export function SearchDialog() {
 
         <ScrollArea className="max-h-[min(22rem,52vh)]">
           <div id={listId} className="px-2 py-2" role="listbox">
-            {showIdle ? (
-              <div className="px-2 py-3">
-                <p className="mb-3 px-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                  Search in
-                </p>
-                <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
-                  {SUGGESTIONS.map(({ label, icon: Icon }) => (
-                    <div
-                      key={label}
-                      className="flex items-center gap-2 rounded-lg border border-transparent bg-muted/40 px-2.5 py-2 text-xs text-muted-foreground"
-                    >
-                      <Icon className="size-3.5 shrink-0 opacity-70" />
-                      <span>{label}</span>
-                    </div>
-                  ))}
+            {showActions ? (
+              <div className="mb-1">
+                <div className="flex items-center gap-1.5 px-3 pb-1.5 pt-2">
+                  <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                    Actions
+                  </span>
                 </div>
-                <p className="mt-4 px-2 text-center text-xs text-muted-foreground/80">
-                  Type at least 2 characters
-                </p>
+                <ul className="space-y-0.5">
+                  {matchedActions.map((action) => {
+                    const key = `action-${action.id}`;
+                    const index = indexByKey.get(key) ?? 0;
+                    const active = index === activeIndex;
+                    const Icon = action.icon;
+
+                    return (
+                      <li key={key}>
+                        <button
+                          type="button"
+                          role="option"
+                          aria-selected={active}
+                          className={cn(
+                            "group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
+                            active
+                              ? "bg-accent text-accent-foreground"
+                              : "hover:bg-muted/60",
+                          )}
+                          onMouseEnter={() => setActiveIndex(index)}
+                          onClick={() => goTo(action.href)}
+                        >
+                          <div
+                            className={cn(
+                              "flex size-8 shrink-0 items-center justify-center rounded-md border",
+                              active
+                                ? "border-transparent bg-background/80"
+                                : "border-border/60 bg-muted/50",
+                            )}
+                          >
+                            <Icon className="size-3.5 opacity-80" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium leading-snug">
+                              {action.label}
+                            </p>
+                            <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                              {action.description}
+                            </p>
+                          </div>
+                          <ArrowRight
+                            className={cn(
+                              "size-3.5 shrink-0 text-muted-foreground transition-opacity",
+                              active ? "opacity-70" : "opacity-0",
+                            )}
+                          />
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
               </div>
+            ) : null}
+
+            {showIdle ? (
+              <p className="mt-1 px-3 pb-2 text-center text-xs text-muted-foreground/80">
+                Type to search · ↑↓ to navigate · Enter to run
+              </p>
             ) : null}
 
             {showEmpty ? (
@@ -306,8 +430,8 @@ export function SearchDialog() {
                       </div>
                       <ul className="space-y-0.5">
                         {items.map((item) => {
-                          const key = `${item.entity_type}-${item.id}`;
-                          const index = indexById.get(key) ?? 0;
+                          const key = `result-${item.entity_type}-${item.id}`;
+                          const index = indexByKey.get(key) ?? 0;
                           const active = index === activeIndex;
 
                           return (
@@ -375,7 +499,7 @@ export function SearchDialog() {
               <kbd className="inline-flex items-center rounded border bg-background px-1 py-0.5 font-mono text-[10px]">
                 <CornerDownLeft className="size-2.5" />
               </kbd>
-              open
+              run
             </span>
           </div>
           <span className="inline-flex items-center gap-1">

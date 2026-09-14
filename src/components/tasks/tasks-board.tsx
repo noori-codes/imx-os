@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { ArrowUpRight, Search, Timer } from "lucide-react";
 
 import { TaskForm } from "@/components/tasks/task-form";
@@ -24,6 +25,8 @@ type TasksBoardProps = {
   counts: Record<TaskView, number>;
   projects: TaskProjectOption[];
   todayFocus?: TaskFocusToday;
+  /** From ⌘K “Add task” — focus the capture field once. */
+  compose?: boolean;
 };
 
 function FocusNext({ task }: { task: TaskWithContext }) {
@@ -71,9 +74,24 @@ export function TasksBoard({
   counts,
   projects,
   todayFocus,
+  compose = false,
 }: TasksBoardProps) {
+  const router = useRouter();
+  const pathname = usePathname();
   const [query, setQuery] = useState("");
+  const [focusComposer, setFocusComposer] = useState(compose);
   const optimistic = useTaskOptimistic(tasks);
+
+  useEffect(() => {
+    if (!compose) return;
+    setFocusComposer(true);
+    const params = new URLSearchParams(
+      typeof window !== "undefined" ? window.location.search : "",
+    );
+    params.delete("compose");
+    const next = params.toString();
+    router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false });
+  }, [compose, pathname, router]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -105,7 +123,10 @@ export function TasksBoard({
         </div>
       </div>
 
-      <div className="tasks-composer rounded-2xl border border-border/50 bg-card/80 p-4 sm:p-5">
+      <div
+        id="tasks-composer"
+        className="tasks-composer rounded-2xl border border-border/50 bg-card/80 p-4 sm:p-5"
+      >
         <div className="mb-3">
           <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
             Capture
@@ -114,7 +135,11 @@ export function TasksBoard({
             Add fast. Schedule with chips. Project optional.
           </p>
         </div>
-        <TaskForm projects={projects} variant="quick" />
+        <TaskForm
+          projects={projects}
+          variant="quick"
+          autoFocusTitle={focusComposer}
+        />
       </div>
 
       <TaskList

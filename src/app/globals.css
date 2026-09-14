@@ -3872,3 +3872,75 @@ html[data-focus-session] body {
   }
 }
 
+/* Search page — same stage language as Goals/Tasks */
+.search-stage {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.search-stage-wash {
+  pointer-events: none;
+  position: absolute;
+  top: -1.5rem;
+  left: 50%;
+  z-index: 0;
+  width: min(100%, 42rem);
+  height: 14rem;
+  transform: translateX(-50%);
+  background: radial-gradient(
+    ellipse 70% 80% at 50% 0%,
+    color-mix(in oklab, var(--foreground) 4.5%, transparent) 0%,
+    transparent 72%
+  );
+}
+
+.dark .search-stage-wash {
+  background: radial-gradient(
+    ellipse 70% 80% at 50% 0%,
+    color-mix(in oklab, var(--foreground) 6%, transparent) 0%,
+    transparent 72%
+  );
+}
+
+.search-stage-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.search-reveal {
+  animation: dash-reveal-up 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.search-reveal-delay-1 {
+  animation-delay: 60ms;
+}
+
+.search-reveal-delay-2 {
+  animation-delay: 120ms;
+}
+
+.search-composer {
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--foreground) 4%, transparent);
+}
+
+.search-result-row {
+  animation: dash-reveal-up 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--i, 0) * 28ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .search-stage .search-reveal,
+  .search-stage .search-result-row {
+    animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both !important;
+  }
+}
+
+
