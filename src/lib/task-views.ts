@@ -21,10 +21,19 @@ function sortActive(a: TaskWithContext, b: TaskWithContext) {
 }
 
 export function parseTaskView(value: string | undefined | null): TaskView {
-  if (value === "inbox" || value === "upcoming" || value === "all") {
+  if (
+    value === "inbox" ||
+    value === "week" ||
+    value === "upcoming" ||
+    value === "all"
+  ) {
     return value;
   }
   return "today";
+}
+
+function weekEndDate() {
+  return toDateString(addDays(startOfDay(new Date()), 7));
 }
 
 export function filterTasksForView(
@@ -33,6 +42,8 @@ export function filterTasksForView(
 ): TaskWithContext[] {
   const active = tasks.filter((t) => !t.completed);
   const completed = tasks.filter((t) => t.completed);
+  const today = toDateString(startOfDay(new Date()));
+  const weekEnd = weekEndDate();
 
   switch (view) {
     case "inbox":
@@ -53,15 +64,45 @@ export function filterTasksForView(
           (t) => t.due_date != null && isToday(t.due_date),
         ),
       ];
-    case "upcoming": {
-      const today = toDateString(startOfDay(new Date()));
+    case "week":
+      return active
+        .filter(
+          (t) =>
+            t.due_date != null &&
+            (isOverdue(t.due_date) ||
+              (t.due_date >= today && t.due_date < weekEnd)),
+        )
+        .sort(sortActive);
+    case "upcoming":
       return active
         .filter((t) => t.due_date != null && t.due_date > today)
         .sort(sortActive);
-    }
     case "all":
       return [...active.sort(sortActive), ...completed];
   }
+}
+
+/** Best task to focus next: overdue → due today → soonest dated → newest. */
+export function pickFocusNext(
+  tasks: TaskWithContext[],
+): TaskWithContext | null {
+  const open = tasks.filter((t) => !t.completed);
+  if (open.length === 0) return null;
+
+  const overdue = open
+    .filter((t) => t.due_date && isOverdue(t.due_date))
+    .sort(sortActive);
+  if (overdue[0]) return overdue[0];
+
+  const dueToday = open
+    .filter((t) => t.due_date && isToday(t.due_date))
+    .sort(sortActive);
+  if (dueToday[0]) return dueToday[0];
+
+  const dated = open.filter((t) => t.due_date).sort(sortActive);
+  if (dated[0]) return dated[0];
+
+  return [...open].sort((a, b) => b.created_at.localeCompare(a.created_at))[0]!;
 }
 
 export function groupActiveTasks(
@@ -71,19 +112,27 @@ export function groupActiveTasks(
   const active = tasks.filter((t) => !t.completed);
   const today = toDateString(startOfDay(new Date()));
 
-  if (view === "upcoming") {
+  if (view === "upcoming" || view === "week") {
     const byDate = new Map<string, TaskWithContext[]>();
     for (const task of active) {
       if (!task.due_date) continue;
-      const list = byDate.get(task.due_date) ?? [];
+      const key =
+        view === "week" && isOverdue(task.due_date)
+          ? "overdue"
+          : task.due_date;
+      const list = byDate.get(key) ?? [];
       list.push(task);
-      byDate.set(task.due_date, list);
+      byDate.set(key, list);
     }
     return [...byDate.entries()]
-      .sort(([a], [b]) => a.localeCompare(b))
+      .sort(([a], [b]) => {
+        if (a === "overdue") return -1;
+        if (b === "overdue") return 1;
+        return a.localeCompare(b);
+      })
       .map(([date, list]) => ({
-        id: `upcoming-${date}`,
-        label: formatGroupDate(date),
+        id: date === "overdue" ? "overdue" : `day-${date}`,
+        label: date === "overdue" ? "Overdue" : formatGroupDate(date),
         tasks: list,
       }));
   }
@@ -147,6 +196,7 @@ function formatGroupDate(date: string) {
   const d = new Date(`${date}T00:00:00`);
   const today = startOfDay(new Date());
   const tomorrow = addDays(today, 1);
+  if (toDateString(today) === date) return "Today";
   if (toDateString(tomorrow) === date) return "Tomorrow";
   return d.toLocaleDateString("en-US", {
     weekday: "short",
@@ -169,6 +219,11 @@ export function viewEmptyCopy(view: TaskView): {
       return {
         title: "Clear day",
         description: "Due today — or Everyday for work that returns.",
+      };
+    case "week":
+      return {
+        title: "Quiet week",
+        description: "Nothing due in the next seven days.",
       };
     case "upcoming":
       return {

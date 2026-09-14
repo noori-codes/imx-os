@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Search } from "lucide-react";
 
 import { TaskItem, useTaskOptimistic } from "@/components/tasks/task-item";
 import { Button } from "@/components/ui/button";
@@ -18,35 +18,34 @@ type TaskListProps = {
   view?: TaskView;
   mode?: "smart" | "project";
   todayFocus?: TaskFocusToday;
+  searching?: boolean;
 };
 
-function GhostEmpty({ view }: { view: TaskView }) {
+function GhostEmpty({
+  view,
+  searching,
+}: {
+  view: TaskView;
+  searching?: boolean;
+}) {
+  if (searching) {
+    return (
+      <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/60 px-6 py-14 text-center">
+        <Search className="mb-3 size-7 text-muted-foreground" />
+        <p className="text-base font-medium text-foreground/90">No matches</p>
+        <p className="mt-1.5 text-sm text-muted-foreground">
+          Try another search in this view.
+        </p>
+      </div>
+    );
+  }
+
   const empty = viewEmptyCopy(view);
 
   return (
-    <div>
-      <ul
-        className="pointer-events-none border-t border-border/30"
-        aria-hidden="true"
-      >
-        {[72, 56, 40].map((width, i) => (
-          <li
-            key={i}
-            className="flex items-center gap-3 border-b border-border/20 py-3.5 last:border-b-0"
-            style={{ opacity: 0.42 - i * 0.1 }}
-          >
-            <span className="size-5 shrink-0 rounded-full border border-border/50" />
-            <span
-              className="h-2.5 rounded-full bg-muted"
-              style={{ width: `${width}%` }}
-            />
-          </li>
-        ))}
-      </ul>
-      <div className="mt-6 text-center sm:text-left">
-        <p className="text-base font-medium text-foreground/90">{empty.title}</p>
-        <p className="mt-1.5 text-sm text-muted-foreground">{empty.description}</p>
-      </div>
+    <div className="rounded-2xl border border-dashed border-border/60 px-6 py-14 text-center sm:text-left">
+      <p className="text-base font-medium text-foreground/90">{empty.title}</p>
+      <p className="mt-1.5 text-sm text-muted-foreground">{empty.description}</p>
     </div>
   );
 }
@@ -56,6 +55,7 @@ export function TaskList({
   view = "all",
   mode = "smart",
   todayFocus,
+  searching = false,
 }: TaskListProps) {
   const {
     optimisticTasks,
@@ -68,18 +68,12 @@ export function TaskList({
   const active = optimisticTasks.filter((t) => !t.completed);
   const completed = optimisticTasks.filter((t) => {
     if (!t.completed) return false;
-    // Today view already shows these under "Done today"
     if (view === "today" && t.due_date && isToday(t.due_date)) return false;
     return true;
   });
 
   if (optimisticTasks.length === 0) {
-    if (mode === "project") {
-      return (
-        <GhostEmpty view="all" />
-      );
-    }
-    return <GhostEmpty view={view} />;
+    return <GhostEmpty view={mode === "project" ? "all" : view} searching={searching} />;
   }
 
   const groups =
@@ -90,17 +84,20 @@ export function TaskList({
       : groupActiveTasks(optimisticTasks, view);
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-5">
       {groups.map((group) => (
-        <section key={group.id}>
-          <div className="mb-2 flex items-baseline justify-between gap-3">
+        <section
+          key={group.id}
+          className="tasks-group overflow-hidden rounded-2xl border border-border/50 bg-card/80"
+        >
+          <div className="flex items-baseline justify-between gap-3 border-b border-border/40 px-4 py-3">
             <h2
               className={
                 group.id === "overdue"
-                  ? "text-[10px] font-medium uppercase tracking-[0.18em] text-destructive"
+                  ? "text-[11px] font-medium uppercase tracking-[0.14em] text-destructive"
                   : group.id === "done"
-                    ? "text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground/80"
-                    : "text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground"
+                    ? "text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground/80"
+                    : "text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground"
               }
             >
               {group.label}
@@ -109,7 +106,7 @@ export function TaskList({
               {group.tasks.length}
             </span>
           </div>
-          <ul className="dash-stagger border-t border-border/30">
+          <ul className="tasks-stagger">
             {group.tasks.map((task, index) => (
               <TaskItem
                 key={task.id}
@@ -127,12 +124,12 @@ export function TaskList({
       ))}
 
       {completed.length > 0 ? (
-        <section>
+        <section className="tasks-group overflow-hidden rounded-2xl border border-border/50 bg-card/60">
           <Button
             type="button"
             variant="ghost"
             size="sm"
-            className="-ml-2 h-8 text-[11px] text-muted-foreground"
+            className="h-10 w-full justify-start rounded-none px-4 text-[11px] text-muted-foreground"
             onClick={() => setCompletedOpen((v) => !v)}
             aria-expanded={completedOpen}
           >
@@ -142,7 +139,7 @@ export function TaskList({
             Completed · {completed.length}
           </Button>
           {completedOpen ? (
-            <ul className="mt-1 border-t border-border/30">
+            <ul className="border-t border-border/40">
               {completed.map((task, index) => (
                 <TaskItem
                   key={task.id}

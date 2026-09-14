@@ -15,7 +15,7 @@ import { deleteTask, toggleTaskComplete, updateTask } from "@/actions/tasks";
 import { BrandSelect } from "@/components/ui/brand-select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { isOverdue, isToday } from "@/lib/date-utils";
+import { addDays, isOverdue, isToday, startOfDay, toDateString } from "@/lib/date-utils";
 import { recurrenceLabel } from "@/lib/task-recurrence";
 import { cn } from "@/lib/utils";
 import { formatFocusDuration } from "@/types/focus";
@@ -93,7 +93,7 @@ function buildMeta(
     });
   }
 
-  return parts.slice(0, 2);
+  return parts.slice(0, 3);
 }
 
 export function TaskItem({
@@ -128,6 +128,21 @@ export function TaskItem({
     startTransition(async () => {
       onOptimisticDelete(task.id);
       await deleteTask(task.id);
+    });
+  }
+
+  function scheduleDue(nextDue: string | null) {
+    startTransition(async () => {
+      onOptimisticUpdate(task.id, {
+        title: task.title,
+        due_date: nextDue,
+        recurrence: task.recurrence,
+      });
+      await updateTask(task.id, {
+        title: task.title,
+        due_date: nextDue,
+        recurrence: task.recurrence,
+      });
     });
   }
 
@@ -173,7 +188,7 @@ export function TaskItem({
 
   if (editing) {
     return (
-      <li className="border-b border-border/30 py-3.5">
+      <li className="border-b border-border/40 px-3 py-3.5 last:border-b-0 sm:px-4">
         <div className="flex flex-col gap-3">
           <Input
             value={title}
@@ -234,11 +249,17 @@ export function TaskItem({
     );
   }
 
+  const today = toDateString(startOfDay(new Date()));
+  const tomorrow = toDateString(addDays(startOfDay(new Date()), 1));
+  const dueToday = task.due_date === today;
+  const dueTomorrow = task.due_date === tomorrow;
+
   return (
     <li
       className={cn(
-        "group flex items-center gap-3 border-b border-border/50 py-2.5 last:border-b-0",
+        "group flex items-center gap-3 border-b border-border/40 px-3 py-2.5 last:border-b-0 sm:px-4",
         task.completed && "opacity-55",
+        task.due_date && !task.completed && isOverdue(task.due_date) && "bg-destructive/[0.03]",
       )}
       style={{ ["--i" as string]: index }}
     >
@@ -291,6 +312,47 @@ export function TaskItem({
           </p>
         ) : null}
       </div>
+
+      {!task.completed ? (
+        <div className="hidden shrink-0 items-center gap-1 opacity-0 transition-opacity sm:flex sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+          <button
+            type="button"
+            onClick={() => scheduleDue(today)}
+            className={cn(
+              "rounded-md px-2 py-1 text-[10px] font-medium transition-colors",
+              dueToday
+                ? "bg-foreground text-background"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground",
+            )}
+            aria-label="Due today"
+          >
+            Today
+          </button>
+          <button
+            type="button"
+            onClick={() => scheduleDue(tomorrow)}
+            className={cn(
+              "rounded-md px-2 py-1 text-[10px] font-medium transition-colors",
+              dueTomorrow
+                ? "bg-foreground text-background"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground",
+            )}
+            aria-label="Due tomorrow"
+          >
+            Tmrw
+          </button>
+          {task.due_date ? (
+            <button
+              type="button"
+              onClick={() => scheduleDue(null)}
+              className="rounded-md px-2 py-1 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              aria-label="Clear due date"
+            >
+              Clear
+            </button>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="flex shrink-0 opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
         {!task.completed ? (

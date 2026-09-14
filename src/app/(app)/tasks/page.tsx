@@ -1,11 +1,11 @@
 import { Header } from "@/components/layout/header";
 import { AppPageFrame } from "@/components/shared/app-page-frame";
-import { TaskForm } from "@/components/tasks/task-form";
-import { TaskList } from "@/components/tasks/task-list";
+import { TasksBoard } from "@/components/tasks/tasks-board";
 import { TasksStage } from "@/components/tasks/tasks-stage";
+import { TasksStats } from "@/components/tasks/tasks-stats";
 import { getTodayTaskFocus } from "@/actions/focus";
 import { getAllTasks, getTaskProjectOptions } from "@/actions/tasks";
-import { addDays, isOverdue, startOfDay, toDateString } from "@/lib/date-utils";
+import { isOverdue, isToday } from "@/lib/date-utils";
 import {
   filterTasksForView,
   parseTaskView,
@@ -23,24 +23,6 @@ function countForView(
   return filterTasksForView(tasks, view).filter((t) => !t.completed).length;
 }
 
-function nextUpcomingLabel(
-  tasks: Awaited<ReturnType<typeof getAllTasks>>,
-): string | null {
-  const today = toDateString(startOfDay(new Date()));
-  const next = tasks
-    .filter((t) => !t.completed && t.due_date != null && t.due_date > today)
-    .sort((a, b) => (a.due_date ?? "").localeCompare(b.due_date ?? ""))[0];
-
-  if (!next?.due_date) return null;
-  const tomorrow = toDateString(addDays(startOfDay(new Date()), 1));
-  if (next.due_date === tomorrow) return "Tomorrow";
-  return new Date(`${next.due_date}T00:00:00`).toLocaleDateString(undefined, {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
-}
-
 export default async function TasksPage({ searchParams }: TasksPageProps) {
   const params = await searchParams;
   const view = parseTaskView(params.view);
@@ -50,14 +32,22 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
     getTodayTaskFocus(),
   ]);
   const filtered = filterTasksForView(tasks, view);
-  const openCount = filtered.filter((t) => !t.completed).length;
-  const overdueCount = filtered.filter(
-    (t) => !t.completed && t.due_date && isOverdue(t.due_date),
+
+  const openAll = tasks.filter((t) => !t.completed);
+  const overdueCount = openAll.filter(
+    (t) => t.due_date && isOverdue(t.due_date),
   ).length;
+  const doneToday = tasks.filter(
+    (t) => t.completed && t.due_date && isToday(t.due_date),
+  ).length;
+  const focusMinutes = Math.round(
+    Object.values(todayFocus).reduce((sum, seconds) => sum + seconds, 0) / 60,
+  );
 
   const counts = {
     inbox: countForView(tasks, "inbox"),
     today: countForView(tasks, "today"),
+    week: countForView(tasks, "week"),
     upcoming: countForView(tasks, "upcoming"),
     all: countForView(tasks, "all"),
   } satisfies Record<TaskView, number>;
@@ -65,25 +55,41 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
   return (
     <>
       <Header title="Tasks" />
-      <AppPageFrame className="max-w-5xl gap-10 md:py-8">
-        <TasksStage
-          view={view}
-          openCount={openCount}
-          overdueCount={overdueCount}
-          counts={counts}
-          nextDueLabel={view === "upcoming" ? nextUpcomingLabel(tasks) : null}
-        />
+      <AppPageFrame className="max-w-5xl gap-8 md:py-8">
+        <TasksStage>
+          <div className="tasks-reveal">
+            <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">Command deck</p>
+                <h2 className="mt-1 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+                  Tasks
+                </h2>
+                <p className="mt-1.5 max-w-lg text-sm text-muted-foreground">
+                  Capture, schedule, and start focus without leaving the list.
+                </p>
+              </div>
+            </header>
+          </div>
 
-        <TaskForm projects={projects} variant="quick" />
+          <div className="tasks-reveal tasks-reveal-delay-1">
+            <TasksStats
+              openCount={openAll.length}
+              overdueCount={overdueCount}
+              doneToday={doneToday}
+              focusMinutes={focusMinutes}
+            />
+          </div>
 
-        <div className="border-t border-border/30 pt-8">
-          <TaskList
-            tasks={filtered}
-            view={view}
-            mode="smart"
-            todayFocus={todayFocus}
-          />
-        </div>
+          <div className="tasks-reveal tasks-reveal-delay-2">
+            <TasksBoard
+              tasks={filtered}
+              view={view}
+              counts={counts}
+              projects={projects}
+              todayFocus={todayFocus}
+            />
+          </div>
+        </TasksStage>
       </AppPageFrame>
     </>
   );

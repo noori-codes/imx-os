@@ -17,10 +17,11 @@ export type TaskWithContext = Task & {
   context_href: string | null;
 };
 
-export type TaskView = "inbox" | "today" | "upcoming" | "all";
+export type TaskView = "inbox" | "today" | "week" | "upcoming" | "all";
 
 export const TASK_VIEWS: { id: TaskView; label: string }[] = [
   { id: "today", label: "Today" },
+  { id: "week", label: "Week" },
   { id: "inbox", label: "Inbox" },
   { id: "upcoming", label: "Upcoming" },
   { id: "all", label: "All" },

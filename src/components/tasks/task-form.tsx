@@ -206,9 +206,8 @@ export function TaskForm({
       ref={formRef}
       action={formAction}
       className={cn(
-        "rounded-2xl border border-border/40 bg-muted/20 p-4 transition-[border-color,background-color,box-shadow] duration-300 sm:p-5",
-        focused &&
-          "border-border/70 bg-muted/35 shadow-[0_12px_40px_oklch(0_0_0/0.08)] dark:shadow-[0_12px_40px_oklch(0_0_0/0.35)]",
+        "transition-[border-color,background-color,box-shadow] duration-300",
+        focused && "tasks-capture-focused",
       )}
       onFocusCapture={() => setFocused(true)}
       onBlurCapture={(e) => {
@@ -247,7 +246,7 @@ export function TaskForm({
             placeholder="What needs doing?"
             required
             autoComplete="off"
-            className="h-12 border-0 bg-transparent pl-10 text-base shadow-none focus-visible:ring-0"
+            className="h-11 border-0 bg-muted/50 pl-10 text-base shadow-none focus-visible:ring-1"
             aria-label="New task"
           />
         </div>
@@ -261,7 +260,7 @@ export function TaskForm({
       </div>
 
       {showChips ? (
-        <div className="mt-4 flex flex-wrap items-center gap-1.5 border-t border-border/30 pt-4">
+        <div className="mt-3 flex flex-wrap items-center gap-1.5">
           {CHIPS.map((item) => {
             const active = chip === item.id;
             return (
@@ -270,10 +269,10 @@ export function TaskForm({
                 type="button"
                 onClick={() => setChip(active ? "none" : item.id)}
                 className={cn(
-                  "rounded-full px-3 py-1.5 text-[11px] tracking-wide transition-colors",
+                  "rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors",
                   active
-                    ? "bg-foreground font-medium text-background"
-                    : "text-muted-foreground hover:bg-background/60 hover:text-foreground",
+                    ? "bg-foreground text-background"
+                    : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground",
                 )}
               >
                 {item.label}
@@ -285,7 +284,7 @@ export function TaskForm({
               type="button"
               onClick={() => setMoreOpen((v) => !v)}
               className={cn(
-                "ml-auto inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-[11px] text-muted-foreground transition-colors hover:text-foreground",
+                "ml-auto inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground",
                 moreOpen && "text-foreground",
               )}
               aria-expanded={moreOpen}
