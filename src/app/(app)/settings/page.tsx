@@ -1,4 +1,4 @@
-import { getDailyFocusGoal } from "@/actions/focus";
+import { getUserSettings } from "@/actions/settings";
 import { Header } from "@/components/layout/header";
 import { SettingsHub } from "@/components/settings/settings-hub";
 import { SettingsStage } from "@/components/settings/settings-stage";
@@ -15,7 +15,7 @@ export default async function SettingsPage() {
     return null;
   }
 
-  const dailyGoal = await getDailyFocusGoal();
+  const settings = await getUserSettings();
 
   const created = user.created_at ? new Date(user.created_at) : null;
   const memberSince = created
@@ -45,7 +45,8 @@ export default async function SettingsPage() {
                   Settings
                 </h2>
                 <p className="mt-1.5 max-w-lg text-sm text-muted-foreground">
-                  Appearance, focus defaults, alerts, and account — tuned for how you work.
+                  Appearance, focus defaults, alerts, and account — tuned for how
+                  you work.
                 </p>
               </div>
             </header>
@@ -56,8 +57,7 @@ export default async function SettingsPage() {
               email={user.email ?? "Signed in"}
               memberSince={memberSince}
               memberShort={memberShort}
-              dailyGoalMinutes={dailyGoal.minutes}
-              dailyGoalSaved={dailyGoal.saved}
+              settings={settings}
             />
           </div>
         </SettingsStage>

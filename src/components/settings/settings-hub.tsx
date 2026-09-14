@@ -1,23 +1,27 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useTheme } from "next-themes";
 import {
   Bell,
   BellOff,
+  Download,
   Keyboard,
   Moon,
   Monitor,
   Sun,
+  Upload,
   Volume2,
 } from "lucide-react";
 
-import { updateDailyFocusGoal } from "@/actions/focus";
+import { exportUserData, importUserData } from "@/actions/data-transfer";
+import { updateUserSettings } from "@/actions/settings";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { FocusSounds } from "@/components/focus/focus-sounds";
 import { SettingsStats } from "@/components/settings/settings-stats";
 import { Button } from "@/components/ui/button";
+import { confirm } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import {
   playFocusChime,
@@ -36,6 +40,11 @@ import {
   writeFocusClockPref,
   writeFocusProfilePref,
 } from "@/lib/app-preferences";
+import {
+  downloadJson,
+  exportFilename,
+  readJsonFile,
+} from "@/lib/data-transfer";
 import { cn } from "@/lib/utils";
 import { useFocusTimer } from "@/stores/focus-timer";
 import {
@@ -47,14 +56,14 @@ import {
   type FocusClock,
   type FocusProfileId,
 } from "@/types/focus";
+import type { AppThemePref, UserSettings } from "@/types/settings";
 import { TASK_VIEWS, type TaskView } from "@/types/task";
 
 type SettingsHubProps = {
   email: string;
   memberSince: string;
   memberShort: string;
-  dailyGoalMinutes: number;
-  dailyGoalSaved: boolean;
+  settings: UserSettings;
 };
 
 function Section({
@@ -167,43 +176,82 @@ export function SettingsHub({
   email,
   memberSince,
   memberShort,
-  dailyGoalMinutes,
-  dailyGoalSaved,
+  settings,
 }: SettingsHubProps) {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [, startTransition] = useTransition();
   const setAutoStartNext = useFocusTimer((s) => s.setAutoStartNext);
   const setClock = useFocusTimer((s) => s.setClock);
   const applyProfile = useFocusTimer((s) => s.applyProfile);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const [mounted, setMounted] = useState(false);
-  const [goal, setGoal] = useState(dailyGoalMinutes);
-  const [goalCustom, setGoalCustom] = useState(String(dailyGoalMinutes));
+  const [goal, setGoal] = useState(settings.daily_focus_goal_minutes);
+  const [goalCustom, setGoalCustom] = useState(
+    String(settings.daily_focus_goal_minutes),
+  );
   const [goalError, setGoalError] = useState<string | null>(null);
-  const [autoStart, setAutoStart] = useState(false);
-  const [clock, setClockLocal] = useState<FocusClock>("down");
-  const [profile, setProfile] = useState<FocusProfileId>("classic");
-  const [chime, setChime] = useState(true);
-  const [celebrate, setCelebrate] = useState(true);
-  const [defaultView, setDefaultView] = useState<TaskView>("today");
+  const [prefError, setPrefError] = useState<string | null>(null);
+  const [transferMsg, setTransferMsg] = useState<string | null>(null);
+  const [transferError, setTransferError] = useState<string | null>(null);
+  const [transferPending, setTransferPending] = useState(false);
+  const [autoStart, setAutoStart] = useState(settings.auto_start_next);
+  const [clock, setClockLocal] = useState<FocusClock>(settings.focus_clock);
+  const [profile, setProfile] = useState<FocusProfileId>(settings.focus_profile);
+  const [chime, setChime] = useState(settings.chime_enabled);
+  const [celebrate, setCelebrate] = useState(settings.celebrate_enabled);
+  const [defaultView, setDefaultView] = useState<TaskView>(
+    settings.default_task_view,
+  );
   const [notify, setNotify] = useState<"unsupported" | NotificationPermission>(
     "default",
   );
 
   useEffect(() => {
     setMounted(true);
-    setAutoStart(readBoolPref(PREF_AUTO_START, false));
-    setClockLocal(readFocusClockPref());
-    setProfile(readFocusProfilePref());
-    setChime(readBoolPref(PREF_CHIME, true));
-    setCelebrate(readBoolPref(PREF_CELEBRATE, true));
-    setDefaultView(readDefaultTaskView());
+
+    if (settings.saved) {
+      setAutoStart(settings.auto_start_next);
+      setClockLocal(settings.focus_clock);
+      setProfile(settings.focus_profile);
+      setChime(settings.chime_enabled);
+      setCelebrate(settings.celebrate_enabled);
+      setDefaultView(settings.default_task_view);
+      writeBoolPref(PREF_AUTO_START, settings.auto_start_next);
+      writeFocusClockPref(settings.focus_clock);
+      writeFocusProfilePref(settings.focus_profile);
+      writeBoolPref(PREF_CHIME, settings.chime_enabled);
+      writeBoolPref(PREF_CELEBRATE, settings.celebrate_enabled);
+      writeDefaultTaskView(settings.default_task_view);
+      setTheme(settings.theme);
+      setAutoStartNext(settings.auto_start_next);
+      setClock(settings.focus_clock);
+      applyProfile(settings.focus_profile);
+    } else {
+      setAutoStart(readBoolPref(PREF_AUTO_START, false));
+      setClockLocal(readFocusClockPref());
+      setProfile(readFocusProfilePref());
+      setChime(readBoolPref(PREF_CHIME, true));
+      setCelebrate(readBoolPref(PREF_CELEBRATE, true));
+      setDefaultView(readDefaultTaskView());
+    }
+
     if (typeof Notification === "undefined") {
       setNotify("unsupported");
     } else {
       setNotify(Notification.permission);
     }
+    // Hydrate once from server props / local cache.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  function persist(patch: Parameters<typeof updateUserSettings>[0]) {
+    setPrefError(null);
+    startTransition(async () => {
+      const result = await updateUserSettings(patch);
+      if (result.error) setPrefError(result.error);
+    });
+  }
 
   function saveGoal(minutes: number) {
     const next = clampDailyFocusGoal(minutes);
@@ -212,7 +260,9 @@ export function SettingsHub({
     setGoalError(null);
     window.localStorage.setItem(FOCUS_DAILY_GOAL_KEY, String(next));
     startTransition(async () => {
-      const result = await updateDailyFocusGoal(next);
+      const result = await updateUserSettings({
+        daily_focus_goal_minutes: next,
+      });
       if (result.error) setGoalError(result.error);
     });
   }
@@ -221,6 +271,56 @@ export function SettingsHub({
     await requestFocusNotifyPermission();
     if (typeof Notification !== "undefined") {
       setNotify(Notification.permission);
+    }
+  }
+
+  async function handleExport() {
+    setTransferError(null);
+    setTransferMsg(null);
+    setTransferPending(true);
+    try {
+      const result = await exportUserData();
+      if (!result.ok) {
+        setTransferError(result.error);
+        return;
+      }
+      downloadJson(exportFilename(), result.payload);
+      setTransferMsg("Export downloaded.");
+    } finally {
+      setTransferPending(false);
+    }
+  }
+
+  async function handleImportFile(file: File | null) {
+    if (!file) return;
+    setTransferError(null);
+    setTransferMsg(null);
+
+    const ok = await confirm({
+      title: "Import this backup?",
+      description:
+        "Matching items merge by id into your account. This cannot be undone easily.",
+      confirmLabel: "Import",
+      destructive: true,
+    });
+    if (!ok) return;
+
+    setTransferPending(true);
+    try {
+      const payload = await readJsonFile(file);
+      const result = await importUserData(payload);
+      if (!result.ok) {
+        setTransferError(result.error);
+        return;
+      }
+      setTransferMsg(`Imported ${result.imported} records.`);
+    } catch (error) {
+      setTransferError(
+        error instanceof Error ? error.message : "Import failed.",
+      );
+    } finally {
+      setTransferPending(false);
+      if (fileRef.current) fileRef.current.value = "";
     }
   }
 
@@ -252,7 +352,7 @@ export function SettingsHub({
 
       <Section
         title="Appearance"
-        description="How imx-os looks on this device."
+        description="How imx-os looks — synced to your account."
       >
         <div className="grid gap-2 sm:grid-cols-3">
           {(
@@ -268,7 +368,10 @@ export function SettingsHub({
               <button
                 key={option.id}
                 type="button"
-                onClick={() => setTheme(option.id)}
+                onClick={() => {
+                  setTheme(option.id);
+                  persist({ theme: option.id satisfies AppThemePref });
+                }}
                 className={cn(
                   "flex items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors",
                   active
@@ -305,7 +408,7 @@ export function SettingsHub({
                 Daily focus goal
               </p>
               <p className="text-xs text-muted-foreground">
-                {dailyGoalSaved || goal ? "Synced" : "Default"}
+                {settings.saved || goal ? "Synced" : "Default"}
               </p>
             </div>
             <div className="flex flex-wrap gap-1.5">
@@ -370,6 +473,7 @@ export function SettingsHub({
               setProfile(next);
               writeFocusProfilePref(next);
               applyProfile(next);
+              persist({ focus_profile: next });
             }}
           />
 
@@ -384,6 +488,7 @@ export function SettingsHub({
               setClockLocal(next);
               writeFocusClockPref(next);
               setClock(next);
+              persist({ focus_clock: next });
             }}
           />
 
@@ -395,6 +500,7 @@ export function SettingsHub({
               setAutoStart(next);
               writeBoolPref(PREF_AUTO_START, next);
               setAutoStartNext(next);
+              persist({ auto_start_next: next });
             }}
           />
 
@@ -405,6 +511,7 @@ export function SettingsHub({
             onChange={(next) => {
               setChime(next);
               writeBoolPref(PREF_CHIME, next);
+              persist({ chime_enabled: next });
             }}
           />
 
@@ -415,6 +522,7 @@ export function SettingsHub({
             onChange={(next) => {
               setCelebrate(next);
               writeBoolPref(PREF_CELEBRATE, next);
+              persist({ celebrate_enabled: next });
             }}
           />
 
@@ -422,7 +530,7 @@ export function SettingsHub({
             <div className="flex items-baseline justify-between gap-3">
               <p className="text-sm font-medium text-foreground">Atmosphere</p>
               <p className="text-xs text-muted-foreground">
-                Ambient while focusing
+                Ambient while focusing · this device
               </p>
             </div>
             <FocusSounds embedded />
@@ -446,7 +554,7 @@ export function SettingsHub({
 
       <Section
         title="Notifications"
-        description="Browser alerts when a focus phase finishes (tab can be in the background)."
+        description="Browser alerts when a focus phase finishes (this device only)."
       >
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
@@ -501,6 +609,7 @@ export function SettingsHub({
           onChange={(next) => {
             setDefaultView(next);
             writeDefaultTaskView(next);
+            persist({ default_task_view: next });
           }}
         />
       </Section>
@@ -511,9 +620,13 @@ export function SettingsHub({
       >
         <ul className="space-y-2.5">
           {[
-            { keys: "N", action: "Focus the new item field (tasks, habits, goals…)" },
+            {
+              keys: "N",
+              action: "Focus the new item field (tasks, habits, goals…)",
+            },
             { keys: "Enter", action: "Save an inline edit" },
             { keys: "Esc", action: "Cancel an inline edit" },
+            { keys: "⌘K", action: "Open search and command palette" },
           ].map((row) => (
             <li
               key={row.keys}
@@ -531,7 +644,10 @@ export function SettingsHub({
         </ul>
       </Section>
 
-      <Section title="Account" description="Signed-in identity on this device.">
+      <Section
+        title="Account"
+        description="Identity, backup, and session on this device."
+      >
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
@@ -546,14 +662,65 @@ export function SettingsHub({
             <p className="mt-1.5 text-sm text-foreground">{memberSince}</p>
           </div>
         </div>
+
+        <div className="mt-5 space-y-3 border-t border-border/40 pt-4">
+          <p className="text-sm font-medium text-foreground">Data backup</p>
+          <p className="text-xs text-muted-foreground">
+            Download a JSON snapshot of your goals, tasks, habits, notes, focus
+            history, and more — or merge a backup back in.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={transferPending}
+              onClick={() => void handleExport()}
+            >
+              <Download className="size-3.5" />
+              Export JSON
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={transferPending}
+              onClick={() => fileRef.current?.click()}
+            >
+              <Upload className="size-3.5" />
+              Import JSON
+            </Button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              onChange={(event) => {
+                void handleImportFile(event.target.files?.[0] ?? null);
+              }}
+            />
+          </div>
+          {transferMsg ? (
+            <p className="text-sm text-muted-foreground">{transferMsg}</p>
+          ) : null}
+          {transferError ? (
+            <p className="text-sm text-destructive">{transferError}</p>
+          ) : null}
+        </div>
+
         <div className="mt-5 flex items-center justify-between gap-3 border-t border-border/40 pt-4">
           <p className="text-sm text-muted-foreground">End this device session</p>
           <SignOutButton variant="outline" />
         </div>
       </Section>
 
+      {prefError ? (
+        <p className="text-center text-sm text-destructive">{prefError}</p>
+      ) : null}
+
       <p className="text-center text-[11px] text-muted-foreground">
-        imx-os · preferences sync to this browser; focus goal syncs to your account
+        imx-os · theme, focus defaults, and task view sync to your account ·
+        volume and browser alerts stay on this device
       </p>
     </div>
   );

@@ -2,13 +2,15 @@
 
 import { useEffect, useRef, useState, useTransition, type ReactNode } from "react";
 import Image from "next/image";
-import { Sparkles, X } from "lucide-react";
+import Link from "next/link";
+import { ArrowUpRight, Sparkles, X } from "lucide-react";
 
 import { askCoachQuestion, type CoachReply } from "@/actions/ai";
 import {
   AI_COACH_PROMPTS,
   type AiCoachPromptId,
 } from "@/lib/ai/coach-prompts";
+import { coachActionLabel } from "@/lib/ai/coach-actions";
 import { cn } from "@/lib/utils";
 import { useFocusTimer } from "@/stores/focus-timer";
 
@@ -63,6 +65,37 @@ function AssistantBubble({ children }: { children: ReactNode }) {
         {children}
       </div>
     </div>
+  );
+}
+
+function SuggestionList({
+  suggestions,
+  onNavigate,
+}: {
+  suggestions: CoachReply["suggestions"];
+  onNavigate: () => void;
+}) {
+  return (
+    <ul className="mt-3 space-y-2">
+      {suggestions.map((item) => (
+        <li
+          key={`${item.text}-${item.href ?? "none"}`}
+          className="rounded-xl border border-border/40 bg-background/50 px-3 py-2.5"
+        >
+          <p className="text-sm leading-snug text-foreground/90">{item.text}</p>
+          {item.href ? (
+            <Link
+              href={item.href}
+              onClick={onNavigate}
+              className="mt-2 inline-flex items-center gap-1 rounded-full bg-foreground px-2.5 py-1 text-[11px] font-medium text-background transition-opacity hover:opacity-90"
+            >
+              {coachActionLabel(item.href)}
+              <ArrowUpRight className="size-3 opacity-80" />
+            </Link>
+          ) : null}
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -212,14 +245,10 @@ export function ImxChat() {
                   <AssistantBubble key={message.id}>
                     <p>{message.reply.summary}</p>
                     {message.reply.suggestions.length > 0 ? (
-                      <ul className="mt-2.5 space-y-2 text-muted-foreground">
-                        {message.reply.suggestions.map((item) => (
-                          <li key={item} className="flex gap-2.5">
-                            <span className="mt-2 size-1 shrink-0 rounded-full bg-foreground/55" />
-                            <span>{item}</span>
-                          </li>
-                        ))}
-                      </ul>
+                      <SuggestionList
+                        suggestions={message.reply.suggestions}
+                        onNavigate={() => setOpen(false)}
+                      />
                     ) : null}
                   </AssistantBubble>
                 );

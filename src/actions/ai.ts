@@ -9,6 +9,12 @@ import {
   AI_COACH_PROMPTS,
   type AiCoachPromptId,
 } from "@/lib/ai/coach-prompts";
+import {
+  COACH_ACTION_HREFS,
+  DEFAULT_COACH_SUGGESTION_TEXTS,
+  normalizeCoachSuggestions,
+  type CoachSuggestion,
+} from "@/lib/ai/coach-actions";
 import { groqChatCompletion } from "@/lib/ai/groq";
 import { createClient } from "@/lib/supabase/server";
 
@@ -17,7 +23,7 @@ const COOLDOWN_MS = 8_000;
 
 export type CoachReply = {
   summary: string;
-  suggestions: string[];
+  suggestions: CoachSuggestion[];
 };
 
 export type CoachAskResult =
@@ -41,15 +47,19 @@ export type CoachAskResult =
       retryAfterMs?: number;
     };
 
+const ALLOWED_HREFS = COACH_ACTION_HREFS.join(", ");
+
 const SYSTEM_PROMPT = `You are IMX, a concise personal productivity coach.
 You receive a plain-language activity briefing and a question.
 Respond with ONLY a single JSON object (no markdown, no code fences, no extra keys):
-{"summary":"<2-4 full sentences of prose>","suggestions":["<tip>","<tip>","<tip>"]}
+{"summary":"<2-4 full sentences of prose>","suggestions":[{"text":"<tip>","href":"<path or null>"},{"text":"<tip>","href":"<path or null>"},{"text":"<tip>","href":"<path or null>"}]}
 
 Hard rules:
 - "summary" MUST be a string of normal English sentences. Never put numbers-only objects, nested JSON, or the briefing text inside summary.
 - Do NOT repeat or paste the briefing. Interpret it.
-- Exactly 3 short actionable suggestions as strings.
+- Exactly 3 suggestions. Each has "text" (short actionable tip) and "href".
+- "href" must be one of: ${ALLOWED_HREFS} — or null when no clear destination.
+- Prefer real destinations (tasks/focus/habits/review) over null when the tip implies one.
 - No emojis. No medical advice.`;
 
 function resolvePrompt(id: string) {
@@ -89,25 +99,12 @@ function parseReply(raw: string): CoachReply | null {
     if (!summary || looksLikeRawDataDump(summary)) return null;
     if (summary.length < 24) return null;
 
-    const suggestions = Array.isArray(parsed.suggestions)
-      ? parsed.suggestions
-          .filter((item): item is string => typeof item === "string")
-          .map((item) => item.trim())
-          .filter(Boolean)
-          .slice(0, 3)
-      : [];
+    const suggestions = normalizeCoachSuggestions(
+      parsed.suggestions,
+      [...DEFAULT_COACH_SUGGESTION_TEXTS],
+    );
 
-    return {
-      summary,
-      suggestions:
-        suggestions.length > 0
-          ? suggestions
-          : [
-              "Protect one short focus block tomorrow.",
-              "Clear one overdue task.",
-              "Log tonight’s daily review.",
-            ],
-    };
+    return { summary, suggestions };
   } catch {
     return null;
   }
@@ -118,11 +115,11 @@ function fallbackReply(raw: string): CoachReply {
     return {
       summary:
         "I couldn’t shape that into a clear answer. Try the same question once more.",
-      suggestions: [
+      suggestions: normalizeCoachSuggestions(null, [
         "Ask “How was my week?” again.",
         "Or try “What should I focus on next?”",
         "Surprise me can also work after a moment.",
-      ],
+      ]),
     };
   }
 
@@ -134,13 +131,10 @@ function fallbackReply(raw: string): CoachReply {
 
   return {
     summary: lines[0] ?? "Here’s a quick take based on your recent activity.",
-    suggestions: lines.slice(1, 4).length
-      ? lines.slice(1, 4)
-      : [
-          "Protect one short focus block tomorrow.",
-          "Clear one overdue task.",
-          "Log tonight’s daily review.",
-        ],
+    suggestions: normalizeCoachSuggestions(
+      lines.slice(1, 4),
+      [...DEFAULT_COACH_SUGGESTION_TEXTS],
+    ),
   };
 }
 
@@ -222,7 +216,7 @@ export async function askCoachQuestion(
         {
           role: "system",
           content:
-            'Convert the assistant draft into JSON only: {"summary":"prose sentences","suggestions":["tip","tip","tip"]}. summary must be English sentences, never JSON/data.',
+            'Convert the assistant draft into JSON only: {"summary":"prose sentences","suggestions":[{"text":"tip","href":"/focus"},{"text":"tip","href":null},{"text":"tip","href":"/review"}]}. summary must be English sentences, never JSON/data. href must be an allowed app path or null.',
         },
         {
           role: "user",
