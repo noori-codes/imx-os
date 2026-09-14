@@ -769,8 +769,8 @@ export function FocusTimer({
       className={cn(
         "focus-stage group relative flex w-full flex-col overflow-hidden",
         isRunning
-          ? "h-full min-h-0 flex-1 items-center justify-center px-5 py-5 sm:px-8 sm:py-6"
-          : "px-1 py-4 sm:px-2 sm:py-6",
+          ? "h-full min-h-0 flex-1 items-center justify-center px-5 py-6 sm:px-8 sm:py-8"
+          : "px-0 py-0",
       )}
       id="focus-timer"
       style={
@@ -781,221 +781,196 @@ export function FocusTimer({
           : undefined
       }
     >
-      <div className="focus-stage-sky" aria-hidden />
-      <div className="focus-stage-aurora" aria-hidden />
-      <div className="focus-stage-floor" aria-hidden />
-      <div className="focus-stage-motes" aria-hidden>
-        <span />
-        <span />
-        <span />
-        <span />
-        <span />
-        <span />
-        <span />
-        <span />
-      </div>
+      {/* Idle wash lives on .focus-studio; run room uses ink layers only */}
+      <div className="focus-run-rail" aria-hidden />
+      <div className="focus-run-mist" aria-hidden />
+      <div className="focus-run-vignette" aria-hidden />
       <div className="focus-stage-grain" aria-hidden />
-      <div className="focus-stage-vignette" aria-hidden />
       <div className="focus-stage-glow-soft" aria-hidden />
       <div className="focus-stage-glow" aria-hidden />
 
       {isRunning ? (
-        <div className="focus-run relative z-1 mx-auto grid w-full max-w-5xl grid-cols-1 items-center gap-8 px-1 lg:grid-cols-[1.15fr_0.85fr] lg:gap-10 xl:gap-14">
-          <div className="flex min-w-0 flex-col items-center justify-center text-center">
-            <div className="flex items-center gap-2.5">
-              <span className="focus-live-dot" aria-hidden />
-              <p className="text-[10px] font-medium uppercase tracking-[0.32em] text-muted-foreground">
-                {runningLabel}
-              </p>
-            </div>
-
-            <div className="focus-clock-jewel relative mt-5 flex size-[min(62vw,16.5rem)] items-center justify-center sm:mt-6 sm:size-[19rem] lg:mt-8 lg:size-[22rem]">
-              <div className="focus-clock-spin" aria-hidden />
-              <FocusClockFace
-                isRunning={isRunning}
-                isStopwatch={isStopwatch}
-                canContinue={canContinue}
-                mode={mode}
-                durationSeconds={durationSeconds}
-                subject={subject}
-                sessionLine={sessionLine}
-                pickupHint={pickupHint}
-                endedHint={endedHint}
-                runningHint={runningHint}
-                upcomingLabel={FOCUS_PRESETS[upcoming].label}
-                ringRadius={ringRadius}
-                ringCircumference={ringCircumference}
-                compactHints
-              />
-            </div>
+        <div className="focus-run relative z-1 mx-auto flex w-full max-w-lg flex-col items-center justify-center gap-8 text-center sm:gap-10">
+          <div className="flex items-center gap-2.5">
+            <span className="focus-live-dot" aria-hidden />
+            <p className="text-[10px] font-medium uppercase tracking-[0.32em] text-muted-foreground">
+              {runningLabel}
+            </p>
           </div>
 
-          <div className="flex min-w-0 flex-col items-center justify-center gap-6 text-center lg:gap-7">
-            {runningDetail ? (
-              <p className="max-w-[20rem] truncate text-[13px] tracking-[0.04em] text-foreground/70 sm:max-w-[24rem]">
-                {runningDetail}
-              </p>
-            ) : (
-              <p className="text-[13px] tracking-[0.04em] text-muted-foreground">
-                In session
-              </p>
-            )}
+          <div className="focus-clock-jewel relative flex size-[min(68vw,17rem)] items-center justify-center sm:size-[19rem] lg:size-[21rem]">
+            <FocusClockFace
+              isRunning={isRunning}
+              isStopwatch={isStopwatch}
+              canContinue={canContinue}
+              mode={mode}
+              durationSeconds={durationSeconds}
+              subject={subject}
+              sessionLine={sessionLine}
+              pickupHint={pickupHint}
+              endedHint={endedHint}
+              runningHint={runningHint}
+              upcomingLabel={FOCUS_PRESETS[upcoming].label}
+              ringRadius={ringRadius}
+              ringCircumference={ringCircumference}
+              compactHints
+            />
+          </div>
 
+          {runningDetail ? (
+            <p className="max-w-[22rem] truncate text-[13px] tracking-[0.04em] text-foreground/75">
+              {runningDetail}
+            </p>
+          ) : (
+            <p className="text-[13px] tracking-[0.04em] text-muted-foreground">
+              In session
+            </p>
+          )}
+
+          {!isStopwatch ? (
+            <div
+              className="flex items-center justify-center gap-2.5"
+              aria-label={`${dots} of ${FOCUS_POMODOROS_PER_LONG_BREAK} toward a long break`}
+            >
+              {Array.from({ length: FOCUS_POMODOROS_PER_LONG_BREAK }).map(
+                (_, i) => (
+                  <span
+                    key={i}
+                    className={cn(
+                      "size-1.5 rounded-full transition-colors",
+                      i < dots
+                        ? "bg-(--focus-accent)"
+                        : "bg-muted-foreground/25",
+                    )}
+                  />
+                ),
+              )}
+            </div>
+          ) : null}
+
+          <div className="focus-run-controls flex items-center justify-center gap-4 sm:gap-5">
+            <button
+              type="button"
+              onClick={handleReset}
+              className="flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
+              aria-label={
+                canSealStopwatch ? "Discard session" : "Reset timer"
+              }
+            >
+              <RotateCcw className="size-4" />
+            </button>
+            <button
+              type="button"
+              onClick={handleToggle}
+              className="focus-run-pause flex size-[4.5rem] items-center justify-center rounded-full text-background transition-transform hover:scale-[1.03] active:scale-95"
+              aria-label="Pause timer"
+            >
+              <Pause className="size-6 fill-current" />
+            </button>
             {!isStopwatch ? (
-              <div
-                className="flex items-center justify-center gap-2.5"
-                aria-label={`${dots} of ${FOCUS_POMODOROS_PER_LONG_BREAK} toward a long break`}
+              <button
+                type="button"
+                onClick={handleSkip}
+                className="flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
+                aria-label="Skip to next phase"
               >
-                {Array.from({ length: FOCUS_POMODOROS_PER_LONG_BREAK }).map(
-                  (_, i) => (
+                <SkipForward className="size-4" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleSealStopwatch}
+                disabled={!canSealStopwatch}
+                className={cn(
+                  "flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground",
+                  !canSealStopwatch && "pointer-events-none opacity-30",
+                )}
+                aria-label="Seal session"
+              >
+                <CircleCheck className="size-4" />
+              </button>
+            )}
+          </div>
+
+          <div className="focus-run-dock flex w-full max-w-sm flex-col items-center gap-3 opacity-70 transition-opacity hover:opacity-100 focus-within:opacity-100">
+            <FocusSounds compact />
+            <FocusSettings
+              dailyGoalMinutes={dailyGoalMinutes}
+              onClockChange={handleClockChange}
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="focus-launch relative z-1 w-full overflow-hidden rounded-2xl border border-border/50 bg-card/80">
+          <div className="focus-launch-glow" aria-hidden />
+          <div className="relative grid gap-8 p-5 sm:p-7 lg:grid-cols-[0.95fr_1.05fr] lg:items-center lg:gap-10 lg:p-8">
+            <div className="flex flex-col items-center gap-4 lg:items-start">
+              <div className="text-center lg:text-left">
+                <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                  {canContinue ? "Paused thread" : "Launch"}
+                </p>
+                <p className="mt-1.5 text-sm text-muted-foreground">
+                  {isStopwatch
+                    ? canContinue
+                      ? "Pick up where you left off"
+                      : "Open focus · no countdown"
+                    : [
+                        FOCUS_PRESETS[mode].label,
+                        activeProfile?.label ?? "Custom",
+                        formatFocusMinutes(Math.round(durationSeconds / 60)),
+                      ].join(" · ")}
+                </p>
+              </div>
+
+              <div className="relative flex size-[min(58vw,14.5rem)] items-center justify-center sm:size-[16.5rem] lg:size-[18rem]">
+                <FocusClockFace
+                  isRunning={isRunning}
+                  isStopwatch={isStopwatch}
+                  canContinue={canContinue}
+                  mode={mode}
+                  durationSeconds={durationSeconds}
+                  subject={subject}
+                  sessionLine={sessionLine}
+                  pickupHint={pickupHint}
+                  endedHint={endedHint}
+                  runningHint={runningHint}
+                  upcomingLabel={FOCUS_PRESETS[upcoming].label}
+                  ringRadius={ringRadius}
+                  ringCircumference={ringCircumference}
+                  compactHints
+                />
+              </div>
+
+              {!isStopwatch ? (
+                <div
+                  className="flex items-center gap-2"
+                  aria-label={`${dots} of ${FOCUS_POMODOROS_PER_LONG_BREAK} toward a long break`}
+                >
+                  {Array.from({
+                    length: FOCUS_POMODOROS_PER_LONG_BREAK,
+                  }).map((_, i) => (
                     <span
                       key={i}
                       className={cn(
                         "size-1.5 rounded-full transition-colors",
                         i < dots
-                          ? "bg-(--focus-accent)"
+                          ? "bg-foreground"
                           : "bg-muted-foreground/25",
                       )}
                     />
-                  ),
-                )}
-              </div>
-            ) : null}
-
-            <div className="focus-run-controls flex items-center justify-center gap-4 sm:gap-5">
-              <button
-                type="button"
-                onClick={handleReset}
-                className="flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
-                aria-label={
-                  canSealStopwatch ? "Discard session" : "Reset timer"
-                }
-              >
-                <RotateCcw className="size-4" />
-              </button>
-              <button
-                type="button"
-                onClick={handleToggle}
-                className="focus-run-pause flex size-[4.5rem] items-center justify-center rounded-full text-background transition-transform hover:scale-[1.03] active:scale-95"
-                aria-label="Pause timer"
-              >
-                <Pause className="size-6 fill-current" />
-              </button>
-              {!isStopwatch ? (
-                <button
-                  type="button"
-                  onClick={handleSkip}
-                  className="flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
-                  aria-label="Skip to next phase"
-                >
-                  <SkipForward className="size-4" />
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleSealStopwatch}
-                  disabled={!canSealStopwatch}
-                  className={cn(
-                    "flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground",
-                    !canSealStopwatch && "pointer-events-none opacity-30",
-                  )}
-                  aria-label="Seal session"
-                >
-                  <CircleCheck className="size-4" />
-                </button>
-              )}
-            </div>
-
-            <div className="focus-run-dock flex w-full max-w-sm flex-col items-center gap-4">
-              <FocusSounds compact />
-              <FocusSettings
-                dailyGoalMinutes={dailyGoalMinutes}
-                onClockChange={handleClockChange}
-                className="opacity-55 hover:opacity-100"
-              />
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="relative z-[1] flex w-full flex-col gap-10">
-          <div className="grid w-full gap-8 lg:grid-cols-2 lg:items-center lg:gap-8 xl:gap-10">
-            <div className="flex min-w-0 flex-col gap-3">
-              <div className="text-center lg:text-left">
-                <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                  Session
-                </p>
-                <p className="mt-1.5 flex min-h-5 items-baseline justify-center gap-2 text-sm text-muted-foreground lg:justify-start">
-                  <span>
-                    {isStopwatch
-                      ? canContinue
-                        ? "Continue session"
-                        : "Open focus"
-                      : canContinue
-                        ? "Continue session"
-                        : FOCUS_PRESETS[mode].label}
-                  </span>
-                  {!isStopwatch ? (
-                    <span className="text-xs tabular-nums text-muted-foreground/70">
-                      · {formatFocusMinutes(Math.round(durationSeconds / 60))}
-                    </span>
-                  ) : null}
-                </p>
-              </div>
-
-              <div className="flex flex-col items-center gap-3 lg:items-start">
-                <div className="relative flex size-[16rem] items-center justify-center sm:size-[18.5rem] lg:size-[22rem]">
-                  <FocusClockFace
-                    isRunning={isRunning}
-                    isStopwatch={isStopwatch}
-                    canContinue={canContinue}
-                    mode={mode}
-                    durationSeconds={durationSeconds}
-                    subject={subject}
-                    sessionLine={sessionLine}
-                    pickupHint={pickupHint}
-                    endedHint={endedHint}
-                    runningHint={runningHint}
-                    upcomingLabel={FOCUS_PRESETS[upcoming].label}
-                    ringRadius={ringRadius}
-                    ringCircumference={ringCircumference}
-                    compactHints
-                  />
+                  ))}
                 </div>
-
-                {!isStopwatch ? (
-                  <div
-                    className="flex items-center gap-2"
-                    aria-label={`${dots} of ${FOCUS_POMODOROS_PER_LONG_BREAK} toward a long break`}
-                  >
-                    {Array.from({
-                      length: FOCUS_POMODOROS_PER_LONG_BREAK,
-                    }).map((_, i) => (
-                      <span
-                        key={i}
-                        className={cn(
-                          "size-1.5 rounded-full transition-colors",
-                          i < dots
-                            ? "bg-foreground"
-                            : "bg-muted-foreground/25",
-                        )}
-                      />
-                    ))}
-                  </div>
-                ) : null}
-              </div>
+              ) : null}
             </div>
 
             <div className="flex min-w-0 flex-col gap-5">
               <div className="text-center lg:text-left">
-                <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                  {canContinue ? "Paused" : "Ready"}
-                </p>
                 <p
                   className={cn(
-                    "mt-1.5 font-medium leading-none tracking-tight text-foreground",
+                    "font-semibold leading-none tracking-tight text-foreground",
                     isStopwatch
-                      ? "text-2xl sm:text-3xl"
-                      : "text-2xl tabular-nums sm:text-3xl",
+                      ? "text-3xl sm:text-4xl"
+                      : "text-3xl tabular-nums sm:text-4xl",
                   )}
                 >
                   {isStopwatch
@@ -1004,68 +979,60 @@ export function FocusTimer({
                       : "Count up"
                     : formatFocusMinutes(Math.round(durationSeconds / 60))}
                 </p>
-                <p className="mt-1.5 text-sm leading-snug text-muted-foreground">
-                  {isStopwatch
-                    ? canContinue
-                      ? pickupHint ?? "Pick up where you left off"
-                      : "No timer · seal when ready"
-                    : [
-                        mode === "focus" ? "Focus" : FOCUS_PRESETS[mode].label,
-                        activeProfile?.label ?? "Custom",
-                      ].join(" · ")}
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {canContinue
+                    ? pickupHint ?? "Space to resume"
+                    : isStopwatch
+                      ? "Seal when the work is done"
+                      : mode === "focus"
+                        ? "Name the work. Begin when ready."
+                        : "Break · Space to begin"}
                 </p>
               </div>
 
-              <div className="space-y-3 text-center lg:text-left">
-                {mode === "focus" || isStopwatch ? (
-                  <>
-                    <Input
-                      value={intention}
-                      onChange={(e) => setIntention(e.target.value)}
-                      placeholder={
-                        linkedTask
-                          ? `Working on ${linkedTask.title}`
-                          : "What deserves your focus?"
-                      }
-                      aria-label="What are you focusing on"
-                      className="h-12 w-full rounded-2xl border-border/40 bg-transparent px-4 text-center text-lg font-medium tracking-tight shadow-none placeholder:font-normal placeholder:text-muted-foreground/70 focus-visible:ring-1 lg:text-left"
+              {mode === "focus" || isStopwatch ? (
+                <div className="space-y-3">
+                  <Input
+                    value={intention}
+                    onChange={(e) => setIntention(e.target.value)}
+                    placeholder={
+                      linkedTask
+                        ? `Working on ${linkedTask.title}`
+                        : "What deserves your focus?"
+                    }
+                    aria-label="What are you focusing on"
+                    className="h-12 w-full rounded-xl border-border/50 bg-muted/40 px-4 text-base font-medium tracking-tight shadow-none placeholder:font-normal focus-visible:ring-1"
+                  />
+                  {tasks.length > 0 ? (
+                    <BrandSelect
+                      value={linkedTaskId ?? ""}
+                      aria-label="Link a task"
+                      className="h-9 border-border/40 bg-muted/30"
+                      placeholder="Optional · link an open task"
+                      options={[
+                        { value: "", label: "Optional · link an open task" },
+                        ...tasks.map((task) => ({
+                          value: task.id,
+                          label: task.context
+                            ? `${task.title} · ${task.context}`
+                            : task.title,
+                        })),
+                      ]}
+                      onValueChange={(nextId) => {
+                        const id = nextId || null;
+                        setLinkedTaskId(id);
+                        if (id && !intention.trim()) {
+                          const task = tasks.find((item) => item.id === id);
+                          if (task) setIntention(task.title);
+                        }
+                      }}
                     />
-                    {tasks.length > 0 ? (
-                      <BrandSelect
-                        value={linkedTaskId ?? ""}
-                        aria-label="Link a task"
-                        className="h-9 border-transparent bg-muted/30 text-center hover:bg-muted/50 lg:text-left"
-                        placeholder="Optional · link an open task"
-                        options={[
-                          { value: "", label: "Optional · link an open task" },
-                          ...tasks.map((task) => ({
-                            value: task.id,
-                            label: task.context
-                              ? `${task.title} · ${task.context}`
-                              : task.title,
-                          })),
-                        ]}
-                        onValueChange={(nextId) => {
-                          const id = nextId || null;
-                          setLinkedTaskId(id);
-                          if (id && !intention.trim()) {
-                            const task = tasks.find((item) => item.id === id);
-                            if (task) setIntention(task.title);
-                          }
-                        }}
-                      />
-                    ) : null}
-                  </>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    {activeProfile ? activeProfile.label : "Custom"} · Space to
-                    begin
-                  </p>
-                )}
-              </div>
+                  ) : null}
+                </div>
+              ) : null}
 
-              <div className="flex flex-col items-center gap-3">
-                <div className="flex items-center gap-3 sm:gap-4">
+              <div className="flex flex-col items-center gap-3 sm:items-stretch">
+                <div className="flex items-center justify-center gap-3 sm:justify-start sm:gap-4">
                   <button
                     type="button"
                     onClick={handleReset}
@@ -1079,7 +1046,7 @@ export function FocusTimer({
                   <button
                     type="button"
                     onClick={handleToggle}
-                    className="flex size-16 items-center justify-center rounded-full bg-foreground text-background transition-transform hover:scale-[1.03] active:scale-95"
+                    className="flex h-14 min-w-[9.5rem] items-center justify-center gap-2 rounded-full bg-foreground px-6 text-sm font-medium text-background transition-transform hover:scale-[1.02] active:scale-95"
                     aria-label={
                       canContinue
                         ? "Continue session"
@@ -1088,7 +1055,14 @@ export function FocusTimer({
                           : "Begin session"
                     }
                   >
-                    <Play className="size-6 fill-current pl-0.5" />
+                    <Play className="size-4 fill-current" />
+                    {canContinue
+                      ? "Continue"
+                      : isStopwatch
+                        ? "Start"
+                        : mode === "focus"
+                          ? "Begin"
+                          : "Start break"}
                   </button>
                   {!isStopwatch ? (
                     <button
@@ -1114,28 +1088,22 @@ export function FocusTimer({
                     </button>
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {canContinue
-                    ? "Continue · Space"
-                    : isStopwatch
-                      ? "Start focus · Space"
-                      : mode === "focus"
-                        ? "Begin session · Space"
-                        : "Start break · Space"}
+                <p className="text-center text-xs text-muted-foreground sm:text-left">
+                  Space to {canContinue ? "continue" : "begin"} · R to reset
                 </p>
+              </div>
+
+              <div className="flex flex-col gap-3 border-t border-border/40 pt-4">
                 <FocusSettings
                   dailyGoalMinutes={dailyGoalMinutes}
                   onClockChange={handleClockChange}
                   align="start"
-                  className="lg:justify-start"
+                  className="justify-start"
                 />
-                <div className="w-full pt-2 lg:pt-3">
-                  <FocusSounds />
-                </div>
+                <FocusSounds />
               </div>
             </div>
           </div>
-
         </div>
       )}
     </section>

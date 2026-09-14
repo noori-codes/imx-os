@@ -239,8 +239,9 @@
 
 .focus-stage[data-running="true"] {
   --focus-progress: 0;
-  background: color-mix(in oklab, var(--background) 94%, var(--focus-wash));
+  background: color-mix(in oklab, var(--background) 96%, var(--focus-wash));
   box-shadow: none;
+  border-radius: 0;
   transition: background 1s ease;
 }
 
@@ -388,170 +389,54 @@
   }
 }
 
-.focus-stage-sky,
-.focus-stage-aurora,
-.focus-stage-floor,
-.focus-stage-motes,
-.focus-stage-vignette,
+.focus-run-rail,
+.focus-run-mist,
+.focus-run-vignette,
 .focus-stage-grain,
 .focus-stage-glow-soft {
   display: none;
 }
 
-/* Quiet twilight chamber — sky, aurora, floor. No orbs behind the clock. */
-.focus-stage[data-running="true"] .focus-stage-sky {
+/* Ink room — quiet field while focusing. Progress is a top rail, not orbs. */
+.focus-stage[data-running="true"] .focus-run-rail {
   display: block;
   pointer-events: none;
   position: absolute;
-  inset: 0 0 auto;
-  height: 62%;
-  z-index: 0;
-  opacity: calc(0.7 + (var(--focus-progress) * 0.2));
-  background:
-    radial-gradient(
-      ellipse 95% 70% at 50% -5%,
-      color-mix(in oklab, var(--focus-glow) 70%, transparent) 0%,
-      transparent 68%
-    ),
-    radial-gradient(
-      ellipse 50% 40% at 12% 18%,
-      color-mix(in oklab, var(--focus-wash) 55%, transparent) 0%,
-      transparent 70%
-    ),
-    radial-gradient(
-      ellipse 45% 36% at 88% 12%,
-      color-mix(in oklab, var(--focus-wash) 40%, transparent) 0%,
-      transparent 68%
-    );
-  animation: focus-sky-shift 28s ease-in-out infinite;
-}
-
-.focus-stage[data-running="true"] .focus-stage-aurora {
-  display: block;
-  pointer-events: none;
-  position: absolute;
-  left: -20%;
-  right: -20%;
-  top: 28%;
-  height: 38%;
-  z-index: 0;
-  opacity: calc(0.28 + (var(--focus-progress) * 0.42));
-  filter: blur(40px);
-  background: linear-gradient(
-    95deg,
-    transparent 0%,
-    color-mix(in oklab, var(--focus-glow) 55%, transparent) 28%,
-    color-mix(in oklab, var(--focus-wash) 70%, transparent) 52%,
-    color-mix(in oklab, var(--focus-glow) 35%, transparent) 74%,
-    transparent 100%
-  );
-  transform: skewY(-4deg);
-  animation: focus-aurora-drift 20s ease-in-out infinite;
-  transition: opacity 1.4s ease;
-}
-
-.focus-stage[data-running="true"] .focus-stage-floor {
-  display: block;
-  pointer-events: none;
-  position: absolute;
+  top: 0;
   left: 0;
   right: 0;
-  bottom: 0;
-  height: calc(36% + (var(--focus-progress) * 10%));
-  z-index: 0;
-  opacity: calc(0.55 + (var(--focus-progress) * 0.3));
-  background:
-    radial-gradient(
-      ellipse 80% 55% at 50% 100%,
-      color-mix(in oklab, var(--focus-glow) 50%, transparent) 0%,
-      transparent 72%
-    ),
-    linear-gradient(
-      180deg,
-      transparent 0%,
-      color-mix(in oklab, var(--focus-wash) 35%, transparent) 100%
-    );
-  transition: height 1.4s ease, opacity 1.4s ease;
-  animation: focus-floor-breathe 16s ease-in-out infinite;
+  z-index: 2;
+  height: 2px;
+  background: color-mix(in oklab, var(--foreground) 8%, transparent);
 }
 
-.focus-stage[data-running="true"] .focus-stage-motes {
+.focus-stage[data-running="true"] .focus-run-rail::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: calc(var(--focus-progress) * 100%);
+  background: color-mix(in oklab, var(--focus-accent) 85%, transparent);
+  transition: width 500ms linear;
+}
+
+.focus-stage[data-running="true"] .focus-run-mist {
   display: block;
   pointer-events: none;
   position: absolute;
   inset: 0;
   z-index: 0;
-  overflow: hidden;
+  opacity: calc(0.35 + (var(--focus-progress) * 0.25));
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--focus-wash) 55%, transparent) 0%,
+      transparent 38%,
+      color-mix(in oklab, var(--focus-glow) 28%, transparent) 100%
+    );
+  transition: opacity 1.2s ease;
 }
 
-.focus-stage[data-running="true"] .focus-stage-motes span {
-  position: absolute;
-  width: 2px;
-  height: 2px;
-  border-radius: 9999px;
-  background: color-mix(in oklab, var(--focus-accent) 55%, white);
-  opacity: 0;
-  animation: focus-mote-float 14s ease-in-out infinite;
-}
-
-.focus-stage[data-running="true"] .focus-stage-motes span:nth-child(1) {
-  left: 12%;
-  top: 62%;
-  animation-delay: 0s;
-  animation-duration: 16s;
-}
-.focus-stage[data-running="true"] .focus-stage-motes span:nth-child(2) {
-  left: 22%;
-  top: 38%;
-  width: 1.5px;
-  height: 1.5px;
-  animation-delay: -3s;
-  animation-duration: 18s;
-}
-.focus-stage[data-running="true"] .focus-stage-motes span:nth-child(3) {
-  left: 48%;
-  top: 72%;
-  animation-delay: -6s;
-  animation-duration: 15s;
-}
-.focus-stage[data-running="true"] .focus-stage-motes span:nth-child(4) {
-  left: 68%;
-  top: 44%;
-  width: 1.5px;
-  height: 1.5px;
-  animation-delay: -2s;
-  animation-duration: 19s;
-}
-.focus-stage[data-running="true"] .focus-stage-motes span:nth-child(5) {
-  left: 82%;
-  top: 58%;
-  animation-delay: -8s;
-  animation-duration: 17s;
-}
-.focus-stage[data-running="true"] .focus-stage-motes span:nth-child(6) {
-  left: 34%;
-  top: 22%;
-  width: 1.5px;
-  height: 1.5px;
-  animation-delay: -5s;
-  animation-duration: 21s;
-}
-.focus-stage[data-running="true"] .focus-stage-motes span:nth-child(7) {
-  left: 76%;
-  top: 28%;
-  animation-delay: -9s;
-  animation-duration: 14s;
-}
-.focus-stage[data-running="true"] .focus-stage-motes span:nth-child(8) {
-  left: 58%;
-  top: 18%;
-  width: 1.5px;
-  height: 1.5px;
-  animation-delay: -4s;
-  animation-duration: 20s;
-}
-
-.focus-stage[data-running="true"] .focus-stage-vignette {
+.focus-stage[data-running="true"] .focus-run-vignette {
   display: block;
   pointer-events: none;
   position: absolute;
@@ -560,17 +445,17 @@
   background:
     linear-gradient(
       90deg,
-      color-mix(in oklab, var(--background) 72%, transparent) 0%,
-      transparent 16%,
-      transparent 84%,
-      color-mix(in oklab, var(--background) 72%, transparent) 100%
+      color-mix(in oklab, var(--background) 78%, transparent) 0%,
+      transparent 14%,
+      transparent 86%,
+      color-mix(in oklab, var(--background) 78%, transparent) 100%
     ),
     linear-gradient(
       180deg,
-      color-mix(in oklab, var(--background) 42%, transparent) 0%,
-      transparent 18%,
-      transparent 78%,
-      color-mix(in oklab, var(--background) 58%, transparent) 100%
+      color-mix(in oklab, var(--background) 48%, transparent) 0%,
+      transparent 16%,
+      transparent 82%,
+      color-mix(in oklab, var(--background) 62%, transparent) 100%
     );
 }
 
@@ -649,24 +534,7 @@ html[data-focus-session] body {
 }
 
 .focus-clock-spin {
-  display: none;
-}
-
-.focus-stage[data-running="true"] .focus-clock-spin {
-  display: block;
-  pointer-events: none;
-  position: absolute;
-  inset: -7%;
-  border-radius: 9999px;
-  background: conic-gradient(
-    from 0deg,
-    transparent 0 72%,
-    color-mix(in oklab, var(--focus-accent) 38%, transparent) 88%,
-    transparent 100%
-  );
-  mask: radial-gradient(circle, transparent 67%, black 68.5%, black 70%, transparent 71.5%);
-  animation: focus-orbit-spin 42s linear infinite;
-  opacity: 0.7;
+  display: none !important;
 }
 
 .focus-run-pause {
@@ -1260,18 +1128,11 @@ html[data-focus-session] body {
 
 @media (prefers-reduced-motion: reduce) {
   .focus-eq-bar,
-  .focus-stage[data-running="true"] .focus-stage-sky,
-  .focus-stage[data-running="true"] .focus-stage-aurora,
-  .focus-stage[data-running="true"] .focus-stage-floor,
-  .focus-stage[data-running="true"] .focus-stage-motes span,
-  .focus-stage[data-running="true"] .focus-clock-spin,
   .focus-live-dot,
   .focus-stage[data-running="true"] .focus-stage-grain {
     animation: none !important;
   }
 
-  .focus-stage[data-running="true"] .focus-clock-spin,
-  .focus-stage[data-running="true"] .focus-stage-motes,
   .focus-stage[data-running="true"] .focus-stage-grain {
     display: none !important;
   }
@@ -3680,6 +3541,112 @@ html[data-focus-session] body {
   .settings-stage .settings-reveal,
   .settings-stage .settings-stats > *,
   .settings-stage .settings-panel {
+    animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both !important;
+  }
+}
+
+/* Focus studio — idle shell */
+.focus-studio {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.focus-studio-wash {
+  pointer-events: none;
+  position: absolute;
+  top: -1.5rem;
+  left: 50%;
+  z-index: 0;
+  width: min(100%, 42rem);
+  height: 14rem;
+  transform: translateX(-50%);
+  background: radial-gradient(
+    ellipse 70% 80% at 50% 0%,
+    color-mix(in oklab, var(--foreground) 4.5%, transparent) 0%,
+    transparent 72%
+  );
+}
+
+.dark .focus-studio-wash {
+  background: radial-gradient(
+    ellipse 70% 80% at 50% 0%,
+    color-mix(in oklab, var(--foreground) 6%, transparent) 0%,
+    transparent 72%
+  );
+}
+
+.focus-studio-content {
+  position: relative;
+  z-index: 1;
+}
+
+.focus-reveal {
+  animation: dash-reveal-up 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.focus-reveal-delay-1 {
+  animation-delay: 60ms;
+}
+
+.focus-reveal-delay-2 {
+  animation-delay: 120ms;
+}
+
+.focus-reveal-delay-3 {
+  animation-delay: 180ms;
+}
+
+.focus-kpis > *:nth-child(1) {
+  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 40ms;
+}
+.focus-kpis > *:nth-child(2) {
+  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 80ms;
+}
+.focus-kpis > *:nth-child(3) {
+  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 120ms;
+}
+.focus-kpis > *:nth-child(4) {
+  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 160ms;
+}
+
+.focus-kpi,
+.focus-launch {
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--foreground) 4%, transparent);
+}
+
+.focus-launch-glow {
+  pointer-events: none;
+  position: absolute;
+  right: -12%;
+  top: -35%;
+  width: min(24rem, 70%);
+  height: 130%;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 5.5%, transparent) 0%,
+    transparent 68%
+  );
+  opacity: 0.9;
+}
+
+.dark .focus-launch-glow {
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 8%, transparent) 0%,
+    transparent 68%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .focus-studio .focus-reveal,
+  .focus-studio .focus-kpis > * {
     animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both !important;
   }
 }
