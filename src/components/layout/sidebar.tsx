@@ -33,7 +33,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
         >
           <span className="relative size-8 shrink-0 overflow-hidden rounded-lg border border-sidebar-border bg-black dark:border-white/10">
             <Image
-              src="/IMX-logo.png"
+              src="/imx-logo-64.png"
               alt="IMX"
               fill
               priority

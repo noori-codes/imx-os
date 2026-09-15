@@ -1,58 +1,39 @@
 "use client";
 
-import { useState } from "react";
-import { Menu } from "lucide-react";
-
 import { ThemeToggle } from "@/components/layout/theme-toggle";
-import { Sidebar } from "@/components/layout/sidebar";
-import { SearchDialog } from "@/components/search/search-dialog";
-import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { DeferredSearchDialog } from "@/components/search/deferred-search-dialog";
+import { cn } from "@/lib/utils";
 
 type HeaderProps = {
   title: string;
   description?: string;
+  /**
+   * Chrome-only bar for pulse/list pages where the hero owns the title.
+   * Keeps an accessible page name for screen readers.
+   */
+  chrome?: boolean;
 };
 
-export function Header({ title, description }: HeaderProps) {
-  const [open, setOpen] = useState(false);
-
+/** App top bar — search + theme. Mobile nav lives in the tab bar. */
+export function Header({ title, description, chrome = false }: HeaderProps) {
   return (
-    <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:px-6">
-      <div className="flex items-center gap-3">
-        <Sheet open={open} onOpenChange={setOpen}>
-          <SheetTrigger asChild>
-            <Button variant="outline" size="icon" className="md:hidden">
-              <Menu className="size-4" />
-              <span className="sr-only">Open menu</span>
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-64 p-0">
-            <SheetHeader className="sr-only">
-              <SheetTitle>Navigation</SheetTitle>
-            </SheetHeader>
-            <Sidebar onNavigate={() => setOpen(false)} />
-          </SheetContent>
-        </Sheet>
-
-        <div>
-          <h1 className="text-lg font-semibold tracking-tight">{title}</h1>
-          {description ? (
-            <p className="hidden text-sm text-muted-foreground sm:block">
-              {description}
-            </p>
-          ) : null}
-        </div>
+    <header
+      className={cn(
+        "sticky top-0 z-10 flex h-14 items-center border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:px-6",
+        chrome ? "justify-end" : "justify-between",
+      )}
+    >
+      <div className={cn("min-w-0", chrome && "sr-only")}>
+        <h1 className="truncate text-lg font-semibold tracking-tight">{title}</h1>
+        {description ? (
+          <p className="hidden truncate text-sm text-muted-foreground sm:block">
+            {description}
+          </p>
+        ) : null}
       </div>
 
-      <div className="flex items-center gap-2">
-        <SearchDialog />
+      <div className="flex shrink-0 items-center gap-2">
+        <DeferredSearchDialog />
         <ThemeToggle />
       </div>
     </header>

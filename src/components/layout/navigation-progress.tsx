@@ -6,6 +6,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 /**
  * Thin top progress bar during client navigations.
  * Shows immediately so soft-nav never feels frozen.
+ * Scrolls main content to top on forward navigations (not back/forward).
  */
 export function NavigationProgress() {
   const pathname = usePathname();
@@ -13,6 +14,8 @@ export function NavigationProgress() {
   const search = searchParams.toString();
   const [visible, setVisible] = useState(false);
   const safetyTimerRef = useRef<number | undefined>(undefined);
+  const previousPathRef = useRef(`${pathname}?${search}`);
+  const skipScrollRef = useRef(false);
 
   function clearSafety() {
     window.clearTimeout(safetyTimerRef.current);
@@ -28,10 +31,27 @@ export function NavigationProgress() {
     }, 8000);
   }
 
-  // Navigation finished — hide the bar.
+  // Navigation finished — hide the bar and scroll to top when the path changes.
   useEffect(() => {
     clearSafety();
     setVisible(false);
+
+    const nextKey = `${pathname}?${search}`;
+    const pathChanged = previousPathRef.current.split("?")[0] !== pathname;
+    previousPathRef.current = nextKey;
+
+    if (!pathChanged) return;
+
+    if (skipScrollRef.current) {
+      skipScrollRef.current = false;
+      return;
+    }
+
+    const main = document.getElementById("main-content");
+    if (main) {
+      main.scrollTop = 0;
+    }
+    window.scrollTo(0, 0);
   }, [pathname, search]);
 
   useEffect(() => {
@@ -69,6 +89,7 @@ export function NavigationProgress() {
     }
 
     function onPopState() {
+      skipScrollRef.current = true;
       startProgress();
     }
 
@@ -77,7 +98,6 @@ export function NavigationProgress() {
     return () => {
       document.removeEventListener("click", onClick, true);
       window.removeEventListener("popstate", onPopState);
-      clearSafety();
     };
   }, []);
 

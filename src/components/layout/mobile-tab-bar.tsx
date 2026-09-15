@@ -8,6 +8,7 @@ import { Ellipsis } from "lucide-react";
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
@@ -84,7 +85,8 @@ export function MobileTabBar() {
             type="button"
             onClick={() => setMoreOpen(true)}
             aria-expanded={moreOpen}
-            aria-current={moreActive ? "page" : undefined}
+            aria-haspopup="dialog"
+            aria-controls="mobile-more-sheet"
             className={cn(
               "mobile-tab-item relative flex flex-col items-center justify-center gap-0.5 px-1 py-2 text-[10px] font-medium tracking-wide transition-colors",
               moreActive || moreOpen
@@ -110,14 +112,45 @@ export function MobileTabBar() {
 
       <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
         <SheetContent
+          id="mobile-more-sheet"
           side="bottom"
           className="rounded-t-2xl border-border/60 px-0 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2 md:hidden"
         >
+          <div
+            className="mx-auto mb-1 h-1 w-10 rounded-full bg-border/80"
+            aria-hidden
+          />
           <SheetHeader className="px-5 pb-2 text-left">
             <SheetTitle className="text-base font-semibold tracking-tight">
               More
             </SheetTitle>
+            <SheetDescription className="text-xs text-muted-foreground">
+              Spaces beyond the tab bar, plus Search.
+            </SheetDescription>
           </SheetHeader>
+          <div className="flex flex-wrap gap-2 px-5 pb-3">
+            <Link
+              href="/tasks?compose=1"
+              onClick={() => setMoreOpen(false)}
+              className="inline-flex h-8 items-center rounded-lg bg-foreground px-3 text-xs font-medium text-background transition-opacity hover:opacity-90"
+            >
+              Add task
+            </Link>
+            <Link
+              href="/calendar?compose=1"
+              onClick={() => setMoreOpen(false)}
+              className="inline-flex h-8 items-center rounded-lg border border-border/60 bg-muted/50 px-3 text-xs font-medium text-foreground transition-colors hover:border-border"
+            >
+              Add event
+            </Link>
+            <Link
+              href="/habits?compose=1"
+              onClick={() => setMoreOpen(false)}
+              className="inline-flex h-8 items-center rounded-lg border border-border/60 bg-muted/50 px-3 text-xs font-medium text-foreground transition-colors hover:border-border"
+            >
+              Add habit
+            </Link>
+          </div>
           <nav className="flex flex-col gap-0.5 px-2 pb-2" aria-label="More">
             {MOBILE_MORE_ITEMS.map((item) => {
               const Icon = item.icon;
