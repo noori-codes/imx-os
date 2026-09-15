@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowUpRight, Clock3, Search } from "lucide-react";
+import { ArrowUpRight, Clock3, Search, Sparkles } from "lucide-react";
 
 import { EmptyState } from "@/components/shared/empty-state";
 import {
@@ -13,7 +13,6 @@ import {
   readRecentSearches,
   SEARCH_ENTITY_META,
   SEARCH_ENTITY_ORDER,
-  SEARCH_JUMP_LINKS,
   parseSearchEntityType,
 } from "@/lib/search-ui";
 import { cn } from "@/lib/utils";
@@ -85,85 +84,153 @@ export function SearchResults({
 
   if (query.length < 2) {
     return (
-      <div className="space-y-6">
-        {recents.length > 0 ? (
-          <section className="rounded-2xl border border-border/50 bg-card/80 p-4 sm:p-5">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <p className="inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                <Clock3 className="size-3.5" />
-                Recent
-              </p>
-              <button
-                type="button"
-                className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-                onClick={() => {
-                  clearRecentSearches();
-                  setRecents([]);
-                }}
-              >
-                Clear
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {recents.map((recent) => (
+      <div className="mx-auto w-full max-w-2xl">
+        <section className="search-spotlight relative overflow-hidden rounded-[1.5rem] border border-border/50 bg-card/80 p-5 sm:p-6">
+          <div className="search-spotlight-glow" aria-hidden="true" />
+          <div className="relative z-[1]">
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <p className="inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                  {recents.length > 0 ? (
+                    <>
+                      <Clock3 className="size-3.5" />
+                      Recent threads
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="size-3.5" />
+                      Ready when you are
+                    </>
+                  )}
+                </p>
+                <p className="mt-1.5 text-sm text-muted-foreground">
+                  {recents.length > 0
+                    ? "Pick up where you left off — or type a new query above."
+                    : "Type two letters to search, or jump to Tasks, Goals, Habits."}
+                </p>
+              </div>
+              {recents.length > 0 ? (
                 <button
-                  key={recent}
                   type="button"
+                  className="shrink-0 text-xs text-muted-foreground transition-colors hover:text-foreground"
                   onClick={() => {
-                    pushRecentSearch(recent);
-                    router.push(`/search?q=${encodeURIComponent(recent)}`);
+                    clearRecentSearches();
+                    setRecents([]);
                   }}
-                  className="rounded-full border border-border/55 bg-background/60 px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
                 >
-                  {recent}
+                  Clear
                 </button>
-              ))}
+              ) : null}
             </div>
-          </section>
-        ) : null}
 
-        <section className="rounded-2xl border border-border/50 bg-card/80 p-4 sm:p-5">
-          <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-            Jump to
-          </p>
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {SEARCH_JUMP_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="group flex items-center justify-between gap-3 rounded-xl border border-border/45 bg-background/40 px-3.5 py-3 transition-colors hover:border-border hover:bg-muted/40"
-              >
-                <span>
-                  <span className="block text-sm font-medium text-foreground">
-                    {link.label}
-                  </span>
-                  <span className="mt-0.5 block text-xs text-muted-foreground">
-                    {link.hint}
-                  </span>
-                </span>
-                <ArrowUpRight className="size-3.5 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-              </Link>
-            ))}
+            {recents.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {recents.map((recent, index) => (
+                  <button
+                    key={recent}
+                    type="button"
+                    style={{ ["--i" as string]: index }}
+                    onClick={() => {
+                      pushRecentSearch(recent);
+                      router.push(`/search?q=${encodeURIComponent(recent)}`);
+                    }}
+                    className="search-recent-chip rounded-full border border-border/55 bg-background/65 px-3.5 py-1.5 text-sm text-foreground/85 transition-colors hover:border-foreground/20 hover:bg-background hover:text-foreground"
+                  >
+                    {recent}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <>
+                <EmptyState
+                  icon={Search}
+                  title="Start a search"
+                  description="Your recent queries will live here."
+                  variant="plain"
+                  className="py-6"
+                />
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <Link
+                    href="/tasks?compose=1"
+                    className="inline-flex h-8 items-center rounded-lg bg-foreground px-3 text-xs font-medium text-background transition-opacity hover:opacity-90"
+                  >
+                    Add task
+                  </Link>
+                  <Link
+                    href="/calendar?compose=1"
+                    className="inline-flex h-8 items-center rounded-lg border border-border/60 bg-card/70 px-3 text-xs font-medium text-foreground transition-colors hover:border-border"
+                  >
+                    Add event
+                  </Link>
+                  <Link
+                    href="/habits?compose=1"
+                    className="inline-flex h-8 items-center rounded-lg border border-border/60 bg-card/70 px-3 text-xs font-medium text-foreground transition-colors hover:border-border"
+                  >
+                    Add habit
+                  </Link>
+                  <Link
+                    href="/goals?compose=1"
+                    className="inline-flex h-8 items-center rounded-lg border border-border/60 bg-card/70 px-3 text-xs font-medium text-foreground transition-colors hover:border-border"
+                  >
+                    Add goal
+                  </Link>
+                  <Link
+                    href="/books?compose=1"
+                    className="inline-flex h-8 items-center rounded-lg border border-border/60 bg-card/70 px-3 text-xs font-medium text-foreground transition-colors hover:border-border"
+                  >
+                    Add book
+                  </Link>
+                </div>
+              </>
+            )}
           </div>
         </section>
-
-        <EmptyState
-          icon={Search}
-          title="Start a search"
-          description="Type at least 2 characters — or pick a recent query / jump link above."
-          className="py-12"
-        />
       </div>
     );
   }
 
   if (results.length === 0) {
     return (
-      <EmptyState
-        icon={Search}
-        title="No matches"
-        description={`Nothing matched “${query}”. Try another word or check spelling.`}
-      />
+      <div className="mx-auto w-full max-w-2xl">
+        <EmptyState
+          icon={Search}
+          title="No matches"
+          description={`Nothing matched “${query}”. Try another word, or jump to a space.`}
+        >
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+            <Link
+              href="/tasks?compose=1"
+              className="inline-flex h-10 items-center rounded-xl bg-foreground px-4 text-sm font-medium text-background transition-opacity hover:opacity-90"
+            >
+              Add task
+            </Link>
+            <Link
+              href="/calendar?compose=1"
+              className="inline-flex h-10 items-center rounded-xl border border-border/60 bg-card/70 px-4 text-sm font-medium text-foreground transition-colors hover:border-border"
+            >
+              Add event
+            </Link>
+            <Link
+              href="/habits?compose=1"
+              className="inline-flex h-10 items-center rounded-xl border border-border/60 bg-card/70 px-4 text-sm font-medium text-foreground transition-colors hover:border-border"
+            >
+              Add habit
+            </Link>
+            <Link
+              href="/goals?compose=1"
+              className="inline-flex h-10 items-center rounded-xl border border-border/60 bg-card/70 px-4 text-sm font-medium text-foreground transition-colors hover:border-border"
+            >
+              Add goal
+            </Link>
+            <Link
+              href="/books?compose=1"
+              className="inline-flex h-10 items-center rounded-xl border border-border/60 bg-card/70 px-4 text-sm font-medium text-foreground transition-colors hover:border-border"
+            >
+              Add book
+            </Link>
+          </div>
+        </EmptyState>
+      </div>
     );
   }
 
@@ -217,7 +284,22 @@ export function SearchResults({
         </div>
       </div>
 
-      {SEARCH_ENTITY_ORDER.map((type) => {
+      {filtered.length === 0 && filter !== "all" ? (
+        <EmptyState
+          icon={Search}
+          title={`No ${SEARCH_ENTITY_META[filter].plural.toLowerCase()} here`}
+          description="Other types still matched — clear the type chip to see them."
+        >
+          <button
+            type="button"
+            onClick={() => setFilter("all")}
+            className="mt-5 inline-flex h-10 items-center rounded-xl bg-foreground px-4 text-sm font-medium text-background transition-opacity hover:opacity-90"
+          >
+            Show all · {results.length}
+          </button>
+        </EmptyState>
+      ) : (
+        SEARCH_ENTITY_ORDER.map((type) => {
         const items = grouped[type];
         if (!items?.length) return null;
         const meta = SEARCH_ENTITY_META[type];
@@ -243,11 +325,12 @@ export function SearchResults({
                 >
                   <Link
                     href={item.href}
+                    data-entity={item.entity_type}
                     onClick={() => pushRecentSearch(query)}
-                    className="search-result-card group relative flex h-full gap-3 overflow-hidden rounded-2xl border border-border/50 bg-card/80 p-4 transition-colors hover:border-border hover:bg-card"
+                    className="search-result-card group relative flex h-full gap-3 overflow-hidden rounded-2xl border border-border/50 bg-card/80 p-4 transition-[border-color,background-color,transform,box-shadow] hover:-translate-y-0.5 hover:border-border hover:bg-card hover:shadow-sm"
                   >
                     <span className="search-result-accent" aria-hidden />
-                    <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+                    <div className="search-result-icon flex size-10 shrink-0 items-center justify-center rounded-xl border border-border/50 bg-muted/60 text-muted-foreground transition-colors group-hover:border-border group-hover:text-foreground">
                       <Icon className="size-4" />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -270,7 +353,8 @@ export function SearchResults({
             </ul>
           </section>
         );
-      })}
+      })
+      )}
     </div>
   );
 }

@@ -24,12 +24,25 @@ export function RichTextEditor({
   onChange,
   placeholder = "Start writing…",
 }: RichTextEditorProps) {
+  const editorId = "note-body-editor";
   const editor = useEditor({
-    extensions: [StarterKit],
+    extensions: [
+      StarterKit.configure({
+        heading: { levels: [2] },
+        code: false,
+        codeBlock: false,
+        horizontalRule: false,
+        strike: false,
+      }),
+    ],
     content: content || "",
     immediatelyRender: false,
     editorProps: {
       attributes: {
+        id: editorId,
+        role: "textbox",
+        "aria-multiline": "true",
+        "aria-label": placeholder,
         class:
           "note-editor min-h-72 px-3 py-4 text-[15px] leading-7 focus:outline-none sm:min-h-96 sm:px-4 sm:py-5 sm:text-base sm:leading-8",
       },
@@ -41,7 +54,11 @@ export function RichTextEditor({
 
   if (!editor) {
     return (
-      <div className="min-h-80 rounded-xl border border-border/40 px-4 py-5 text-sm text-muted-foreground">
+      <div
+        className="min-h-80 rounded-xl border border-border/40 px-4 py-5 text-sm text-muted-foreground"
+        role="status"
+        aria-label="Loading editor"
+      >
         Loading editor…
       </div>
     );
@@ -51,7 +68,12 @@ export function RichTextEditor({
 
   return (
     <div className="notes-rte mt-4 overflow-hidden rounded-xl border border-border/40 bg-background/40">
-      <div className="flex flex-wrap gap-0.5 border-b border-border/40 px-2 py-1.5">
+      <div
+        className="flex flex-wrap gap-0.5 border-b border-border/40 px-2 py-1.5"
+        role="toolbar"
+        aria-label="Formatting"
+        aria-controls={editorId}
+      >
         <ToolbarButton
           active={editor.isActive("bold")}
           onClick={() => editor.chain().focus().toggleBold().run()}
@@ -100,7 +122,11 @@ export function RichTextEditor({
 
       <div className="relative">
         {isEmpty ? (
-          <p className="pointer-events-none absolute top-4 left-3 text-[15px] text-muted-foreground sm:top-5 sm:left-4 sm:text-base">
+          <p
+            id={`${editorId}-placeholder`}
+            className="pointer-events-none absolute top-4 left-3 text-[15px] text-muted-foreground sm:top-5 sm:left-4 sm:text-base"
+            aria-hidden
+          >
             {placeholder}
           </p>
         ) : null}

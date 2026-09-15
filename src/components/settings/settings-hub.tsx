@@ -1,12 +1,15 @@
 "use client";
 
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useTheme } from "next-themes";
 import {
   Bell,
   BellOff,
+  Copy,
   Download,
+  KeyRound,
   Keyboard,
   Moon,
   Monitor,
@@ -19,7 +22,7 @@ import { exportUserData, importUserData } from "@/actions/data-transfer";
 import { updateUserSettings } from "@/actions/settings";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { FocusSounds } from "@/components/focus/focus-sounds";
-import { SettingsStats } from "@/components/settings/settings-stats";
+import { SettingsPulse } from "@/components/settings/settings-pulse";
 import { Button } from "@/components/ui/button";
 import { confirm } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
@@ -27,6 +30,7 @@ import {
   playFocusChime,
   requestFocusNotifyPermission,
 } from "@/lib/focus-alerts";
+import { imxToast } from "@/lib/imx-toast";
 import {
   PREF_AUTO_START,
   PREF_CELEBRATE,
@@ -67,16 +71,21 @@ type SettingsHubProps = {
 };
 
 function Section({
+  id,
   title,
   description,
   children,
 }: {
+  id?: string;
   title: string;
   description: string;
   children: ReactNode;
 }) {
   return (
-    <section className="settings-panel rounded-2xl border border-border/50 bg-card/80 p-4 sm:p-5">
+    <section
+      id={id}
+      className="settings-panel scroll-mt-20 rounded-[1.35rem] border border-border/50 bg-card/80 p-4 sm:p-5"
+    >
       <header className="mb-4">
         <h3 className="text-sm font-semibold tracking-tight text-foreground">
           {title}
@@ -206,6 +215,12 @@ export function SettingsHub({
   const [notify, setNotify] = useState<"unsupported" | NotificationPermission>(
     "default",
   );
+  const [modKey, setModKey] = useState("⌘");
+
+  useEffect(() => {
+    const isApple = /Mac|iPhone|iPad|iPod/.test(navigator.platform);
+    setModKey(isApple ? "⌘" : "Ctrl");
+  }, []);
 
   useEffect(() => {
     setMounted(true);
@@ -245,6 +260,23 @@ export function SettingsHub({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    function scrollToHash() {
+      const id = window.location.hash.replace(/^#/, "");
+      if (!id.startsWith("settings-")) return;
+      window.requestAnimationFrame(() => {
+        document.getElementById(id)?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      });
+    }
+
+    scrollToHash();
+    window.addEventListener("hashchange", scrollToHash);
+    return () => window.removeEventListener("hashchange", scrollToHash);
+  }, []);
+
   function persist(patch: Parameters<typeof updateUserSettings>[0]) {
     setPrefError(null);
     startTransition(async () => {
@@ -282,10 +314,18 @@ export function SettingsHub({
       const result = await exportUserData();
       if (!result.ok) {
         setTransferError(result.error);
+        imxToast("Export failed", {
+          description: result.error,
+          tone: "error",
+        });
         return;
       }
       downloadJson(exportFilename(), result.payload);
       setTransferMsg("Export downloaded.");
+      imxToast("Export downloaded", {
+        description: "Your backup JSON is ready.",
+        tone: "success",
+      });
     } finally {
       setTransferPending(false);
     }
@@ -311,13 +351,25 @@ export function SettingsHub({
       const result = await importUserData(payload);
       if (!result.ok) {
         setTransferError(result.error);
+        imxToast("Import failed", {
+          description: result.error,
+          tone: "error",
+        });
         return;
       }
       setTransferMsg(`Imported ${result.imported} records.`);
+      imxToast("Import complete", {
+        description: `Merged ${result.imported} records into your account.`,
+        tone: "success",
+      });
     } catch (error) {
-      setTransferError(
-        error instanceof Error ? error.message : "Import failed.",
-      );
+      const message =
+        error instanceof Error ? error.message : "Import failed.";
+      setTransferError(message);
+      imxToast("Import failed", {
+        description: message,
+        tone: "error",
+      });
     } finally {
       setTransferPending(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -343,14 +395,19 @@ export function SettingsHub({
 
   return (
     <div className="flex flex-col gap-6">
-      <SettingsStats
+      <SettingsPulse
+        email={email}
         themeLabel={themeLabel}
         focusGoalLabel={formatFocusMinutesCompact(goal) || `${goal}m`}
+        focusGoalMinutes={goal}
         notifyLabel={notifyLabel}
         memberLabel={memberShort}
+        memberSince={memberSince}
+        synced={settings.saved}
       />
 
       <Section
+        id="settings-appearance"
         title="Appearance"
         description="How imx-os looks — synced to your account."
       >
@@ -398,6 +455,7 @@ export function SettingsHub({
       </Section>
 
       <Section
+        id="settings-focus"
         title="Focus"
         description="Defaults for the timer, daily goal, and session flow."
       >
@@ -553,6 +611,7 @@ export function SettingsHub({
       </Section>
 
       <Section
+        id="settings-alerts"
         title="Notifications"
         description="Browser alerts when a focus phase finishes (this device only)."
       >
@@ -595,6 +654,7 @@ export function SettingsHub({
       </Section>
 
       <Section
+        id="settings-capture"
         title="Capture"
         description="Defaults for how you land in Tasks."
       >
@@ -615,6 +675,7 @@ export function SettingsHub({
       </Section>
 
       <Section
+        id="settings-shortcuts"
         title="Shortcuts"
         description="Keyboard habits that work across capture surfaces."
       >
@@ -622,11 +683,36 @@ export function SettingsHub({
           {[
             {
               keys: "N",
-              action: "Focus the new item field (tasks, habits, goals…)",
+              action:
+                "Focus or open the page’s primary capture (task, habit, note, book…)",
+            },
+            {
+              keys: "/",
+              action: "Open search when the palette is closed",
+            },
+            {
+              keys: `${modKey}K`,
+              action: "Toggle search and the command palette",
+            },
+            {
+              keys: `${modKey}⇧I`,
+              action: "Open or close the IMX coach",
+            },
+            {
+              keys: "← / →",
+              action: "Move the selected day on Calendar",
+            },
+            {
+              keys: "T",
+              action: "Jump to today on Calendar",
+            },
+            {
+              keys: "Type in palette",
+              action:
+                "Run Actions — Add task, Ask IMX, New note, Add habit, Add event…",
             },
             { keys: "Enter", action: "Save an inline edit" },
-            { keys: "Esc", action: "Cancel an inline edit" },
-            { keys: "⌘K", action: "Open search and command palette" },
+            { keys: "Esc", action: "Cancel an inline edit · close the palette" },
           ].map((row) => (
             <li
               key={row.keys}
@@ -645,6 +731,7 @@ export function SettingsHub({
       </Section>
 
       <Section
+        id="settings-account"
         title="Account"
         description="Identity, backup, and session on this device."
       >
@@ -653,7 +740,28 @@ export function SettingsHub({
             <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
               Email
             </p>
-            <p className="mt-1.5 text-sm text-foreground">{email}</p>
+            <div className="mt-1.5 flex items-center gap-2">
+              <p className="min-w-0 truncate text-sm text-foreground">{email}</p>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-8 shrink-0 text-muted-foreground"
+                aria-label="Copy email"
+                onClick={() => {
+                  void (async () => {
+                    try {
+                      await navigator.clipboard.writeText(email);
+                      imxToast("Email copied", { tone: "success" });
+                    } catch {
+                      imxToast("Couldn’t copy email", { tone: "error" });
+                    }
+                  })();
+                }}
+              >
+                <Copy className="size-3.5" />
+              </Button>
+            </div>
           </div>
           <div>
             <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
@@ -661,6 +769,15 @@ export function SettingsHub({
             </p>
             <p className="mt-1.5 text-sm text-foreground">{memberSince}</p>
           </div>
+        </div>
+
+        <div className="mt-4">
+          <Button type="button" variant="outline" size="sm" asChild>
+            <Link href="/update-password">
+              <KeyRound className="size-3.5" />
+              Change password
+            </Link>
+          </Button>
         </div>
 
         <div className="mt-5 space-y-3 border-t border-border/40 pt-4">
