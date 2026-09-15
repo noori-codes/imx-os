@@ -4,7 +4,7 @@ import { Header } from "@/components/layout/header";
 export default function HabitsLoading() {
   return (
     <>
-      <Header title="Habits" />
+      <Header chrome title="Habits" />
       <HabitsSkeleton />
     </>
   );

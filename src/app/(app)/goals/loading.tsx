@@ -4,7 +4,7 @@ import { GoalsSkeleton } from "@/components/goals/goals-skeleton";
 export default function GoalsLoading() {
   return (
     <>
-      <Header title="Goals" />
+      <Header chrome title="Goals" />
       <GoalsSkeleton />
     </>
   );
