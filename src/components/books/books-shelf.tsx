@@ -385,7 +385,7 @@ export function BooksShelf({ books, compose = false }: BooksShelfProps) {
       ) : (
         <>
           {/* Desktop table */}
-          <div className="hidden overflow-hidden rounded-2xl border border-border/50 bg-card/80 md:block">
+          <div className="hidden overflow-hidden rounded-2xl border border-border/40 bg-card/70 md:block">
             <table className="w-full text-left text-sm">
               <thead className="border-b border-border/40 text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
                 <tr>
@@ -499,7 +499,7 @@ export function BooksShelf({ books, compose = false }: BooksShelfProps) {
               <li
                 id={`book-${book.id}`}
                 key={book.id}
-                className="scroll-mt-24 rounded-2xl border border-border/50 bg-card/80 p-4"
+                className="scroll-mt-24 rounded-2xl border border-border/40 bg-card/70 p-4"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">

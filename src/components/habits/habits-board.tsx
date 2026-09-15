@@ -112,7 +112,7 @@ function TodayPulse({
   return (
     <section
       className={cn(
-        "habits-pulse habits-hero relative overflow-hidden py-2 sm:py-3",
+        "habits-pulse habits-hero relative overflow-hidden rounded-[1.75rem] border border-border/50 bg-card/85 px-5 py-6 sm:px-7 sm:py-8",
         clear && "habits-pulse-sealed",
       )}
     >
@@ -239,7 +239,7 @@ export function HabitsBoard({
       {view === "active" ? (
         <TodayPulse habits={optimisticHabits} pulseStats={pulseStats} />
       ) : (
-        <section className="habits-pulse relative overflow-hidden py-2 sm:py-3">
+        <section className="habits-pulse relative overflow-hidden rounded-[1.75rem] border border-border/50 bg-card/85 px-5 py-6 sm:px-7 sm:py-8">
           <div className="habits-pulse-glow" aria-hidden />
           <div className="relative z-[1]">
             <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
@@ -264,7 +264,7 @@ export function HabitsBoard({
       {view === "active" ? (
         <div
           id="habits-composer"
-          className="habits-composer relative overflow-hidden rounded-2xl border border-border/50 bg-card/80 p-4 sm:p-5"
+          className="habits-composer relative overflow-hidden rounded-2xl border border-border/40 bg-card/70 p-4 sm:p-5"
         >
           <div className="habits-composer-glow" aria-hidden />
           <div className="relative z-[1]">

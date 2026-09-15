@@ -247,7 +247,7 @@ export function NoteEditor({ note }: NoteEditorProps) {
     <form
       action={formAction}
       className={cn(
-        "notes-editor relative overflow-hidden rounded-[1.35rem] border border-border/50 bg-card/80",
+        "notes-editor relative overflow-hidden rounded-[1.35rem] border border-border/40 bg-card/70",
         isJournal && "notes-editor-journal border-amber-500/20",
       )}
     >

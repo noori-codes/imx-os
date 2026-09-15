@@ -93,7 +93,7 @@ export function TasksBoard({
 
       <div
         id="tasks-composer"
-        className="tasks-composer relative overflow-hidden rounded-2xl border border-border/50 bg-card/80 p-4 sm:p-5"
+        className="tasks-composer relative overflow-hidden rounded-2xl border border-border/40 bg-card/70 p-4 sm:p-5"
       >
         <div className="tasks-composer-glow" aria-hidden />
         <div className="relative z-1">

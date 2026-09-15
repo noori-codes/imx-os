@@ -11,7 +11,7 @@ function Bone({ className }: { className?: string }) {
 function HabitsSkeletonBody() {
   return (
     <div className="flex flex-col gap-6">
-      <div className="habits-pulse relative overflow-hidden py-2 sm:py-3">
+      <div className="habits-pulse relative overflow-hidden rounded-[1.75rem] border border-border/50 bg-card/85 px-5 py-6 sm:px-7 sm:py-8">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0 flex-1 space-y-3 text-center sm:text-left">
             <Bone className="mx-auto h-2.5 w-24 sm:mx-0" />

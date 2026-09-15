@@ -134,7 +134,7 @@ export function CalendarGrid({
   const isWeek = view === "week";
 
   return (
-    <div className="cal-grid overflow-hidden rounded-2xl border border-border/50 bg-card/80">
+    <div className="cal-grid overflow-hidden rounded-2xl border border-border/40 bg-card/70">
       <div className="grid grid-cols-7 border-b border-border/40">
         {WEEKDAYS.map((day) => (
           <div

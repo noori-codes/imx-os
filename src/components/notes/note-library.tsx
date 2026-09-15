@@ -147,7 +147,7 @@ export function NoteLibrary({ notes }: NoteLibraryProps) {
                 <Link
                   href={`/notes/${note.id}`}
                   className={cn(
-                    "notes-card group flex h-full flex-col rounded-2xl border border-border/50 bg-card/80 p-4 transition-colors hover:border-border hover:bg-card sm:p-5",
+                    "notes-card group flex h-full flex-col rounded-2xl border border-border/40 bg-card/70 p-4 transition-colors hover:border-border hover:bg-card sm:p-5",
                     isJournal && "border-amber-500/20 hover:border-amber-500/35",
                   )}
                 >

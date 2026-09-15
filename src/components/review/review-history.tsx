@@ -38,7 +38,7 @@ function CloseTheLoopButton() {
 
 export function ReviewHistory({ selectedDate, recent }: ReviewHistoryProps) {
   return (
-    <section className="review-history overflow-hidden rounded-2xl border border-border/50 bg-card/80">
+    <section className="review-history overflow-hidden rounded-2xl border border-border/40 bg-card/70">
       <div className="border-b border-border/40 px-5 py-4">
         <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
           Archive

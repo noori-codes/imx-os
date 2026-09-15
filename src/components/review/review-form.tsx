@@ -88,7 +88,7 @@ export function ReviewForm({ date, review }: ReviewFormProps) {
       id="review-form"
       action={formAction}
       className={cn(
-        "review-form relative overflow-hidden rounded-[1.35rem] border border-border/50 bg-card/80",
+        "review-form relative overflow-hidden rounded-[1.35rem] border border-border/40 bg-card/70",
         review && "border-foreground/10",
       )}
     >

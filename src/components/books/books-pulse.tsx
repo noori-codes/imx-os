@@ -77,7 +77,7 @@ export function BooksPulse({ stats }: BooksPulseProps) {
   return (
     <section
       className={cn(
-        "books-pulse relative overflow-hidden py-2 sm:py-3",
+        "books-pulse relative overflow-hidden rounded-[1.75rem] border border-border/50 bg-card/85 px-5 py-6 sm:px-7 sm:py-8",
         copy.sealed && "books-pulse-sealed",
       )}
     >

@@ -9,7 +9,7 @@ function Bone({ className }: { className?: string }) {
 function BooksSkeletonBody() {
   return (
     <>
-      <div className="books-pulse relative overflow-hidden py-2 sm:py-3">
+      <div className="books-pulse relative overflow-hidden rounded-[1.75rem] border border-border/50 bg-card/85 px-5 py-6 sm:px-7 sm:py-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:justify-between">
           <div className="space-y-2 text-center sm:text-left">
             <Bone className="mx-auto h-2.5 w-28 sm:mx-0" />

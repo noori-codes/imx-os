@@ -193,7 +193,7 @@ export function TaskList({
       {groups.map((group) => (
         <section
           key={group.id}
-          className="tasks-group overflow-hidden rounded-2xl border border-border/50 bg-card/80"
+          className="tasks-group overflow-hidden rounded-2xl border border-border/40 bg-card/70"
         >
           <div className="flex items-baseline justify-between gap-3 border-b border-border/40 px-4 py-3">
             <h2
@@ -230,7 +230,7 @@ export function TaskList({
       ))}
 
       {completed.length > 0 ? (
-        <section className="tasks-group overflow-hidden rounded-2xl border border-border/50 bg-card/60">
+        <section className="tasks-group overflow-hidden rounded-2xl border border-border/40 bg-card/55">
           <Button
             type="button"
             variant="ghost"

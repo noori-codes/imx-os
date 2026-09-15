@@ -2157,7 +2157,9 @@ html[data-focus-session] body {
 }
 
 .cal-pulse {
-  /* Open hero — atmosphere from stage wash */
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--foreground) 5%, transparent),
+    0 28px 56px -40px color-mix(in oklab, var(--foreground) 22%, transparent);
 }
 
 .cal-pulse-vignette {
@@ -2263,7 +2265,8 @@ html[data-focus-session] body {
 }
 
 .cal-dock {
-  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--foreground) 4%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--foreground) 3%, transparent);
 }
 
 .cal-dock-glow {
@@ -2464,7 +2467,9 @@ html[data-focus-session] body {
 }
 
 .notes-pulse {
-  /* Open hero — atmosphere from stage wash */
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--foreground) 5%, transparent),
+    0 28px 56px -40px color-mix(in oklab, var(--foreground) 22%, transparent);
 }
 
 .notes-pulse-vignette {
@@ -2719,7 +2724,9 @@ html[data-focus-session] body {
 }
 
 .books-pulse {
-  /* Open hero — atmosphere from stage wash */
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--foreground) 5%, transparent),
+    0 28px 56px -40px color-mix(in oklab, var(--foreground) 22%, transparent);
 }
 
 .books-pulse-vignette {
@@ -2878,7 +2885,9 @@ html[data-focus-session] body {
 }
 
 .review-pulse {
-  /* Open hero — atmosphere from stage wash */
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--foreground) 5%, transparent),
+    0 28px 56px -40px color-mix(in oklab, var(--foreground) 22%, transparent);
 }
 
 .review-pulse-vignette {
@@ -3089,7 +3098,9 @@ html[data-focus-session] body {
 }
 
 .goals-pulse {
-  /* Open hero — atmosphere from stage wash */
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--foreground) 5%, transparent),
+    0 28px 56px -40px color-mix(in oklab, var(--foreground) 22%, transparent);
 }
 
 .goals-pulse-vignette {
@@ -3132,7 +3143,8 @@ html[data-focus-session] body {
 }
 
 .goals-composer {
-  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--foreground) 4%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--foreground) 3%, transparent);
 }
 
 .goals-composer-glow {
@@ -3272,13 +3284,18 @@ html[data-focus-session] body {
 }
 
 .habits-pulse {
-  /* Open hero — atmosphere from stage wash */
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--foreground) 5%, transparent),
+    0 28px 56px -40px color-mix(in oklab, var(--foreground) 22%, transparent);
 }
 
 .habits-composer {
   box-shadow:
-    inset 0 1px 0 color-mix(in oklab, var(--foreground) 4%, transparent),
-    0 22px 48px -36px color-mix(in oklab, var(--foreground) 16%, transparent);
+    inset 0 1px 0 color-mix(in oklab, var(--foreground) 3%, transparent);
+}
+
+.habits-hero {
+  border-radius: 1.75rem;
 }
 
 .habits-pulse-vignette {
@@ -3502,7 +3519,9 @@ html[data-focus-session] body {
 }
 
 .tasks-pulse {
-  /* Open hero — atmosphere from stage wash, not a card shell */
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--foreground) 5%, transparent),
+    0 28px 56px -40px color-mix(in oklab, var(--foreground) 22%, transparent);
 }
 
 .tasks-pulse-vignette {
@@ -3545,7 +3564,8 @@ html[data-focus-session] body {
 }
 
 .tasks-composer {
-  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--foreground) 4%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--foreground) 3%, transparent);
 }
 
 .tasks-composer-glow {
@@ -3561,7 +3581,8 @@ html[data-focus-session] body {
 }
 
 .tasks-group {
-  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--foreground) 3.5%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--foreground) 3%, transparent);
 }
 
 .tasks-stagger > * {
@@ -3684,7 +3705,9 @@ html[data-focus-session] body {
 }
 
 .settings-pulse {
-  /* Open hero — atmosphere from stage wash */
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--foreground) 5%, transparent),
+    0 28px 56px -40px color-mix(in oklab, var(--foreground) 22%, transparent);
 }
 
 .settings-pulse-vignette {
@@ -4206,7 +4229,9 @@ html[data-focus-session] body {
 }
 
 .search-hero {
-  /* Open hero — atmosphere from stage wash */
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--foreground) 5%, transparent),
+    0 28px 56px -40px color-mix(in oklab, var(--foreground) 22%, transparent);
 }
 
 .search-hero-vignette {

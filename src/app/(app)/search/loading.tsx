@@ -12,7 +12,7 @@ function Bone({ className }: { className?: string }) {
 function SearchSkeletonBody() {
   return (
     <>
-      <div className="search-hero relative mx-auto w-full max-w-2xl overflow-hidden py-2 sm:py-3">
+      <div className="search-hero relative mx-auto w-full max-w-2xl overflow-hidden rounded-[1.75rem] border border-border/50 bg-card/85 p-5 sm:p-7">
         <div className="space-y-5">
           <div className="space-y-3 text-center sm:text-left">
             <Bone className="mx-auto h-2.5 w-28 sm:mx-0" />

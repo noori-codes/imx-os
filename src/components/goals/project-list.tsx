@@ -132,7 +132,7 @@ function ProjectRow({
 
   if (editing) {
     return (
-      <li className="rounded-2xl border border-border/50 bg-card/80 p-4">
+      <li className="rounded-2xl border border-border/40 bg-card/70 p-4">
         <div className="space-y-3">
           <Input
             value={title}
@@ -185,7 +185,7 @@ function ProjectRow({
   }
 
   return (
-    <li className="group rounded-2xl border border-border/50 bg-card/80 p-4 transition-colors hover:border-border">
+    <li className="group rounded-2xl border border-border/40 bg-card/70 p-4 transition-colors hover:border-border">
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
           <Link

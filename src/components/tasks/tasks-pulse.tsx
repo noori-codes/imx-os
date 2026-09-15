@@ -82,7 +82,7 @@ export function TasksPulse({ stats, focusNext }: TasksPulseProps) {
   return (
     <section
       className={cn(
-        "tasks-pulse relative overflow-hidden py-2 sm:py-3",
+        "tasks-pulse relative overflow-hidden rounded-[1.75rem] border border-border/50 bg-card/85 px-5 py-6 sm:px-7 sm:py-8",
         copy.clear && "tasks-pulse-sealed",
       )}
     >
