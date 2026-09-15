@@ -1,0 +1,57 @@
+{
+  "name": "IMX OS",
+  "short_name": "IMX OS",
+  "description": "Your private personal operating system",
+  "id": "/",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "icons": [
+    {
+      "src": "/imx-logo-64.png",
+      "sizes": "64x64",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/og-image.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/og-image.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Home",
+      "url": "/dashboard",
+      "description": "Daily overview"
+    },
+    {
+      "name": "Add task",
+      "short_name": "Task",
+      "url": "/tasks?compose=1",
+      "description": "Capture a task"
+    },
+    {
+      "name": "Focus",
+      "short_name": "Focus",
+      "url": "/focus",
+      "description": "Start a focus block"
+    }
+  ]
+}
