@@ -1,18 +1,28 @@
+import { Suspense } from "react";
+import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+
 import { getUserSettings } from "@/actions/settings";
 import { Header } from "@/components/layout/header";
 import { SettingsHub } from "@/components/settings/settings-hub";
+import { SettingsSkeleton } from "@/components/settings/settings-skeleton";
 import { SettingsStage } from "@/components/settings/settings-stage";
 import { AppPageFrame } from "@/components/shared/app-page-frame";
 import { createClient } from "@/lib/supabase/server";
 
-export default async function SettingsPage() {
+export const metadata: Metadata = {
+  title: "Settings",
+  description: "Preferences and account",
+};
+
+async function SettingsBody() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return null;
+    redirect("/login");
   }
 
   const settings = await getUserSettings();
@@ -33,35 +43,28 @@ export default async function SettingsPage() {
     : "—";
 
   return (
-    <>
-      <Header title="Settings" />
-      <AppPageFrame className="max-w-5xl gap-8 md:py-8">
-        <SettingsStage>
-          <div className="settings-reveal">
-            <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground">Control room</p>
-                <h2 className="mt-1 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-                  Settings
-                </h2>
-                <p className="mt-1.5 max-w-lg text-sm text-muted-foreground">
-                  Appearance, focus defaults, alerts, and account — tuned for how
-                  you work.
-                </p>
-              </div>
-            </header>
-          </div>
+    <AppPageFrame className="max-w-5xl gap-8 md:py-8">
+      <SettingsStage>
+        <div className="settings-reveal">
+          <SettingsHub
+            email={user.email ?? "Signed in"}
+            memberSince={memberSince}
+            memberShort={memberShort}
+            settings={settings}
+          />
+        </div>
+      </SettingsStage>
+    </AppPageFrame>
+  );
+}
 
-          <div className="settings-reveal settings-reveal-delay-1">
-            <SettingsHub
-              email={user.email ?? "Signed in"}
-              memberSince={memberSince}
-              memberShort={memberShort}
-              settings={settings}
-            />
-          </div>
-        </SettingsStage>
-      </AppPageFrame>
+export default function SettingsPage() {
+  return (
+    <>
+      <Header chrome title="Settings" />
+      <Suspense fallback={<SettingsSkeleton />}>
+        <SettingsBody />
+      </Suspense>
     </>
   );
 }
