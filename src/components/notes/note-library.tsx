@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { BookOpen, FileText, NotebookPen, Search } from "lucide-react";
 
+import { CreateNoteButton } from "@/components/notes/create-note-button";
 import { EmptyState } from "@/components/shared/empty-state";
 import { cn } from "@/lib/utils";
 import type { NoteListItem, NoteType } from "@/types/note";
@@ -54,7 +55,24 @@ export function NoteLibrary({ notes }: NoteLibraryProps) {
         icon={NotebookPen}
         title="No notes yet"
         description="Create a note or open today's journal to start writing."
-      />
+      >
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+          <CreateNoteButton
+            type="note"
+            label="New note"
+            icon="plus"
+            tone="primary"
+            capture
+          />
+          <CreateNoteButton
+            type="journal"
+            label="Start journal"
+            icon="book"
+            tone="outline"
+            className="border-border/60 bg-card/70"
+          />
+        </div>
+      </EmptyState>
     );
   }
 
@@ -97,7 +115,22 @@ export function NoteLibrary({ notes }: NoteLibraryProps) {
       </div>
 
       {filtered.length === 0 ? (
-        <EmptyState title="Nothing matches that filter." className="py-10" />
+        <EmptyState
+          title="Nothing matches that filter."
+          description="Clear search or switch tabs to see the rest of your library."
+          className="py-10"
+        >
+          <button
+            type="button"
+            onClick={() => {
+              setFilter("all");
+              setQuery("");
+            }}
+            className="mt-5 inline-flex h-10 items-center rounded-xl border border-border/60 bg-card/70 px-4 text-sm font-medium text-foreground transition-colors hover:border-border"
+          >
+            Reset filters
+          </button>
+        </EmptyState>
       ) : (
         <ul className="notes-grid grid gap-3 sm:grid-cols-2">
           {filtered.map((note, index) => {

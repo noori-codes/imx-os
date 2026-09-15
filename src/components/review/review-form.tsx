@@ -1,13 +1,18 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState, useTransition, type ChangeEvent } from "react";
+import { useRouter } from "next/navigation";
+import { ListTodo } from "lucide-react";
 
 import { saveDailyReview, type ReviewActionState } from "@/actions/review";
+import { createTasksFromLines } from "@/actions/tasks";
 import {
   ENERGY_SCALE,
   MOOD_SCALE,
   type ReviewScaleOption,
 } from "@/lib/review-scale";
+import { addDays, startOfDay, toDateString } from "@/lib/date-utils";
+import { imxToast } from "@/lib/imx-toast";
 import { cn } from "@/lib/utils";
 import type { DailyReview } from "@/types/review";
 
@@ -17,21 +22,78 @@ type ReviewFormProps = {
 };
 
 export function ReviewForm({ date, review }: ReviewFormProps) {
+  const router = useRouter();
   const saveForDate = saveDailyReview.bind(null, date);
   const [state, formAction, pending] = useActionState<
     ReviewActionState | null,
     FormData
   >(saveForDate, null);
+  const toasted = useRef<ReviewActionState | null>(null);
+  const [tomorrowFocus, setTomorrowFocus] = useState(
+    review?.tomorrow_focus ?? "",
+  );
+  const [spawnPending, startSpawn] = useTransition();
+
+  useEffect(() => {
+    setTomorrowFocus(review?.tomorrow_focus ?? "");
+  }, [review?.tomorrow_focus, review?.id]);
+
+  useEffect(() => {
+    if (!state || state === toasted.current) return;
+    toasted.current = state;
+    if (state.error) {
+      imxToast("Couldn’t save review", {
+        description: state.error,
+        tone: "error",
+      });
+      return;
+    }
+    if (state.saved) {
+      imxToast(review ? "Review updated" : "Review sealed", {
+        tone: "success",
+      });
+    }
+  }, [state, review]);
+
+  const tomorrowLines = tomorrowFocus
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const canSpawn = tomorrowLines.length > 0;
+
+  function spawnTomorrowTasks() {
+    if (!canSpawn) return;
+    const due = toDateString(addDays(startOfDay(new Date()), 1));
+    startSpawn(async () => {
+      const result = await createTasksFromLines(tomorrowLines, due);
+      if (result.error) {
+        imxToast("Couldn’t create tasks", {
+          description: result.error,
+          tone: "error",
+        });
+        return;
+      }
+      imxToast(
+        result.created === 1
+          ? "1 task due tomorrow"
+          : `${result.created} tasks due tomorrow`,
+        { tone: "success" },
+      );
+      router.push("/tasks?view=week");
+    });
+  }
 
   return (
     <form
+      id="review-form"
       action={formAction}
       className={cn(
-        "review-form overflow-hidden rounded-2xl border border-border/50 bg-card/80",
+        "review-form relative overflow-hidden rounded-[1.35rem] border border-border/50 bg-card/80",
         review && "border-foreground/10",
       )}
     >
-      <div className="border-b border-border/40 px-5 py-4 sm:px-6">
+      <div className="review-form-glow" aria-hidden />
+      <div className="relative z-1 border-b border-border/40 px-5 py-4 sm:px-6">
         <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
           Reflection
         </p>
@@ -43,7 +105,7 @@ export function ReviewForm({ date, review }: ReviewFormProps) {
         </p>
       </div>
 
-      <div className="space-y-7 px-5 py-5 sm:px-6">
+      <div className="relative z-1 space-y-7 px-5 py-5 sm:px-6">
         <FeelingScale
           name="mood"
           legend="Mood"
@@ -64,6 +126,7 @@ export function ReviewForm({ date, review }: ReviewFormProps) {
           hint="Wins, progress, gratitude"
           defaultValue={review?.went_well ?? ""}
           placeholder="Name the things worth keeping…"
+          capture
         />
 
         <PromptField
@@ -80,7 +143,8 @@ export function ReviewForm({ date, review }: ReviewFormProps) {
           name="tomorrow_focus"
           label="Tomorrow's focus"
           hint="Shows on your dashboard greeting"
-          defaultValue={review?.tomorrow_focus ?? ""}
+          value={tomorrowFocus}
+          onChange={setTomorrowFocus}
           placeholder="The 1–3 things that matter most…"
         />
       </div>
@@ -97,8 +161,23 @@ export function ReviewForm({ date, review }: ReviewFormProps) {
               ? "Update review"
               : "Save review"}
         </button>
+        {canSpawn ? (
+          <button
+            type="button"
+            disabled={spawnPending}
+            onClick={spawnTomorrowTasks}
+            className="inline-flex h-10 items-center gap-2 rounded-xl border border-border/60 bg-card/70 px-4 text-sm font-medium text-foreground transition-colors hover:border-border disabled:opacity-60"
+          >
+            <ListTodo className="size-3.5" />
+            {spawnPending
+              ? "Creating…"
+              : `Add ${tomorrowLines.length} task${tomorrowLines.length === 1 ? "" : "s"} for tomorrow`}
+          </button>
+        ) : null}
         {state?.error ? (
-          <p className="text-sm text-destructive">{state.error}</p>
+          <p className="text-sm text-destructive" role="alert">
+            {state.error}
+          </p>
         ) : null}
         {state?.saved && !state.error ? (
           <p className="text-sm text-muted-foreground">Saved</p>
@@ -128,16 +207,22 @@ function FeelingScale({
 
   return (
     <fieldset className="review-feeling">
-      <div className="flex items-end justify-between gap-3">
-        <legend className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-          {legend}
-        </legend>
-        {active ? (
-          <p className="text-xs text-muted-foreground">{active.hint}</p>
-        ) : (
-          <p className="text-xs text-muted-foreground/70">Pick one</p>
-        )}
-      </div>
+      <legend className="w-full p-0">
+        <span className="flex w-full items-end justify-between gap-3">
+          <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+            {legend}
+          </span>
+          {active ? (
+            <span className="text-xs font-normal normal-case tracking-normal text-muted-foreground">
+              {active.hint}
+            </span>
+          ) : (
+            <span className="text-xs font-normal normal-case tracking-normal text-muted-foreground/70">
+              Pick one
+            </span>
+          )}
+        </span>
+      </legend>
 
       <div className="review-feeling-grid mt-3 grid grid-cols-5 gap-2">
         {options.map((option) => {
@@ -206,15 +291,23 @@ function PromptField({
   label,
   hint,
   defaultValue,
+  value,
+  onChange,
   placeholder,
+  capture = false,
 }: {
   id: string;
   name: string;
   label: string;
   hint: string;
-  defaultValue: string;
+  defaultValue?: string;
+  value?: string;
+  onChange?: (next: string) => void;
   placeholder: string;
+  capture?: boolean;
 }) {
+  const controlled = value !== undefined && onChange !== undefined;
+
   return (
     <div className="space-y-2">
       <div className="flex items-baseline justify-between gap-3">
@@ -227,8 +320,15 @@ function PromptField({
         id={id}
         name={name}
         rows={3}
-        defaultValue={defaultValue}
+        {...(controlled
+          ? {
+              value,
+              onChange: (event: ChangeEvent<HTMLTextAreaElement>) =>
+                onChange(event.target.value),
+            }
+          : { defaultValue: defaultValue ?? "" })}
         placeholder={placeholder}
+        data-imx-capture={capture ? true : undefined}
         className="w-full resize-none rounded-xl border border-border/50 bg-background/40 px-3.5 py-3 text-sm leading-relaxed outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-border focus:ring-2 focus:ring-ring/30"
       />
     </div>
