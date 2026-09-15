@@ -38,6 +38,11 @@ function InsightItem({
   );
 }
 
+const pillPrimary =
+  "inline-flex h-8 items-center rounded-lg bg-foreground px-3 text-xs font-medium text-background transition-opacity hover:opacity-90";
+const pillOutline =
+  "inline-flex h-8 items-center rounded-lg border border-border/60 bg-card/70 px-3 text-xs font-medium text-foreground transition-colors hover:border-border";
+
 export function DashboardInsightStrip({
   focusMinutes,
   tasksDoneToday,
@@ -91,11 +96,8 @@ export function DashboardInsightStrip({
   const empty = items.length === 0;
 
   return (
-    <Link
-      href="/analytics"
-      className="dash-insight-strip group block rounded-2xl border px-5 py-4 transition-colors hover:border-border/55 hover:bg-card/55 sm:px-6"
-    >
-      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+    <div className="dash-insight-strip border-t border-border/30 pt-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
         <div className="min-w-0">
           <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground/70">
             This week
@@ -124,10 +126,38 @@ export function DashboardInsightStrip({
             )}
           </p>
         </div>
-        <span className="shrink-0 text-xs font-medium tracking-wide text-muted-foreground transition-colors group-hover:text-foreground">
-          Analytics →
-        </span>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {empty ? (
+            <>
+              <Link href="/focus" className={pillPrimary}>
+                Open Focus
+              </Link>
+              <Link href="/habits" className={pillOutline}>
+                Habits
+              </Link>
+              <Link href="/review" className={pillOutline}>
+                Review
+              </Link>
+            </>
+          ) : (
+            <>
+              {habitsTotal > 0 && habitsDone === 0 ? (
+                <Link href="/habits" className={pillOutline}>
+                  Habits
+                </Link>
+              ) : focusMinutes === 0 ? (
+                <Link href="/focus" className={pillOutline}>
+                  Focus
+                </Link>
+              ) : null}
+              <Link href="/analytics" className={pillOutline}>
+                Analytics →
+              </Link>
+            </>
+          )}
+        </div>
       </div>
-    </Link>
+    </div>
   );
 }

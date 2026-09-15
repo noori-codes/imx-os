@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Play } from "lucide-react";
 
 import {
@@ -19,6 +20,7 @@ function scrollToTimer() {
 }
 
 export function FocusContinueBar() {
+  const router = useRouter();
   const clock = useFocusTimer((s) => s.clock);
   const mode = useFocusTimer((s) => s.mode);
   const elapsedSeconds = useFocusTimer((s) => s.elapsedSeconds);
@@ -28,6 +30,7 @@ export function FocusContinueBar() {
   const remainingSeconds = useFocusTimer((s) => s.remainingSeconds);
   const progressBaseSeconds = useFocusTimer((s) => s.progressBaseSeconds);
   const intention = useFocusTimer((s) => s.intention);
+  const linkedTaskTitle = useFocusTimer((s) => s.linkedTaskTitle);
 
   const canContinue = canContinueFocusSession({
     clock,
@@ -58,15 +61,20 @@ export function FocusContinueBar() {
       ? durationSeconds - remainingSeconds
       : 0;
   const sessionSeconds = stopwatchSession || countdownSession;
-  const subject = continueSubject(intention, null);
+  const subject = continueSubject(intention, linkedTaskTitle);
   const pickupHint =
     progressBaseSeconds > 0
       ? buildPickupHint(sessionSeconds, subject)
       : subject;
 
   function handleContinue() {
+    const onFocusPage = Boolean(document.getElementById("focus-timer"));
     useFocusTimer.getState().start();
-    scrollToTimer();
+    if (onFocusPage) {
+      scrollToTimer();
+      return;
+    }
+    router.push("/focus");
   }
 
   return (

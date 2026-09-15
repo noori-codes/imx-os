@@ -5,14 +5,18 @@ function Bone({ className }: { className?: string }) {
   return <div className={cn("imx-skeleton-bone", className)} aria-hidden="true" />;
 }
 
-function PanelHeader() {
+function PanelHeader({ withRing = false }: { withRing?: boolean }) {
   return (
     <div className="flex items-center justify-between gap-3 border-b border-border/40 px-5 py-4">
       <div className="space-y-2">
-        <Bone className="h-3 w-16" />
+        <Bone className="h-2.5 w-16" />
+        <Bone className="h-3 w-20" />
         <Bone className="h-2.5 w-24 opacity-55" />
       </div>
-      <Bone className="h-2.5 w-12" />
+      <div className="flex items-center gap-3">
+        {withRing ? <Bone className="size-12 rounded-full" /> : null}
+        <Bone className="h-2.5 w-12" />
+      </div>
     </div>
   );
 }
@@ -20,27 +24,32 @@ function PanelHeader() {
 function DashboardSkeletonBody() {
   return (
     <div className="dash-page-content flex flex-1 flex-col gap-6">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="space-y-2">
-          <Bone className="h-2.5 w-28" />
-          <Bone className="h-8 w-56 max-w-full sm:h-9 sm:w-72" />
-          <Bone className="h-3.5 w-48 max-w-full opacity-55" />
-        </div>
-        <Bone className="h-10 w-24 rounded-xl" />
-      </header>
-
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div
-            key={i}
-            className="rounded-2xl border border-border/50 bg-card/80 p-4 sm:p-5"
-          >
-            <Bone className="h-2.5 w-16" />
-            <Bone className="mt-3 h-8 w-14 sm:h-9" />
-            <Bone className="mt-2 h-2.5 w-20 opacity-55" />
+      <section className="dash-stage dash-stage-hero relative overflow-hidden px-6 py-8 sm:px-8 sm:py-10">
+        <div className="relative z-[2] flex min-h-[min(42vh,22rem)] flex-col justify-between gap-10 sm:min-h-[24rem]">
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-3 text-center sm:text-left">
+              <Bone className="mx-auto h-2.5 w-36 sm:mx-0" />
+              <Bone className="mx-auto h-8 w-56 max-w-full sm:mx-0 sm:h-9 sm:w-72" />
+              <Bone className="mx-auto h-3.5 w-48 max-w-full opacity-55 sm:mx-0" />
+            </div>
+            <Bone className="mx-auto h-10 w-28 rounded-xl sm:mx-0" />
           </div>
-        ))}
-      </div>
+          <div className="flex flex-col gap-8 sm:flex-row sm:items-end sm:justify-between">
+            <div className="space-y-2 text-center sm:text-left">
+              <Bone className="mx-auto h-2.5 w-20 sm:mx-0" />
+              <Bone className="mx-auto h-14 w-24 sm:mx-0 sm:h-16" />
+            </div>
+            <div className="grid grid-cols-3 gap-5 sm:min-w-[17.5rem] sm:gap-7">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="space-y-2 text-center sm:text-left">
+                  <Bone className="mx-auto h-2.5 w-12 sm:mx-0" />
+                  <Bone className="mx-auto h-6 w-14 sm:mx-0" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
 
       <div className="dash-bento">
         <div className="dash-bento-today min-h-88 lg:min-h-112">
@@ -62,7 +71,7 @@ function DashboardSkeletonBody() {
 
         <div className="dash-bento-side flex flex-col gap-4">
           <section className="dash-panel min-h-44">
-            <PanelHeader />
+            <PanelHeader withRing />
             <div className="flex flex-wrap gap-3 px-5 py-4">
               {Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="flex w-17 flex-col items-center gap-1.5">
@@ -74,16 +83,12 @@ function DashboardSkeletonBody() {
           </section>
           <section className="dash-panel min-h-48">
             <PanelHeader />
-            <div className="space-y-4 px-5 py-4">
-              {Array.from({ length: 2 }).map((_, i) => (
-                <div key={i} className="space-y-2">
-                  <div className="flex justify-between gap-3">
-                    <Bone className="h-3 w-[55%]" />
-                    <Bone className="h-3 w-8" />
-                  </div>
-                  <Bone className="h-1.5 w-full rounded-full" />
-                </div>
-              ))}
+            <div className="flex items-center gap-4 px-5 py-4">
+              <Bone className="size-16 shrink-0 rounded-full" />
+              <div className="min-w-0 flex-1 space-y-2">
+                <Bone className="h-3 w-[70%]" />
+                <Bone className="h-2.5 w-24 opacity-55" />
+              </div>
             </div>
           </section>
         </div>
@@ -114,7 +119,7 @@ function DashboardSkeletonBody() {
         </div>
       </div>
 
-      <div className="dash-insight-strip rounded-2xl border px-5 py-4 sm:px-6">
+      <div className="dash-insight-strip border-t border-border/30 pt-6">
         <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-2">
             <Bone className="h-2.5 w-16" />
