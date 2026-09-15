@@ -1,12 +1,13 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 import { ChevronDown, Plus } from "lucide-react";
 
 import { createProject, type ProjectActionState } from "@/actions/projects";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { imxToast } from "@/lib/imx-toast";
 import { cn } from "@/lib/utils";
 
 type ProjectFormProps = {
@@ -30,25 +31,17 @@ export function ProjectForm({
   >(async (prev, formData) => {
     const result = await createProjectForGoal(prev, formData);
     if (!result.error) {
+      const title = String(formData.get("title") ?? "").trim();
+      imxToast("Project added", {
+        description: title || undefined,
+        tone: "success",
+      });
       formRef.current?.reset();
       setMoreOpen(false);
       queueMicrotask(() => titleRef.current?.focus());
     }
     return result;
   }, null);
-
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key !== "n" && e.key !== "N") return;
-      const tag = (e.target as HTMLElement)?.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
-      if ((e.target as HTMLElement)?.isContentEditable) return;
-      e.preventDefault();
-      titleRef.current?.focus();
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
 
   return (
     <form
@@ -65,6 +58,9 @@ export function ProjectForm({
             placeholder="New project under this goal"
             required
             autoComplete="off"
+            data-imx-capture
+            aria-invalid={state?.error ? true : undefined}
+            aria-describedby={state?.error ? "project-form-error" : undefined}
             className="h-10 border-0 bg-muted/40 pl-9 shadow-none focus-visible:ring-1"
             aria-label="New project"
           />
@@ -108,7 +104,13 @@ export function ProjectForm({
       </p>
 
       {state?.error ? (
-        <p className="mt-3 text-sm text-destructive">{state.error}</p>
+        <p
+          id="project-form-error"
+          role="alert"
+          className="mt-3 text-sm text-destructive"
+        >
+          {state.error}
+        </p>
       ) : null}
     </form>
   );

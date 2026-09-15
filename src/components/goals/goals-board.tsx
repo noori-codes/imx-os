@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useOptimistic, useState, useTransition } from "react";
+import { useEffect, useMemo, useOptimistic, useState, useTransition } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import {
-  ArrowUpRight,
   Pencil,
   Search,
   Target,
@@ -12,17 +12,18 @@ import {
 } from "lucide-react";
 
 import { deleteGoal, updateGoal } from "@/actions/goals";
+import { ProgressRing } from "@/components/dashboard/progress-ring";
 import { GoalForm } from "@/components/goals/goal-form";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
 import { confirm } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { imxToast } from "@/lib/imx-toast";
 import {
   goalMotion,
   goalMotionLabel,
   goalProgressPercent,
-  pickSpotlightGoal,
   type GoalMotion,
 } from "@/lib/goal-status";
 import { cn } from "@/lib/utils";
@@ -32,54 +33,16 @@ type Filter = "all" | GoalMotion;
 
 type GoalsBoardProps = {
   goals: GoalWithCounts[];
+  /** From ⌘K “Add goal” — focus the capture field once. */
+  compose?: boolean;
 };
 
-function ProgressRing({
-  progress,
-  size = 72,
-  stroke = 5,
-  className,
-}: {
-  progress: number;
-  size?: number;
-  stroke?: number;
-  className?: string;
-}) {
-  const radius = (size - stroke) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference * (1 - Math.min(100, Math.max(0, progress)) / 100);
-
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox={`0 0 ${size} ${size}`}
-      className={cn("shrink-0 -rotate-90", className)}
-      aria-hidden
-    >
-      <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={radius}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={stroke}
-        className="text-muted/70"
-      />
-      <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={radius}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={stroke}
-        strokeLinecap="round"
-        strokeDasharray={circumference}
-        strokeDashoffset={offset}
-        className="text-foreground transition-[stroke-dashoffset] duration-700 ease-out"
-      />
-    </svg>
-  );
+function focusGoalsComposer() {
+  const root = document.getElementById("goals-composer");
+  root?.scrollIntoView({ behavior: "smooth", block: "center" });
+  root
+    ?.querySelector<HTMLInputElement>("input[name=title]")
+    ?.focus({ preventScroll: true });
 }
 
 function MotionBadge({ motion }: { motion: GoalMotion }) {
@@ -106,7 +69,10 @@ const FILTERS: { id: Filter; label: string }[] = [
   { id: "complete", label: "Complete" },
 ];
 
-export function GoalsBoard({ goals }: GoalsBoardProps) {
+export function GoalsBoard({ goals, compose = false }: GoalsBoardProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const [focusComposer, setFocusComposer] = useState(compose);
   const [optimisticGoals, removeOptimistic] = useOptimistic(
     goals,
     (current: GoalWithCounts[], id: string) =>
@@ -115,10 +81,14 @@ export function GoalsBoard({ goals }: GoalsBoardProps) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
 
-  const spotlight = useMemo(
-    () => pickSpotlightGoal(optimisticGoals),
-    [optimisticGoals],
-  );
+  useEffect(() => {
+    if (!compose) return;
+    setFocusComposer(true);
+    const params = new URLSearchParams(window.location.search);
+    params.delete("compose");
+    const next = params.toString();
+    router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false });
+  }, [compose, pathname, router]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -135,20 +105,28 @@ export function GoalsBoard({ goals }: GoalsBoardProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      {spotlight ? <GoalsSpotlight goal={spotlight} /> : null}
-
-      <div className="goals-composer rounded-2xl border border-border/50 bg-card/80 p-4 sm:p-5">
-        <div className="mb-3 flex items-baseline justify-between gap-3">
-          <div>
-            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-              Declare
-            </p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Name an outcome. Projects and tasks live underneath.
-            </p>
+      <div
+        id="goals-composer"
+        className="goals-composer relative overflow-hidden rounded-2xl border border-border/50 bg-card/80 p-4 sm:p-5"
+      >
+        <div className="goals-composer-glow" aria-hidden />
+        <div className="relative z-1">
+          <div className="mb-3 flex items-baseline justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                Declare
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Name an outcome. Projects and tasks live underneath. Press{" "}
+                <kbd className="rounded border border-border/60 bg-muted/50 px-1.5 py-0.5 font-mono text-[10px]">
+                  N
+                </kbd>{" "}
+                to focus.
+              </p>
+            </div>
           </div>
+          <GoalForm variant="composer" autoFocusTitle={focusComposer} />
         </div>
-        <GoalForm variant="composer" />
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -191,7 +169,25 @@ export function GoalsBoard({ goals }: GoalsBoardProps) {
               : "Try another filter or clear the search."
           }
           className="py-16"
-        />
+        >
+          {optimisticGoals.length === 0 ? (
+            <Button type="button" className="mt-5" onClick={focusGoalsComposer}>
+              Declare a goal
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              className="mt-5"
+              onClick={() => {
+                setQuery("");
+                setFilter("all");
+              }}
+            >
+              Clear filters
+            </Button>
+          )}
+        </EmptyState>
       ) : (
         <ul className="goals-grid grid gap-3 sm:grid-cols-2">
           {filtered.map((goal, index) => (
@@ -205,67 +201,6 @@ export function GoalsBoard({ goals }: GoalsBoardProps) {
         </ul>
       )}
     </div>
-  );
-}
-
-function GoalsSpotlight({ goal }: { goal: GoalWithCounts }) {
-  const progress = goalProgressPercent(goal);
-  const motion = goalMotion(goal);
-  const hasTasks = goal.task_count > 0;
-
-  return (
-    <section className="goals-spotlight relative overflow-hidden rounded-2xl border border-border/50 bg-card/80 px-5 py-5 sm:px-7 sm:py-6">
-      <div className="goals-spotlight-glow" aria-hidden />
-      <div className="relative z-1 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-            {motion === "complete" ? "North star cleared" : "Closest finish"}
-          </p>
-          <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
-            <Link
-              href={`/goals/${goal.id}`}
-              className="transition-colors hover:text-foreground/80"
-            >
-              {goal.title}
-            </Link>
-          </h3>
-          {goal.description ? (
-            <p className="mt-2 line-clamp-2 max-w-xl text-sm text-muted-foreground">
-              {goal.description}
-            </p>
-          ) : null}
-          <div className="mt-4 flex flex-wrap items-center gap-2.5">
-            <MotionBadge motion={motion} />
-            <span className="text-xs text-muted-foreground">
-              {goal.project_count} project
-              {goal.project_count === 1 ? "" : "s"}
-              {hasTasks
-                ? ` · ${goal.completed_task_count}/${goal.task_count} tasks`
-                : " · awaiting tasks"}
-            </span>
-          </div>
-          <Link
-            href={`/goals/${goal.id}`}
-            className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-foreground transition-opacity hover:opacity-70"
-          >
-            Open goal
-            <ArrowUpRight className="size-3.5" />
-          </Link>
-        </div>
-
-        <div className="relative mx-auto flex size-28 items-center justify-center sm:mx-0">
-          <ProgressRing progress={hasTasks ? progress : 0} size={112} stroke={6} />
-          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
-            <p className="text-2xl font-semibold tabular-nums tracking-tight sm:text-3xl">
-              {hasTasks ? `${progress}%` : "—"}
-            </p>
-            <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-              {hasTasks ? "done" : "seed"}
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
   );
 }
 
@@ -304,6 +239,7 @@ function GoalCard({
       startTransition(async () => {
         onOptimisticDelete();
         await deleteGoal(goal.id);
+        imxToast("Goal deleted", { tone: "success" });
       });
     })();
   }
@@ -347,6 +283,8 @@ function GoalCard({
             }}
             autoFocus
             aria-label="Goal title"
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error ? "goal-edit-error" : undefined}
           />
           <Textarea
             value={description}
@@ -364,11 +302,20 @@ function GoalCard({
               size="sm"
               variant="ghost"
               onClick={() => setEditing(false)}
+              aria-label="Cancel edit"
             >
               <X className="size-4" />
             </Button>
           </div>
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+          {error ? (
+            <p
+              id="goal-edit-error"
+              role="alert"
+              className="text-sm text-destructive"
+            >
+              {error}
+            </p>
+          ) : null}
         </div>
       </li>
     );
@@ -380,17 +327,16 @@ function GoalCard({
       style={{ ["--i" as string]: index }}
     >
       <div className="flex items-start gap-3">
-        <div className="relative flex size-14 shrink-0 items-center justify-center">
-          <ProgressRing
-            progress={hasTasks ? progress : 0}
-            size={56}
-            stroke={4}
-            className="absolute inset-0"
-          />
+        <ProgressRing
+          value={hasTasks ? progress : 0}
+          size={56}
+          stroke={4}
+          sealed={motion === "complete"}
+        >
           <span className="text-xs font-semibold tabular-nums text-foreground">
             {hasTasks ? `${progress}` : "·"}
           </span>
-        </div>
+        </ProgressRing>
 
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
@@ -444,6 +390,18 @@ function GoalCard({
                 ? ` · ${goal.completed_task_count}/${goal.task_count}`
                 : null}
             </span>
+            {!hasTasks ? (
+              <Link
+                href={
+                  goal.first_project_id
+                    ? `/goals/${goal.id}/projects/${goal.first_project_id}?compose=1`
+                    : `/goals/${goal.id}`
+                }
+                className="text-xs font-medium text-foreground/80 underline-offset-2 hover:underline"
+              >
+                {goal.project_count === 0 ? "Add project →" : "Add task →"}
+              </Link>
+            ) : null}
           </div>
         </div>
       </div>

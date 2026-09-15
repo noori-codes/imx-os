@@ -2,25 +2,18 @@
 
 import { useEffect, type ReactNode } from "react";
 
-import {
-  FocusContinueBar,
-  useFocusContinueBarVisible,
-} from "@/components/focus/focus-continue-bar";
+import { useFocusContinueBarVisible } from "@/components/focus/focus-continue-bar";
 import { AppPageFrame } from "@/components/shared/app-page-frame";
 import { cn } from "@/lib/utils";
 import { useFocusTimer } from "@/stores/focus-timer";
 
 type FocusWorkspaceProps = {
-  header?: ReactNode;
-  kpis?: ReactNode;
   timer: ReactNode;
   sky: ReactNode;
   sessions: ReactNode;
 };
 
 export function FocusWorkspace({
-  header,
-  kpis,
   timer,
   sky,
   sessions,
@@ -60,35 +53,29 @@ export function FocusWorkspace({
     <AppPageFrame className="max-w-5xl gap-8 md:py-8">
       <div className="focus-studio">
         <div className="focus-studio-wash" aria-hidden="true" />
+        <div className="focus-studio-glow" aria-hidden="true" />
+        <div className="focus-studio-glow-soft" aria-hidden="true" />
         <div
           className={cn(
-            "focus-studio-content flex w-full flex-col gap-6",
+            "focus-studio-content flex w-full flex-col gap-8",
             continueBarVisible &&
               "pb-[calc(var(--mobile-continue-h)+0.75rem)]",
           )}
         >
-          {header ? (
-            <div className="focus-reveal">{header}</div>
-          ) : null}
-          {kpis ? (
-            <div className="focus-reveal focus-reveal-delay-1">{kpis}</div>
-          ) : null}
+          <div className="focus-reveal w-full">{timer}</div>
 
-          <div className="focus-reveal focus-reveal-delay-2 w-full">
-            {timer}
-          </div>
-
-          <div className="focus-reveal focus-reveal-delay-3 mt-2 w-full border-t border-border/40 pt-8">
+          <div className="focus-reveal focus-reveal-delay-1 w-full border-t border-border/40 pt-8">
             {sky}
           </div>
 
-          <div className="mt-4 w-full sm:mt-6" id="focus-recent-sessions">
+          <div
+            className="focus-reveal focus-reveal-delay-2 w-full"
+            id="focus-recent-sessions"
+          >
             {sessions}
           </div>
         </div>
       </div>
-
-      <FocusContinueBar />
     </AppPageFrame>
   );
 }

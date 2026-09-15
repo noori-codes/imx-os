@@ -7,13 +7,18 @@ import { createGoal, type GoalActionState } from "@/actions/goals";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { imxToast } from "@/lib/imx-toast";
 import { cn } from "@/lib/utils";
 
 type GoalFormProps = {
   variant?: "default" | "composer";
+  autoFocusTitle?: boolean;
 };
 
-export function GoalForm({ variant = "default" }: GoalFormProps) {
+export function GoalForm({
+  variant = "default",
+  autoFocusTitle = false,
+}: GoalFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const titleRef = useRef<HTMLInputElement>(null);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -25,6 +30,11 @@ export function GoalForm({ variant = "default" }: GoalFormProps) {
   >(async (prev, formData) => {
     const result = await createGoal(prev, formData);
     if (!result.error) {
+      const title = String(formData.get("title") ?? "").trim();
+      imxToast("Goal declared", {
+        description: title || undefined,
+        tone: "success",
+      });
       formRef.current?.reset();
       setMoreOpen(false);
       queueMicrotask(() => titleRef.current?.focus());
@@ -33,17 +43,15 @@ export function GoalForm({ variant = "default" }: GoalFormProps) {
   }, null);
 
   useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key !== "n" && e.key !== "N") return;
-      const tag = (e.target as HTMLElement)?.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
-      if ((e.target as HTMLElement)?.isContentEditable) return;
-      e.preventDefault();
+    if (!autoFocusTitle) return;
+    const frame = window.requestAnimationFrame(() => {
       titleRef.current?.focus();
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
+      document
+        .getElementById("goals-composer")
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [autoFocusTitle]);
 
   return (
     <form
@@ -60,6 +68,9 @@ export function GoalForm({ variant = "default" }: GoalFormProps) {
             placeholder="What are you working toward?"
             required
             autoComplete="off"
+            data-imx-capture
+            aria-invalid={state?.error ? true : undefined}
+            aria-describedby={state?.error ? "goal-form-error" : undefined}
             className={cn(
               "h-10 border-0 pl-9 shadow-none focus-visible:ring-1",
               isComposer ? "bg-muted/50" : "bg-muted/40",
@@ -106,7 +117,13 @@ export function GoalForm({ variant = "default" }: GoalFormProps) {
       </p>
 
       {state?.error ? (
-        <p className="mt-3 text-sm text-destructive">{state.error}</p>
+        <p
+          id="goal-form-error"
+          role="alert"
+          className="mt-3 text-sm text-destructive"
+        >
+          {state.error}
+        </p>
       ) : null}
     </form>
   );
