@@ -18,6 +18,7 @@ import {
   mergeOptimisticSessions,
 } from "@/lib/focus-optimistic";
 import { groupDaySessionsIntoThreads } from "@/lib/focus-threads";
+import { imxToast } from "@/lib/imx-toast";
 import { cn } from "@/lib/utils";
 import { useFocusTimer } from "@/stores/focus-timer";
 import {
@@ -161,7 +162,14 @@ export function FocusSessionList({ sessions }: FocusSessionListProps) {
           title="No sessions yet"
           description="Start the timer. Finished and stopped sessions will land here."
           className="py-10"
-        />
+        >
+          <a
+            href="#focus-timer"
+            className="mt-5 inline-flex h-10 items-center rounded-xl bg-foreground px-4 text-sm font-medium text-background transition-opacity hover:opacity-90"
+          >
+            Open timer
+          </a>
+        </EmptyState>
       </section>
     );
   }
@@ -188,6 +196,9 @@ export function FocusSessionList({ sessions }: FocusSessionListProps) {
       startTransition(async () => {
         removeOptimistic(ids);
         await deleteFocusSessions(ids);
+        imxToast(count === 1 ? "Session deleted" : "Sessions deleted", {
+          tone: "success",
+        });
       });
     })();
   }
@@ -336,7 +347,11 @@ export function FocusSessionList({ sessions }: FocusSessionListProps) {
                               <p className="mt-0.5 truncate text-xs text-muted-foreground">
                                 Task{" "}
                                 <Link
-                                  href="/tasks"
+                                  href={
+                                    latest.task_id
+                                      ? `/focus?task=${latest.task_id}`
+                                      : "/tasks"
+                                  }
                                   className="text-foreground/80 underline-offset-2 hover:underline"
                                   onClick={(event) => event.stopPropagation()}
                                 >

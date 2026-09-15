@@ -8,13 +8,13 @@ import {
 } from "react";
 
 import { useDocumentVisible } from "@/hooks/use-document-visible";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CircleCheck, Pause, Play, RotateCcw, SkipForward } from "lucide-react";
 
 import { logFocusSession, updateFocusSession } from "@/actions/focus";
 import { toggleTaskComplete } from "@/actions/tasks";
 import { FocusClockFace } from "@/components/focus/focus-clock-face";
+import { FocusSettings } from "@/components/focus/focus-settings";
 import { FocusSounds } from "@/components/focus/focus-sounds";
 import { showFocusSealToast } from "@/components/focus/focus-seal-toast";
 import { confirm } from "@/components/ui/confirm-dialog";
@@ -39,6 +39,8 @@ import { cn } from "@/lib/utils";
 import { stopFocusSound, useFocusSound } from "@/stores/focus-sound";
 import { nextFocusMode, useFocusTimer, canContinueFocusSession } from "@/stores/focus-timer";
 import {
+  BREAK_DURATION_PRESETS,
+  FOCUS_DURATION_PRESETS,
   FOCUS_MAX_SECONDS,
   FOCUS_POMODOROS_PER_LONG_BREAK,
   FOCUS_PRESETS,
@@ -83,11 +85,13 @@ export function FocusTimer({
   tasks = [],
   focusMinutesToday = 0,
   dailyGoalMinutes,
+  goalHint,
   initialTaskId = null,
 }: {
   tasks?: FocusLinkableTask[];
   focusMinutesToday?: number;
   dailyGoalMinutes?: number;
+  goalHint?: string;
   initialTaskId?: string | null;
 }) {
   const router = useRouter();
@@ -152,7 +156,7 @@ export function FocusTimer({
     const task = tasks.find((item) => item.id === initialTaskId);
     if (!task) return;
     appliedTaskParam.current = true;
-    setLinkedTaskId(task.id);
+    setLinkedTaskId(task.id, task.title);
     if (!useFocusTimer.getState().intention.trim()) {
       setIntention(task.title);
     }
@@ -161,8 +165,15 @@ export function FocusTimer({
   useEffect(() => {
     if (linkedTaskId && !tasks.some((task) => task.id === linkedTaskId)) {
       setLinkedTaskId(null);
+      return;
     }
-  }, [linkedTaskId, tasks, setLinkedTaskId]);
+    if (
+      linkedTask &&
+      useFocusTimer.getState().linkedTaskTitle !== linkedTask.title
+    ) {
+      setLinkedTaskId(linkedTask.id, linkedTask.title);
+    }
+  }, [linkedTaskId, linkedTask, tasks, setLinkedTaskId]);
 
   const [, startTransition] = useTransition();
   const loggedRef = useRef(false);
@@ -897,25 +908,31 @@ export function FocusTimer({
           </div>
         </div>
       ) : (
-        <div className="focus-launch relative z-1 w-full overflow-hidden rounded-2xl border border-border/50 bg-card/80">
+        <div className="focus-launch relative z-1 w-full overflow-hidden rounded-[1.75rem] border border-border/50 bg-card/80">
+          <div className="focus-launch-vignette" aria-hidden />
           <div className="focus-launch-glow" aria-hidden />
           <div className="relative grid items-start gap-8 p-5 sm:p-7 lg:grid-cols-2 lg:gap-12 lg:p-8">
             {/* Visual column */}
             <div className="flex flex-col items-center gap-5 lg:items-start">
               <div className="w-full text-center lg:text-left">
                 <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-                  {canContinue ? "Paused" : "Launch"}
+                  {canContinue ? "Paused" : "Focus studio"}
                 </p>
-                <p className="mt-1.5 text-sm text-muted-foreground">
-                  {isStopwatch
-                    ? canContinue
-                      ? "Pick up where you left off"
-                      : "Open focus · no countdown"
-                    : [
-                        FOCUS_PRESETS[mode].label,
-                        activeProfile?.label ?? "Custom",
-                        formatFocusMinutes(Math.round(durationSeconds / 60)),
-                      ].join(" · ")}
+                <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+                  {canContinue ? "Continue" : "Begin"}
+                </h2>
+                <p className="mt-1.5 max-w-sm text-sm text-muted-foreground lg:mx-0">
+                  {goalHint
+                    ? `${goalHint}.`
+                    : isStopwatch
+                      ? canContinue
+                        ? "Pick up where you left off."
+                        : "Open focus · no countdown."
+                      : [
+                          FOCUS_PRESETS[mode].label,
+                          activeProfile?.label ?? "Custom",
+                          formatFocusMinutes(Math.round(durationSeconds / 60)),
+                        ].join(" · ")}
                 </p>
               </div>
 
@@ -962,30 +979,38 @@ export function FocusTimer({
 
             {/* Action column */}
             <div className="flex min-w-0 flex-col gap-5">
-              <div>
-                <p
-                  className={cn(
-                    "font-semibold leading-none tracking-tight text-foreground",
-                    isStopwatch
-                      ? "text-3xl sm:text-4xl"
-                      : "text-3xl tabular-nums sm:text-4xl",
-                  )}
-                >
-                  {isStopwatch
-                    ? canContinue
-                      ? "Continue"
-                      : "Count up"
-                    : formatFocusMinutes(Math.round(durationSeconds / 60))}
-                </p>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {canContinue
-                    ? pickupHint ?? "Space to resume"
-                    : isStopwatch
-                      ? "Seal when the work is done"
-                      : mode === "focus"
-                        ? "Name the work. Begin when ready."
-                        : "Break · Space to begin"}
-                </p>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p
+                    className={cn(
+                      "font-semibold leading-none tracking-tight text-foreground",
+                      isStopwatch
+                        ? "text-3xl sm:text-4xl"
+                        : "text-3xl tabular-nums sm:text-4xl",
+                    )}
+                  >
+                    {isStopwatch
+                      ? canContinue
+                        ? "Continue"
+                        : "Count up"
+                      : formatFocusMinutes(Math.round(durationSeconds / 60))}
+                  </p>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {canContinue
+                      ? pickupHint ?? "Space to resume"
+                      : isStopwatch
+                        ? "Seal when the work is done"
+                        : mode === "focus"
+                          ? "Name the work. Begin when ready."
+                          : "Break · Space to begin"}
+                  </p>
+                </div>
+                <FocusSettings
+                  dailyGoalMinutes={dailyGoalMinutes}
+                  onClockChange={handleClockChange}
+                  align="start"
+                  className="shrink-0"
+                />
               </div>
 
               <div className="flex flex-wrap gap-1.5">
@@ -1015,19 +1040,116 @@ export function FocusTimer({
                 </button>
               </div>
 
+              {!isStopwatch ? (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {FOCUS_PROFILES.map((profile) => {
+                      const active = profileId === profile.id;
+                      return (
+                        <button
+                          key={profile.id}
+                          type="button"
+                          onClick={() => applyProfile(profile.id)}
+                          className={cn(
+                            "rounded-xl px-2.5 py-2 text-left transition-colors",
+                            active
+                              ? "bg-foreground text-background"
+                              : "bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:text-foreground",
+                          )}
+                          aria-pressed={active}
+                        >
+                          <span className="block text-xs font-medium sm:text-sm">
+                            {profile.label}
+                          </span>
+                          <span
+                            className={cn(
+                              "mt-0.5 block text-[10px] tabular-nums sm:text-[11px]",
+                              active
+                                ? "text-background/70"
+                                : "text-muted-foreground",
+                            )}
+                          >
+                            {profile.hint}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div
+                    className="flex w-full gap-1 rounded-full bg-muted/35 p-1"
+                    role="tablist"
+                    aria-label="Timer mode"
+                  >
+                    {(["focus", "short_break", "long_break"] as FocusMode[]).map(
+                      (m) => {
+                        const isActive = mode === m;
+                        return (
+                          <button
+                            key={m}
+                            type="button"
+                            role="tab"
+                            aria-selected={isActive}
+                            onClick={() => setMode(m)}
+                            className={cn(
+                              "min-w-0 flex-1 rounded-full px-2 py-1.5 text-xs transition-colors sm:text-sm",
+                              isActive
+                                ? "bg-background font-medium text-foreground shadow-sm"
+                                : "text-muted-foreground hover:text-foreground",
+                            )}
+                          >
+                            {FOCUS_PRESETS[m].label}
+                          </button>
+                        );
+                      },
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap gap-1.5">
+                    {(mode === "focus"
+                      ? FOCUS_DURATION_PRESETS
+                      : BREAK_DURATION_PRESETS[mode]
+                    ).map((preset) => {
+                      const active =
+                        Math.round(durationSeconds / 60) === preset.minutes;
+                      return (
+                        <button
+                          key={preset.minutes}
+                          type="button"
+                          onClick={() => setDuration(preset.minutes * 60)}
+                          className={cn(
+                            "rounded-full px-2.5 py-1 text-xs tabular-nums transition-colors",
+                            active
+                              ? "bg-foreground text-background"
+                              : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                          )}
+                        >
+                          {preset.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
+
               {mode === "focus" || isStopwatch ? (
                 <div className="space-y-2.5">
                   <Input
                     value={intention}
                     onChange={(e) => setIntention(e.target.value)}
-                    placeholder={
-                      linkedTask
-                        ? `Working on ${linkedTask.title}`
-                        : "What deserves your focus?"
-                    }
+                    placeholder="What deserves your focus?"
                     aria-label="What are you focusing on"
+                    data-imx-capture
                     className="h-11 w-full rounded-xl border-border/50 bg-muted/40 px-4 text-sm font-medium tracking-tight shadow-none placeholder:font-normal focus-visible:ring-1"
                   />
+                  {linkedTask ? (
+                    <p className="px-0.5 text-xs text-muted-foreground">
+                      Linked · {linkedTask.title}
+                      {!intention.trim()
+                        ? " · used if the field stays empty"
+                        : null}
+                    </p>
+                  ) : null}
                   {tasks.length > 0 ? (
                     <BrandSelect
                       value={linkedTaskId ?? ""}
@@ -1045,16 +1167,24 @@ export function FocusTimer({
                       ]}
                       onValueChange={(nextId) => {
                         const id = nextId || null;
-                        setLinkedTaskId(id);
-                        if (id && !intention.trim()) {
-                          const task = tasks.find((item) => item.id === id);
-                          if (task) setIntention(task.title);
+                        if (!id) {
+                          setLinkedTaskId(null);
+                          return;
+                        }
+                        const task = tasks.find((item) => item.id === id);
+                        setLinkedTaskId(id, task?.title ?? null);
+                        if (task && !intention.trim()) {
+                          setIntention(task.title);
                         }
                       }}
                     />
                   ) : null}
                 </div>
               ) : null}
+
+              <div className="focus-launch-atmosphere rounded-2xl border border-border/40 bg-background/40 px-3 py-3 sm:px-4">
+                <FocusSounds embedded />
+              </div>
 
               <div className="flex flex-col gap-2.5">
                 <div className="flex items-center gap-3">
@@ -1115,13 +1245,6 @@ export function FocusTimer({
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Space to {canContinue ? "continue" : "begin"} · R to reset
-                  {" · "}
-                  <Link
-                    href="/settings"
-                    className="underline-offset-2 hover:text-foreground hover:underline"
-                  >
-                    Timer prefs
-                  </Link>
                 </p>
               </div>
             </div>

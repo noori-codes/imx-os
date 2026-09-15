@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
+import { calendarHref } from "@/lib/calendar";
+import { toDateString } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
 import type { WeekDaySummary } from "@/types/dashboard";
 
@@ -14,6 +16,7 @@ export function WeekOverview({ week }: WeekOverviewProps) {
   const maxCount = Math.max(...week.map((d) => d.task_count), 1);
   const total = week.reduce((sum, d) => sum + d.task_count, 0);
   const empty = total === 0;
+  const today = toDateString(new Date());
   const todayCount = week.find((d) => d.is_today)?.task_count ?? 0;
   const [pulseToday, setPulseToday] = useState(false);
   const prevTodayCount = useRef(todayCount);
@@ -34,23 +37,27 @@ export function WeekOverview({ week }: WeekOverviewProps) {
   }, [todayCount]);
 
   return (
-    <section className="dash-panel">
-      <div className="flex items-center justify-between gap-3 border-b border-border/40 px-5 py-4">
+    <section className="dash-panel relative overflow-hidden">
+      <div className="dash-panel-glow" aria-hidden="true" />
+      <div className="relative z-[1] flex items-center justify-between gap-3 border-b border-border/40 px-5 py-4">
         <div>
-          <h3 className="text-sm font-semibold text-foreground">Week load</h3>
+          <p className="dash-panel-eyebrow">This week</p>
+          <h3 className="mt-0.5 text-sm font-semibold text-foreground">
+            Week load
+          </h3>
           <p className="mt-0.5 text-xs text-muted-foreground">
             {empty ? "Nothing scheduled" : `${total} due this week`}
           </p>
         </div>
         <Link
-          href="/tasks"
+          href="/tasks?compose=1"
           className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
           Tasks
         </Link>
       </div>
 
-      <div className="px-5 py-5">
+      <div className="relative z-[1] px-5 py-5">
         <div className="dash-stagger grid h-36 grid-cols-7 items-end gap-2 sm:gap-3">
           {week.map((day, index) => {
             const heightPct = empty
@@ -59,10 +66,19 @@ export function WeekOverview({ week }: WeekOverviewProps) {
             const hasTasks = day.task_count > 0;
 
             return (
-              <div
+              <Link
                 key={day.date}
-                className="flex h-full min-w-0 flex-col items-center justify-end gap-2"
-                title={`${day.label}: ${day.task_count} due`}
+                href={
+                  empty && day.is_today
+                    ? calendarHref("week", day.date, { compose: true })
+                    : calendarHref("week", day.date)
+                }
+                className="flex h-full min-w-0 flex-col items-center justify-end gap-2 rounded-lg outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring/40"
+                title={
+                  empty && day.is_today
+                    ? "Add something for today"
+                    : `${day.label}: ${day.task_count} due — open calendar`
+                }
                 style={{ ["--i" as string]: index }}
               >
                 <span
@@ -99,10 +115,27 @@ export function WeekOverview({ week }: WeekOverviewProps) {
                 >
                   {day.day_label.slice(0, 2)}
                 </span>
-              </div>
+              </Link>
             );
           })}
         </div>
+
+        {empty ? (
+          <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border/40 pt-4">
+            <Link
+              href="/tasks?compose=1"
+              className="inline-flex h-8 items-center rounded-lg bg-foreground px-3 text-xs font-medium text-background transition-opacity hover:opacity-90"
+            >
+              Add task
+            </Link>
+            <Link
+              href={calendarHref("week", today, { compose: true })}
+              className="inline-flex h-8 items-center rounded-lg border border-border/60 bg-card/70 px-3 text-xs font-medium text-foreground transition-colors hover:border-border"
+            >
+              Add event
+            </Link>
+          </div>
+        ) : null}
       </div>
     </section>
   );

@@ -107,9 +107,14 @@ export function FocusSounds({
     return (
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-3">
-          <p className="text-xs text-muted-foreground">
-            {playing ? `${active.hint} room` : "Choose a texture for the room"}
-          </p>
+          <div>
+            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+              Atmosphere
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {playing ? `${active.hint} room` : "Choose a texture for the room"}
+            </p>
+          </div>
           <VolumeControls volume={volume} setVolume={setVolume} />
         </div>
         <div

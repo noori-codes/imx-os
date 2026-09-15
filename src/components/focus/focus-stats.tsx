@@ -640,13 +640,25 @@ function ConstellationSky({
             : liveFocus
               ? liveMark?.title ?? "Session in flight"
               : empty
-                ? "No stars yet · start a block"
+                ? "No stars yet"
                 : filter
                   ? visible.length === 0
                     ? `No ${filter} sessions today`
                     : `${visible.length} ${filter} star${visible.length === 1 ? "" : "s"}`
                   : "Tap a star for time"}
       </p>
+
+      {empty && ready && !liveFocus ? (
+        <div className="mt-2 flex justify-center">
+          <a
+            href="#focus-timer"
+            className="inline-flex items-center gap-2 rounded-full bg-foreground px-3.5 py-1.5 text-xs font-medium text-background transition-opacity hover:opacity-90"
+          >
+            <Play className="size-3 fill-current" />
+            Start block
+          </a>
+        </div>
+      ) : null}
 
       <div className="focus-sky-labels mt-1 grid grid-cols-3 items-start px-0.5">
         <SkyPhaseLabel
@@ -1034,6 +1046,16 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
                       {pickupHint}
                     </p>
                   ) : null}
+                </div>
+              ) : focusMinutes === 0 && !isRunning ? (
+                <div className="text-center lg:text-left">
+                  <a
+                    href="#focus-timer"
+                    className="inline-flex items-center gap-2 rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-90"
+                  >
+                    <Play className="size-3.5 fill-current" />
+                    Start block
+                  </a>
                 </div>
               ) : null}
 

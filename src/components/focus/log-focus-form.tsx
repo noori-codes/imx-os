@@ -16,8 +16,12 @@ import {
   commitFocusSessionOptimistic,
   rollbackFocusSessionOptimistic,
 } from "@/lib/focus-optimistic";
+import { imxToast } from "@/lib/imx-toast";
 import { cn } from "@/lib/utils";
-import { buildOptimisticFocusSession } from "@/types/focus";
+import {
+  buildOptimisticFocusSession,
+  formatFocusDuration,
+} from "@/types/focus";
 import type { FocusLinkableTask } from "@/types/task";
 
 const PRESETS = [25, 50, 90, 120, 180] as const;
@@ -83,6 +87,18 @@ export function LogFocusForm({
     if (result.error) {
       rollbackFocusSessionOptimistic();
     } else {
+      const actual_seconds = Math.round(
+        parsedHours * 3600 + parsedMinutes * 60,
+      );
+      imxToast("Focus logged", {
+        description: [
+          actual_seconds >= 60 ? formatFocusDuration(actual_seconds) : null,
+          linkedTask?.title ?? note,
+        ]
+          .filter(Boolean)
+          .join(" · "),
+        tone: "success",
+      });
       router.refresh();
       formRef.current?.reset();
       setHours("");
