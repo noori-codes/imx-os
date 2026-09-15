@@ -1,45 +1,54 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 import { signup, type AuthState } from "@/actions/auth";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 export function RegisterForm() {
   const [state, formAction, pending] = useActionState<AuthState | null, FormData>(
     signup,
     null,
   );
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   return (
-    <Card className="w-full max-w-sm">
-      <CardHeader>
-        <CardTitle>Create account</CardTitle>
-        <CardDescription>
-          Start building your personal operating system.
-        </CardDescription>
-      </CardHeader>
-      <form action={formAction}>
-        <CardContent className="flex flex-col gap-4">
+    <div className="auth-card w-full max-w-sm overflow-hidden rounded-[1.35rem] border border-border/55 bg-card/90 shadow-[inset_0_1px_0_color-mix(in_oklab,var(--foreground)_4%,transparent)] backdrop-blur-sm">
+      <div className="auth-card-glow" aria-hidden />
+      <div className="relative z-1 space-y-6 p-6 sm:p-7">
+        <header className="space-y-1.5 text-center sm:text-left">
+          <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+            Get started
+          </p>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            Create account
+          </h1>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            Your private OS for focus, goals, and daily rhythm.
+          </p>
+        </header>
+
+        <form action={formAction} className="space-y-4">
           {state?.error ? (
-            <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <p
+              role="alert"
+              className="rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-2.5 text-sm text-destructive"
+            >
               {state.error}
             </p>
           ) : null}
 
           {state?.success ? (
-            <p className="rounded-md bg-primary/10 px-3 py-2 text-sm text-primary">
+            <p
+              role="status"
+              className="rounded-xl border border-border/50 bg-foreground/5 px-3 py-2.5 text-sm text-foreground"
+            >
               {state.success}
             </p>
           ) : null}
@@ -53,46 +62,99 @@ export function RegisterForm() {
               placeholder="you@example.com"
               required
               autoComplete="email"
+              autoFocus
+              disabled={pending}
+              className="h-11 rounded-xl border-border/60 bg-background/60"
             />
           </div>
 
           <div className="flex flex-col gap-2">
             <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              required
-              minLength={8}
-              autoComplete="new-password"
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                required
+                minLength={8}
+                autoComplete="new-password"
+                disabled={pending}
+                className="h-11 rounded-xl border-border/60 bg-background/60 pr-11"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                disabled={pending}
+                className="absolute top-1/2 right-2.5 inline-flex size-8 -translate-y-1/2 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground disabled:opacity-50"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? (
+                  <EyeOff className="size-4" />
+                ) : (
+                  <Eye className="size-4" />
+                )}
+              </button>
+            </div>
+            <p className="text-[11px] text-muted-foreground">At least 8 characters</p>
           </div>
 
           <div className="flex flex-col gap-2">
             <Label htmlFor="confirmPassword">Confirm password</Label>
-            <Input
-              id="confirmPassword"
-              name="confirmPassword"
-              type="password"
-              required
-              minLength={8}
-              autoComplete="new-password"
-            />
+            <div className="relative">
+              <Input
+                id="confirmPassword"
+                name="confirmPassword"
+                type={showConfirm ? "text" : "password"}
+                required
+                minLength={8}
+                autoComplete="new-password"
+                disabled={pending}
+                className="h-11 rounded-xl border-border/60 bg-background/60 pr-11"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirm((v) => !v)}
+                disabled={pending}
+                className="absolute top-1/2 right-2.5 inline-flex size-8 -translate-y-1/2 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground disabled:opacity-50"
+                aria-label={showConfirm ? "Hide password" : "Show password"}
+              >
+                {showConfirm ? (
+                  <EyeOff className="size-4" />
+                ) : (
+                  <Eye className="size-4" />
+                )}
+              </button>
+            </div>
           </div>
-        </CardContent>
 
-        <CardFooter className="flex flex-col gap-4">
-          <Button type="submit" className="w-full" disabled={pending}>
-            {pending ? "Creating account..." : "Create account"}
+          <Button
+            type="submit"
+            className="h-11 w-full rounded-xl"
+            disabled={pending}
+          >
+            {pending ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                Creating account…
+              </>
+            ) : (
+              "Create account"
+            )}
           </Button>
-          <p className="text-center text-sm text-muted-foreground">
-            Already have an account?{" "}
-            <Link href="/login" className="text-primary underline-offset-4 hover:underline">
-              Sign in
-            </Link>
-          </p>
-        </CardFooter>
-      </form>
-    </Card>
+        </form>
+
+        <p className="text-center text-sm text-muted-foreground">
+          Already have an account?{" "}
+          <Link
+            href="/login"
+            className={cn(
+              "font-medium text-foreground underline-offset-4 hover:underline",
+            )}
+          >
+            Sign in
+          </Link>
+        </p>
+      </div>
+    </div>
   );
 }

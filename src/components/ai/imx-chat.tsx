@@ -3,27 +3,38 @@
 import { useEffect, useRef, useState, useTransition, type ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowUpRight, Sparkles, X } from "lucide-react";
+import { ArrowUpRight, Send, Sparkles, X } from "lucide-react";
 
-import { askCoachQuestion, type CoachReply } from "@/actions/ai";
+import { askCoachMessage, askCoachQuestion, type CoachReply } from "@/actions/ai";
 import {
   AI_COACH_PROMPTS,
   type AiCoachPromptId,
 } from "@/lib/ai/coach-prompts";
 import { coachActionLabel } from "@/lib/ai/coach-actions";
+import {
+  clearCoachChat,
+  defaultCoachChat,
+  readCoachChat,
+  writeCoachChat,
+  type PersistedChatMessage,
+} from "@/lib/ai/coach-chat-storage";
+import { IMX_OPEN_COACH_EVENT } from "@/lib/imx-events";
+import { imxToast } from "@/lib/imx-toast";
 import { cn } from "@/lib/utils";
 import { useFocusTimer } from "@/stores/focus-timer";
 
-type ChatMessage =
-  | { id: string; role: "assistant"; kind: "welcome" }
-  | { id: string; role: "user"; text: string }
-  | {
-      id: string;
-      role: "assistant";
-      kind: "reply";
-      reply: CoachReply;
-      at: string;
-    };
+function isTypingTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false;
+  const tag = target.tagName;
+  return (
+    tag === "INPUT" ||
+    tag === "TEXTAREA" ||
+    tag === "SELECT" ||
+    target.isContentEditable
+  );
+}
+
+type ChatMessage = PersistedChatMessage;
 
 function formatRetry(ms: number) {
   const seconds = Math.max(1, Math.ceil(ms / 1000));
@@ -47,7 +58,7 @@ function BrandMark({
       style={{ width: size, height: size }}
     >
       <Image
-        src="/IMX-logo.png"
+        src="/imx-logo-64.png"
         alt=""
         fill
         sizes={`${size}px`}
@@ -113,12 +124,17 @@ export function ImxChat() {
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    { id: "welcome", role: "assistant", kind: "welcome" },
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>(
+    defaultCoachChat().messages,
+  );
   const [error, setError] = useState<string | null>(null);
   const [usedPromptIds, setUsedPromptIds] = useState<AiCoachPromptId[]>([]);
+  const [draft, setDraft] = useState("");
   const scrollerRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const fabRef = useRef<HTMLButtonElement>(null);
+  const wasOpenRef = useRef(false);
   const isRunning = useFocusTimer((s) => s.isRunning);
 
   const availablePrompts = AI_COACH_PROMPTS.filter(
@@ -126,17 +142,97 @@ export function ImxChat() {
   );
 
   useEffect(() => {
+    const saved = readCoachChat();
+    setMessages(saved.messages);
+    setUsedPromptIds(saved.usedPromptIds);
     setMounted(true);
   }, []);
 
   useEffect(() => {
+    if (!mounted) return;
+    writeCoachChat({ messages, usedPromptIds });
+  }, [messages, usedPromptIds, mounted]);
+
+  useEffect(() => {
     if (!open) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      inputRef.current?.focus({ preventScroll: true });
+    });
+
     function onKey(event: KeyboardEvent) {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setOpen(false);
+        return;
+      }
+
+      if (event.key !== "Tab" || !panelRef.current) return;
+
+      const focusable = panelRef.current.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+
+      if (event.shiftKey) {
+        if (active === first || !panelRef.current.contains(active)) {
+          event.preventDefault();
+          last.focus();
+        }
+      } else if (active === last) {
+        event.preventDefault();
+        first.focus();
+      }
     }
+
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("keydown", onKey);
+    };
   }, [open]);
+
+  useEffect(() => {
+    if (open) return;
+    if (!wasOpenRef.current) return;
+    wasOpenRef.current = false;
+    fabRef.current?.focus({ preventScroll: true });
+  }, [open]);
+
+  useEffect(() => {
+    if (open) wasOpenRef.current = true;
+  }, [open]);
+
+  useEffect(() => {
+    function openCoach() {
+      if (isRunning) return;
+      setOpen(true);
+    }
+
+    function onOpenEvent() {
+      openCoach();
+    }
+
+    function onKey(event: KeyboardEvent) {
+      if (!(event.metaKey || event.ctrlKey) || !event.shiftKey) return;
+      if (event.key.toLowerCase() !== "i") return;
+      if (isTypingTarget(event.target)) return;
+      event.preventDefault();
+      if (isRunning) return;
+      setOpen((value) => !value);
+    }
+
+    window.addEventListener(IMX_OPEN_COACH_EVENT, onOpenEvent);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener(IMX_OPEN_COACH_EVENT, onOpenEvent);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [isRunning]);
 
   function scrollToBottom() {
     requestAnimationFrame(() => {
@@ -165,7 +261,54 @@ export function ImxChat() {
           result.code === "cooldown" && result.retryAfterMs
             ? ` Try again in ${formatRetry(result.retryAfterMs)}.`
             : "";
-        setError(`${result.error}${suffix}`);
+        const message = `${result.error}${suffix}`;
+        setError(message);
+        imxToast("Coach unavailable", {
+          description: message,
+          tone: "error",
+        });
+        scrollToBottom();
+        return;
+      }
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `a-${result.promptId}-${result.generatedAt}`,
+          role: "assistant",
+          kind: "reply",
+          reply: result.reply,
+          at: result.generatedAt,
+        },
+      ]);
+      scrollToBottom();
+    });
+  }
+
+  function handleFreeAsk() {
+    const question = draft.trim();
+    if (question.length < 3 || pending) return;
+    setError(null);
+    setDraft("");
+    setMessages((prev) => [
+      ...prev,
+      { id: `u-custom-${Date.now()}`, role: "user", text: question },
+    ]);
+    scrollToBottom();
+
+    startTransition(async () => {
+      const result = await askCoachMessage(question);
+      if (!result.ok) {
+        const suffix =
+          result.code === "cooldown" && result.retryAfterMs
+            ? ` Try again in ${formatRetry(result.retryAfterMs)}.`
+            : "";
+        const message = `${result.error}${suffix}`;
+        setError(message);
+        imxToast("Coach unavailable", {
+          description: message,
+          tone: "error",
+        });
         scrollToBottom();
         return;
       }
@@ -191,10 +334,20 @@ export function ImxChat() {
       className="imx-chat-dock pointer-events-none fixed inset-x-0 z-40 flex justify-end p-4 sm:p-5"
       style={{ bottom: "var(--mobile-chrome-bottom)" }}
     >
-      <div className="pointer-events-auto flex flex-col items-end gap-3">
+      {open ? (
+        <button
+          type="button"
+          className="pointer-events-auto fixed inset-0 z-0 cursor-default bg-background/20 backdrop-blur-[1px]"
+          aria-label="Close IMX"
+          onClick={() => setOpen(false)}
+        />
+      ) : null}
+      <div className="pointer-events-auto relative z-10 flex flex-col items-end gap-3">
         {open ? (
           <div
+            ref={panelRef}
             role="dialog"
+            aria-modal="true"
             aria-label="IMX chat"
             className="imx-chat-panel relative flex h-[min(34rem,calc(100dvh-6.5rem-var(--mobile-chrome-bottom)))] w-[min(25rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-[1.35rem]"
           >
@@ -271,6 +424,33 @@ export function ImxChat() {
             </div>
 
             <div className="relative z-[1] border-t border-border/40 bg-background/50 px-4 py-3.5 backdrop-blur-sm">
+              <form
+                className="mb-3 flex items-center gap-2"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  handleFreeAsk();
+                }}
+              >
+                <input
+                  ref={inputRef}
+                  value={draft}
+                  onChange={(event) => setDraft(event.target.value)}
+                  placeholder="Ask IMX anything…"
+                  maxLength={280}
+                  disabled={pending}
+                  className="h-10 min-w-0 flex-1 rounded-xl border border-border/50 bg-background/70 px-3 text-sm outline-none transition-[border-color] placeholder:text-muted-foreground/65 focus:border-foreground/25 disabled:opacity-50"
+                  aria-label="Ask IMX"
+                />
+                <button
+                  type="submit"
+                  disabled={pending || draft.trim().length < 3}
+                  className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-foreground text-background transition-opacity hover:opacity-90 disabled:pointer-events-none disabled:opacity-40"
+                  aria-label="Send"
+                >
+                  <Send className="size-3.5" />
+                </button>
+              </form>
+
               {availablePrompts.length > 0 ? (
                 <div
                   className="flex flex-wrap gap-2"
@@ -303,20 +483,47 @@ export function ImxChat() {
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground">
-                  That’s the set for now — come back later for a fresh read.
-                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-xs text-muted-foreground">
+                    Chip prompts used for this chat.
+                  </p>
+                  <button
+                    type="button"
+                    disabled={pending}
+                    onClick={() => setUsedPromptIds([])}
+                    className="rounded-full border border-border/55 bg-background/70 px-3 py-1.5 text-xs text-foreground transition-colors hover:border-foreground/25 disabled:opacity-50"
+                  >
+                    Reset chips
+                  </button>
+                  <button
+                    type="button"
+                    disabled={pending}
+                    onClick={() => {
+                      const fresh = defaultCoachChat();
+                      setMessages(fresh.messages);
+                      setUsedPromptIds([]);
+                      setError(null);
+                      clearCoachChat();
+                    }}
+                    className="rounded-full border border-border/55 bg-background/70 px-3 py-1.5 text-xs text-foreground transition-colors hover:border-foreground/25 disabled:opacity-50"
+                  >
+                    Clear chat
+                  </button>
+                </div>
               )}
             </div>
           </div>
         ) : null}
 
         <button
+          ref={fabRef}
           type="button"
           onClick={() => setOpen((value) => !value)}
           data-open={open ? "true" : "false"}
+          tabIndex={open ? -1 : undefined}
           className={cn("imx-chat-fab", open && "imx-chat-fab-open")}
           aria-expanded={open}
+          aria-haspopup="dialog"
           aria-label={open ? "Close IMX" : "Open IMX"}
         >
           <span className="imx-chat-fab-glow" aria-hidden />
@@ -327,7 +534,7 @@ export function ImxChat() {
           ) : (
             <>
               <BrandMark size={48} className="relative z-[1] rounded-2xl" />
-              <span className="relative z-[1] flex min-w-0 flex-col items-start pr-1">
+              <span className="relative z-[1] hidden min-w-0 flex-col items-start pr-1 sm:flex">
                 <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
                   Ask
                 </span>

@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { CheckSquare } from "lucide-react";
 
+import { EmptyState } from "@/components/shared/empty-state";
 import type { HabitStreakSummary } from "@/types/analytics";
 
 type HabitStreaksListProps = {
@@ -28,12 +30,28 @@ export function HabitStreaksList({ streaks, rangeDays }: HabitStreaksListProps) 
       </div>
 
       {streaks.length === 0 ? (
-        <p className="mt-6 text-sm text-muted-foreground">
-          Add habits and check them in to build streaks.{" "}
-          <Link href="/habits" className="underline-offset-2 hover:underline">
-            Go to Habits
-          </Link>
-        </p>
+        <EmptyState
+          icon={CheckSquare}
+          title="No streaks yet"
+          description="Add habits and check them in to build streaks."
+          variant="panel"
+          className="mt-5 py-10"
+        >
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+            <Link
+              href="/habits?compose=1"
+              className="inline-flex h-9 items-center rounded-xl bg-foreground px-3.5 text-sm font-medium text-background transition-opacity hover:opacity-90"
+            >
+              Add habit
+            </Link>
+            <Link
+              href="/habits"
+              className="inline-flex h-9 items-center rounded-xl border border-border/60 bg-card/70 px-3.5 text-sm font-medium text-foreground transition-colors hover:border-border"
+            >
+              Manage habits
+            </Link>
+          </div>
+        </EmptyState>
       ) : (
         <ul className="mt-5 divide-y divide-border/40">
           {streaks.map((habit) => (

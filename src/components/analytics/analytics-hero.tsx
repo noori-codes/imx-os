@@ -111,6 +111,9 @@ export function AnalyticsHero({
       ? Math.round((focusGoalHitDays / focusGoalDays) * 100)
       : 0;
 
+  const isEmpty =
+    focusMinutes <= 0 && focusSessions <= 0 && habitsAvgRate <= 0;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -121,6 +124,28 @@ export function AnalyticsHero({
           <p className="mt-2 max-w-xl text-base leading-snug text-foreground/90 sm:text-lg">
             {story}
           </p>
+          {isEmpty ? (
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+              <Link
+                href="/focus"
+                className="inline-flex h-9 items-center rounded-xl bg-foreground px-3.5 text-sm font-medium text-background transition-opacity hover:opacity-90"
+              >
+                Open Focus
+              </Link>
+              <Link
+                href="/habits"
+                className="inline-flex h-9 items-center rounded-xl border border-border/60 bg-card/70 px-3.5 text-sm font-medium text-foreground transition-colors hover:border-border"
+              >
+                Habits
+              </Link>
+              <Link
+                href="/review"
+                className="inline-flex h-9 items-center rounded-xl border border-border/60 bg-card/70 px-3.5 text-sm font-medium text-foreground transition-colors hover:border-border"
+              >
+                Review
+              </Link>
+            </div>
+          ) : null}
         </div>
         <div className="flex justify-center sm:justify-end">
           <AnalyticsRangeToggle rangeDays={rangeDays} />

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   Area,
   AreaChart,
@@ -26,6 +27,28 @@ type ChartBlockProps = {
   heightClassName?: string;
   footer?: React.ReactNode;
 };
+
+function ChartEmpty({
+  message,
+  href,
+  label,
+}: {
+  message: string;
+  href: string;
+  label: string;
+}) {
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border/50 px-4 text-center text-sm text-muted-foreground">
+      <p>{message}</p>
+      <Link
+        href={href}
+        className="inline-flex h-8 items-center rounded-lg bg-foreground px-3 text-xs font-medium text-background transition-opacity hover:opacity-90"
+      >
+        {label}
+      </Link>
+    </div>
+  );
+}
 
 function ChartBlock({
   label,
@@ -206,9 +229,11 @@ export function FocusMinutesChart({
           </BarChart>
         </ResponsiveContainer>
       ) : (
-        <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-border/50 text-sm text-muted-foreground">
-          Seal focus sessions to see the pattern.
-        </div>
+        <ChartEmpty
+          message="Seal focus sessions to see the pattern."
+          href="/focus"
+          label="Open Focus"
+        />
       )}
     </ChartBlock>
   );
@@ -306,9 +331,11 @@ export function HabitCompletionChart({ series }: HabitCompletionChartProps) {
           </AreaChart>
         </ResponsiveContainer>
       ) : (
-        <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-border/50 text-sm text-muted-foreground">
-          Add habits to track consistency.
-        </div>
+        <ChartEmpty
+          message="Add habits to track consistency."
+          href="/habits?compose=1"
+          label="Go to Habits"
+        />
       )}
     </ChartBlock>
   );
@@ -434,9 +461,11 @@ export function MoodEnergyChart({ series }: MoodEnergyChartProps) {
           </LineChart>
         </ResponsiveContainer>
       ) : (
-        <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-border/50 text-sm text-muted-foreground">
-          Log daily reviews to see mood and energy.
-        </div>
+        <ChartEmpty
+          message="Log daily reviews to see mood and energy."
+          href="/review#review-form"
+          label="Open Review"
+        />
       )}
     </ChartBlock>
   );
