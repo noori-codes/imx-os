@@ -7,17 +7,23 @@ import { createHabit, type HabitActionState } from "@/actions/habits";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { imxToast } from "@/lib/imx-toast";
 import { cn } from "@/lib/utils";
 import { HABIT_COLORS } from "@/types/habit";
 
 type HabitFormProps = {
   variant?: "default" | "composer";
+  autoFocusTitle?: boolean;
 };
 
-export function HabitForm({ variant = "default" }: HabitFormProps) {
+export function HabitForm({
+  variant = "default",
+  autoFocusTitle = false,
+}: HabitFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const titleRef = useRef<HTMLInputElement>(null);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [color, setColor] = useState<string>(HABIT_COLORS[0].value);
   const isComposer = variant === "composer";
 
   const [state, formAction, pending] = useActionState<
@@ -26,25 +32,29 @@ export function HabitForm({ variant = "default" }: HabitFormProps) {
   >(async (prev, formData) => {
     const result = await createHabit(prev, formData);
     if (!result.error) {
+      const title = String(formData.get("title") ?? "").trim();
+      imxToast("Habit added", {
+        description: title || undefined,
+        tone: "success",
+      });
       formRef.current?.reset();
       setMoreOpen(false);
+      setColor(HABIT_COLORS[0].value);
       queueMicrotask(() => titleRef.current?.focus());
     }
     return result;
   }, null);
 
   useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key !== "n" && e.key !== "N") return;
-      const tag = (e.target as HTMLElement)?.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
-      if ((e.target as HTMLElement)?.isContentEditable) return;
-      e.preventDefault();
+    if (!autoFocusTitle) return;
+    const frame = window.requestAnimationFrame(() => {
       titleRef.current?.focus();
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
+      document
+        .getElementById("habits-composer")
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [autoFocusTitle]);
 
   return (
     <form
@@ -52,6 +62,8 @@ export function HabitForm({ variant = "default" }: HabitFormProps) {
       action={formAction}
       className={cn(!isComposer && "border-b border-border/60 pb-5")}
     >
+      <input type="hidden" name="color" value={color} />
+
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative min-w-0 flex-1">
           <Plus className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -61,12 +73,39 @@ export function HabitForm({ variant = "default" }: HabitFormProps) {
             placeholder="New daily habit"
             required
             autoComplete="off"
+            data-imx-capture
+            aria-invalid={state?.error ? true : undefined}
+            aria-describedby={state?.error ? "habit-form-error" : undefined}
             className={cn(
               "h-10 border-0 pl-9 shadow-none focus-visible:ring-1",
               isComposer ? "bg-muted/50" : "bg-muted/40",
             )}
             aria-label="New habit"
           />
+        </div>
+        <div
+          className="flex flex-wrap items-center gap-1.5"
+          role="radiogroup"
+          aria-label="Habit color"
+        >
+          {HABIT_COLORS.map((item) => (
+            <button
+              key={item.value}
+              type="button"
+              title={item.label}
+              aria-label={item.label}
+              aria-checked={color === item.value}
+              role="radio"
+              onClick={() => setColor(item.value)}
+              className={cn(
+                "size-6 rounded-full ring-offset-background transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                color === item.value
+                  ? "ring-2 ring-foreground ring-offset-2"
+                  : "opacity-70 hover:opacity-100",
+              )}
+              style={{ backgroundColor: item.value }}
+            />
+          ))}
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -92,47 +131,28 @@ export function HabitForm({ variant = "default" }: HabitFormProps) {
       </div>
 
       {moreOpen ? (
-        <div className="mt-3 space-y-3">
+        <div className="mt-3">
           <Textarea
             name="description"
             placeholder="Why this habit matters"
             rows={2}
             className="resize-none bg-muted/30"
           />
-          <fieldset>
-            <legend className="mb-2 text-xs font-medium text-muted-foreground">
-              Color
-            </legend>
-            <div className="flex flex-wrap gap-2">
-              {HABIT_COLORS.map((color, index) => (
-                <label key={color.value} className="cursor-pointer">
-                  <input
-                    type="radio"
-                    name="color"
-                    value={color.value}
-                    defaultChecked={index === 0}
-                    className="peer sr-only"
-                  />
-                  <span
-                    title={color.label}
-                    className="block size-7 rounded-full ring-offset-background transition peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-checked:ring-2 peer-checked:ring-foreground peer-checked:ring-offset-2"
-                    style={{ backgroundColor: color.value }}
-                  />
-                </label>
-              ))}
-            </div>
-          </fieldset>
         </div>
-      ) : (
-        <input type="hidden" name="color" value={HABIT_COLORS[0].value} />
-      )}
+      ) : null}
 
       <p className="mt-2 text-[11px] text-muted-foreground">
         Press <kbd className="rounded border px-1">N</kbd> to focus
       </p>
 
       {state?.error ? (
-        <p className="mt-3 text-sm text-destructive">{state.error}</p>
+        <p
+          id="habit-form-error"
+          role="alert"
+          className="mt-3 text-sm text-destructive"
+        >
+          {state.error}
+        </p>
       ) : null}
     </form>
   );

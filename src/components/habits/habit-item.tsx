@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, type CSSProperties } from "react";
 import {
   Archive,
   ArchiveRestore,
@@ -13,6 +13,7 @@ import {
 import {
   deleteHabit,
   setHabitArchived,
+  toggleHabitOnDate,
   toggleHabitToday,
   updateHabit,
 } from "@/actions/habits";
@@ -20,7 +21,10 @@ import { Button } from "@/components/ui/button";
 import { confirm } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { PREF_CELEBRATE, readBoolPref } from "@/lib/app-preferences";
+import { imxToast } from "@/lib/imx-toast";
 import { cn } from "@/lib/utils";
+import { toDateString } from "@/lib/date-utils";
 import { HABIT_COLORS, type HabitWithStats } from "@/types/habit";
 
 type HabitItemProps = {
@@ -29,6 +33,11 @@ type HabitItemProps = {
   archivedView?: boolean;
   onOptimisticRemove: (id: string) => void;
   onOptimisticToggle?: (id: string, completed: boolean) => void;
+  onOptimisticToggleDay?: (
+    id: string,
+    date: string,
+    completed: boolean,
+  ) => void;
 };
 
 function weekdayLabel(date: string) {
@@ -43,6 +52,7 @@ export function HabitItem({
   archivedView = false,
   onOptimisticRemove,
   onOptimisticToggle,
+  onOptimisticToggleDay,
 }: HabitItemProps) {
   const [, startTransition] = useTransition();
   const [editing, setEditing] = useState(false);
@@ -50,15 +60,73 @@ export function HabitItem({
   const [description, setDescription] = useState(habit.description ?? "");
   const [color, setColor] = useState(habit.color);
   const [error, setError] = useState<string | null>(null);
+  const [burst, setBurst] = useState(false);
+  const [liveMessage, setLiveMessage] = useState("");
 
   const optimistic = habit;
+  const today = toDateString(new Date());
 
   function onToggle() {
     if (archivedView) return;
     const next = !optimistic.completed_today;
+    if (next) {
+      setBurst(true);
+      window.setTimeout(() => setBurst(false), 460);
+      const nextStreak = optimistic.current_streak + 1;
+      setLiveMessage(
+        nextStreak > 1
+          ? `Checked in · ${nextStreak}d streak`
+          : "Checked in",
+      );
+      if (
+        readBoolPref(PREF_CELEBRATE, true) &&
+        [3, 7, 14, 30].includes(nextStreak)
+      ) {
+        imxToast(`${nextStreak}-day streak`, {
+          description: optimistic.title,
+          tone: "success",
+        });
+      }
+    } else {
+      setLiveMessage("Check-in cleared");
+    }
     startTransition(async () => {
       onOptimisticToggle?.(optimistic.id, next);
-      await toggleHabitToday(optimistic.id, next);
+      const result = await toggleHabitToday(optimistic.id, next);
+      if (result.error) {
+        onOptimisticToggle?.(optimistic.id, !next);
+        setLiveMessage("Couldn’t update habit");
+        imxToast("Couldn’t update habit", {
+          description: result.error,
+          tone: "error",
+        });
+      }
+    });
+  }
+
+  function onToggleDay(date: string) {
+    if (archivedView || date > today) return;
+    const day = optimistic.week.find((entry) => entry.date === date);
+    if (!day) return;
+    const next = !day.completed;
+    setLiveMessage(
+      next
+        ? date === today
+          ? "Checked in"
+          : "Backfilled check-in"
+        : "Check-in cleared",
+    );
+    startTransition(async () => {
+      onOptimisticToggleDay?.(optimistic.id, date, next);
+      const result = await toggleHabitOnDate(optimistic.id, date, next);
+      if (result.error) {
+        onOptimisticToggleDay?.(optimistic.id, date, !next);
+        setLiveMessage("Couldn’t update habit");
+        imxToast("Couldn’t update habit", {
+          description: result.error,
+          tone: "error",
+        });
+      }
     });
   }
 
@@ -66,6 +134,10 @@ export function HabitItem({
     startTransition(async () => {
       onOptimisticRemove(optimistic.id);
       await setHabitArchived(optimistic.id, true);
+      imxToast("Habit archived", {
+        description: optimistic.title,
+        tone: "success",
+      });
     });
   }
 
@@ -73,6 +145,10 @@ export function HabitItem({
     startTransition(async () => {
       onOptimisticRemove(optimistic.id);
       await setHabitArchived(optimistic.id, false);
+      imxToast("Habit restored", {
+        description: optimistic.title,
+        tone: "success",
+      });
     });
   }
 
@@ -88,6 +164,7 @@ export function HabitItem({
       startTransition(async () => {
         onOptimisticRemove(optimistic.id);
         await deleteHabit(optimistic.id);
+        imxToast("Habit deleted", { tone: "success" });
       });
     })();
   }
@@ -132,6 +209,8 @@ export function HabitItem({
             }}
             autoFocus
             aria-label="Habit title"
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error ? "habit-edit-error" : undefined}
           />
           <Textarea
             value={description}
@@ -167,11 +246,20 @@ export function HabitItem({
               size="sm"
               variant="ghost"
               onClick={() => setEditing(false)}
+              aria-label="Cancel edit"
             >
               <X className="size-4" />
             </Button>
           </div>
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+          {error ? (
+            <p
+              id="habit-edit-error"
+              role="alert"
+              className="text-sm text-destructive"
+            >
+              {error}
+            </p>
+          ) : null}
         </div>
       </li>
     );
@@ -179,17 +267,22 @@ export function HabitItem({
 
   return (
     <li
+      id={`habit-${optimistic.id}`}
       className={cn(
-        "habits-card group relative overflow-hidden rounded-2xl border border-border/50 bg-card/80 p-4 transition-colors hover:border-border",
+        "habits-card group relative scroll-mt-24 overflow-hidden rounded-2xl border border-border/50 bg-card/80 p-4 transition-colors hover:border-border",
         optimistic.completed_today && !archivedView && "habits-card-done",
       )}
-      style={{ ["--i" as string]: index }}
+      style={
+        {
+          ["--i" as string]: index,
+          ["--habit-color" as string]: optimistic.color,
+        } as CSSProperties
+      }
     >
-      <div
-        className="habits-card-accent absolute inset-y-0 left-0 w-1"
-        style={{ backgroundColor: optimistic.color }}
-        aria-hidden
-      />
+      <span className="sr-only" aria-live="polite">
+        {liveMessage}
+      </span>
+      <div className="habits-card-accent absolute inset-y-0 left-0 w-1" aria-hidden />
 
       <div className="flex items-start gap-3 pl-2">
         <Button
@@ -199,15 +292,17 @@ export function HabitItem({
           onClick={onToggle}
           disabled={archivedView}
           className={cn(
-            "mt-0.5 size-10 shrink-0 rounded-full border-2 transition-all duration-150",
+            "habits-check relative mt-0.5 size-10 shrink-0 rounded-full border-2 transition-all duration-150",
             optimistic.completed_today && "text-white shadow-sm",
             archivedView && "opacity-50",
+            burst && "habits-check-burst",
           )}
           style={
             optimistic.completed_today
               ? {
                   backgroundColor: optimistic.color,
                   borderColor: optimistic.color,
+                  boxShadow: `0 0 0 3px color-mix(in oklab, ${optimistic.color} 28%, transparent)`,
                 }
               : { borderColor: optimistic.color }
           }
@@ -327,28 +422,72 @@ export function HabitItem({
           </div>
 
           <div className="mt-3 flex gap-1.5">
-            {optimistic.week.map((day) => (
-              <div
-                key={day.date}
-                title={day.date}
-                className="flex min-w-0 flex-1 flex-col items-center gap-1"
-              >
-                <span className="text-[10px] uppercase tracking-wide text-muted-foreground/80">
-                  {weekdayLabel(day.date)}
-                </span>
-                <div
-                  className={cn(
-                    "h-2 w-full rounded-full transition-colors",
-                    !day.completed && "bg-muted",
-                  )}
-                  style={
-                    day.completed
-                      ? { backgroundColor: optimistic.color }
-                      : undefined
+            {optimistic.week.map((day) => {
+              const isToday = day.date === today;
+              const future = day.date > today;
+              const missed = !future && !day.completed && day.date < today;
+              const dayName = weekdayLabel(day.date);
+              return (
+                <button
+                  key={day.date}
+                  type="button"
+                  title={
+                    future
+                      ? `${dayName} (upcoming)`
+                      : day.completed
+                        ? `Clear ${dayName}`
+                        : missed
+                          ? `Backfill ${dayName}`
+                          : `Check in ${dayName}`
                   }
-                />
-              </div>
-            ))}
+                  disabled={archivedView || future}
+                  onClick={() => onToggleDay(day.date)}
+                  aria-label={
+                    future
+                      ? `${dayName} (upcoming)`
+                      : day.completed
+                        ? `Clear ${dayName}`
+                        : missed
+                          ? `Backfill ${dayName}`
+                          : `Complete ${dayName}`
+                  }
+                  aria-pressed={day.completed}
+                  className="habits-week-cell flex min-w-0 flex-1 flex-col items-center gap-1 disabled:cursor-default"
+                  data-today={isToday ? "true" : undefined}
+                  data-done={day.completed ? "true" : undefined}
+                  data-missed={missed ? "true" : undefined}
+                >
+                  <span
+                    className={cn(
+                      "text-[10px] uppercase tracking-wide text-muted-foreground/80",
+                      isToday && "font-medium text-foreground",
+                      missed && "text-muted-foreground",
+                    )}
+                  >
+                    {dayName}
+                  </span>
+                  <span
+                    className={cn(
+                      "habits-week-dot h-2.5 w-full rounded-full transition-colors",
+                      !day.completed && "bg-muted",
+                      isToday && !day.completed && "ring-1 ring-foreground/20",
+                      missed &&
+                        !archivedView &&
+                        "ring-1 ring-dashed ring-foreground/25",
+                      !archivedView &&
+                        !future &&
+                        "hover:opacity-80 active:scale-[0.97]",
+                      future && "opacity-40",
+                    )}
+                    style={
+                      day.completed
+                        ? { backgroundColor: optimistic.color }
+                        : undefined
+                    }
+                  />
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>

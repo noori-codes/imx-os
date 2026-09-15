@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { confirm } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { imxToast } from "@/lib/imx-toast";
 import type { ProjectWithCounts } from "@/types/project";
 
 type ProjectListProps = {
@@ -36,7 +37,21 @@ export function ProjectList({ goalId, projects }: ProjectListProps) {
         title="No projects yet"
         description="Add a project to break this goal into chunks."
         className="py-12"
-      />
+      >
+        <Button
+          type="button"
+          className="mt-5"
+          onClick={() => {
+            const root = document.querySelector(".goals-composer");
+            root?.scrollIntoView({ behavior: "smooth", block: "center" });
+            root
+              ?.querySelector<HTMLInputElement>("input[name=title]")
+              ?.focus({ preventScroll: true });
+          }}
+        >
+          Add a project
+        </Button>
+      </EmptyState>
     );
   }
 
@@ -90,6 +105,7 @@ function ProjectRow({
       startTransition(async () => {
         onOptimisticDelete();
         await deleteProject(goalId, project.id);
+        imxToast("Project deleted", { tone: "success" });
       });
     })();
   }
@@ -130,6 +146,8 @@ function ProjectRow({
             }}
             autoFocus
             aria-label="Project title"
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error ? "project-edit-error" : undefined}
           />
           <Textarea
             value={description}
@@ -147,11 +165,20 @@ function ProjectRow({
               size="sm"
               variant="ghost"
               onClick={() => setEditing(false)}
+              aria-label="Cancel edit"
             >
               <X className="size-4" />
             </Button>
           </div>
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+          {error ? (
+            <p
+              id="project-edit-error"
+              role="alert"
+              className="text-sm text-destructive"
+            >
+              {error}
+            </p>
+          ) : null}
         </div>
       </li>
     );
@@ -173,9 +200,16 @@ function ProjectRow({
             </p>
           ) : null}
           <p className="mt-2 text-xs text-muted-foreground">
-            {project.task_count === 0
-              ? "No tasks yet"
-              : `${project.completed_task_count}/${project.task_count} tasks · ${progress}%`}
+            {project.task_count === 0 ? (
+              <Link
+                href={`/goals/${goalId}/projects/${project.id}?compose=1`}
+                className="font-medium text-foreground/80 underline-offset-2 hover:underline"
+              >
+                Add task
+              </Link>
+            ) : (
+              `${project.completed_task_count}/${project.task_count} tasks · ${progress}%`
+            )}
           </p>
           {project.task_count > 0 ? (
             <div className="mt-2 h-1.5 max-w-xs overflow-hidden rounded-full bg-muted">
