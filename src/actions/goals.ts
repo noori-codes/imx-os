@@ -25,24 +25,23 @@ async function revalidateGoals() {
 export async function getGoals(): Promise<GoalWithCounts[]> {
   const supabase = await createClient();
 
-  const { data: goals, error } = await supabase
-    .from("goals")
-    .select("*")
-    .order("created_at", { ascending: false });
+  const [goalsResult, projectsResult, tasksResult] = await Promise.all([
+    supabase.from("goals").select("*").order("created_at", { ascending: false }),
+    supabase.from("projects").select("id, goal_id"),
+    supabase
+      .from("tasks")
+      .select("id, project_id, completed")
+      .not("project_id", "is", null),
+  ]);
 
-  if (error || !goals) {
-    console.error("[goals] getGoals:", error?.message);
+  if (goalsResult.error || !goalsResult.data) {
+    console.error("[goals] getGoals:", goalsResult.error?.message);
     return [];
   }
 
-  const { data: projects } = await supabase
-    .from("projects")
-    .select("id, goal_id");
-
-  const { data: tasks } = await supabase
-    .from("tasks")
-    .select("id, project_id, completed")
-    .not("project_id", "is", null);
+  const goals = goalsResult.data;
+  const projects = projectsResult.data;
+  const tasks = tasksResult.data;
 
   const projectIdsByGoal = new Map<string, string[]>();
   for (const project of projects ?? []) {
@@ -82,6 +81,7 @@ export async function getGoals(): Promise<GoalWithCounts[]> {
       project_count: goalProjectIds.length,
       task_count,
       completed_task_count,
+      first_project_id: goalProjectIds[0] ?? null,
     };
   });
 }

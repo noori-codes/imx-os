@@ -218,49 +218,15 @@ async function loadAnalyticsData(
     };
   });
 
-  const streakLookback = new Date();
-  streakLookback.setDate(streakLookback.getDate() - 120);
-  const streakLookbackStr = toDateString(streakLookback);
-
-  let streakLogs: { habit_id: string; logged_on: string }[] =
-    habitLogsResult.data ?? [];
-
-  if (habits.length > 0) {
-    let longQuery = supabase
-      .from("habit_logs")
-      .select("habit_id, logged_on")
-      .in(
-        "habit_id",
-        habits.map((h) => h.id),
-      )
-      .gte("logged_on", streakLookbackStr)
-      .order("logged_on", { ascending: true });
-
-    if (userId) {
-      longQuery = longQuery.eq("user_id", userId);
-    }
-
-    const { data: longLogs, error: longError } = await longQuery;
-
-    if (longError) {
-      console.error("[analytics] streak logs:", longError.message);
-    } else {
-      streakLogs = longLogs ?? [];
-    }
-  }
-
-  const streakDatesByHabit = new Map<string, string[]>();
-  for (const log of streakLogs) {
-    const list = streakDatesByHabit.get(log.habit_id) ?? [];
-    list.push(log.logged_on);
-    streakDatesByHabit.set(log.habit_id, list);
-  }
-
+  // Fast path: streak stats from logs already fetched for the selected range.
+  // Full 120-day lookback streams separately via getAnalyticsHabitStreaks.
   const habit_streaks: HabitStreakSummary[] = habits
     .map((habit) => {
-      const allDates = streakDatesByHabit.get(habit.id) ?? [];
       const rangeDates = logsByHabit.get(habit.id) ?? [];
-      const { current_streak, longest_streak } = computeStreaks(allDates, today);
+      const { current_streak, longest_streak } = computeStreaks(
+        rangeDates,
+        today,
+      );
       const days_logged = new Set(rangeDates).size;
       const completion_rate =
         rangeDays > 0 ? Math.round((days_logged / rangeDays) * 100) : 0;
@@ -341,11 +307,137 @@ async function loadAnalyticsData(
   };
 }
 
+async function loadHabitStreaks(
+  supabase: QueryClient,
+  userId: string | null,
+  rangeDays: AnalyticsRangeDays,
+): Promise<HabitStreakSummary[]> {
+  const days = getPastDays(rangeDays);
+  const rangeStart = toDateString(days[0]);
+  const rangeEnd = toDateString(days[days.length - 1]);
+  const today = toDateString(new Date());
+
+  let habitsQuery = supabase
+    .from("habits")
+    .select("id, title, color")
+    .eq("archived", false)
+    .order("created_at", { ascending: true });
+
+  let habitLogsQuery = supabase
+    .from("habit_logs")
+    .select("habit_id, logged_on")
+    .gte("logged_on", rangeStart)
+    .lte("logged_on", rangeEnd);
+
+  if (userId) {
+    habitsQuery = habitsQuery.eq("user_id", userId);
+    habitLogsQuery = habitLogsQuery.eq("user_id", userId);
+  }
+
+  const [habitsResult, habitLogsResult] = await Promise.all([
+    habitsQuery,
+    habitLogsQuery,
+  ]);
+
+  if (habitsResult.error) {
+    console.error("[analytics] streak habits:", habitsResult.error.message);
+  }
+  if (habitLogsResult.error) {
+    console.error("[analytics] streak range logs:", habitLogsResult.error.message);
+  }
+
+  const habits = habitsResult.data ?? [];
+  if (habits.length === 0) return [];
+
+  const logsByHabit = new Map<string, string[]>();
+  for (const log of habitLogsResult.data ?? []) {
+    const list = logsByHabit.get(log.habit_id) ?? [];
+    list.push(log.logged_on);
+    logsByHabit.set(log.habit_id, list);
+  }
+
+  const streakLookback = new Date();
+  streakLookback.setDate(streakLookback.getDate() - 120);
+  const streakLookbackStr = toDateString(streakLookback);
+
+  let longQuery = supabase
+    .from("habit_logs")
+    .select("habit_id, logged_on")
+    .in(
+      "habit_id",
+      habits.map((h) => h.id),
+    )
+    .gte("logged_on", streakLookbackStr)
+    .order("logged_on", { ascending: true });
+
+  if (userId) {
+    longQuery = longQuery.eq("user_id", userId);
+  }
+
+  const { data: longLogs, error: longError } = await longQuery;
+  if (longError) {
+    console.error("[analytics] streak logs:", longError.message);
+  }
+
+  const streakDatesByHabit = new Map<string, string[]>();
+  for (const log of longLogs ?? []) {
+    const list = streakDatesByHabit.get(log.habit_id) ?? [];
+    list.push(log.logged_on);
+    streakDatesByHabit.set(log.habit_id, list);
+  }
+
+  return habits
+    .map((habit) => {
+      const allDates = streakDatesByHabit.get(habit.id) ?? [];
+      const rangeDates = logsByHabit.get(habit.id) ?? [];
+      const { current_streak, longest_streak } = computeStreaks(allDates, today);
+      const days_logged = new Set(rangeDates).size;
+      const completion_rate =
+        rangeDays > 0 ? Math.round((days_logged / rangeDays) * 100) : 0;
+
+      return {
+        id: habit.id,
+        title: habit.title,
+        color: habit.color,
+        current_streak,
+        longest_streak,
+        completion_rate,
+        days_logged,
+      };
+    })
+    .sort(
+      (a, b) =>
+        b.current_streak - a.current_streak ||
+        b.longest_streak - a.longest_streak,
+    );
+}
+
+async function withAnalyticsClient<T>(
+  userId: string,
+  key: string[],
+  loader: (supabase: QueryClient, scopedUserId: string | null) => Promise<T>,
+): Promise<T> {
+  if (hasAdminClient()) {
+    return cachedQuery(
+      key,
+      [cacheTags.analytics(userId)],
+      CACHE_TTL.analytics,
+      async () => {
+        const admin = createAdminClient();
+        return loader(admin as unknown as QueryClient, userId);
+      },
+    )();
+  }
+
+  const supabase = await createClient();
+  return loader(supabase, null);
+}
+
 /**
- * Analytics is expensive — request-memoized always;
- * cross-request cached when SUPABASE_SERVICE_ROLE_KEY is set.
+ * Core analytics (series + summary) without the 120-day streak lookback.
+ * Streams ahead of habit streak enrichment.
  */
-export const getAnalyticsData = cache(
+export const getAnalyticsCore = cache(
   async (
     rangeDays: number | AnalyticsRangeDays = 30,
   ): Promise<AnalyticsData> => {
@@ -355,23 +447,67 @@ export const getAnalyticsData = cache(
       return emptyAnalytics(resolved);
     }
 
-    if (hasAdminClient()) {
-      return cachedQuery(
-        ["analytics", user.id, String(resolved)],
-        [cacheTags.analytics(user.id)],
-        CACHE_TTL.analytics,
-        async () => {
-          const admin = createAdminClient();
-          return loadAnalyticsData(
-            admin as unknown as QueryClient,
-            user.id,
-            resolved,
-          );
-        },
-      )();
-    }
+    return withAnalyticsClient(
+      user.id,
+      ["analytics-core", user.id, String(resolved)],
+      (supabase, scopedUserId) =>
+        loadAnalyticsData(supabase, scopedUserId, resolved),
+    );
+  },
+);
 
-    const supabase = await createClient();
-    return loadAnalyticsData(supabase, null, resolved);
+/** Full habit streaks with 120-day lookback — streamed after core. */
+export const getAnalyticsHabitStreaks = cache(
+  async (
+    rangeDays: number | AnalyticsRangeDays = 30,
+  ): Promise<HabitStreakSummary[]> => {
+    const resolved = parseAnalyticsRange(String(rangeDays));
+    const user = await getCurrentUser();
+    if (!user) return [];
+
+    return withAnalyticsClient(
+      user.id,
+      ["analytics-streaks", user.id, String(resolved)],
+      (supabase, scopedUserId) =>
+        loadHabitStreaks(supabase, scopedUserId, resolved),
+    );
+  },
+);
+
+/**
+ * Full analytics payload — request-memoized always;
+ * cross-request cached when SUPABASE_SERVICE_ROLE_KEY is set.
+ */
+export const getAnalyticsData = cache(
+  async (
+    rangeDays: number | AnalyticsRangeDays = 30,
+  ): Promise<AnalyticsData> => {
+    const [core, habit_streaks] = await Promise.all([
+      getAnalyticsCore(rangeDays),
+      getAnalyticsHabitStreaks(rangeDays),
+    ]);
+
+    if (habit_streaks.length === 0) return core;
+
+    const habitRates = habit_streaks.map((h) => h.completion_rate);
+    const habits_avg_rate =
+      habitRates.length > 0
+        ? Math.round(
+            habitRates.reduce((sum, rate) => sum + rate, 0) / habitRates.length,
+          )
+        : 0;
+
+    return {
+      ...core,
+      habit_streaks,
+      summary: {
+        ...core.summary,
+        habits_avg_rate,
+        best_habit_streak: habit_streaks.reduce(
+          (max, h) => Math.max(max, h.longest_streak),
+          0,
+        ),
+      },
+    };
   },
 );

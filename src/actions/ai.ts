@@ -29,7 +29,7 @@ export type CoachReply = {
 export type CoachAskResult =
   | {
       ok: true;
-      promptId: AiCoachPromptId;
+      promptId: AiCoachPromptId | "custom";
       promptLabel: string;
       reply: CoachReply;
       generatedAt: string;
@@ -143,18 +143,11 @@ export async function generateWeeklyInsight() {
   return askCoachQuestion("week_overview");
 }
 
-export async function askCoachQuestion(
-  promptId: string,
+async function runCoachAsk(
+  promptId: AiCoachPromptId | "custom",
+  label: string,
+  hint: string,
 ): Promise<CoachAskResult> {
-  const prompt = resolvePrompt(promptId);
-  if (!prompt) {
-    return {
-      ok: false,
-      code: "invalid_prompt",
-      error: "That question isn’t available.",
-    };
-  }
-
   const user = await getVerifiedUser();
   if (!user) {
     return { ok: false, code: "auth", error: "Sign in to ask the coach." };
@@ -190,7 +183,7 @@ export async function askCoachQuestion(
       { role: "system", content: SYSTEM_PROMPT },
       {
         role: "user",
-        content: `Question: ${prompt.label}\nWhat to emphasize: ${prompt.hint}\n\nActivity briefing:\n${briefing}\n\nRemember: reply with JSON only. summary must be prose sentences, never raw data.`,
+        content: `Question: ${label}\nWhat to emphasize: ${hint}\n\nActivity briefing:\n${briefing}\n\nRemember: reply with JSON only. summary must be prose sentences, never raw data.`,
       },
     ],
     {
@@ -210,7 +203,6 @@ export async function askCoachQuestion(
 
   let reply = parseReply(completion.content);
   if (!reply) {
-    // One repair pass if the model drifted.
     const repair = await groqChatCompletion(
       [
         {
@@ -220,7 +212,7 @@ export async function askCoachQuestion(
         },
         {
           role: "user",
-          content: `Question was: ${prompt.label}\nDraft:\n${completion.content.slice(0, 2000)}`,
+          content: `Question was: ${label}\nDraft:\n${completion.content.slice(0, 2000)}`,
         },
       ],
       { temperature: 0.1, maxTokens: 500, jsonMode: true },
@@ -251,9 +243,44 @@ export async function askCoachQuestion(
 
   return {
     ok: true,
-    promptId: prompt.id,
-    promptLabel: prompt.label,
+    promptId,
+    promptLabel: label,
     reply,
     generatedAt,
   };
+}
+
+export async function askCoachQuestion(
+  promptId: string,
+): Promise<CoachAskResult> {
+  const prompt = resolvePrompt(promptId);
+  if (!prompt) {
+    return {
+      ok: false,
+      code: "invalid_prompt",
+      error: "That question isn’t available.",
+    };
+  }
+
+  return runCoachAsk(prompt.id, prompt.label, prompt.hint);
+}
+
+/** Free-text coach ask — same activity briefing + cooldown as chip prompts. */
+export async function askCoachMessage(
+  rawQuestion: string,
+): Promise<CoachAskResult> {
+  const question = rawQuestion.trim().replace(/\s+/g, " ").slice(0, 280);
+  if (question.length < 3) {
+    return {
+      ok: false,
+      code: "invalid_prompt",
+      error: "Ask something a bit more specific.",
+    };
+  }
+
+  return runCoachAsk(
+    "custom",
+    question,
+    "Answer this user question using the activity briefing. Be concrete and actionable.",
+  );
 }

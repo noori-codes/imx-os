@@ -10,7 +10,7 @@ import {
   formatShortWeekday,
   getWeekDays,
   startOfDay,
-  startOfWeekSaturday,
+  startOfWeek,
   toDateString,
 } from "@/lib/date-utils";
 import { createAdminClient, hasAdminClient } from "@/lib/supabase/admin";
@@ -257,7 +257,7 @@ async function loadDashboardData(
   scheduleRecurringTaskSync(await createClient());
 
   const todayStr = toDateString(startOfDay(new Date()));
-  const weekStart = startOfWeekSaturday(new Date());
+  const weekStart = startOfWeek(new Date());
   const weekDays = getWeekDays(weekStart);
   const weekStartStr = toDateString(weekDays[0]!);
   const weekEndStr = toDateString(weekDays[6]!);

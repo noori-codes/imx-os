@@ -4,6 +4,12 @@ import { revalidatePath } from "next/cache";
 
 import { getCurrentUser } from "@/lib/auth";
 import { revalidateUserCaches } from "@/lib/cache";
+import {
+  addDays,
+  parseDateString,
+  toDateString,
+} from "@/lib/date-utils";
+import { stripNoteHtml } from "@/lib/note-preview";
 import { createClient } from "@/lib/supabase/server";
 import type {
   CalendarData,
@@ -152,7 +158,8 @@ export async function createCalendarEvent(
   const title = (formData.get("title") as string)?.trim();
   const description = (formData.get("description") as string)?.trim() || null;
   const eventDate = formData.get("event_date") as string;
-  const startTimeRaw = formData.get("start_time") as string;
+  const startTimeRaw = (formData.get("start_time") as string)?.trim() || "";
+  const endTimeRaw = (formData.get("end_time") as string)?.trim() || "";
 
   if (!title) {
     return { error: "Event title is required." };
@@ -162,13 +169,84 @@ export async function createCalendarEvent(
     return { error: "Event date is required." };
   }
 
+  const start_time = startTimeRaw.length ? startTimeRaw : null;
+  const end_time = endTimeRaw.length ? endTimeRaw : null;
+
+  if (end_time && !start_time) {
+    return { error: "Add a start time before setting an end time." };
+  }
+
+  if (start_time && end_time && end_time <= start_time) {
+    return { error: "End time must be after start time." };
+  }
+
   const { error } = await supabase.from("calendar_events").insert({
     user_id: user.id,
     title,
     description,
     event_date: eventDate,
-    start_time: startTimeRaw?.length ? startTimeRaw : null,
+    start_time,
+    end_time,
   });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  await revalidateCalendar();
+  return {};
+}
+
+export async function updateCalendarEvent(
+  eventId: string,
+  _prevState: CalendarActionState | null,
+  formData: FormData,
+): Promise<CalendarActionState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "You must be signed in." };
+  }
+
+  const title = (formData.get("title") as string)?.trim();
+  const description = (formData.get("description") as string)?.trim() || null;
+  const eventDate = formData.get("event_date") as string;
+  const startTimeRaw = (formData.get("start_time") as string)?.trim() || "";
+  const endTimeRaw = (formData.get("end_time") as string)?.trim() || "";
+
+  if (!title) {
+    return { error: "Event title is required." };
+  }
+
+  if (!eventDate) {
+    return { error: "Event date is required." };
+  }
+
+  const start_time = startTimeRaw.length ? startTimeRaw : null;
+  const end_time = endTimeRaw.length ? endTimeRaw : null;
+
+  if (end_time && !start_time) {
+    return { error: "Add a start time before setting an end time." };
+  }
+
+  if (start_time && end_time && end_time <= start_time) {
+    return { error: "End time must be after start time." };
+  }
+
+  const { error } = await supabase
+    .from("calendar_events")
+    .update({
+      title,
+      description,
+      event_date: eventDate,
+      start_time,
+      end_time,
+    })
+    .eq("id", eventId)
+    .eq("user_id", user.id);
 
   if (error) {
     return { error: error.message };
@@ -188,8 +266,108 @@ export async function deleteCalendarEvent(eventId: string) {
 
   if (error) {
     console.error("[calendar] deleteCalendarEvent:", error.message);
-    return;
+    return { error: error.message };
   }
 
   await revalidateCalendar();
+  return {};
+}
+
+export async function duplicateCalendarEvent(eventId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "You must be signed in." };
+  }
+
+  const { data: event, error: fetchError } = await supabase
+    .from("calendar_events")
+    .select("*")
+    .eq("id", eventId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (fetchError) {
+    return { error: fetchError.message };
+  }
+  if (!event) {
+    return { error: "Event not found." };
+  }
+
+  const nextDate = toDateString(addDays(parseDateString(event.event_date), 1));
+
+  const { data: created, error } = await supabase
+    .from("calendar_events")
+    .insert({
+      user_id: user.id,
+      title: event.title,
+      description: event.description,
+      event_date: nextDate,
+      start_time: event.start_time,
+      end_time: event.end_time,
+    })
+    .select("id, event_date")
+    .single();
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  await revalidateCalendar();
+  return { id: created.id as string, event_date: created.event_date as string };
+}
+
+export async function createEventFromNote(noteId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "You must be signed in." };
+  }
+
+  const { data: note, error: fetchError } = await supabase
+    .from("notes")
+    .select("id, title, content, journal_date, type")
+    .eq("id", noteId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (fetchError) {
+    return { error: fetchError.message };
+  }
+  if (!note) {
+    return { error: "Note not found." };
+  }
+
+  const title = (note.title as string)?.trim() || "Untitled";
+  const plain = stripNoteHtml((note.content as string) ?? "").trim();
+  const description = plain ? plain.slice(0, 500) : null;
+  const event_date =
+    (note.journal_date as string | null) ?? toDateString(new Date());
+
+  const { data: created, error } = await supabase
+    .from("calendar_events")
+    .insert({
+      user_id: user.id,
+      title,
+      description,
+      event_date,
+      start_time: null,
+      end_time: null,
+    })
+    .select("id, event_date")
+    .single();
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  await revalidateCalendar();
+  revalidatePath(`/notes/${noteId}`);
+  return { id: created.id as string, event_date: created.event_date as string };
 }

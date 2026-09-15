@@ -63,8 +63,11 @@ export async function getReviewPageData(date: string): Promise<ReviewPageData> {
     supabase
       .from("tasks")
       .select("id, title, completed, due_date")
-      .eq("due_date", date)
-      .order("completed", { ascending: true }),
+      .eq("completed", false)
+      .lte("due_date", date)
+      .order("due_date", { ascending: true })
+      .order("title", { ascending: true })
+      .limit(40),
     supabase
       .from("tasks")
       .select("id, title, completed, due_date")

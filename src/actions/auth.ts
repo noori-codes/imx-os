@@ -5,6 +5,10 @@ import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
 
+function siteOrigin() {
+  return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+}
+
 export type AuthState = {
   error?: string;
   success?: string;
@@ -54,7 +58,7 @@ export async function signup(
     email,
     password,
     options: {
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/auth/callback`,
+      emailRedirectTo: `${siteOrigin()}/auth/callback`,
     },
   });
 
@@ -66,6 +70,65 @@ export async function signup(
     success:
       "Account created! Check your email to confirm, then sign in.",
   };
+}
+
+export async function requestPasswordReset(
+  _prevState: AuthState | null,
+  formData: FormData,
+): Promise<AuthState> {
+  const supabase = await createClient();
+  const email = (formData.get("email") as string)?.trim();
+
+  if (!email) {
+    return { error: "Email is required." };
+  }
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${siteOrigin()}/auth/callback?next=${encodeURIComponent("/update-password")}`,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  return {
+    success:
+      "If an account exists for that email, you’ll get a reset link shortly.",
+  };
+}
+
+export async function updatePassword(
+  _prevState: AuthState | null,
+  formData: FormData,
+): Promise<AuthState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Your reset link expired. Request a new one." };
+  }
+
+  const password = formData.get("password") as string;
+  const confirmPassword = formData.get("confirmPassword") as string;
+
+  if (password !== confirmPassword) {
+    return { error: "Passwords do not match." };
+  }
+
+  if (password.length < 8) {
+    return { error: "Password must be at least 8 characters." };
+  }
+
+  const { error } = await supabase.auth.updateUser({ password });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/", "layout");
+  redirect("/dashboard");
 }
 
 export async function signOut() {

@@ -403,6 +403,29 @@ export async function updateBookProgress(bookId: string, currentPage: number) {
   await revalidateBooks();
 }
 
+export async function updateBookRating(
+  bookId: string,
+  rating: number | null,
+): Promise<{ error?: string }> {
+  if (rating != null && (rating < 1 || rating > 5 || !Number.isInteger(rating))) {
+    return { error: "Rating must be 1–5." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("books")
+    .update({ rating })
+    .eq("id", bookId);
+
+  if (error) {
+    console.error("[books] updateBookRating:", error.message);
+    return { error: error.message };
+  }
+
+  await revalidateBooks();
+  return {};
+}
+
 export async function deleteBook(bookId: string) {
   const supabase = await createClient();
   const { error } = await supabase.from("books").delete().eq("id", bookId);

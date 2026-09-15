@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
 import { revalidateUserCaches } from "@/lib/cache";
 import { createClient } from "@/lib/supabase/server";
-import { computeStreaks, getWeekDays, startOfDay, startOfWeekSaturday, toDateString } from "@/lib/date-utils";
+import { computeStreaks, getWeekDays, startOfDay, startOfWeek, toDateString } from "@/lib/date-utils";
 import { sameFocusThread } from "@/lib/focus-threads";
 import type {
   DailyFocusGoal,
@@ -110,7 +110,7 @@ function focusLevelFromMinutes(minutes: number): FocusWeekDay["level"] {
 /** Today totals + streak + last-7-day heatmap for the Focus page. */
 export async function getFocusOverviewStats() {
   const supabase = await createClient();
-  const days = getWeekDays(startOfWeekSaturday(new Date()));
+  const days = getWeekDays(startOfWeek(new Date()));
   const today = toDateString(new Date());
 
   const streakLookback = new Date();
