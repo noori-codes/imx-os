@@ -2,7 +2,7 @@ import {
   getWeekDays,
   isToday,
   parseDateString,
-  startOfWeekSaturday,
+  startOfWeek,
   toDateString,
 } from "@/lib/date-utils";
 import {
@@ -20,7 +20,7 @@ export function buildFocusWeekDays(
 ): FocusWeekDay[] {
   const anchor = new Date();
   anchor.setDate(anchor.getDate() + weekOffset * 7);
-  const weekStart = startOfWeekSaturday(anchor);
+  const weekStart = startOfWeek(anchor);
 
   return getWeekDays(weekStart).map((day) => {
     const date = toDateString(day);
@@ -42,8 +42,8 @@ export function minFocusWeekOffset(focusByDay: Record<string, number>) {
   if (dates.length === 0) return 0;
 
   const earliest = dates.reduce((a, b) => (a < b ? a : b));
-  const currentStart = startOfWeekSaturday(new Date());
-  const earliestStart = startOfWeekSaturday(parseDateString(earliest));
+  const currentStart = startOfWeek(new Date());
+  const earliestStart = startOfWeek(parseDateString(earliest));
   const diffWeeks = Math.floor(
     (currentStart.getTime() - earliestStart.getTime()) / (7 * 86_400_000),
   );

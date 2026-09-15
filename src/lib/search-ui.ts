@@ -34,14 +34,124 @@ export const SEARCH_ENTITY_META: Record<
   book: { label: "Book", plural: "Books", icon: BookOpen },
 };
 
-export const SEARCH_JUMP_LINKS = [
-  { label: "Dashboard", href: "/dashboard", hint: "Today’s overview" },
-  { label: "Tasks", href: "/tasks", hint: "Inbox & schedule" },
-  { label: "Focus", href: "/focus", hint: "Timer" },
-  { label: "Notes", href: "/notes", hint: "Library" },
-  { label: "Habits", href: "/habits", hint: "Check-ins" },
-  { label: "Review", href: "/review", hint: "Reflect" },
-] as const;
+export type SearchJumpLink = {
+  label: string;
+  href: string;
+  hint: string;
+  /** Extra names that resolve on Enter (e.g. "task" → Tasks). */
+  aliases?: readonly string[];
+};
+
+export const SEARCH_JUMP_LINKS: readonly SearchJumpLink[] = [
+  {
+    label: "Dashboard",
+    href: "/dashboard",
+    hint: "Today’s overview",
+    aliases: ["home", "today", "dash"],
+  },
+  {
+    label: "Tasks",
+    href: "/tasks",
+    hint: "Inbox & schedule",
+    aliases: ["task", "todo", "todos", "inbox"],
+  },
+  {
+    label: "Goals",
+    href: "/goals",
+    hint: "Goals & projects",
+    aliases: ["goal", "project", "projects"],
+  },
+  {
+    label: "Habits",
+    href: "/habits",
+    hint: "Check-ins",
+    aliases: ["habit", "streak", "streaks"],
+  },
+  {
+    label: "Focus",
+    href: "/focus",
+    hint: "Timer",
+    aliases: ["timer", "pomodoro"],
+  },
+  {
+    label: "Notes",
+    href: "/notes",
+    hint: "Library",
+    aliases: ["note"],
+  },
+  {
+    label: "Review",
+    href: "/review",
+    hint: "Reflect",
+    aliases: ["reflect", "journal"],
+  },
+  {
+    label: "Calendar",
+    href: "/calendar",
+    hint: "Schedule",
+    aliases: ["cal", "events", "event"],
+  },
+  {
+    label: "Books",
+    href: "/books",
+    hint: "Reading list",
+    aliases: ["book", "reading"],
+  },
+  {
+    label: "Analytics",
+    href: "/analytics",
+    hint: "Stats",
+    aliases: ["stats", "insights"],
+  },
+  {
+    label: "Settings",
+    href: "/settings",
+    hint: "Prefs",
+    aliases: ["setting", "prefs", "preferences"],
+  },
+];
+
+/** Core destinations always shown in the fixed Jump strip. */
+export const SEARCH_JUMP_PRIMARY: readonly SearchJumpLink[] =
+  SEARCH_JUMP_LINKS.filter((link) =>
+    ["/dashboard", "/tasks", "/goals", "/habits", "/focus", "/notes"].includes(
+      link.href,
+    ),
+  );
+
+function jumpNames(link: SearchJumpLink): string[] {
+  return [link.label, ...(link.aliases ?? [])].map((name) =>
+    name.toLowerCase(),
+  );
+}
+
+/** Jump links that match the typed query (for highlight / keyboard). */
+export function matchSearchJumps(query: string): SearchJumpLink[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return [...SEARCH_JUMP_LINKS];
+
+  return SEARCH_JUMP_LINKS.filter((link) =>
+    jumpNames(link).some((name) => name === q || name.startsWith(q)),
+  );
+}
+
+/**
+ * Resolve a typed query to a destination page when the user clearly named it.
+ * Exact name/alias, or a unique prefix (e.g. “hab” → Habits).
+ */
+export function resolveSearchJump(query: string): SearchJumpLink | null {
+  const q = query.trim().toLowerCase();
+  if (!q) return null;
+
+  for (const link of SEARCH_JUMP_LINKS) {
+    if (jumpNames(link).includes(q)) return link;
+  }
+
+  const matches = matchSearchJumps(q);
+  if (matches.length === 1) return matches[0] ?? null;
+
+  return null;
+}
 
 const RECENT_KEY = "imx-search-recent";
 const RECENT_MAX = 8;

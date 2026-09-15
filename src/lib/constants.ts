@@ -7,6 +7,7 @@ import {
   ListTodo,
   Moon,
   NotebookPen,
+  Search,
   Settings,
   Target,
   Timer,
@@ -102,6 +103,13 @@ export const NAV_SETTINGS: NavItem = {
   description: "Preferences and account",
 };
 
+export const NAV_SEARCH: NavItem = {
+  title: "Search",
+  href: "/search",
+  icon: Search,
+  description: "Find anything · ⌘K",
+};
+
 export const NAV_GROUPS: NavGroup[] = [
   {
     label: "Operate",
@@ -118,13 +126,14 @@ export const NAV_GROUPS: NavGroup[] = [
 ];
 
 /** Primary destinations for the mobile bottom tab bar. */
-export const MOBILE_TAB_ITEMS: NavItem[] = [DASHBOARD, TASKS, FOCUS, NOTES];
+export const MOBILE_TAB_ITEMS: NavItem[] = [DASHBOARD, TASKS, FOCUS, HABITS];
 
 /** Secondary routes shown in the mobile “More” sheet. */
 export const MOBILE_MORE_ITEMS: NavItem[] = [
+  NAV_SEARCH,
+  NOTES,
   CALENDAR,
   GOALS,
-  HABITS,
   BOOKS,
   REVIEW,
   ANALYTICS,

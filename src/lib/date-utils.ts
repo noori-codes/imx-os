@@ -133,14 +133,14 @@ export function startOfMonth(date: Date) {
   return d;
 }
 
-/** Saturday-start week containing the given date. */
+/** Saturday-start week (legacy). Prefer `startOfWeek` for app-wide weeks. */
 export function startOfWeekSaturday(date: Date) {
   const d = startOfDay(date);
   d.setDate(d.getDate() - ((d.getDay() + 1) % 7));
   return d;
 }
 
-/** Sunday-start week, matching typical US month calendars. */
+/** Sunday-start week — shared by Calendar, Dashboard, and Focus. */
 export function startOfWeek(date: Date) {
   const d = startOfDay(date);
   d.setDate(d.getDate() - d.getDay());

@@ -3,8 +3,10 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { getSupabaseEnv, isSupabaseConfigured } from "@/lib/supabase/env";
 
-const AUTH_ROUTES = ["/login", "/register"];
+const AUTH_ROUTES = ["/login", "/register", "/forgot-password"];
 const PUBLIC_ROUTES = ["/auth/callback", "/setup"];
+/** Needs a session (recovery link or signed-in) but stays on the auth chrome. */
+const SESSION_AUTH_ROUTES = ["/update-password"];
 
 function isAuthRoute(pathname: string) {
   return AUTH_ROUTES.some((route) => pathname.startsWith(route));
@@ -12,6 +14,10 @@ function isAuthRoute(pathname: string) {
 
 function isPublicRoute(pathname: string) {
   return PUBLIC_ROUTES.some((route) => pathname.startsWith(route));
+}
+
+function isSessionAuthRoute(pathname: string) {
+  return SESSION_AUTH_ROUTES.some((route) => pathname.startsWith(route));
 }
 
 function hasSupabaseAuthCookie(request: NextRequest) {
@@ -35,7 +41,12 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Fast path: no auth cookie → skip network call for protected routes
-  if (!hasSupabaseAuthCookie(request) && !isAuthRoute(pathname) && !isPublicRoute(pathname)) {
+  if (
+    !hasSupabaseAuthCookie(request) &&
+    !isAuthRoute(pathname) &&
+    !isPublicRoute(pathname) &&
+    !isSessionAuthRoute(pathname)
+  ) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
@@ -71,6 +82,12 @@ export async function updateSession(request: NextRequest) {
 
   if (isPublicRoute(pathname)) {
     return supabaseResponse;
+  }
+
+  if (!user && isSessionAuthRoute(pathname)) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = "/forgot-password";
+    return NextResponse.redirect(redirectUrl);
   }
 
   if (!user && !isAuthRoute(pathname)) {
