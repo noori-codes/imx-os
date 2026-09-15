@@ -1,17 +1,20 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { BookOpen, Pencil, Search, Trash2 } from "lucide-react";
 
 import {
   deleteBook,
   updateBookProgress,
+  updateBookRating,
   updateBookStatus,
 } from "@/actions/books";
 import { BookFormDialog } from "@/components/books/book-form-dialog";
 import { EmptyState } from "@/components/shared/empty-state";
 import { BrandSelect } from "@/components/ui/brand-select";
 import { confirm } from "@/components/ui/confirm-dialog";
+import { imxToast } from "@/lib/imx-toast";
 import { cn } from "@/lib/utils";
 import {
   BOOK_STATUSES,
@@ -27,6 +30,8 @@ type Filter = "all" | BookStatus;
 
 type BooksShelfProps = {
   books: Book[];
+  /** From ⌘K “Add book” — open the create dialog once. */
+  compose?: boolean;
 };
 
 function formatShortDate(iso: string) {
@@ -121,25 +126,67 @@ function ProgressCell({ book }: { book: Book }) {
   );
 }
 
-function RatingStars({ rating }: { rating: number | null }) {
-  if (rating == null) {
-    return <span className="text-xs text-muted-foreground">—</span>;
-  }
+function RatingStars({
+  rating,
+  bookTitle,
+  onRate,
+}: {
+  rating: number | null;
+  bookTitle: string;
+  onRate: (next: number | null) => void;
+}) {
+  const value = rating ?? 0;
   return (
-    <span className="text-xs tabular-nums text-foreground" title={`${rating}/5`}>
-      {"★".repeat(rating)}
-      <span className="text-muted-foreground/40">
-        {"★".repeat(5 - rating)}
-      </span>
-    </span>
+    <div
+      className="inline-flex items-center gap-0.5"
+      role="group"
+      aria-label={`Rating for ${bookTitle}`}
+    >
+      {[1, 2, 3, 4, 5].map((star) => {
+        const filled = star <= value;
+        return (
+          <button
+            key={star}
+            type="button"
+            onClick={() => onRate(rating === star ? null : star)}
+            className={cn(
+              "rounded px-0.5 text-sm leading-none transition-colors",
+              filled
+                ? "text-foreground"
+                : "text-muted-foreground/35 hover:text-muted-foreground",
+            )}
+            aria-label={
+              rating === star
+                ? `Clear rating (${star} stars)`
+                : `Rate ${star} star${star === 1 ? "" : "s"}`
+            }
+            aria-pressed={filled}
+          >
+            ★
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
-export function BooksShelf({ books }: BooksShelfProps) {
+export function BooksShelf({ books, compose = false }: BooksShelfProps) {
+  const router = useRouter();
+  const pathname = usePathname();
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
   const [editing, setEditing] = useState<Book | null>(null);
+  const [creating, setCreating] = useState(compose);
   const [, startTransition] = useTransition();
+
+  useEffect(() => {
+    if (!compose) return;
+    setCreating(true);
+    const params = new URLSearchParams(window.location.search);
+    params.delete("compose");
+    const next = params.toString();
+    router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false });
+  }, [compose, pathname, router]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -154,17 +201,91 @@ export function BooksShelf({ books }: BooksShelfProps) {
     });
   }, [books, filter, query]);
 
+  useEffect(() => {
+    const id = window.location.hash.replace(/^#/, "");
+    if (!id.startsWith("book-")) return;
+    window.requestAnimationFrame(() => {
+      const nodes = document.querySelectorAll(`[id="${CSS.escape(id)}"]`);
+      for (const el of nodes) {
+        let hidden = false;
+        let cur: Element | null = el;
+        while (cur) {
+          const style = window.getComputedStyle(cur);
+          if (style.display === "none" || style.visibility === "hidden") {
+            hidden = true;
+            break;
+          }
+          cur = cur.parentElement;
+        }
+        if (hidden) continue;
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        break;
+      }
+    });
+  }, [filtered.length]);
+
   function onStatusChange(bookId: string, status: BookStatus) {
+    const book = books.find((item) => item.id === bookId);
     startTransition(async () => {
       await updateBookStatus(bookId, status);
+      if (status === "finished") {
+        imxToast("Finished", {
+          description: book?.title,
+          tone: "success",
+        });
+      } else {
+        imxToast("Status updated", {
+          description: book ? `${book.title} · ${bookStatusLabel(status)}` : undefined,
+        });
+      }
     });
   }
 
   function onProgressSubmit(bookId: string, value: string) {
     const page = Number.parseInt(value, 10);
     if (!Number.isFinite(page) || page < 0) return;
+    const book = books.find((item) => item.id === bookId);
+    const finished =
+      book?.total_pages != null &&
+      book.total_pages > 0 &&
+      page >= book.total_pages;
     startTransition(async () => {
       await updateBookProgress(bookId, page);
+      if (finished) {
+        imxToast("Finished", {
+          description: book?.title,
+          tone: "success",
+        });
+      } else {
+        imxToast("Progress saved", {
+          description: book
+            ? `${book.title} · p.${page}${book.total_pages ? `/${book.total_pages}` : ""}`
+            : undefined,
+        });
+      }
+    });
+  }
+
+  function onRate(bookId: string, next: number | null) {
+    const book = books.find((item) => item.id === bookId);
+    startTransition(async () => {
+      const result = await updateBookRating(bookId, next);
+      if (result.error) {
+        imxToast("Couldn’t update rating", {
+          description: result.error,
+          tone: "error",
+        });
+        return;
+      }
+      imxToast(
+        next == null
+          ? "Rating cleared"
+          : `${next} star${next === 1 ? "" : "s"}`,
+        {
+          description: book?.title,
+          tone: "success",
+        },
+      );
     });
   }
 
@@ -178,21 +299,22 @@ export function BooksShelf({ books }: BooksShelfProps) {
     if (!ok) return;
     startTransition(async () => {
       await deleteBook(book.id);
+      imxToast("Book deleted", { tone: "success" });
     });
   }
 
   if (books.length === 0) {
     return (
-      <div className="space-y-4">
-        <div className="flex justify-end">
+      <EmptyState
+        icon={BookOpen}
+        title="Your shelf is empty"
+        description="Add a book you're reading, finished, or want to start next."
+        className="py-16"
+      >
+        <div className="mt-5">
           <BookFormDialog />
         </div>
-        <EmptyState
-          icon={BookOpen}
-          title="Your shelf is empty"
-          description="Add a book you're reading, finished, or want to start next."
-        />
-      </div>
+      </EmptyState>
     );
   }
 
@@ -244,7 +366,22 @@ export function BooksShelf({ books }: BooksShelfProps) {
       </div>
 
       {filtered.length === 0 ? (
-        <EmptyState title="Nothing matches that filter." className="py-10" />
+        <EmptyState
+          title="Nothing matches that filter."
+          description="Clear search or switch tabs to see more of your shelf."
+          className="py-10"
+        >
+          <button
+            type="button"
+            onClick={() => {
+              setFilter("all");
+              setQuery("");
+            }}
+            className="mt-5 inline-flex h-10 items-center rounded-xl border border-border/60 bg-card/70 px-4 text-sm font-medium text-foreground transition-colors hover:border-border"
+          >
+            Reset filters
+          </button>
+        </EmptyState>
       ) : (
         <>
           {/* Desktop table */}
@@ -266,8 +403,9 @@ export function BooksShelf({ books }: BooksShelfProps) {
               <tbody>
                 {filtered.map((book) => (
                   <tr
+                    id={`book-${book.id}`}
                     key={book.id}
-                    className="border-b border-border/30 last:border-b-0"
+                    className="scroll-mt-24 border-b border-border/30 last:border-b-0"
                   >
                     <td className="max-w-[14rem] px-4 py-3">
                       <p className="truncate font-medium text-foreground">
@@ -320,7 +458,11 @@ export function BooksShelf({ books }: BooksShelfProps) {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <RatingStars rating={book.rating} />
+                      <RatingStars
+                        rating={book.rating}
+                        bookTitle={book.title}
+                        onRate={(next) => onRate(book.id, next)}
+                      />
                     </td>
                     <td className="px-4 py-3">
                       <DatesCell book={book} />
@@ -355,8 +497,9 @@ export function BooksShelf({ books }: BooksShelfProps) {
           <ul className="grid gap-3 md:hidden">
             {filtered.map((book) => (
               <li
+                id={`book-${book.id}`}
                 key={book.id}
-                className="rounded-2xl border border-border/50 bg-card/80 p-4"
+                className="scroll-mt-24 rounded-2xl border border-border/50 bg-card/80 p-4"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -403,7 +546,11 @@ export function BooksShelf({ books }: BooksShelfProps) {
                       aria-label={`Current page for ${book.title}`}
                     />
                   )}
-                  <RatingStars rating={book.rating} />
+                  <RatingStars
+                    rating={book.rating}
+                    bookTitle={book.title}
+                    onRate={(next) => onRate(book.id, next)}
+                  />
                 </div>
 
                 <div className="mt-3 flex items-center justify-between border-t border-border/40 pt-3">
@@ -441,6 +588,15 @@ export function BooksShelf({ books }: BooksShelfProps) {
           open={Boolean(editing)}
           onOpenChange={(next) => {
             if (!next) setEditing(null);
+          }}
+        />
+      ) : null}
+
+      {creating && !editing ? (
+        <BookFormDialog
+          open={creating}
+          onOpenChange={(next) => {
+            if (!next) setCreating(false);
           }}
         />
       ) : null}

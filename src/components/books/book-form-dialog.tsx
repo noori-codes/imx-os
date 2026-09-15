@@ -21,6 +21,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { imxToast } from "@/lib/imx-toast";
 import { BOOK_STATUSES, type Book } from "@/types/book";
 
 type BookFormDialogProps = {
@@ -53,8 +54,16 @@ export function BookFormDialog({
   useEffect(() => {
     if (state && !state.error) {
       setOpen(false);
+      imxToast(isEdit ? "Book updated" : "Book added", {
+        tone: "success",
+      });
+    } else if (state?.error) {
+      imxToast("Couldn’t save book", {
+        description: state.error,
+        tone: "error",
+      });
     }
-  }, [state, setOpen]);
+  }, [state, setOpen, isEdit]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -63,6 +72,7 @@ export function BookFormDialog({
         <DialogTrigger asChild>
           <button
             type="button"
+            data-imx-capture
             className="inline-flex h-10 items-center gap-2 rounded-xl bg-foreground px-4 text-sm font-medium text-background transition-opacity hover:opacity-90"
           >
             <Plus className="size-4" />
@@ -88,6 +98,7 @@ export function BookFormDialog({
               id="book-title"
               name="title"
               required
+              autoFocus={!isEdit}
               defaultValue={book?.title ?? ""}
               placeholder="Book title"
               autoComplete="off"

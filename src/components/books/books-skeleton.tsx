@@ -1,3 +1,4 @@
+import { BooksStage } from "@/components/books/books-stage";
 import { AppPageFrame } from "@/components/shared/app-page-frame";
 import { cn } from "@/lib/utils";
 
@@ -7,24 +8,30 @@ function Bone({ className }: { className?: string }) {
 
 function BooksSkeletonBody() {
   return (
-    <div className="books-stage-content flex flex-1 flex-col gap-6">
-      <div className="space-y-2">
-        <Bone className="h-2.5 w-24" />
-        <Bone className="h-8 w-36 sm:h-9" />
-        <Bone className="h-3.5 w-64 max-w-full opacity-55" />
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div
-            key={i}
-            className="rounded-2xl border border-border/50 bg-card/80 px-4 py-3.5 sm:px-5 sm:py-4"
-          >
-            <Bone className="h-2.5 w-16" />
-            <Bone className="mt-2 h-7 w-12" />
-            <Bone className="mt-2 h-2.5 w-20 opacity-55" />
+    <>
+      <div className="books-pulse relative overflow-hidden py-2 sm:py-3">
+        <div className="flex flex-col gap-4 sm:flex-row sm:justify-between">
+          <div className="space-y-2 text-center sm:text-left">
+            <Bone className="mx-auto h-2.5 w-28 sm:mx-0" />
+            <Bone className="mx-auto h-8 w-28 sm:mx-0 sm:h-9" />
           </div>
-        ))}
+          <Bone className="mx-auto h-10 w-28 rounded-xl sm:mx-0" />
+        </div>
+        <div className="mt-6 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0 flex-1 space-y-3 text-center sm:text-left">
+            <Bone className="mx-auto h-7 w-40 sm:mx-0" />
+            <Bone className="mx-auto h-3.5 w-72 max-w-full opacity-55 sm:mx-0" />
+            <div className="mt-4 grid grid-cols-3 gap-4 sm:max-w-sm">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="space-y-1.5">
+                  <Bone className="mx-auto h-2 w-12 sm:mx-0" />
+                  <Bone className="mx-auto h-5 w-8 sm:mx-0" />
+                </div>
+              ))}
+            </div>
+          </div>
+          <Bone className="mx-auto size-32 shrink-0 rounded-full sm:mx-0" />
+        </div>
       </div>
 
       <div className="flex flex-col gap-3 lg:flex-row lg:justify-between">
@@ -55,7 +62,7 @@ function BooksSkeletonBody() {
           </div>
         ))}
       </div>
-    </div>
+    </>
   );
 }
 
@@ -68,7 +75,9 @@ export function BooksSkeleton() {
       aria-label="Loading books"
     >
       <AppPageFrame className="max-w-5xl gap-8 md:py-8">
-        <BooksSkeletonBody />
+        <BooksStage>
+          <BooksSkeletonBody />
+        </BooksStage>
       </AppPageFrame>
     </div>
   );
