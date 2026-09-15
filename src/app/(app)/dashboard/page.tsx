@@ -1,8 +1,17 @@
+import { Suspense } from "react";
+import type { Metadata } from "next";
+
 import { getDashboardData } from "@/actions/dashboard";
 import { getCurrentUser } from "@/lib/auth";
+import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
 import { DashboardStage } from "@/components/dashboard/dashboard-stage";
 import { Header } from "@/components/layout/header";
 import { AppPageFrame } from "@/components/shared/app-page-frame";
+
+export const metadata: Metadata = {
+  title: "Dashboard",
+  description: "Today’s overview across tasks, habits, and focus",
+};
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -24,7 +33,7 @@ function displayName(user: {
   return user.email?.split("@")[0] ?? "there";
 }
 
-export default async function DashboardPage() {
+async function DashboardBody() {
   const [user, data] = await Promise.all([
     getCurrentUser(),
     getDashboardData(),
@@ -32,15 +41,19 @@ export default async function DashboardPage() {
   const name = user ? displayName(user) : "there";
 
   return (
+    <AppPageFrame className="max-w-6xl gap-8 md:py-8">
+      <DashboardStage name={name} greeting={getGreeting()} data={data} />
+    </AppPageFrame>
+  );
+}
+
+export default function DashboardPage() {
+  return (
     <>
-      <Header title="Dashboard" />
-      <AppPageFrame className="max-w-6xl gap-8 md:py-8">
-        <DashboardStage
-          name={name}
-          greeting={getGreeting()}
-          data={data}
-        />
-      </AppPageFrame>
+      <Header chrome title="Dashboard" />
+      <Suspense fallback={<DashboardSkeleton />}>
+        <DashboardBody />
+      </Suspense>
     </>
   );
 }

@@ -1,5 +1,11 @@
 import { FocusSkeleton } from "@/components/focus/focus-skeleton";
+import { Header } from "@/components/layout/header";
 
 export default function FocusLoading() {
-  return <FocusSkeleton />;
+  return (
+    <>
+      <Header chrome title="Focus" />
+      <FocusSkeleton />
+    </>
+  );
 }

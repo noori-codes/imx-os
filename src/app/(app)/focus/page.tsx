@@ -1,44 +1,30 @@
-import dynamic from "next/dynamic";
+import { Suspense } from "react";
+import type { Metadata } from "next";
 
-import {
-  FocusStatsChunkFallback,
-  FocusTimerChunkFallback,
-} from "@/components/focus/focus-chunk-fallbacks";
-import { FocusKpis } from "@/components/focus/focus-kpis";
-import { FocusSessionList } from "@/components/focus/focus-session-list";
-import { FocusWorkspace } from "@/components/focus/focus-workspace";
-import { LogFocusForm } from "@/components/focus/log-focus-form";
-import { Header } from "@/components/layout/header";
 import {
   getDailyFocusGoal,
   getFocusOverviewStats,
   getRecentFocusSessions,
 } from "@/actions/focus";
 import { getFocusLinkableTasks } from "@/actions/tasks";
+import { FocusStatsLazy, FocusTimerLazy } from "@/components/focus/focus-lazy";
+import { FocusSessionList } from "@/components/focus/focus-session-list";
+import { FocusSkeleton } from "@/components/focus/focus-skeleton";
+import { FocusWorkspace } from "@/components/focus/focus-workspace";
+import { LogFocusForm } from "@/components/focus/log-focus-form";
+import { Header } from "@/components/layout/header";
 import { formatFocusMinutesCompact } from "@/types/focus";
 
-const FocusTimer = dynamic(
-  () =>
-    import("@/components/focus/focus-timer").then((m) => ({
-      default: m.FocusTimer,
-    })),
-  { loading: () => <FocusTimerChunkFallback /> },
-);
-
-const FocusStats = dynamic(
-  () =>
-    import("@/components/focus/focus-stats").then((m) => ({
-      default: m.FocusStats,
-    })),
-  { loading: () => <FocusStatsChunkFallback /> },
-);
+export const metadata: Metadata = {
+  title: "Focus",
+  description: "Pomodoro timer and session history",
+};
 
 type FocusPageProps = {
   searchParams: Promise<{ task?: string }>;
 };
 
-export default async function FocusPage({ searchParams }: FocusPageProps) {
-  const { task: taskParam } = await searchParams;
+async function FocusBody({ taskParam }: { taskParam: string | null }) {
   const [sessions, stats, tasks, dailyGoal] = await Promise.all([
     getRecentFocusSessions(20),
     getFocusOverviewStats(),
@@ -55,51 +41,41 @@ export default async function FocusPage({ searchParams }: FocusPageProps) {
         : "Daily goal sealed — keep going if you want";
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <Header title="Focus" />
-      <FocusWorkspace
-        header={
-          <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-xs text-muted-foreground">Focus studio</p>
-              <h2 className="mt-1 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-                Focus
-              </h2>
-              <p className="mt-1.5 max-w-lg text-sm text-muted-foreground">
-                {goalHint}.
-              </p>
-            </div>
-          </header>
-        }
-        kpis={
-          <FocusKpis
-            focusMinutes={stats.focus_minutes}
-            goalMinutes={dailyGoal.minutes}
-            streak={stats.current_streak}
-            sessionsToday={stats.today_marks.length}
-          />
-        }
-        timer={
-          <FocusTimer
-            tasks={tasks}
-            focusMinutesToday={stats.focus_minutes}
-            dailyGoalMinutes={dailyGoal.minutes}
-            initialTaskId={taskParam ?? null}
-          />
-        }
-        sky={<FocusStats stats={stats} dailyGoal={dailyGoal} />}
-        sessions={
-          <div className="space-y-8">
-            <FocusSessionList sessions={sessions} />
-            <div className="rounded-2xl border border-border/50 bg-card/80 p-4 sm:p-5">
-              <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                Log manually
-              </p>
+    <FocusWorkspace
+      timer={
+        <FocusTimerLazy
+          tasks={tasks}
+          focusMinutesToday={stats.focus_minutes}
+          dailyGoalMinutes={dailyGoal.minutes}
+          goalHint={goalHint}
+          initialTaskId={taskParam}
+        />
+      }
+      sky={<FocusStatsLazy stats={stats} dailyGoal={dailyGoal} />}
+      sessions={
+        <div className="focus-secondary space-y-6">
+          <FocusSessionList sessions={sessions} />
+          <section className="focus-panel relative overflow-hidden rounded-2xl border border-border/50 bg-card/80 p-4 sm:p-5">
+            <div className="focus-panel-glow" aria-hidden="true" />
+            <div className="relative z-1">
               <LogFocusForm tasks={tasks} />
             </div>
-          </div>
-        }
-      />
+          </section>
+        </div>
+      }
+    />
+  );
+}
+
+export default async function FocusPage({ searchParams }: FocusPageProps) {
+  const { task: taskParam } = await searchParams;
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <Header chrome title="Focus" />
+      <Suspense fallback={<FocusSkeleton />}>
+        <FocusBody taskParam={taskParam ?? null} />
+      </Suspense>
     </div>
   );
 }

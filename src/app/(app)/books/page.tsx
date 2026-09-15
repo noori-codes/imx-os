@@ -1,15 +1,26 @@
+import { Suspense } from "react";
+import type { Metadata } from "next";
+
 import { getBooks } from "@/actions/books";
+import { BooksPulse } from "@/components/books/books-pulse";
 import { BooksShelf } from "@/components/books/books-shelf";
+import { BooksSkeleton } from "@/components/books/books-skeleton";
 import { BooksStage } from "@/components/books/books-stage";
-import { BooksStats } from "@/components/books/books-stats";
 import { Header } from "@/components/layout/header";
 import { AppPageFrame } from "@/components/shared/app-page-frame";
+import { bookProgressPercent } from "@/types/book";
 
-export default async function BooksPage() {
+export const metadata: Metadata = {
+  title: "Books",
+  description: "Reading shelf and finished books",
+};
+
+async function BooksBody({ compose }: { compose: boolean }) {
   const books = await getBooks();
   const year = new Date().getFullYear();
 
-  const reading = books.filter((book) => book.status === "reading").length;
+  const readingBooks = books.filter((book) => book.status === "reading");
+  const reading = readingBooks.length;
   const wantToRead = books.filter(
     (book) => book.status === "want_to_read",
   ).length;
@@ -25,39 +36,61 @@ export default async function BooksPage() {
       ? rated.reduce((sum, book) => sum + (book.rating ?? 0), 0) / rated.length
       : null;
 
+  const progressValues = readingBooks
+    .map((book) => bookProgressPercent(book))
+    .filter((value): value is number => value != null);
+  const readingProgress =
+    progressValues.length > 0
+      ? Math.round(
+          progressValues.reduce((sum, value) => sum + value, 0) /
+            progressValues.length,
+        )
+      : null;
+
+  const lead =
+    readingBooks.find((book) => bookProgressPercent(book) != null) ??
+    readingBooks[0] ??
+    null;
+
+  return (
+    <AppPageFrame className="max-w-5xl gap-8 md:py-8">
+      <BooksStage>
+        <div className="books-reveal">
+          <BooksPulse
+            stats={{
+              reading,
+              finishedYear,
+              wantToRead,
+              avgRating,
+              year,
+              readingProgress,
+              currentTitle: lead?.title ?? null,
+            }}
+          />
+        </div>
+
+        <div className="books-reveal books-reveal-delay-1">
+          <BooksShelf books={books} compose={compose} />
+        </div>
+      </BooksStage>
+    </AppPageFrame>
+  );
+}
+
+export default async function BooksPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ compose?: string }>;
+}) {
+  const params = await searchParams;
+  const compose = params.compose === "1";
+
   return (
     <>
-      <Header title="Books" />
-      <AppPageFrame className="max-w-5xl gap-8 md:py-8">
-        <BooksStage>
-          <div className="books-reveal">
-            <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground">Reading shelf</p>
-                <h2 className="mt-1 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-                  Books
-                </h2>
-                <p className="mt-1.5 max-w-lg text-sm text-muted-foreground">
-                  Track what you&apos;re reading, finished, and want next.
-                </p>
-              </div>
-            </header>
-          </div>
-
-          <div className="books-reveal books-reveal-delay-1">
-            <BooksStats
-              reading={reading}
-              finishedYear={finishedYear}
-              wantToRead={wantToRead}
-              avgRating={avgRating}
-            />
-          </div>
-
-          <div className="books-reveal books-reveal-delay-2">
-            <BooksShelf books={books} />
-          </div>
-        </BooksStage>
-      </AppPageFrame>
+      <Header chrome title="Books" />
+      <Suspense fallback={<BooksSkeleton />}>
+        <BooksBody compose={compose} />
+      </Suspense>
     </>
   );
 }

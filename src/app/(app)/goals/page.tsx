@@ -1,12 +1,21 @@
+import { Suspense } from "react";
+import type { Metadata } from "next";
+
 import { getGoals } from "@/actions/goals";
 import { GoalsBoard } from "@/components/goals/goals-board";
+import { GoalsPulse } from "@/components/goals/goals-pulse";
+import { GoalsSkeleton } from "@/components/goals/goals-skeleton";
 import { GoalsStage } from "@/components/goals/goals-stage";
-import { GoalsStats } from "@/components/goals/goals-stats";
 import { Header } from "@/components/layout/header";
 import { AppPageFrame } from "@/components/shared/app-page-frame";
-import { goalProgressPercent } from "@/lib/goal-status";
+import { goalProgressPercent, pickSpotlightGoal } from "@/lib/goal-status";
 
-export default async function GoalsPage() {
+export const metadata: Metadata = {
+  title: "Goals",
+  description: "Goals, projects, and progress",
+};
+
+async function GoalsBody({ compose }: { compose: boolean }) {
   const goals = await getGoals();
 
   const projectCount = goals.reduce((sum, goal) => sum + goal.project_count, 0);
@@ -23,40 +32,44 @@ export default async function GoalsPage() {
   ).length;
 
   return (
+    <AppPageFrame className="max-w-5xl gap-8 md:py-8">
+      <GoalsStage>
+        <div className="goals-reveal">
+          <GoalsPulse
+            stats={{
+              goalCount: goals.length,
+              projectCount,
+              completedTasks,
+              totalTasks,
+              momentum,
+              activeCount,
+              spotlight: pickSpotlightGoal(goals),
+            }}
+          />
+        </div>
+
+        <div className="goals-reveal goals-reveal-delay-1">
+          <GoalsBoard goals={goals} compose={compose} />
+        </div>
+      </GoalsStage>
+    </AppPageFrame>
+  );
+}
+
+export default async function GoalsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ compose?: string }>;
+}) {
+  const params = await searchParams;
+  const compose = params.compose === "1";
+
+  return (
     <>
-      <Header title="Goals" />
-      <AppPageFrame className="max-w-5xl gap-8 md:py-8">
-        <GoalsStage>
-          <div className="goals-reveal">
-            <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground">North star board</p>
-                <h2 className="mt-1 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-                  Goals
-                </h2>
-                <p className="mt-1.5 max-w-lg text-sm text-muted-foreground">
-                  Outcomes broken into projects and tasks
-                  {activeCount > 0 ? ` · ${activeCount} in flight` : ""}.
-                </p>
-              </div>
-            </header>
-          </div>
-
-          <div className="goals-reveal goals-reveal-delay-1">
-            <GoalsStats
-              goalCount={goals.length}
-              projectCount={projectCount}
-              completedTasks={completedTasks}
-              totalTasks={totalTasks}
-              momentum={momentum}
-            />
-          </div>
-
-          <div className="goals-reveal goals-reveal-delay-2">
-            <GoalsBoard goals={goals} />
-          </div>
-        </GoalsStage>
-      </AppPageFrame>
+      <Header chrome title="Goals" />
+      <Suspense fallback={<GoalsSkeleton />}>
+        <GoalsBody compose={compose} />
+      </Suspense>
     </>
   );
 }

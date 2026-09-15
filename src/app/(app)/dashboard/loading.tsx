@@ -4,7 +4,7 @@ import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
 export default function DashboardLoading() {
   return (
     <>
-      <Header title="Dashboard" />
+      <Header chrome title="Dashboard" />
       <DashboardSkeleton />
     </>
   );
