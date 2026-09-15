@@ -1,7 +1,10 @@
+"use client";
+
 import Link from "next/link";
 import { Moon } from "lucide-react";
 
-import { reviewHref } from "@/components/review/review-nav";
+import { reviewHref } from "@/components/review/review-href";
+import { EmptyState } from "@/components/shared/empty-state";
 import { energyOption, moodOption } from "@/lib/review-scale";
 import { parseDateString } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
@@ -11,6 +14,27 @@ type ReviewHistoryProps = {
   selectedDate: string;
   recent: Pick<DailyReview, "id" | "review_date" | "mood" | "energy">[];
 };
+
+function CloseTheLoopButton() {
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        document
+          .getElementById("review-form")
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+        document
+          .querySelector<HTMLElement>(
+            '#review-form input[name="mood"]:checked, #review-form input[name="mood"]',
+          )
+          ?.focus({ preventScroll: true });
+      }}
+      className="mt-5 inline-flex h-9 items-center rounded-xl bg-foreground px-3.5 text-sm font-medium text-background transition-opacity hover:opacity-90"
+    >
+      Close the loop
+    </button>
+  );
+}
 
 export function ReviewHistory({ selectedDate, recent }: ReviewHistoryProps) {
   return (
@@ -25,12 +49,15 @@ export function ReviewHistory({ selectedDate, recent }: ReviewHistoryProps) {
       </div>
 
       {recent.length === 0 ? (
-        <div className="flex flex-col items-center px-5 py-10 text-center">
-          <Moon className="mb-2 size-7 text-muted-foreground/70" />
-          <p className="text-sm text-muted-foreground">
-            Saved reviews appear here as a trail.
-          </p>
-        </div>
+        <EmptyState
+          icon={Moon}
+          title="No reviews yet"
+          description="Saved reviews appear here as a trail."
+          variant="plain"
+          className="px-5 py-10"
+        >
+          <CloseTheLoopButton />
+        </EmptyState>
       ) : (
         <ul className="divide-y divide-border/30">
           {recent.map((item) => {
@@ -79,7 +106,6 @@ export function ReviewHistory({ selectedDate, recent }: ReviewHistoryProps) {
                         </span>
                       </span>
                     ) : null}
-                    {!mood && !energy ? <span>—</span> : null}
                   </span>
                 </Link>
               </li>
