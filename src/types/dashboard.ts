@@ -6,7 +6,7 @@ import {
   getWeekDays,
   isOverdue,
   startOfDay,
-  startOfWeekSaturday,
+  startOfWeek,
   toDateString,
 } from "@/lib/date-utils";
 import type { Task, TaskWithContext } from "@/types/task";
@@ -198,7 +198,7 @@ export function buildDashboardData(
     .filter((t) => !t.due_date || (!isOverdue(t.due_date) && t.due_date !== todayStr))
     .slice(0, 5);
 
-  const weekStart = startOfWeekSaturday(new Date());
+  const weekStart = startOfWeek(new Date());
   const week = getWeekDays(weekStart).map((day) => {
     const dateStr = toDateString(day);
     const task_count = active.filter((t) => t.due_date === dateStr).length;

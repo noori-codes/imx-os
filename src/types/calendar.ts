@@ -10,6 +10,7 @@ export type CalendarEvent = {
   description: string | null;
   event_date: string;
   start_time: string | null;
+  end_time: string | null;
   created_at: string;
   updated_at: string;
 };

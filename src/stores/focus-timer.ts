@@ -43,6 +43,7 @@ type FocusTimerState = {
   autoStartNext: boolean;
   intention: string;
   linkedTaskId: string | null;
+  linkedTaskTitle: string | null;
   profileId: FocusProfileId | null;
   lastFocusSeconds: number;
   lastShortBreakSeconds: number;
@@ -54,7 +55,7 @@ type FocusTimerState = {
   setClock: (clock: FocusClock) => void;
   setDuration: (seconds: number) => void;
   setIntention: (intention: string) => void;
-  setLinkedTaskId: (taskId: string | null) => void;
+  setLinkedTaskId: (taskId: string | null, title?: string | null) => void;
   setAutoStartNext: (value: boolean) => void;
   applyProfile: (profileId: FocusProfileId) => void;
   hydrateProfile: () => void;
@@ -197,6 +198,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
   autoStartNext: false,
   intention: "",
   linkedTaskId: null,
+  linkedTaskTitle: null,
   profileId: FOCUS_PROFILE_DEFAULT,
   lastFocusSeconds: classic.focus * 60,
   lastShortBreakSeconds: classic.short_break * 60,
@@ -357,7 +359,11 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
 
   setIntention: (intention) => set({ intention }),
 
-  setLinkedTaskId: (taskId) => set({ linkedTaskId: taskId }),
+  setLinkedTaskId: (taskId, title) =>
+    set({
+      linkedTaskId: taskId,
+      linkedTaskTitle: taskId ? (title ?? null) : null,
+    }),
 
   setAutoStartNext: (value) => {
     if (typeof window !== "undefined") {
@@ -565,6 +571,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
       lastDisplaySecond: carried,
       intention: session.note ?? "",
       linkedTaskId: session.task_id ?? null,
+      linkedTaskTitle: null,
       remainingSeconds: current.lastFocusSeconds,
       durationSeconds: current.lastFocusSeconds,
     });

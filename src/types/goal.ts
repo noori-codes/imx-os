@@ -11,4 +11,6 @@ export type GoalWithCounts = Goal & {
   project_count: number;
   task_count: number;
   completed_task_count: number;
+  /** First project id when any exist — used for compose deep-links. */
+  first_project_id: string | null;
 };

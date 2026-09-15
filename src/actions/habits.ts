@@ -204,41 +204,62 @@ export async function setHabitArchived(habitId: string, archived: boolean) {
   await revalidateHabits();
 }
 
-export async function toggleHabitToday(habitId: string, completed: boolean) {
+export async function toggleHabitOnDate(
+  habitId: string,
+  loggedOn: string,
+  completed: boolean,
+): Promise<{ error?: string }> {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(loggedOn)) {
+    return { error: "Invalid date." };
+  }
+
+  const today = toDateString(new Date());
+  if (loggedOn > today) {
+    return { error: "Can’t log a future day." };
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return;
-
-  const today = toDateString(new Date());
+  if (!user) {
+    return { error: "You must be signed in." };
+  }
 
   if (completed) {
     const { error } = await supabase.from("habit_logs").insert({
       habit_id: habitId,
       user_id: user.id,
-      logged_on: today,
+      logged_on: loggedOn,
     });
 
     if (error && error.code !== "23505") {
-      console.error("[habits] toggleHabitToday insert:", error.message);
-      return;
+      console.error("[habits] toggleHabitOnDate insert:", error.message);
+      return { error: error.message };
     }
   } else {
     const { error } = await supabase
       .from("habit_logs")
       .delete()
       .eq("habit_id", habitId)
-      .eq("logged_on", today);
+      .eq("logged_on", loggedOn);
 
     if (error) {
-      console.error("[habits] toggleHabitToday delete:", error.message);
-      return;
+      console.error("[habits] toggleHabitOnDate delete:", error.message);
+      return { error: error.message };
     }
   }
 
   await revalidateHabits();
+  return {};
+}
+
+export async function toggleHabitToday(
+  habitId: string,
+  completed: boolean,
+): Promise<{ error?: string }> {
+  return toggleHabitOnDate(habitId, toDateString(new Date()), completed);
 }
 
 export async function deleteHabit(habitId: string) {
