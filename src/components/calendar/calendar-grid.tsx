@@ -1,6 +1,10 @@
 import Link from "next/link";
 
-import { calendarHref } from "@/lib/calendar";
+import {
+  calendarHref,
+  compareEventsByTime,
+  formatEventTimeShort,
+} from "@/lib/calendar";
 import { cn } from "@/lib/utils";
 import type {
   CalendarData,
@@ -23,6 +27,7 @@ type Chip = {
   label: string;
   kind: "event" | "task" | "journal";
   meta?: string | null;
+  timeLabel?: string | null;
 };
 
 function dayLoad(items: CalendarDayItems | undefined) {
@@ -32,26 +37,37 @@ function dayLoad(items: CalendarDayItems | undefined) {
 
 function chipsFor(items: CalendarDayItems | undefined): Chip[] {
   if (!items) return [];
-  return [
-    ...items.events.map((event) => ({
-      id: event.id,
-      label: event.title,
-      kind: "event" as const,
-      meta: event.start_time,
-    })),
-    ...items.tasks.map((task) => ({
+  const events = [...items.events].sort(compareEventsByTime).map((event) => ({
+    id: event.id,
+    label: event.title,
+    kind: "event" as const,
+    meta: event.start_time,
+    timeLabel: formatEventTimeShort(event),
+  }));
+  const tasks = [...items.tasks]
+    .sort((a, b) => Number(a.completed) - Number(b.completed))
+    .map((task) => ({
       id: task.id,
       label: task.title,
       kind: "task" as const,
       meta: task.completed ? "done" : null,
-    })),
-    ...items.journals.map((note) => ({
-      id: note.id,
-      label: note.title,
-      kind: "journal" as const,
-      meta: null,
-    })),
-  ];
+      timeLabel: null as string | null,
+    }));
+  const journals = items.journals.map((note) => ({
+    id: note.id,
+    label: note.title,
+    kind: "journal" as const,
+    meta: null as string | null,
+    timeLabel: null as string | null,
+  }));
+  return [...events, ...tasks, ...journals];
+}
+
+function peekLines(items: CalendarDayItems | undefined) {
+  if (!items) return [];
+  return chipsFor(items)
+    .slice(0, 2)
+    .map((chip) => chip.label);
 }
 
 function DensityMarks({ items }: { items: CalendarDayItems | undefined }) {
@@ -90,7 +106,7 @@ function WeekChip({ chip }: { chip: Chip }) {
   return (
     <span
       className={cn(
-        "cal-chip block truncate rounded-md px-1.5 py-1 text-left text-[10px] font-medium leading-tight",
+        "cal-chip flex items-baseline gap-1 truncate rounded-md px-1.5 py-1 text-left text-[10px] font-medium leading-tight",
         chip.kind === "event" &&
           "bg-sky-500/12 text-sky-800 dark:text-sky-300",
         chip.kind === "task" &&
@@ -101,7 +117,10 @@ function WeekChip({ chip }: { chip: Chip }) {
           "bg-amber-500/12 text-amber-800 dark:text-amber-300",
       )}
     >
-      {chip.label}
+      {chip.kind === "event" && chip.timeLabel ? (
+        <span className="shrink-0 tabular-nums opacity-70">{chip.timeLabel}</span>
+      ) : null}
+      <span className="min-w-0 truncate">{chip.label}</span>
     </span>
   );
 }
@@ -136,6 +155,7 @@ export function CalendarGrid({
           const chips = allChips.slice(0, 6);
           const extra = Math.max(allChips.length - 6, 0);
           const intensity = Math.min(load, 4);
+          const peeks = !isWeek ? peekLines(items) : [];
 
           return (
             <Link
@@ -146,7 +166,7 @@ export function CalendarGrid({
                 "cal-cell group relative flex flex-col border-r border-b border-border/35 p-1.5 transition-colors last:border-r-0",
                 isWeek ? "min-h-52 sm:min-h-60" : "min-h-[4.75rem] sm:min-h-24",
                 !day.inCurrentMonth && "bg-muted/15 text-muted-foreground",
-                selected && "cal-cell-selected z-[1]",
+                selected && "cal-cell-selected z-1",
                 !selected && day.isToday && "bg-muted/40",
                 !selected && "hover:bg-muted/30",
               )}
@@ -158,19 +178,20 @@ export function CalendarGrid({
                 <span
                   className={cn(
                     "inline-flex size-7 items-center justify-center rounded-full text-xs font-semibold tabular-nums transition-colors",
-                    day.isToday &&
-                      "bg-foreground text-background",
+                    day.isToday && "bg-foreground text-background",
                     selected &&
                       !day.isToday &&
                       "bg-foreground/10 text-foreground",
                     !day.isToday && !selected && "text-foreground/85",
-                    !day.inCurrentMonth && !day.isToday && "text-muted-foreground",
+                    !day.inCurrentMonth &&
+                      !day.isToday &&
+                      "text-muted-foreground",
                   )}
                 >
                   {day.day}
                 </span>
                 {!isWeek && load > 0 ? (
-                  <span className="pr-0.5 pt-0.5 text-[10px] tabular-nums text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 group-[[data-selected=true]]:opacity-100">
+                  <span className="pr-0.5 pt-0.5 text-[10px] tabular-nums text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 group-[[data-selected=true]]:opacity-100">
                     {load}
                   </span>
                 ) : null}
@@ -193,7 +214,26 @@ export function CalendarGrid({
                   ) : null}
                 </div>
               ) : (
-                <DensityMarks items={items} />
+                <>
+                  <DensityMarks items={items} />
+                  {peeks.length > 0 ? (
+                    <div className="cal-peek pointer-events-none absolute inset-x-1 bottom-1 z-2 hidden flex-col gap-0.5 rounded-lg border border-border/50 bg-card/95 p-1.5 shadow-sm sm:group-hover:flex sm:group-focus-visible:flex sm:group-[[data-selected=true]]:flex">
+                      {peeks.map((line) => (
+                        <span
+                          key={line}
+                          className="truncate text-[10px] font-medium leading-tight text-foreground/85"
+                        >
+                          {line}
+                        </span>
+                      ))}
+                      {load > peeks.length ? (
+                        <span className="text-[10px] text-muted-foreground">
+                          +{load - peeks.length} more
+                        </span>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </>
               )}
             </Link>
           );

@@ -1,6 +1,7 @@
 "use client";
 
-import { Flame } from "lucide-react";
+import Link from "next/link";
+import { Flame, Moon } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { DashboardFocusCta } from "@/components/dashboard/dashboard-focus-cta";
@@ -16,6 +17,8 @@ type DashboardHeroProps = {
   name: string;
   greeting: string;
   intent: string | null;
+  /** True when today’s daily review is already sealed. */
+  hasTodayReview?: boolean;
   dueToday: number;
   overdue: number;
   focusMinutes: number;
@@ -87,6 +90,7 @@ export function DashboardHero({
   name,
   greeting,
   intent,
+  hasTodayReview = false,
   dueToday,
   overdue,
   focusMinutes,
@@ -160,8 +164,25 @@ export function DashboardHero({
             {streak >= 7 ? (
               <StreakPill streak={streakDisplay} tier={streakLevel} />
             ) : null}
-            <div className="dash-hero-cta-wrap">
+            <div className="dash-hero-cta-wrap flex flex-wrap items-center justify-center gap-2 sm:justify-end">
               <DashboardFocusCta />
+              {hasTodayReview ? (
+                <Link
+                  href="/review"
+                  className="inline-flex items-center gap-2 rounded-xl border border-foreground/15 bg-foreground/5 px-4 py-2.5 text-sm font-medium text-foreground/80 transition-colors hover:border-border hover:bg-muted/40"
+                >
+                  <Moon className="size-3.5" aria-hidden="true" />
+                  Reviewed
+                </Link>
+              ) : phase === "evening" || phase === "night" || !story ? (
+                <Link
+                  href="/review"
+                  className="inline-flex items-center gap-2 rounded-xl border border-border/60 bg-background/40 px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:border-border hover:bg-muted/40"
+                >
+                  <Moon className="size-3.5" aria-hidden="true" />
+                  Review
+                </Link>
+              ) : null}
             </div>
           </div>
         </div>
@@ -204,6 +225,7 @@ export function DashboardHero({
                 label="Focus"
                 value={formatFocusMinutes(focusMinutes)}
                 muted={focusMinutes <= 0}
+                href="/focus"
               />
             ) : (
               <SecondaryStat
@@ -211,12 +233,14 @@ export function DashboardHero({
                 value={String(attention)}
                 muted={attention <= 0}
                 alert={overdue > 0}
+                href="/tasks"
               />
             )}
             <SecondaryStat
               label="Habits"
               value={habitsTotal > 0 ? `${habitsDone}/${habitsTotal}` : "—"}
               muted={habitsTotal <= 0}
+              href="/habits"
             />
             <StreakStat streak={streakDisplay} tier={streakLevel} />
           </div>
@@ -231,14 +255,16 @@ function SecondaryStat({
   value,
   muted,
   alert,
+  href,
 }: {
   label: string;
   value: string;
   muted?: boolean;
   alert?: boolean;
+  href?: string;
 }) {
-  return (
-    <div className="text-center sm:text-left">
+  const body = (
+    <>
       <p className="dash-hero-secondary-label">{label}</p>
       <p
         className={cn(
@@ -252,8 +278,21 @@ function SecondaryStat({
       >
         {value}
       </p>
-    </div>
+    </>
   );
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className="block text-center transition-opacity hover:opacity-80 sm:text-left"
+      >
+        {body}
+      </Link>
+    );
+  }
+
+  return <div className="text-center sm:text-left">{body}</div>;
 }
 
 function StreakStat({
