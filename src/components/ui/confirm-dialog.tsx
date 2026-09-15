@@ -89,6 +89,8 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
         }}
       >
         <DialogContent
+          role="alertdialog"
+          aria-modal="true"
           showCloseButton={false}
           onOpenAutoFocus={(event) => {
             event.preventDefault();

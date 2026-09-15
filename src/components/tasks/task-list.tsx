@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { ChevronDown, ListTodo, Search } from "lucide-react";
 
@@ -12,7 +13,11 @@ import {
 } from "@/lib/task-views";
 import { isToday } from "@/lib/date-utils";
 import type { TaskFocusToday } from "@/types/focus";
-import type { TaskView, TaskWithContext } from "@/types/task";
+import type {
+  TaskProjectOption,
+  TaskView,
+  TaskWithContext,
+} from "@/types/task";
 
 type TaskOptimisticApi = ReturnType<typeof useTaskOptimistic>;
 
@@ -22,16 +27,36 @@ type TaskListProps = {
   mode?: "smart" | "project";
   todayFocus?: TaskFocusToday;
   searching?: boolean;
+  projects?: TaskProjectOption[];
+  /** Board-wide open count (all views) — surfaces inbox when Today/Week is empty. */
+  boardOpenCount?: number;
+  inboxCount?: number;
   /** When provided (Tasks board), share optimistic state with Focus Next. */
   optimistic?: TaskOptimisticApi;
 };
 
+function focusTasksComposer() {
+  const root =
+    document.getElementById("tasks-composer") ??
+    document.querySelector<HTMLElement>(".goals-composer");
+  root?.scrollIntoView({ behavior: "smooth", block: "center" });
+  root
+    ?.querySelector<HTMLInputElement>("input[name=title]")
+    ?.focus({ preventScroll: true });
+}
+
 function ListEmpty({
   view,
   searching,
+  mode,
+  boardOpenCount = 0,
+  inboxCount = 0,
 }: {
   view: TaskView;
   searching?: boolean;
+  mode?: "smart" | "project";
+  boardOpenCount?: number;
+  inboxCount?: number;
 }) {
   if (searching) {
     return (
@@ -39,17 +64,63 @@ function ListEmpty({
         icon={Search}
         title="No matches"
         description="Try another search in this view."
-      />
+      >
+        <p className="mt-3 text-xs text-muted-foreground">
+          Clear the search field above to see all tasks in this view.
+        </p>
+      </EmptyState>
+    );
+  }
+
+  if (mode === "project") {
+    return (
+      <EmptyState
+        icon={ListTodo}
+        title="No tasks yet"
+        description="Capture the first move for this project above."
+      >
+        <Button type="button" className="mt-5" onClick={focusTasksComposer}>
+          Add task
+        </Button>
+      </EmptyState>
     );
   }
 
   const empty = viewEmptyCopy(view);
+  const showElsewhere =
+    boardOpenCount > 0 &&
+    (view === "today" || view === "week" || view === "upcoming");
+  const elsewhereHref =
+    inboxCount > 0 ? "/tasks?view=inbox" : "/tasks?view=all";
+  const elsewhereLabel =
+    inboxCount > 0
+      ? `${inboxCount} in inbox →`
+      : `${boardOpenCount} open elsewhere →`;
+
   return (
     <EmptyState
       icon={ListTodo}
       title={empty.title}
-      description={empty.description}
-    />
+      description={
+        showElsewhere
+          ? `${empty.description} Open work is waiting in another view.`
+          : empty.description
+      }
+    >
+      <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+        <Button type="button" onClick={focusTasksComposer}>
+          Capture a task
+        </Button>
+        {showElsewhere ? (
+          <Link
+            href={elsewhereHref}
+            className="inline-flex h-10 items-center rounded-xl border border-border/60 bg-card/70 px-4 text-sm font-medium text-foreground transition-colors hover:border-border"
+          >
+            {elsewhereLabel}
+          </Link>
+        ) : null}
+      </div>
+    </EmptyState>
   );
 }
 
@@ -59,6 +130,9 @@ export function TaskList({
   mode = "smart",
   todayFocus,
   searching = false,
+  projects = [],
+  boardOpenCount = 0,
+  inboxCount = 0,
   optimistic: optimisticProp,
 }: TaskListProps) {
   const localOptimistic = useTaskOptimistic(tasks);
@@ -85,7 +159,10 @@ export function TaskList({
     return (
       <ListEmpty
         view={mode === "project" ? "all" : view}
+        mode={mode}
         searching={searching}
+        boardOpenCount={boardOpenCount}
+        inboxCount={inboxCount}
       />
     );
   }
@@ -97,8 +174,22 @@ export function TaskList({
         : []
       : groupActiveTasks(optimisticTasks, view);
 
+  const silentBlank =
+    mode === "smart" &&
+    groups.length === 0 &&
+    completed.length === 0 &&
+    !searching;
+
   return (
     <div className="space-y-5">
+      {silentBlank ? (
+        <ListEmpty
+          view={view}
+          boardOpenCount={boardOpenCount}
+          inboxCount={inboxCount}
+        />
+      ) : null}
+
       {groups.map((group) => (
         <section
           key={group.id}
@@ -128,6 +219,7 @@ export function TaskList({
                 view={view}
                 index={index}
                 todayFocusSeconds={todayFocus?.[task.id] ?? 0}
+                projects={projects}
                 onOptimisticToggle={onOptimisticToggle}
                 onOptimisticDelete={onOptimisticDelete}
                 onOptimisticUpdate={onOptimisticUpdate}
@@ -161,6 +253,7 @@ export function TaskList({
                   view={view}
                   index={index}
                   todayFocusSeconds={todayFocus?.[task.id] ?? 0}
+                  projects={projects}
                   onOptimisticToggle={onOptimisticToggle}
                   onOptimisticDelete={onOptimisticDelete}
                   onOptimisticUpdate={onOptimisticUpdate}

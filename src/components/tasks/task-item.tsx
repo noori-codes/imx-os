@@ -14,28 +14,38 @@ import {
 import { deleteTask, toggleTaskComplete, updateTask } from "@/actions/tasks";
 import { BrandSelect } from "@/components/ui/brand-select";
 import { Button } from "@/components/ui/button";
+import { confirm } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
-import { addDays, isOverdue, isToday, startOfDay, toDateString } from "@/lib/date-utils";
+import { addDays, isOverdue, isToday, parseDateString, startOfDay, toDateString } from "@/lib/date-utils";
+import { imxToast } from "@/lib/imx-toast";
 import { recurrenceLabel } from "@/lib/task-recurrence";
 import { cn } from "@/lib/utils";
 import { formatFocusDuration } from "@/types/focus";
-import type { TaskRecurrence, TaskView, TaskWithContext } from "@/types/task";
+import type {
+  TaskProjectOption,
+  TaskRecurrence,
+  TaskView,
+  TaskWithContext,
+} from "@/types/task";
+
+type TaskUpdatePatch = {
+  title: string;
+  due_date: string | null;
+  recurrence?: TaskRecurrence;
+  project_id?: string | null;
+  context?: string | null;
+  context_href?: string | null;
+};
 
 type TaskItemProps = {
   task: TaskWithContext;
   view?: TaskView;
   index?: number;
   todayFocusSeconds?: number;
+  projects?: TaskProjectOption[];
   onOptimisticToggle: (id: string, completed: boolean) => void;
   onOptimisticDelete: (id: string) => void;
-  onOptimisticUpdate: (
-    id: string,
-    patch: {
-      title: string;
-      due_date: string | null;
-      recurrence?: TaskRecurrence;
-    },
-  ) => void;
+  onOptimisticUpdate: (id: string, patch: TaskUpdatePatch) => void;
 };
 
 function formatDueLabel(dueDate: string) {
@@ -101,6 +111,7 @@ export function TaskItem({
   view,
   index = 0,
   todayFocusSeconds = 0,
+  projects = [],
   onOptimisticToggle,
   onOptimisticDelete,
   onOptimisticUpdate,
@@ -109,46 +120,91 @@ export function TaskItem({
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(task.title);
   const [dueDate, setDueDate] = useState(task.due_date ?? "");
+  const [projectId, setProjectId] = useState(task.project_id ?? "");
   const [recurrence, setRecurrence] = useState<TaskRecurrence>(
     task.recurrence ?? null,
   );
   const [error, setError] = useState<string | null>(null);
+  const [celebrating, setCelebrating] = useState(false);
+  const [liveMessage, setLiveMessage] = useState("");
 
   const meta = buildMeta(task, view, todayFocusSeconds);
 
   function handleToggle() {
     const next = !task.completed;
+    if (next) {
+      setCelebrating(true);
+      window.setTimeout(() => setCelebrating(false), 480);
+      setLiveMessage("Task completed");
+    } else {
+      setLiveMessage("Task reopened");
+    }
     startTransition(async () => {
       onOptimisticToggle(task.id, next);
-      await toggleTaskComplete(task.id, next);
+      const result = await toggleTaskComplete(task.id, next);
+      if (result.error) {
+        onOptimisticToggle(task.id, !next);
+        setLiveMessage("Couldn’t update task");
+        imxToast("Couldn’t update task", {
+          description: result.error,
+          tone: "error",
+        });
+      }
     });
   }
 
   function handleDelete() {
-    startTransition(async () => {
-      onOptimisticDelete(task.id);
-      await deleteTask(task.id);
-    });
+    void (async () => {
+      const ok = await confirm({
+        title: `Delete “${task.title}”?`,
+        description: "This removes the task from your list.",
+        confirmLabel: "Delete",
+        destructive: true,
+      });
+      if (!ok) return;
+      startTransition(async () => {
+        onOptimisticDelete(task.id);
+        await deleteTask(task.id);
+        imxToast("Task deleted", { tone: "success" });
+      });
+    })();
   }
 
   function scheduleDue(nextDue: string | null) {
+    const label =
+      nextDue === null
+        ? "Cleared due date"
+        : nextDue === toDateString(startOfDay(new Date()))
+          ? "Due today"
+          : nextDue === toDateString(addDays(startOfDay(new Date()), 1))
+            ? "Due tomorrow"
+            : "Due date updated";
     startTransition(async () => {
       onOptimisticUpdate(task.id, {
         title: task.title,
         due_date: nextDue,
         recurrence: task.recurrence,
       });
-      await updateTask(task.id, {
+      const result = await updateTask(task.id, {
         title: task.title,
         due_date: nextDue,
         recurrence: task.recurrence,
       });
+      if (result.error) {
+        imxToast("Couldn’t update due date", {
+          description: result.error,
+          tone: "error",
+        });
+        return;
+      }
+      imxToast(label, { tone: "success" });
     });
   }
 
   function startEdit() {
     setTitle(task.title);
     setDueDate(task.due_date ?? "");
+    setProjectId(task.project_id ?? "");
     setRecurrence(task.recurrence ?? null);
     setError(null);
     setEditing(true);
@@ -166,16 +222,23 @@ export function TaskItem({
       return;
     }
     const nextDue = dueDate.length ? dueDate : null;
+    const nextProjectId = projectId.length ? projectId : null;
+    const projectLabel =
+      projects.find((project) => project.id === nextProjectId)?.label ?? null;
     startTransition(async () => {
       onOptimisticUpdate(task.id, {
         title: nextTitle,
         due_date: nextDue,
         recurrence,
+        project_id: nextProjectId,
+        context: projectLabel,
+        context_href: null,
       });
       const result = await updateTask(task.id, {
         title: nextTitle,
         due_date: nextDue,
         recurrence,
+        project_id: nextProjectId,
       });
       if (result.error) {
         setError(result.error);
@@ -183,6 +246,7 @@ export function TaskItem({
       }
       setEditing(false);
       setError(null);
+      imxToast("Task updated", { tone: "success" });
     });
   }
 
@@ -203,8 +267,10 @@ export function TaskItem({
             className="flex-1"
             autoFocus
             aria-label="Task title"
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error ? "task-edit-error" : undefined}
           />
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
             <Input
               type="date"
               value={dueDate}
@@ -212,6 +278,21 @@ export function TaskItem({
               className="w-full sm:w-40"
               aria-label="Due date"
             />
+            {projects.length > 0 ? (
+              <BrandSelect
+                value={projectId}
+                aria-label="Project"
+                className="w-full sm:w-52"
+                options={[
+                  { value: "", label: "Inbox" },
+                  ...projects.map((project) => ({
+                    value: project.id,
+                    label: project.label,
+                  })),
+                ]}
+                onValueChange={setProjectId}
+              />
+            ) : null}
             <BrandSelect
               value={recurrence ?? ""}
               aria-label="Repeat"
@@ -236,6 +317,7 @@ export function TaskItem({
                 size="sm"
                 variant="ghost"
                 onClick={cancelEdit}
+                aria-label="Cancel edit"
               >
                 <X className="size-4" />
               </Button>
@@ -243,7 +325,13 @@ export function TaskItem({
           </div>
         </div>
         {error ? (
-          <p className="mt-2 text-sm text-destructive">{error}</p>
+          <p
+            id="task-edit-error"
+            role="alert"
+            className="mt-2 text-sm text-destructive"
+          >
+            {error}
+          </p>
         ) : null}
       </li>
     );
@@ -251,28 +339,39 @@ export function TaskItem({
 
   const today = toDateString(startOfDay(new Date()));
   const tomorrow = toDateString(addDays(startOfDay(new Date()), 1));
+  const deferBase = task.due_date
+    ? parseDateString(task.due_date)
+    : startOfDay(new Date());
+  const plusOne = toDateString(addDays(deferBase, 1));
+  const nextWeek = toDateString(addDays(deferBase, 7));
   const dueToday = task.due_date === today;
   const dueTomorrow = task.due_date === tomorrow;
 
   return (
     <li
       className={cn(
-        "group flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-border/40 px-3 py-2.5 last:border-b-0 sm:flex-nowrap sm:px-4",
+        "imx-cv-row group flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-border/40 px-3 py-2.5 last:border-b-0 sm:flex-nowrap sm:px-4",
         task.completed && "opacity-55",
         task.due_date && !task.completed && isOverdue(task.due_date) && "bg-destructive/[0.03]",
       )}
       style={{ ["--i" as string]: index }}
     >
+      <span className="sr-only" aria-live="polite">
+        {liveMessage}
+      </span>
       <button
         type="button"
-        className="flex size-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground"
+        className={cn(
+          "relative flex size-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground",
+          celebrating && "task-check-burst",
+        )}
         onClick={handleToggle}
         aria-label={
           task.completed ? "Mark incomplete" : "Mark complete"
         }
         aria-pressed={task.completed}
       >
-        {task.completed ? (
+        {task.completed || celebrating ? (
           <CheckCircle2 className="size-5 text-foreground" />
         ) : (
           <Circle className="size-5 transition-colors group-hover:text-foreground" />
@@ -346,6 +445,32 @@ export function TaskItem({
           >
             Tmrw
           </button>
+          <button
+            type="button"
+            onClick={() => scheduleDue(plusOne)}
+            className={cn(
+              "rounded-md px-2 py-1 text-[10px] font-medium transition-colors",
+              task.due_date === plusOne && !dueTomorrow
+                ? "bg-foreground text-background"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground",
+            )}
+            aria-label="Defer one day"
+          >
+            +1d
+          </button>
+          <button
+            type="button"
+            onClick={() => scheduleDue(nextWeek)}
+            className={cn(
+              "rounded-md px-2 py-1 text-[10px] font-medium transition-colors",
+              task.due_date === nextWeek
+                ? "bg-foreground text-background"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground",
+            )}
+            aria-label="Defer one week"
+          >
+            +1w
+          </button>
           {task.due_date ? (
             <button
               type="button"
@@ -408,6 +533,9 @@ export function useTaskOptimistic(tasks: TaskWithContext[]) {
         title: string;
         due_date: string | null;
         recurrence?: TaskRecurrence;
+        project_id?: string | null;
+        context?: string | null;
+        context_href?: string | null;
       };
 
   const [optimisticTasks, dispatch] = useOptimistic(
@@ -431,6 +559,16 @@ export function useTaskOptimistic(tasks: TaskWithContext[]) {
                     action.recurrence !== undefined
                       ? action.recurrence
                       : t.recurrence,
+                  project_id:
+                    action.project_id !== undefined
+                      ? action.project_id
+                      : t.project_id,
+                  context:
+                    action.context !== undefined ? action.context : t.context,
+                  context_href:
+                    action.context_href !== undefined
+                      ? action.context_href
+                      : t.context_href,
                 }
               : t,
           );
@@ -445,13 +583,7 @@ export function useTaskOptimistic(tasks: TaskWithContext[]) {
     onOptimisticToggle: (id: string, completed: boolean) =>
       dispatch({ type: "toggle", id, completed }),
     onOptimisticDelete: (id: string) => dispatch({ type: "delete", id }),
-    onOptimisticUpdate: (
-      id: string,
-      patch: {
-        title: string;
-        due_date: string | null;
-        recurrence?: TaskRecurrence;
-      },
-    ) => dispatch({ type: "update", id, ...patch }),
+    onOptimisticUpdate: (id: string, patch: TaskUpdatePatch) =>
+      dispatch({ type: "update", id, ...patch }),
   };
 }

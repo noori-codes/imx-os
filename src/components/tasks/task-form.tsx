@@ -8,6 +8,7 @@ import { BrandSelect } from "@/components/ui/brand-select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { addDays, startOfDay, toDateString } from "@/lib/date-utils";
+import { imxToast } from "@/lib/imx-toast";
 import { weekdayOnOrAfter } from "@/lib/task-recurrence";
 import { cn } from "@/lib/utils";
 import type { TaskProjectOption, TaskRecurrence } from "@/types/task";
@@ -20,6 +21,8 @@ type TaskFormProps = {
   variant?: "card" | "quick" | "compact";
   /** Focus the title field on mount (e.g. ⌘K → Add task). */
   autoFocusTitle?: boolean;
+  /** Optional id for the title input (calendar day dock). */
+  titleInputId?: string;
 };
 
 type ScheduleChip = "none" | "today" | "tomorrow" | "daily" | "weekdays";
@@ -59,6 +62,7 @@ export function TaskForm({
   projects = [],
   variant,
   autoFocusTitle = false,
+  titleInputId,
 }: TaskFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const titleRef = useRef<HTMLInputElement>(null);
@@ -79,6 +83,11 @@ export function TaskForm({
   >(async (prev, formData) => {
     const result = await createTask(prev, formData);
     if (!result.error) {
+      const title = String(formData.get("title") ?? "").trim();
+      imxToast("Task added", {
+        description: title || undefined,
+        tone: "success",
+      });
       formRef.current?.reset();
       setChip("none");
       if (mode === "quick") setMoreOpen(false);
@@ -98,20 +107,6 @@ export function TaskForm({
     return () => window.cancelAnimationFrame(frame);
   }, [autoFocusTitle]);
 
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (mode !== "quick") return;
-      if (e.key !== "n" && e.key !== "N") return;
-      const tag = (e.target as HTMLElement)?.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
-      if ((e.target as HTMLElement)?.isContentEditable) return;
-      e.preventDefault();
-      titleRef.current?.focus();
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [mode]);
-
   if (mode === "compact") {
     return (
       <form ref={formRef} action={formAction} className="space-y-3">
@@ -124,10 +119,14 @@ export function TaskForm({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <Input
             ref={titleRef}
+            id={titleInputId}
             name="title"
             placeholder="Task due this day"
             required
             autoComplete="off"
+            data-cal-task-capture=""
+            aria-invalid={state?.error ? true : undefined}
+            aria-describedby={state?.error ? "task-form-error" : undefined}
             className="flex-1"
           />
           <Button type="submit" disabled={pending}>
@@ -136,7 +135,13 @@ export function TaskForm({
           </Button>
         </div>
         {state?.error ? (
-          <p className="text-sm text-destructive">{state.error}</p>
+          <p
+            id="task-form-error"
+            role="alert"
+            className="text-sm text-destructive"
+          >
+            {state.error}
+          </p>
         ) : null}
       </form>
     );
@@ -164,6 +169,9 @@ export function TaskForm({
               placeholder="What needs doing?"
               required
               autoComplete="off"
+              data-imx-capture
+              aria-invalid={state?.error ? true : undefined}
+              aria-describedby={state?.error ? "task-form-error" : undefined}
               className="h-10 border-0 bg-muted/40 pl-9 shadow-none focus-visible:ring-1"
               aria-label="New task"
             />
@@ -209,7 +217,13 @@ export function TaskForm({
           ) : null}
         </div>
         {state?.error ? (
-          <p className="mt-3 text-sm text-destructive">{state.error}</p>
+          <p
+            id="task-form-error"
+            role="alert"
+            className="mt-3 text-sm text-destructive"
+          >
+            {state.error}
+          </p>
         ) : null}
       </form>
     );
@@ -260,6 +274,9 @@ export function TaskForm({
             placeholder="What needs doing?"
             required
             autoComplete="off"
+            data-imx-capture
+            aria-invalid={state?.error ? true : undefined}
+            aria-describedby={state?.error ? "task-form-error" : undefined}
             className="h-11 border-0 bg-muted/50 pl-10 text-base shadow-none focus-visible:ring-1"
             aria-label="New task"
           />
@@ -354,7 +371,13 @@ export function TaskForm({
       </p>
 
       {state?.error ? (
-        <p className="mt-2 text-sm text-destructive">{state.error}</p>
+        <p
+          id="task-form-error"
+          role="alert"
+          className="mt-2 text-sm text-destructive"
+        >
+          {state.error}
+        </p>
       ) : null}
     </form>
   );
