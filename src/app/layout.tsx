@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import { ThemeProvider } from "@/components/theme-provider";
@@ -19,8 +19,48 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "IMX OS — Personal Operating System",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://imx-os.vercel.app",
+  ),
+  title: {
+    default: "IMX OS — Personal Operating System",
+    template: "%s · IMX OS",
+  },
   description: "Your private life-management system",
+  applicationName: "IMX OS",
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [{ url: "/imx-logo-64.png", type: "image/png", sizes: "64x64" }],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
+  },
+  appleWebApp: {
+    capable: true,
+    title: "IMX OS",
+    statusBarStyle: "black-translucent",
+  },
+  openGraph: {
+    type: "website",
+    siteName: "IMX OS",
+    title: "IMX OS — Personal Operating System",
+    description: "Your private life-management system",
+    images: [{ url: "/og-image.png", width: 512, height: 512, alt: "IMX OS" }],
+  },
+  twitter: {
+    card: "summary",
+    title: "IMX OS — Personal Operating System",
+    description: "Your private life-management system",
+    images: ["/og-image.png"],
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fafafa" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+  ],
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

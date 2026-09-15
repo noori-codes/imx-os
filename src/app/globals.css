@@ -160,19 +160,6 @@ html[data-focus-session="true"] {
   }
 }
 
-/* Soft workspace panels (Focus room, etc.) */
-.imx-panel {
-  border-radius: 1.25rem;
-  border: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
-  background: color-mix(in oklab, var(--card) 88%, transparent);
-  box-shadow: 0 1px 0 color-mix(in oklab, white 3%, transparent);
-  padding: 1.25rem;
-}
-
-.imx-panel-tight {
-  padding: 1rem;
-}
-
 /* TipTap editor */
 @keyframes nav-progress {
   0% {
@@ -185,6 +172,14 @@ html[data-focus-session="true"] {
 
 .nav-progress-bar {
   animation: nav-progress 0.85s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-progress-bar {
+    animation: none;
+    width: 100%;
+    opacity: 0.85;
+  }
 }
 
 @keyframes dashboard-shimmer {
@@ -749,14 +744,6 @@ html[data-focus-session] body {
   }
 }
 
-.focus-seal-card {
-  border-radius: 1.5rem;
-  border: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
-  background: color-mix(in oklab, var(--card) 92%, transparent);
-  padding: 1.5rem 1.75rem;
-  box-shadow: 0 16px 40px color-mix(in oklab, black 8%, transparent);
-}
-
 .focus-seal-toast {
   width: 100%;
   animation: focus-seal-toast-in 380ms cubic-bezier(0.22, 1, 0.36, 1);
@@ -1289,31 +1276,42 @@ html[data-focus-session] body {
   border-radius: 1rem;
   border: 1px solid color-mix(in oklab, var(--border) 80%, transparent);
   background: color-mix(in oklab, var(--card) 88%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--foreground) 3.5%, transparent);
 }
 
 .dark .dash-panel {
   background: color-mix(in oklab, var(--card) 72%, transparent);
 }
 
-.dash-kpi {
-  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--foreground) 4%, transparent);
+.dash-panel-eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--muted-foreground) 92%, transparent);
 }
 
-.dash-kpi-row > *:nth-child(1) {
-  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 40ms;
+.dash-panel-glow {
+  pointer-events: none;
+  position: absolute;
+  right: -12%;
+  top: -48%;
+  width: min(18rem, 70%);
+  height: 140%;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 5%, transparent) 0%,
+    transparent 68%
+  );
+  opacity: 0.85;
 }
-.dash-kpi-row > *:nth-child(2) {
-  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 80ms;
-}
-.dash-kpi-row > *:nth-child(3) {
-  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 120ms;
-}
-.dash-kpi-row > *:nth-child(4) {
-  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 160ms;
+
+.dark .dash-panel-glow {
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 8%, transparent) 0%,
+    transparent 68%
+  );
 }
 
 .dash-bento {
@@ -1345,13 +1343,7 @@ html[data-focus-session] body {
 }
 
 .dash-insight-strip {
-  border-color: color-mix(in oklab, var(--foreground) 8%, transparent);
-  background: color-mix(in oklab, var(--card) 55%, transparent);
-  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--foreground) 4%, transparent);
-}
-
-.dark .dash-insight-strip {
-  background: color-mix(in oklab, var(--card) 40%, transparent);
+  /* Open insight — Analytics hairline rhythm */
 }
 
 /* Dashboard — today's stage */
@@ -1724,338 +1716,8 @@ html[data-focus-session] body {
   }
 }
 
-.dash-heat-dot {
-  display: block;
-  transform-origin: center;
-  animation: dash-heat-pop 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: calc(var(--i, 0) * 45ms);
-}
-
-.dash-heat-stage {
-  position: relative;
-}
-
-.dash-heat-arc {
-  pointer-events: none;
-  position: absolute;
-  top: 1.35rem;
-  left: 0;
-  right: 0;
-  height: 1.1rem;
-  width: 100%;
-  opacity: 0.85;
-}
-
-.dash-heat-jewel-wrap {
-  display: flex;
-  height: 2.25rem;
-  width: 100%;
-  align-items: center;
-  justify-content: center;
-}
-
-.dash-heat-jewel {
-  position: relative;
-  display: block;
-  flex-shrink: 0;
-  border-radius: 9999px;
-  transform-origin: center;
-  animation: dash-heat-pop 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: calc(var(--i, 0) * 45ms);
-  background: radial-gradient(
-    circle at 30% 26%,
-    oklch(0.94 0.03 235 / 0.55) 0%,
-    oklch(0.62 0.05 250 / 0.42) 42%,
-    oklch(0.42 0.07 265 / 0.62) 100%
-  );
-  box-shadow:
-    inset 0 1px 1px oklch(1 0 0 / 0.38),
-    0 1px 4px oklch(0 0 0 / 0.1);
-}
-
-.dash-heat-jewel::after {
-  content: "";
-  pointer-events: none;
-  position: absolute;
-  top: 17%;
-  left: 24%;
-  width: 34%;
-  height: 26%;
-  border-radius: 9999px;
-  background: oklch(1 0 0 / 0.62);
-  filter: blur(0.4px);
-}
-
-.dash-heat-jewel[data-level="0"] {
-  background: color-mix(in oklab, var(--foreground) 10%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--foreground) 8%, transparent);
-  opacity: 0.42;
-}
-
-.dash-heat-jewel[data-level="0"]::after {
-  opacity: 0.25;
-}
-
-.dash-heat-jewel[data-level="1"] {
-  background: radial-gradient(
-    circle at 30% 26%,
-    oklch(0.9 0.04 220 / 0.5) 0%,
-    oklch(0.58 0.05 235 / 0.45) 48%,
-    oklch(0.4 0.06 250 / 0.58) 100%
-  );
-}
-
-.dash-heat-jewel[data-level="2"] {
-  background: radial-gradient(
-    circle at 28% 24%,
-    oklch(0.92 0.05 210 / 0.58) 0%,
-    oklch(0.62 0.07 230 / 0.5) 45%,
-    oklch(0.38 0.08 255 / 0.68) 100%
-  );
-  box-shadow:
-    inset 0 1px 1px oklch(1 0 0 / 0.42),
-    0 2px 6px oklch(0 0 0 / 0.12);
-}
-
-.dash-heat-jewel[data-level="3"] {
-  background: radial-gradient(
-    circle at 28% 22%,
-    oklch(0.94 0.06 195 / 0.62) 0%,
-    oklch(0.66 0.09 225 / 0.55) 44%,
-    oklch(0.36 0.1 265 / 0.75) 100%
-  );
-  box-shadow:
-    inset 0 1px 2px oklch(1 0 0 / 0.48),
-    0 0 0 1px color-mix(in oklab, var(--foreground) 10%, transparent),
-    0 3px 8px oklch(0 0 0 / 0.14);
-}
-
-.dash-heat-jewel[data-level="4"] {
-  background: radial-gradient(
-    circle at 26% 20%,
-    oklch(0.96 0.08 185 / 0.72) 0%,
-    oklch(0.7 0.11 215 / 0.62) 42%,
-    oklch(0.34 0.12 275 / 0.82) 100%
-  );
-  box-shadow:
-    inset 0 1px 2px oklch(1 0 0 / 0.55),
-    0 0 0 1px color-mix(in oklab, var(--foreground) 14%, transparent),
-    0 0 14px color-mix(in oklab, var(--foreground) 16%, transparent),
-    0 4px 10px oklch(0 0 0 / 0.16);
-}
-
-.dash-heat-jewel-today {
-  box-shadow:
-    inset 0 1px 2px oklch(1 0 0 / 0.45),
-    0 0 0 2px color-mix(in oklab, var(--foreground) 22%, transparent),
-    0 0 16px color-mix(in oklab, var(--foreground) 20%, transparent);
-}
-
-.dash-heat-jewel-today[data-level="0"] {
-  box-shadow:
-    inset 0 0 0 1px color-mix(in oklab, var(--foreground) 12%, transparent),
-    0 0 0 2px color-mix(in oklab, var(--foreground) 18%, transparent);
-}
-
-.dark .dash-heat-jewel {
-  box-shadow:
-    inset 0 1px 1px oklch(1 0 0 / 0.12),
-    0 2px 8px oklch(0 0 0 / 0.35);
-}
-
-.dark .dash-heat-jewel[data-level="4"] {
-  box-shadow:
-    inset 0 1px 2px oklch(1 0 0 / 0.18),
-    0 0 0 1px color-mix(in oklab, var(--foreground) 18%, transparent),
-    0 0 18px color-mix(in oklab, var(--foreground) 22%, transparent),
-    0 4px 12px oklch(0 0 0 / 0.4);
-}
-
-.dash-heat-today {
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--foreground) 55%, transparent);
-}
-
-@keyframes dash-heat-pop {
-  from {
-    transform: scale(0.35);
-    filter: blur(1px);
-  }
-  to {
-    transform: scale(1);
-    filter: blur(0);
-  }
-}
-
-.dash-ring-draw {
-  animation: dash-reveal-up 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: calc(var(--i, 0) * 55ms);
-}
-
-.dash-habit-seal {
-  transition:
-    transform 150ms ease,
-    box-shadow 200ms ease,
-    background-color 200ms ease,
-    border-color 200ms ease;
-}
-
-.dash-signal-celebrate {
-  animation: dash-signal-clear 560ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.dash-signal-celebrate .dash-signal-value {
-  animation: dash-signal-shimmer 680ms ease-out;
-}
-
-@keyframes dash-signal-clear {
-  0% {
-    transform: scale(1);
-  }
-  38% {
-    transform: scale(1.04);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-@keyframes dash-signal-shimmer {
-  0%,
-  100% {
-    filter: brightness(1);
-  }
-  45% {
-    filter: brightness(1.18);
-  }
-}
-
-.dash-task-row-done {
-  animation: dash-task-row-done 500ms ease-out;
-}
-
-@keyframes dash-task-row-done {
-  0% {
-    background: transparent;
-  }
-  35% {
-    background: color-mix(in oklab, var(--foreground) 7%, transparent);
-  }
-  100% {
-    background: transparent;
-  }
-}
-
-.dash-habit-seal-burst {
-  animation: dash-habit-burst 440ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.dash-habit-seal-burst::after {
-  content: "";
-  pointer-events: none;
-  position: absolute;
-  inset: -4px;
-  border-radius: 9999px;
-  border: 2px solid var(--habit-burst, color-mix(in oklab, var(--foreground) 35%, transparent));
-  animation: dash-habit-ring-burst 440ms ease-out;
-}
-
-@keyframes dash-habit-burst {
-  0% {
-    transform: scale(1);
-  }
-  42% {
-    transform: scale(1.1);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-@keyframes dash-habit-ring-burst {
-  0% {
-    opacity: 0.85;
-    transform: scale(0.92);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(1.35);
-  }
-}
-
-.dash-ring-fill {
-  transition: stroke-dashoffset 620ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.dash-ring-featured .dash-ring-fill {
-  transition-duration: 760ms;
-}
-
-.dash-ring-disc {
-  transform-origin: center;
-  animation: dash-ring-disc-in 520ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.dash-ring-check {
-  transform-origin: center;
-  animation: dash-ring-check-in 480ms cubic-bezier(0.22, 1, 0.36, 1) 80ms both;
-}
-
-@keyframes dash-ring-disc-in {
-  from {
-    opacity: 0;
-    transform: scale(0.82);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes dash-ring-check-in {
-  from {
-    opacity: 0;
-    transform: scale(0.6);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.dash-goal-featured {
-  padding-bottom: 0.15rem;
-}
-
-.dash-ring-sealed .dash-ring-fill {
-  animation: dash-ring-seal-flash 900ms ease-out;
-}
-
-@keyframes dash-ring-seal-flash {
-  0%,
-  100% {
-    stroke: color-mix(in oklab, var(--foreground) 80%, transparent);
-  }
-  40% {
-    stroke: oklch(0.74 0.11 85);
-  }
-}
-
-.dash-heat-pulse {
-  animation: dash-heat-pulse 540ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
 .dash-heat-count-pop {
   animation: dash-heat-count-pop 540ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-@keyframes dash-heat-pulse {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  45% {
-    transform: scale(1.2);
-  }
 }
 
 @keyframes dash-heat-count-pop {
@@ -2370,206 +2032,13 @@ html[data-focus-session] body {
   }
 }
 
-.dash-quad-label {
-  font-size: 0.625rem;
-  font-weight: 500;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: color-mix(in oklab, var(--muted-foreground) 78%, transparent);
-}
-
-.dash-quad-stat {
-  font-size: 2rem;
-  font-weight: 500;
-  letter-spacing: -0.03em;
-  line-height: 1.02;
-  font-variant-numeric: tabular-nums lining-nums;
-}
-
-@media (min-width: 640px) {
-  .dash-quad-stat {
-    font-size: 2.15rem;
-  }
-}
-
-.dash-quad-stat-fraction {
-  font-size: 1.25rem;
-  letter-spacing: -0.02em;
-  color: color-mix(in oklab, var(--muted-foreground) 58%, transparent);
-}
-
-.dash-quad-shell {
-  --dash-quad-surface: color-mix(in oklab, var(--card) 78%, transparent);
-  --dash-quad-edge: color-mix(in oklab, var(--foreground) 8%, transparent);
-  --dash-quad-highlight: color-mix(in oklab, var(--foreground) 10%, transparent);
-  isolation: isolate;
-  position: relative;
-  overflow: hidden;
-  border-radius: 1.5rem;
-  border: 1px solid var(--dash-quad-edge);
-  background: var(--dash-quad-surface);
-  backdrop-filter: blur(10px);
-  box-shadow:
-    inset 0 1px 0 var(--dash-quad-highlight),
-    0 18px 50px -30px oklch(0 0 0 / 0.28);
-}
-
-.dark .dash-quad-shell {
-  --dash-quad-surface: color-mix(in oklab, var(--card) 48%, transparent);
-  --dash-quad-edge: color-mix(in oklab, var(--foreground) 12%, transparent);
-  --dash-quad-highlight: color-mix(in oklab, var(--foreground) 14%, transparent);
-  box-shadow:
-    inset 0 1px 0 var(--dash-quad-highlight),
-    0 24px 60px -32px oklch(0 0 0 / 0.65);
-}
-
-.dash-quad {
-  grid-auto-rows: 1fr;
-}
-
-.dash-quad-cell {
-  display: flex;
-  min-height: 0;
-  min-width: 0;
-  position: relative;
-  border-bottom: 1px solid color-mix(in oklab, var(--foreground) 5%, transparent);
-  transition:
-    background-color 280ms ease,
-    box-shadow 280ms ease;
-  animation: dash-reveal-up 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.dash-quad-cell:nth-child(1) {
-  animation-delay: 140ms;
-}
-.dash-quad-cell:nth-child(2) {
-  animation-delay: 200ms;
-}
-.dash-quad-cell:nth-child(3) {
-  animation-delay: 260ms;
-}
-.dash-quad-cell:nth-child(4) {
-  animation-delay: 320ms;
-}
-
-@media (min-width: 1024px) {
-  .dash-quad-cell:nth-child(odd) {
-    border-right: 1px solid color-mix(in oklab, var(--foreground) 5%, transparent);
-  }
-
-  .dash-quad-cell:nth-child(n + 3) {
-    border-bottom: none;
-  }
-}
-
-@media (hover: hover) {
-  .dash-quad-cell:hover {
-    background: color-mix(in oklab, var(--foreground) 2.5%, transparent);
-    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--foreground) 5%, transparent);
-  }
-}
-
-.dash-quad-cell:focus-within {
-  background: color-mix(in oklab, var(--foreground) 3.5%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--foreground) 8%, transparent);
-}
-
-.dash-quad-cell[data-headline="true"] {
-  --dash-headline-accent: color-mix(in oklab, var(--foreground) 42%, transparent);
-  background: color-mix(in oklab, var(--foreground) 4.5%, transparent);
-  box-shadow:
-    inset 0 0 0 1px color-mix(in oklab, var(--foreground) 12%, transparent),
-    inset 0 0 48px color-mix(in oklab, var(--dash-headline-accent) 12%, transparent);
-}
-
-.dash-quad-cell[data-headline="true"]::before {
-  content: "";
-  pointer-events: none;
-  position: absolute;
-  top: 0;
-  left: 1.15rem;
-  right: 1.15rem;
-  height: 2px;
-  border-radius: 9999px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    var(--dash-headline-accent) 22%,
-    var(--dash-headline-accent) 78%,
-    transparent 100%
-  );
-  opacity: 0.95;
-  animation: dash-headline-bar-pulse 3.2s ease-in-out infinite;
-}
-
-@keyframes dash-headline-bar-pulse {
-  0%,
-  100% {
-    opacity: 0.55;
-    transform: scaleX(0.92);
-  }
-  50% {
-    opacity: 1;
-    transform: scaleX(1);
-  }
-}
-
-.dash-quad-cell[data-headline="true"][data-quad="tasks"] {
-  --dash-headline-accent: oklch(0.62 0.16 28 / 0.62);
-}
-
-.dash-quad-cell[data-headline="true"][data-quad="habits"] {
-  --dash-headline-accent: oklch(0.68 0.14 155 / 0.58);
-}
-
-.dash-quad-cell[data-headline="true"][data-quad="week"] {
-  --dash-headline-accent: oklch(0.62 0.1 245 / 0.58);
-}
-
-.dash-quad-cell[data-headline="true"][data-quad="goals"] {
-  --dash-headline-accent: oklch(0.72 0.11 85 / 0.62);
-}
-
-.dash-quad-cell[data-headline="true"] .dash-quad-stat,
-.dash-quad-cell[data-headline="true"] .dash-signal-value {
-  font-size: 2.125rem;
-}
-
-@media (min-width: 640px) {
-  .dash-quad-cell[data-headline="true"] .dash-quad-stat,
-  .dash-quad-cell[data-headline="true"] .dash-signal-value {
-    font-size: 2.25rem;
-  }
-}
-
-.dash-quad-cell[data-headline="true"] .dash-quad-label {
-  color: color-mix(in oklab, var(--foreground) 58%, transparent);
-}
-
-.dash-quad-cell > * {
-  display: flex;
-  min-height: 14.5rem;
-  width: 100%;
-  flex: 1;
-  flex-direction: column;
-  padding: 1.5rem 1.25rem 1.5rem;
-}
-
-@media (min-width: 1024px) {
-  .dash-quad-cell > * {
-    min-height: 16.25rem;
-    padding: 1.75rem 1.85rem;
-  }
-}
-
 /* Dashboard always animates — GNOME "enable-animations: false" sets prefers-reduced-motion */
 @media (prefers-reduced-motion: reduce) {
   .dash-page-atmosphere .dash-reveal {
     animation: dash-reveal-up 520ms cubic-bezier(0.22, 1, 0.36, 1) both !important;
   }
 
-  .dash-page-atmosphere .dash-stagger > *,
-  .dash-page-atmosphere .dash-kpi-row > * {
+  .dash-page-atmosphere .dash-stagger > * {
     animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both !important;
   }
 
@@ -2588,7 +2057,7 @@ html[data-focus-session] body {
 .calendar-skeleton .cal-reveal-delay-1,
 .calendar-skeleton .cal-reveal-delay-2,
 .calendar-skeleton .cal-cell,
-.calendar-skeleton .cal-stats > * {
+.calendar-skeleton .cal-pulse-glow {
   animation: none !important;
   opacity: 1 !important;
   transform: none !important;
@@ -2603,18 +2072,23 @@ html[data-focus-session] body {
   gap: 1.5rem;
 }
 
-.cal-stage-wash {
+.cal-stage-wash,
+.cal-stage-glow,
+.cal-stage-glow-soft {
   pointer-events: none;
   position: absolute;
+  z-index: 0;
+}
+
+.cal-stage-wash {
   top: -1.5rem;
   left: 50%;
-  z-index: 0;
   width: min(100%, 48rem);
-  height: 14rem;
+  height: 16rem;
   transform: translateX(-50%);
   background: radial-gradient(
     ellipse 70% 80% at 50% 0%,
-    color-mix(in oklab, var(--foreground) 4.5%, transparent) 0%,
+    color-mix(in oklab, var(--foreground) 5%, transparent) 0%,
     transparent 72%
   );
 }
@@ -2622,6 +2096,40 @@ html[data-focus-session] body {
 .dark .cal-stage-wash {
   background: radial-gradient(
     ellipse 70% 80% at 50% 0%,
+    color-mix(in oklab, var(--foreground) 7%, transparent) 0%,
+    transparent 72%
+  );
+}
+
+.cal-stage-glow {
+  top: -1rem;
+  left: 12%;
+  width: min(22rem, 52%);
+  height: 13rem;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 5.5%, transparent) 0%,
+    transparent 70%
+  );
+  animation: dash-glow-breathe 7.5s ease-in-out infinite;
+}
+
+.cal-stage-glow-soft {
+  top: 2.5rem;
+  right: 6%;
+  width: min(18rem, 44%);
+  height: 12rem;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 3.5%, transparent) 0%,
+    transparent 72%
+  );
+  animation: dash-glow-breathe-secondary 9s ease-in-out infinite;
+}
+
+.dark .cal-stage-glow-soft {
+  background: radial-gradient(
+    ellipse at center,
     color-mix(in oklab, var(--foreground) 6%, transparent) 0%,
     transparent 72%
   );
@@ -2648,21 +2156,47 @@ html[data-focus-session] body {
   animation-delay: 120ms;
 }
 
-.cal-stats > *:nth-child(1) {
-  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 40ms;
+.cal-pulse {
+  /* Open hero — atmosphere from stage wash */
 }
-.cal-stats > *:nth-child(2) {
-  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 80ms;
+
+.cal-pulse-vignette {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 80% 70% at 82% 18%,
+    color-mix(in oklab, var(--foreground) 4%, transparent) 0%,
+    transparent 60%
+  );
 }
-.cal-stats > *:nth-child(3) {
-  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 120ms;
+
+.cal-pulse-glow {
+  pointer-events: none;
+  position: absolute;
+  right: -6%;
+  top: -35%;
+  width: min(24rem, 70%);
+  height: 140%;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 6%, transparent) 0%,
+    transparent 68%
+  );
+  opacity: 0.95;
+  animation: dash-glow-breathe 8s ease-in-out infinite;
 }
-.cal-stats > *:nth-child(4) {
-  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 160ms;
+
+.dark .cal-pulse-glow {
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 9%, transparent) 0%,
+    transparent 68%
+  );
+}
+
+.cal-pulse-sealed .cal-pulse-glow {
+  opacity: 0.55;
 }
 
 .cal-cell {
@@ -2732,6 +2266,18 @@ html[data-focus-session] body {
   box-shadow: inset 0 1px 0 color-mix(in oklab, var(--foreground) 4%, transparent);
 }
 
+.cal-dock-glow {
+  pointer-events: none;
+  position: absolute;
+  inset: -15% -20% auto;
+  height: 10rem;
+  background: radial-gradient(
+    ellipse at 50% 0%,
+    color-mix(in oklab, var(--foreground) 4%, transparent) 0%,
+    transparent 70%
+  );
+}
+
 .cal-chip {
   transition: transform 160ms ease, opacity 160ms ease;
 }
@@ -2740,12 +2286,71 @@ html[data-focus-session] body {
   transform: translateY(-1px);
 }
 
+.cal-peek {
+  animation: cal-peek-in 180ms ease both;
+}
+
+@keyframes cal-peek-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cal-timeline-row {
+  position: relative;
+}
+
+.cal-timeline-flash > div:last-child {
+  animation: cal-flash 1.8s ease;
+}
+
+@keyframes cal-flash {
+  0%,
+  100% {
+    box-shadow: none;
+  }
+  20%,
+  55% {
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--foreground) 18%, transparent);
+  }
+}
+
+.cal-composer {
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--foreground) 4%, transparent);
+}
+
+.cal-composer-glow {
+  pointer-events: none;
+  position: absolute;
+  inset: -20% -10% auto;
+  height: 7rem;
+  background: radial-gradient(
+    ellipse at 30% 0%,
+    color-mix(in oklab, var(--foreground) 5%, transparent) 0%,
+    transparent 70%
+  );
+}
+
 @media (prefers-reduced-motion: reduce) {
   .cal-stage .cal-reveal,
-  .cal-stage .cal-stats > *,
   .cal-stage .cal-cell,
-  .cal-stage .cal-dot {
-    animation: dash-reveal-up 420ms cubic-bezier(0.22, 1, 0.36, 1) both !important;
+  .cal-stage .cal-dot,
+  .cal-stage-glow,
+  .cal-stage-glow-soft,
+  .cal-pulse-glow,
+  .cal-peek,
+  .cal-timeline-flash > div:last-child {
+    animation: none !important;
+  }
+
+  .cal-stage .cal-reveal,
+  .cal-stage .cal-cell {
+    opacity: 1;
   }
 }
 
@@ -2754,8 +2359,8 @@ html[data-focus-session] body {
 .notes-skeleton .notes-reveal-delay-1,
 .notes-skeleton .notes-reveal-delay-2,
 .notes-skeleton .notes-reveal-delay-3,
-.notes-skeleton .notes-stats > *,
-.notes-skeleton .notes-card-wrap {
+.notes-skeleton .notes-card-wrap,
+.notes-skeleton .notes-pulse-glow {
   animation: none !important;
   opacity: 1 !important;
   transform: none !important;
@@ -2770,18 +2375,23 @@ html[data-focus-session] body {
   gap: 1.5rem;
 }
 
-.notes-stage-wash {
+.notes-stage-wash,
+.notes-stage-glow,
+.notes-stage-glow-soft {
   pointer-events: none;
   position: absolute;
+  z-index: 0;
+}
+
+.notes-stage-wash {
   top: -1.5rem;
   left: 50%;
-  z-index: 0;
-  width: min(100%, 42rem);
-  height: 14rem;
+  width: min(100%, 46rem);
+  height: 16rem;
   transform: translateX(-50%);
   background: radial-gradient(
     ellipse 70% 80% at 50% 0%,
-    color-mix(in oklab, var(--foreground) 4.5%, transparent) 0%,
+    color-mix(in oklab, var(--foreground) 5%, transparent) 0%,
     transparent 72%
   );
 }
@@ -2789,6 +2399,40 @@ html[data-focus-session] body {
 .dark .notes-stage-wash {
   background: radial-gradient(
     ellipse 70% 80% at 50% 0%,
+    color-mix(in oklab, var(--foreground) 7%, transparent) 0%,
+    transparent 72%
+  );
+}
+
+.notes-stage-glow {
+  top: -1rem;
+  left: 14%;
+  width: min(20rem, 50%);
+  height: 12rem;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 5.5%, transparent) 0%,
+    transparent 70%
+  );
+  animation: dash-glow-breathe 7.5s ease-in-out infinite;
+}
+
+.notes-stage-glow-soft {
+  top: 2.5rem;
+  right: 8%;
+  width: min(16rem, 42%);
+  height: 11rem;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 3.5%, transparent) 0%,
+    transparent 72%
+  );
+  animation: dash-glow-breathe-secondary 9s ease-in-out infinite;
+}
+
+.dark .notes-stage-glow-soft {
+  background: radial-gradient(
+    ellipse at center,
     color-mix(in oklab, var(--foreground) 6%, transparent) 0%,
     transparent 72%
   );
@@ -2819,34 +2463,102 @@ html[data-focus-session] body {
   animation-delay: 180ms;
 }
 
-.notes-stats > *:nth-child(1) {
-  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 40ms;
+.notes-pulse {
+  /* Open hero — atmosphere from stage wash */
 }
-.notes-stats > *:nth-child(2) {
-  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 80ms;
+
+.notes-pulse-vignette {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 80% 70% at 80% 18%,
+    color-mix(in oklab, var(--foreground) 4%, transparent) 0%,
+    transparent 60%
+  );
 }
-.notes-stats > *:nth-child(3) {
-  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 120ms;
+
+.notes-pulse-journal .notes-pulse-vignette {
+  background: radial-gradient(
+    ellipse 75% 65% at 82% 15%,
+    color-mix(in oklab, oklch(0.75 0.12 85) 12%, transparent) 0%,
+    transparent 62%
+  );
 }
-.notes-stats > *:nth-child(4) {
-  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 160ms;
+
+.notes-pulse-glow {
+  pointer-events: none;
+  position: absolute;
+  right: -6%;
+  top: -35%;
+  width: min(24rem, 70%);
+  height: 140%;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 6%, transparent) 0%,
+    transparent 68%
+  );
+  opacity: 0.95;
+  animation: dash-glow-breathe 8s ease-in-out infinite;
+}
+
+.notes-pulse-journal .notes-pulse-glow {
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, oklch(0.78 0.11 85) 14%, transparent) 0%,
+    transparent 68%
+  );
+}
+
+.dark .notes-pulse-glow {
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 9%, transparent) 0%,
+    transparent 68%
+  );
+}
+
+.dark .notes-pulse-journal .notes-pulse-glow {
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, oklch(0.78 0.11 85) 16%, transparent) 0%,
+    transparent 68%
+  );
+}
+
+.notes-pulse-sealed .notes-pulse-glow {
+  opacity: 0.55;
 }
 
 .notes-card-wrap {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 11rem;
   animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
   animation-delay: calc(var(--i, 0) * 40ms);
 }
 
-.notes-spotlight {
-  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--foreground) 5%, transparent);
-}
-
 .notes-editor {
   box-shadow: inset 0 1px 0 color-mix(in oklab, var(--foreground) 4%, transparent);
+}
+
+.notes-editor-glow {
+  pointer-events: none;
+  position: absolute;
+  inset: -18% -15% auto;
+  height: 9rem;
+  background: radial-gradient(
+    ellipse at 40% 0%,
+    color-mix(in oklab, var(--foreground) 4%, transparent) 0%,
+    transparent 70%
+  );
+}
+
+.notes-editor-journal .notes-editor-glow {
+  background: radial-gradient(
+    ellipse at 40% 0%,
+    color-mix(in oklab, oklch(0.78 0.11 85) 12%, transparent) 0%,
+    transparent 70%
+  );
 }
 
 .note-editor h2 {
@@ -2890,9 +2602,16 @@ html[data-focus-session] body {
 
 @media (prefers-reduced-motion: reduce) {
   .notes-stage .notes-reveal,
-  .notes-stage .notes-stats > *,
+  .notes-stage .notes-card-wrap,
+  .notes-stage-glow,
+  .notes-stage-glow-soft,
+  .notes-pulse-glow {
+    animation: none !important;
+  }
+
+  .notes-stage .notes-reveal,
   .notes-stage .notes-card-wrap {
-    animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both !important;
+    opacity: 1;
   }
 }
 
@@ -2900,7 +2619,7 @@ html[data-focus-session] body {
 .books-skeleton .books-reveal,
 .books-skeleton .books-reveal-delay-1,
 .books-skeleton .books-reveal-delay-2,
-.books-skeleton .books-stats > * {
+.books-skeleton .books-pulse-glow {
   animation: none !important;
   opacity: 1 !important;
   transform: none !important;
@@ -2915,18 +2634,23 @@ html[data-focus-session] body {
   gap: 1.5rem;
 }
 
-.books-stage-wash {
+.books-stage-wash,
+.books-stage-glow,
+.books-stage-glow-soft {
   pointer-events: none;
   position: absolute;
+  z-index: 0;
+}
+
+.books-stage-wash {
   top: -1.5rem;
   left: 50%;
-  z-index: 0;
-  width: min(100%, 42rem);
-  height: 14rem;
+  width: min(100%, 46rem);
+  height: 16rem;
   transform: translateX(-50%);
   background: radial-gradient(
     ellipse 70% 80% at 50% 0%,
-    color-mix(in oklab, var(--foreground) 4.5%, transparent) 0%,
+    color-mix(in oklab, var(--foreground) 5%, transparent) 0%,
     transparent 72%
   );
 }
@@ -2934,6 +2658,40 @@ html[data-focus-session] body {
 .dark .books-stage-wash {
   background: radial-gradient(
     ellipse 70% 80% at 50% 0%,
+    color-mix(in oklab, var(--foreground) 7%, transparent) 0%,
+    transparent 72%
+  );
+}
+
+.books-stage-glow {
+  top: -1rem;
+  left: 14%;
+  width: min(20rem, 50%);
+  height: 12rem;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 5.5%, transparent) 0%,
+    transparent 70%
+  );
+  animation: dash-glow-breathe 7.5s ease-in-out infinite;
+}
+
+.books-stage-glow-soft {
+  top: 2.5rem;
+  right: 8%;
+  width: min(16rem, 42%);
+  height: 11rem;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 3.5%, transparent) 0%,
+    transparent 72%
+  );
+  animation: dash-glow-breathe-secondary 9s ease-in-out infinite;
+}
+
+.dark .books-stage-glow-soft {
+  background: radial-gradient(
+    ellipse at center,
     color-mix(in oklab, var(--foreground) 6%, transparent) 0%,
     transparent 72%
   );
@@ -2960,27 +2718,59 @@ html[data-focus-session] body {
   animation-delay: 120ms;
 }
 
-.books-stats > *:nth-child(1) {
-  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 40ms;
+.books-pulse {
+  /* Open hero — atmosphere from stage wash */
 }
-.books-stats > *:nth-child(2) {
-  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 80ms;
+
+.books-pulse-vignette {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 80% 70% at 80% 18%,
+    color-mix(in oklab, var(--foreground) 4%, transparent) 0%,
+    transparent 60%
+  );
 }
-.books-stats > *:nth-child(3) {
-  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 120ms;
+
+.books-pulse-glow {
+  pointer-events: none;
+  position: absolute;
+  right: -6%;
+  top: -35%;
+  width: min(24rem, 70%);
+  height: 140%;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 6%, transparent) 0%,
+    transparent 68%
+  );
+  opacity: 0.95;
+  animation: dash-glow-breathe 8s ease-in-out infinite;
 }
-.books-stats > *:nth-child(4) {
-  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 160ms;
+
+.dark .books-pulse-glow {
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 9%, transparent) 0%,
+    transparent 68%
+  );
+}
+
+.books-pulse-sealed .books-pulse-glow {
+  opacity: 0.55;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .books-stage .books-reveal,
-  .books-stage .books-stats > * {
-    animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both !important;
+  .books-stage-glow,
+  .books-stage-glow-soft,
+  .books-pulse-glow {
+    animation: none !important;
+  }
+
+  .books-stage .books-reveal {
+    opacity: 1;
   }
 }
 
@@ -2988,7 +2778,7 @@ html[data-focus-session] body {
 .review-skeleton .review-reveal,
 .review-skeleton .review-reveal-delay-1,
 .review-skeleton .review-reveal-delay-2,
-.review-skeleton .review-stats > * {
+.review-skeleton .review-pulse-glow {
   animation: none !important;
   opacity: 1 !important;
   transform: none !important;
@@ -3003,18 +2793,23 @@ html[data-focus-session] body {
   gap: 1.5rem;
 }
 
-.review-stage-wash {
+.review-stage-wash,
+.review-stage-glow,
+.review-stage-glow-soft {
   pointer-events: none;
   position: absolute;
+  z-index: 0;
+}
+
+.review-stage-wash {
   top: -1.5rem;
   left: 50%;
-  z-index: 0;
-  width: min(100%, 42rem);
-  height: 14rem;
+  width: min(100%, 46rem);
+  height: 16rem;
   transform: translateX(-50%);
   background: radial-gradient(
     ellipse 70% 80% at 50% 0%,
-    color-mix(in oklab, var(--foreground) 4.5%, transparent) 0%,
+    color-mix(in oklab, var(--foreground) 5%, transparent) 0%,
     transparent 72%
   );
 }
@@ -3022,6 +2817,40 @@ html[data-focus-session] body {
 .dark .review-stage-wash {
   background: radial-gradient(
     ellipse 70% 80% at 50% 0%,
+    color-mix(in oklab, var(--foreground) 7%, transparent) 0%,
+    transparent 72%
+  );
+}
+
+.review-stage-glow {
+  top: -1rem;
+  left: 14%;
+  width: min(20rem, 50%);
+  height: 12rem;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 5.5%, transparent) 0%,
+    transparent 70%
+  );
+  animation: dash-glow-breathe 7.5s ease-in-out infinite;
+}
+
+.review-stage-glow-soft {
+  top: 2.5rem;
+  right: 8%;
+  width: min(16rem, 42%);
+  height: 11rem;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 3.5%, transparent) 0%,
+    transparent 72%
+  );
+  animation: dash-glow-breathe-secondary 9s ease-in-out infinite;
+}
+
+.dark .review-stage-glow-soft {
+  background: radial-gradient(
+    ellipse at center,
     color-mix(in oklab, var(--foreground) 6%, transparent) 0%,
     transparent 72%
   );
@@ -3048,27 +2877,66 @@ html[data-focus-session] body {
   animation-delay: 120ms;
 }
 
-.review-stats > *:nth-child(1) {
-  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 40ms;
+.review-pulse {
+  /* Open hero — atmosphere from stage wash */
 }
-.review-stats > *:nth-child(2) {
-  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 80ms;
+
+.review-pulse-vignette {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 80% 70% at 80% 18%,
+    color-mix(in oklab, var(--foreground) 4%, transparent) 0%,
+    transparent 60%
+  );
 }
-.review-stats > *:nth-child(3) {
-  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 120ms;
+
+.review-pulse-glow {
+  pointer-events: none;
+  position: absolute;
+  right: -6%;
+  top: -35%;
+  width: min(24rem, 70%);
+  height: 140%;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 6%, transparent) 0%,
+    transparent 68%
+  );
+  opacity: 0.95;
+  animation: dash-glow-breathe 8s ease-in-out infinite;
 }
-.review-stats > *:nth-child(4) {
-  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 160ms;
+
+.dark .review-pulse-glow {
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 9%, transparent) 0%,
+    transparent 68%
+  );
+}
+
+.review-pulse-sealed .review-pulse-glow {
+  opacity: 0.55;
 }
 
 .review-form,
 .review-recap,
 .review-history {
   box-shadow: inset 0 1px 0 color-mix(in oklab, var(--foreground) 4%, transparent);
+}
+
+.review-form-glow,
+.review-dock-glow {
+  pointer-events: none;
+  position: absolute;
+  inset: -18% -15% auto;
+  height: 9rem;
+  background: radial-gradient(
+    ellipse at 40% 0%,
+    color-mix(in oklab, var(--foreground) 4%, transparent) 0%,
+    transparent 70%
+  );
 }
 
 .review-feeling-option {
@@ -3097,8 +2965,14 @@ html[data-focus-session] body {
 
 @media (prefers-reduced-motion: reduce) {
   .review-stage .review-reveal,
-  .review-stage .review-stats > * {
-    animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both !important;
+  .review-stage-glow,
+  .review-stage-glow-soft,
+  .review-pulse-glow {
+    animation: none !important;
+  }
+
+  .review-stage .review-reveal {
+    opacity: 1;
   }
 
   .review-feeling-option {
@@ -3114,8 +2988,8 @@ html[data-focus-session] body {
 .goals-skeleton .goals-reveal,
 .goals-skeleton .goals-reveal-delay-1,
 .goals-skeleton .goals-reveal-delay-2,
-.goals-skeleton .goals-stats > *,
-.goals-skeleton .goals-card {
+.goals-skeleton .goals-card,
+.goals-skeleton .goals-pulse-glow {
   animation: none !important;
   opacity: 1 !important;
   transform: none !important;
@@ -3130,18 +3004,23 @@ html[data-focus-session] body {
   gap: 1.5rem;
 }
 
-.goals-stage-wash {
+.goals-stage-wash,
+.goals-stage-glow,
+.goals-stage-glow-soft {
   pointer-events: none;
   position: absolute;
+  z-index: 0;
+}
+
+.goals-stage-wash {
   top: -1.5rem;
   left: 50%;
-  z-index: 0;
-  width: min(100%, 42rem);
-  height: 14rem;
+  width: min(100%, 46rem);
+  height: 16rem;
   transform: translateX(-50%);
   background: radial-gradient(
     ellipse 70% 80% at 50% 0%,
-    color-mix(in oklab, var(--foreground) 4.5%, transparent) 0%,
+    color-mix(in oklab, var(--foreground) 5%, transparent) 0%,
     transparent 72%
   );
 }
@@ -3149,6 +3028,40 @@ html[data-focus-session] body {
 .dark .goals-stage-wash {
   background: radial-gradient(
     ellipse 70% 80% at 50% 0%,
+    color-mix(in oklab, var(--foreground) 7%, transparent) 0%,
+    transparent 72%
+  );
+}
+
+.goals-stage-glow {
+  top: -1rem;
+  left: 14%;
+  width: min(20rem, 50%);
+  height: 12rem;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 5.5%, transparent) 0%,
+    transparent 70%
+  );
+  animation: dash-glow-breathe 7.5s ease-in-out infinite;
+}
+
+.goals-stage-glow-soft {
+  top: 2.5rem;
+  right: 8%;
+  width: min(16rem, 42%);
+  height: 11rem;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 3.5%, transparent) 0%,
+    transparent 72%
+  );
+  animation: dash-glow-breathe-secondary 9s ease-in-out infinite;
+}
+
+.dark .goals-stage-glow-soft {
+  background: radial-gradient(
+    ellipse at center,
     color-mix(in oklab, var(--foreground) 6%, transparent) 0%,
     transparent 72%
   );
@@ -3175,43 +3088,38 @@ html[data-focus-session] body {
   animation-delay: 120ms;
 }
 
-.goals-stats > *:nth-child(1) {
-  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 40ms;
-}
-.goals-stats > *:nth-child(2) {
-  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 80ms;
-}
-.goals-stats > *:nth-child(3) {
-  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 120ms;
-}
-.goals-stats > *:nth-child(4) {
-  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 160ms;
+.goals-pulse {
+  /* Open hero — atmosphere from stage wash */
 }
 
-.goals-spotlight {
-  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--foreground) 4%, transparent);
-}
-
-.goals-spotlight-glow {
+.goals-pulse-vignette {
   pointer-events: none;
   position: absolute;
-  right: -8%;
-  top: -40%;
-  width: min(22rem, 70%);
+  inset: 0;
+  background: radial-gradient(
+    ellipse 80% 70% at 80% 18%,
+    color-mix(in oklab, var(--foreground) 4%, transparent) 0%,
+    transparent 60%
+  );
+}
+
+.goals-pulse-glow {
+  pointer-events: none;
+  position: absolute;
+  right: -6%;
+  top: -35%;
+  width: min(24rem, 70%);
   height: 140%;
   background: radial-gradient(
     ellipse at center,
     color-mix(in oklab, var(--foreground) 6%, transparent) 0%,
     transparent 68%
   );
-  opacity: 0.9;
+  opacity: 0.95;
+  animation: dash-glow-breathe 8s ease-in-out infinite;
 }
 
-.dark .goals-spotlight-glow {
+.dark .goals-pulse-glow {
   background: radial-gradient(
     ellipse at center,
     color-mix(in oklab, var(--foreground) 9%, transparent) 0%,
@@ -3219,8 +3127,24 @@ html[data-focus-session] body {
   );
 }
 
+.goals-pulse-sealed .goals-pulse-glow {
+  opacity: 0.55;
+}
+
 .goals-composer {
   box-shadow: inset 0 1px 0 color-mix(in oklab, var(--foreground) 4%, transparent);
+}
+
+.goals-composer-glow {
+  pointer-events: none;
+  position: absolute;
+  inset: -20% -10% auto;
+  height: 8rem;
+  background: radial-gradient(
+    ellipse at 30% 0%,
+    color-mix(in oklab, var(--foreground) 4%, transparent) 0%,
+    transparent 70%
+  );
 }
 
 .goals-card {
@@ -3231,9 +3155,16 @@ html[data-focus-session] body {
 
 @media (prefers-reduced-motion: reduce) {
   .goals-stage .goals-reveal,
-  .goals-stage .goals-stats > *,
+  .goals-stage .goals-card,
+  .goals-stage-glow,
+  .goals-stage-glow-soft,
+  .goals-pulse-glow {
+    animation: none !important;
+  }
+
+  .goals-stage .goals-reveal,
   .goals-stage .goals-card {
-    animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both !important;
+    opacity: 1;
   }
 }
 
@@ -3241,7 +3172,6 @@ html[data-focus-session] body {
 .habits-skeleton .habits-reveal,
 .habits-skeleton .habits-reveal-delay-1,
 .habits-skeleton .habits-reveal-delay-2,
-.habits-skeleton .habits-stats > *,
 .habits-skeleton .habits-card {
   animation: none !important;
   opacity: 1 !important;
@@ -3257,18 +3187,23 @@ html[data-focus-session] body {
   gap: 1.5rem;
 }
 
-.habits-stage-wash {
+.habits-stage-wash,
+.habits-stage-glow,
+.habits-stage-glow-soft {
   pointer-events: none;
   position: absolute;
+  z-index: 0;
+}
+
+.habits-stage-wash {
   top: -1.5rem;
   left: 50%;
-  z-index: 0;
-  width: min(100%, 42rem);
-  height: 14rem;
+  width: min(100%, 46rem);
+  height: 16rem;
   transform: translateX(-50%);
   background: radial-gradient(
     ellipse 70% 80% at 50% 0%,
-    color-mix(in oklab, var(--foreground) 4.5%, transparent) 0%,
+    color-mix(in oklab, var(--foreground) 5%, transparent) 0%,
     transparent 72%
   );
 }
@@ -3276,6 +3211,40 @@ html[data-focus-session] body {
 .dark .habits-stage-wash {
   background: radial-gradient(
     ellipse 70% 80% at 50% 0%,
+    color-mix(in oklab, var(--foreground) 7%, transparent) 0%,
+    transparent 72%
+  );
+}
+
+.habits-stage-glow {
+  top: -1rem;
+  left: 14%;
+  width: min(20rem, 50%);
+  height: 12rem;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 5.5%, transparent) 0%,
+    transparent 70%
+  );
+  animation: dash-glow-breathe 7.5s ease-in-out infinite;
+}
+
+.habits-stage-glow-soft {
+  top: 2.5rem;
+  right: 8%;
+  width: min(16rem, 42%);
+  height: 11rem;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 3.5%, transparent) 0%,
+    transparent 72%
+  );
+  animation: dash-glow-breathe-secondary 9s ease-in-out infinite;
+}
+
+.dark .habits-stage-glow-soft {
+  background: radial-gradient(
+    ellipse at center,
     color-mix(in oklab, var(--foreground) 6%, transparent) 0%,
     transparent 72%
   );
@@ -3302,25 +3271,26 @@ html[data-focus-session] body {
   animation-delay: 120ms;
 }
 
-.habits-stats > *:nth-child(1) {
-  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 40ms;
-}
-.habits-stats > *:nth-child(2) {
-  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 80ms;
-}
-.habits-stats > *:nth-child(3) {
-  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 120ms;
-}
-.habits-stats > *:nth-child(4) {
-  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 160ms;
+.habits-pulse {
+  /* Open hero — atmosphere from stage wash */
 }
 
-.habits-pulse {
-  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--foreground) 4%, transparent);
+.habits-composer {
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--foreground) 4%, transparent),
+    0 22px 48px -36px color-mix(in oklab, var(--foreground) 16%, transparent);
+}
+
+.habits-pulse-vignette {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 90% 80% at 50% 0%,
+    transparent 42%,
+    color-mix(in oklab, var(--background) 50%, transparent) 100%
+  );
+  opacity: 0.5;
 }
 
 .habits-pulse-glow {
@@ -3335,7 +3305,8 @@ html[data-focus-session] body {
     color-mix(in oklab, var(--foreground) 6%, transparent) 0%,
     transparent 68%
   );
-  opacity: 0.9;
+  opacity: 0.95;
+  animation: dash-glow-breathe-secondary 8s ease-in-out infinite;
 }
 
 .dark .habits-pulse-glow {
@@ -3346,25 +3317,83 @@ html[data-focus-session] body {
   );
 }
 
-.habits-composer {
-  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--foreground) 4%, transparent);
+.habits-pulse-sealed .habits-pulse-glow {
+  opacity: 1;
+}
+
+.habits-composer-glow {
+  pointer-events: none;
+  position: absolute;
+  right: -14%;
+  top: -55%;
+  width: min(16rem, 65%);
+  height: 140%;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 4.5%, transparent) 0%,
+    transparent 68%
+  );
+  opacity: 0.8;
 }
 
 .habits-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 7.5rem;
   animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
   animation-delay: calc(var(--i, 0) * 40ms);
   box-shadow: inset 0 1px 0 color-mix(in oklab, var(--foreground) 3.5%, transparent);
 }
 
+.habits-card-accent {
+  background: var(--habit-color, var(--foreground));
+  opacity: 0.9;
+}
+
 .habits-card-done {
-  opacity: 0.78;
+  opacity: 0.88;
+  background: color-mix(
+    in oklab,
+    var(--habit-color, var(--foreground)) 6%,
+    color-mix(in oklab, var(--card) 88%, transparent)
+  );
+}
+
+.habits-check-burst {
+  animation: dash-habit-burst 440ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.habits-week-dot {
+  transition:
+    background-color 200ms ease,
+    box-shadow 200ms ease;
+}
+
+.habits-week-cell[data-done="true"] .habits-week-dot {
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--habit-color, var(--foreground)) 22%, transparent);
+}
+
+.habits-week-cell[data-missed="true"] .habits-week-dot {
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--foreground) 18%, transparent);
+}
+
+.habits-tabs {
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--foreground) 3%, transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .habits-stage .habits-reveal,
-  .habits-stage .habits-stats > *,
+  .habits-stage .habits-card,
+  .habits-stage-glow,
+  .habits-stage-glow-soft,
+  .habits-pulse-glow,
+  .habits-check-burst {
+    animation: none !important;
+  }
+
+  .habits-stage .habits-reveal,
   .habits-stage .habits-card {
-    animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both !important;
+    opacity: 1;
+    transform: none;
   }
 }
 
@@ -3372,8 +3401,8 @@ html[data-focus-session] body {
 .tasks-skeleton .tasks-reveal,
 .tasks-skeleton .tasks-reveal-delay-1,
 .tasks-skeleton .tasks-reveal-delay-2,
-.tasks-skeleton .tasks-stats > *,
-.tasks-skeleton .tasks-stagger > * {
+.tasks-skeleton .tasks-stagger > *,
+.tasks-skeleton .tasks-pulse-glow {
   animation: none !important;
   opacity: 1 !important;
   transform: none !important;
@@ -3388,18 +3417,23 @@ html[data-focus-session] body {
   gap: 1.5rem;
 }
 
-.tasks-stage-wash {
+.tasks-stage-wash,
+.tasks-stage-glow,
+.tasks-stage-glow-soft {
   pointer-events: none;
   position: absolute;
+  z-index: 0;
+}
+
+.tasks-stage-wash {
   top: -1.5rem;
   left: 50%;
-  z-index: 0;
-  width: min(100%, 42rem);
-  height: 14rem;
+  width: min(100%, 46rem);
+  height: 16rem;
   transform: translateX(-50%);
   background: radial-gradient(
     ellipse 70% 80% at 50% 0%,
-    color-mix(in oklab, var(--foreground) 4.5%, transparent) 0%,
+    color-mix(in oklab, var(--foreground) 5%, transparent) 0%,
     transparent 72%
   );
 }
@@ -3407,6 +3441,40 @@ html[data-focus-session] body {
 .dark .tasks-stage-wash {
   background: radial-gradient(
     ellipse 70% 80% at 50% 0%,
+    color-mix(in oklab, var(--foreground) 7%, transparent) 0%,
+    transparent 72%
+  );
+}
+
+.tasks-stage-glow {
+  top: -1rem;
+  left: 14%;
+  width: min(20rem, 50%);
+  height: 12rem;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 5.5%, transparent) 0%,
+    transparent 70%
+  );
+  animation: dash-glow-breathe 7.5s ease-in-out infinite;
+}
+
+.tasks-stage-glow-soft {
+  top: 2.5rem;
+  right: 8%;
+  width: min(16rem, 42%);
+  height: 11rem;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 3.5%, transparent) 0%,
+    transparent 72%
+  );
+  animation: dash-glow-breathe-secondary 9s ease-in-out infinite;
+}
+
+.dark .tasks-stage-glow-soft {
+  background: radial-gradient(
+    ellipse at center,
     color-mix(in oklab, var(--foreground) 6%, transparent) 0%,
     transparent 72%
   );
@@ -3433,43 +3501,38 @@ html[data-focus-session] body {
   animation-delay: 120ms;
 }
 
-.tasks-stats > *:nth-child(1) {
-  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 40ms;
-}
-.tasks-stats > *:nth-child(2) {
-  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 80ms;
-}
-.tasks-stats > *:nth-child(3) {
-  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 120ms;
-}
-.tasks-stats > *:nth-child(4) {
-  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 160ms;
+.tasks-pulse {
+  /* Open hero — atmosphere from stage wash, not a card shell */
 }
 
-.tasks-focus-next {
-  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--foreground) 4%, transparent);
-}
-
-.tasks-focus-next-glow {
+.tasks-pulse-vignette {
   pointer-events: none;
   position: absolute;
-  right: -8%;
-  top: -40%;
-  width: min(22rem, 68%);
+  inset: 0;
+  background: radial-gradient(
+    ellipse 80% 70% at 80% 20%,
+    color-mix(in oklab, var(--foreground) 4%, transparent) 0%,
+    transparent 60%
+  );
+}
+
+.tasks-pulse-glow {
+  pointer-events: none;
+  position: absolute;
+  right: -6%;
+  top: -35%;
+  width: min(24rem, 70%);
   height: 140%;
   background: radial-gradient(
     ellipse at center,
     color-mix(in oklab, var(--foreground) 6%, transparent) 0%,
     transparent 68%
   );
-  opacity: 0.9;
+  opacity: 0.95;
+  animation: dash-glow-breathe 8s ease-in-out infinite;
 }
 
-.dark .tasks-focus-next-glow {
+.dark .tasks-pulse-glow {
   background: radial-gradient(
     ellipse at center,
     color-mix(in oklab, var(--foreground) 9%, transparent) 0%,
@@ -3477,8 +3540,24 @@ html[data-focus-session] body {
   );
 }
 
+.tasks-pulse-sealed .tasks-pulse-glow {
+  opacity: 0.55;
+}
+
 .tasks-composer {
   box-shadow: inset 0 1px 0 color-mix(in oklab, var(--foreground) 4%, transparent);
+}
+
+.tasks-composer-glow {
+  pointer-events: none;
+  position: absolute;
+  inset: -20% -10% auto;
+  height: 8rem;
+  background: radial-gradient(
+    ellipse at 30% 0%,
+    color-mix(in oklab, var(--foreground) 4%, transparent) 0%,
+    transparent 70%
+  );
 }
 
 .tasks-group {
@@ -3492,16 +3571,24 @@ html[data-focus-session] body {
 
 @media (prefers-reduced-motion: reduce) {
   .tasks-stage .tasks-reveal,
-  .tasks-stage .tasks-stats > *,
+  .tasks-stage .tasks-stagger > *,
+  .tasks-stage-glow,
+  .tasks-stage-glow-soft,
+  .tasks-pulse-glow {
+    animation: none !important;
+  }
+
+  .tasks-stage .tasks-reveal,
   .tasks-stage .tasks-stagger > * {
-    animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both !important;
+    opacity: 1;
   }
 }
 
 /* Settings — control room */
 .settings-skeleton .settings-reveal,
 .settings-skeleton .settings-reveal-delay-1,
-.settings-skeleton .settings-stats > * {
+.settings-skeleton .settings-panel,
+.settings-skeleton .settings-pulse-glow {
   animation: none !important;
   opacity: 1 !important;
   transform: none !important;
@@ -3516,18 +3603,23 @@ html[data-focus-session] body {
   gap: 1.5rem;
 }
 
-.settings-stage-wash {
+.settings-stage-wash,
+.settings-stage-glow,
+.settings-stage-glow-soft {
   pointer-events: none;
   position: absolute;
+  z-index: 0;
+}
+
+.settings-stage-wash {
   top: -1.5rem;
   left: 50%;
-  z-index: 0;
-  width: min(100%, 42rem);
-  height: 14rem;
+  width: min(100%, 46rem);
+  height: 16rem;
   transform: translateX(-50%);
   background: radial-gradient(
     ellipse 70% 80% at 50% 0%,
-    color-mix(in oklab, var(--foreground) 4.5%, transparent) 0%,
+    color-mix(in oklab, var(--foreground) 5%, transparent) 0%,
     transparent 72%
   );
 }
@@ -3535,6 +3627,40 @@ html[data-focus-session] body {
 .dark .settings-stage-wash {
   background: radial-gradient(
     ellipse 70% 80% at 50% 0%,
+    color-mix(in oklab, var(--foreground) 7%, transparent) 0%,
+    transparent 72%
+  );
+}
+
+.settings-stage-glow {
+  top: -1rem;
+  left: 14%;
+  width: min(20rem, 50%);
+  height: 12rem;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 5.5%, transparent) 0%,
+    transparent 70%
+  );
+  animation: dash-glow-breathe 7.5s ease-in-out infinite;
+}
+
+.settings-stage-glow-soft {
+  top: 2.5rem;
+  right: 8%;
+  width: min(16rem, 42%);
+  height: 11rem;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 3.5%, transparent) 0%,
+    transparent 72%
+  );
+  animation: dash-glow-breathe-secondary 9s ease-in-out infinite;
+}
+
+.dark .settings-stage-glow-soft {
+  background: radial-gradient(
+    ellipse at center,
     color-mix(in oklab, var(--foreground) 6%, transparent) 0%,
     transparent 72%
   );
@@ -3557,21 +3683,47 @@ html[data-focus-session] body {
   animation-delay: 60ms;
 }
 
-.settings-stats > *:nth-child(1) {
-  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 40ms;
+.settings-pulse {
+  /* Open hero — atmosphere from stage wash */
 }
-.settings-stats > *:nth-child(2) {
-  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 80ms;
+
+.settings-pulse-vignette {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 80% 70% at 80% 18%,
+    color-mix(in oklab, var(--foreground) 4%, transparent) 0%,
+    transparent 60%
+  );
 }
-.settings-stats > *:nth-child(3) {
-  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 120ms;
+
+.settings-pulse-glow {
+  pointer-events: none;
+  position: absolute;
+  right: -6%;
+  top: -35%;
+  width: min(24rem, 70%);
+  height: 140%;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 6%, transparent) 0%,
+    transparent 68%
+  );
+  opacity: 0.95;
+  animation: dash-glow-breathe 8s ease-in-out infinite;
 }
-.settings-stats > *:nth-child(4) {
-  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 160ms;
+
+.dark .settings-pulse-glow {
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 9%, transparent) 0%,
+    transparent 68%
+  );
+}
+
+.settings-pulse-sealed .settings-pulse-glow {
+  opacity: 0.55;
 }
 
 .settings-panel {
@@ -3585,12 +3737,20 @@ html[data-focus-session] body {
 .settings-panel:nth-of-type(4) { animation-delay: 160ms; }
 .settings-panel:nth-of-type(5) { animation-delay: 200ms; }
 .settings-panel:nth-of-type(6) { animation-delay: 240ms; }
+.settings-panel:nth-of-type(7) { animation-delay: 280ms; }
 
 @media (prefers-reduced-motion: reduce) {
   .settings-stage .settings-reveal,
-  .settings-stage .settings-stats > *,
+  .settings-stage .settings-panel,
+  .settings-stage-glow,
+  .settings-stage-glow-soft,
+  .settings-pulse-glow {
+    animation: none !important;
+  }
+
+  .settings-stage .settings-reveal,
   .settings-stage .settings-panel {
-    animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both !important;
+    opacity: 1;
   }
 }
 
@@ -3603,18 +3763,23 @@ html[data-focus-session] body {
   flex-direction: column;
 }
 
-.focus-studio-wash {
+.focus-studio-wash,
+.focus-studio-glow,
+.focus-studio-glow-soft {
   pointer-events: none;
   position: absolute;
+  z-index: 0;
+}
+
+.focus-studio-wash {
   top: -1.5rem;
   left: 50%;
-  z-index: 0;
-  width: min(100%, 42rem);
-  height: 14rem;
+  width: min(100%, 46rem);
+  height: 16rem;
   transform: translateX(-50%);
   background: radial-gradient(
     ellipse 70% 80% at 50% 0%,
-    color-mix(in oklab, var(--foreground) 4.5%, transparent) 0%,
+    color-mix(in oklab, var(--foreground) 5%, transparent) 0%,
     transparent 72%
   );
 }
@@ -3622,6 +3787,40 @@ html[data-focus-session] body {
 .dark .focus-studio-wash {
   background: radial-gradient(
     ellipse 70% 80% at 50% 0%,
+    color-mix(in oklab, var(--foreground) 7%, transparent) 0%,
+    transparent 72%
+  );
+}
+
+.focus-studio-glow {
+  top: -1rem;
+  left: 12%;
+  width: min(20rem, 50%);
+  height: 12rem;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 5.5%, transparent) 0%,
+    transparent 70%
+  );
+  animation: dash-glow-breathe 7.5s ease-in-out infinite;
+}
+
+.focus-studio-glow-soft {
+  top: 3rem;
+  right: 6%;
+  width: min(16rem, 42%);
+  height: 11rem;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 3.5%, transparent) 0%,
+    transparent 72%
+  );
+  animation: dash-glow-breathe-secondary 9s ease-in-out infinite;
+}
+
+.dark .focus-studio-glow-soft {
+  background: radial-gradient(
+    ellipse at center,
     color-mix(in oklab, var(--foreground) 6%, transparent) 0%,
     transparent 72%
   );
@@ -3648,26 +3847,23 @@ html[data-focus-session] body {
   animation-delay: 180ms;
 }
 
-.focus-kpis > *:nth-child(1) {
-  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 40ms;
-}
-.focus-kpis > *:nth-child(2) {
-  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 80ms;
-}
-.focus-kpis > *:nth-child(3) {
-  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 120ms;
-}
-.focus-kpis > *:nth-child(4) {
-  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 160ms;
+.focus-launch,
+.focus-panel {
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--foreground) 4%, transparent),
+    0 22px 48px -36px color-mix(in oklab, var(--foreground) 18%, transparent);
 }
 
-.focus-kpi,
-.focus-launch {
-  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--foreground) 4%, transparent);
+.focus-launch-vignette {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 90% 80% at 50% 0%,
+    transparent 42%,
+    color-mix(in oklab, var(--background) 50%, transparent) 100%
+  );
+  opacity: 0.5;
 }
 
 .focus-launch-glow {
@@ -3682,7 +3878,8 @@ html[data-focus-session] body {
     color-mix(in oklab, var(--foreground) 5.5%, transparent) 0%,
     transparent 68%
   );
-  opacity: 0.9;
+  opacity: 0.95;
+  animation: dash-glow-breathe-secondary 8s ease-in-out infinite;
 }
 
 .dark .focus-launch-glow {
@@ -3693,10 +3890,43 @@ html[data-focus-session] body {
   );
 }
 
+.focus-panel-glow {
+  pointer-events: none;
+  position: absolute;
+  right: -12%;
+  top: -48%;
+  width: min(18rem, 70%);
+  height: 140%;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 5%, transparent) 0%,
+    transparent 68%
+  );
+  opacity: 0.85;
+}
+
+.dark .focus-panel-glow {
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 8%, transparent) 0%,
+    transparent 68%
+  );
+}
+
+.focus-launch-atmosphere {
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--foreground) 3%, transparent);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .focus-studio .focus-reveal,
-  .focus-studio .focus-kpis > * {
-    animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both !important;
+  .focus-studio-glow,
+  .focus-studio-glow-soft,
+  .focus-launch-glow {
+    animation: none !important;
+  }
+
+  .focus-studio .focus-reveal {
+    opacity: 1;
   }
 }
 
@@ -3719,6 +3949,14 @@ html[data-focus-session] body {
     transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
     box-shadow 220ms ease,
     padding 180ms ease;
+}
+
+@media (max-width: 639px) {
+  .imx-chat-fab:not(.imx-chat-fab-open) {
+    gap: 0;
+    padding: 0.35rem;
+    border-radius: 1.05rem;
+  }
 }
 
 .imx-chat-fab:hover {
@@ -3874,6 +4112,7 @@ html[data-focus-session] body {
 
 /* Search page + ⌘K palette — stage language */
 .search-stage {
+  --search-glow: color-mix(in oklab, var(--foreground) 7%, transparent);
   position: relative;
   isolation: isolate;
   display: flex;
@@ -3882,18 +4121,23 @@ html[data-focus-session] body {
   gap: 1.75rem;
 }
 
-.search-stage-wash {
+.search-stage-wash,
+.search-stage-glow,
+.search-stage-glow-soft {
   pointer-events: none;
   position: absolute;
+  z-index: 0;
+}
+
+.search-stage-wash {
   top: -1.5rem;
   left: 50%;
-  z-index: 0;
-  width: min(100%, 44rem);
-  height: 16rem;
+  width: min(100%, 48rem);
+  height: 18rem;
   transform: translateX(-50%);
   background: radial-gradient(
     ellipse 70% 80% at 50% 0%,
-    color-mix(in oklab, var(--foreground) 5%, transparent) 0%,
+    color-mix(in oklab, var(--foreground) 5.5%, transparent) 0%,
     transparent 72%
   );
 }
@@ -3901,7 +4145,41 @@ html[data-focus-session] body {
 .dark .search-stage-wash {
   background: radial-gradient(
     ellipse 70% 80% at 50% 0%,
-    color-mix(in oklab, var(--foreground) 7%, transparent) 0%,
+    color-mix(in oklab, var(--foreground) 8%, transparent) 0%,
+    transparent 72%
+  );
+}
+
+.search-stage-glow {
+  top: -2rem;
+  left: 18%;
+  width: min(22rem, 55%);
+  height: 14rem;
+  background: radial-gradient(
+    ellipse at center,
+    var(--search-glow) 0%,
+    transparent 70%
+  );
+  animation: dash-glow-breathe 7s ease-in-out infinite;
+}
+
+.search-stage-glow-soft {
+  top: 2rem;
+  right: 8%;
+  width: min(18rem, 48%);
+  height: 12rem;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 4%, transparent) 0%,
+    transparent 72%
+  );
+  animation: dash-glow-breathe-secondary 9s ease-in-out infinite;
+}
+
+.dark .search-stage-glow-soft {
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 6%, transparent) 0%,
     transparent 72%
   );
 }
@@ -3927,11 +4205,88 @@ html[data-focus-session] body {
   animation-delay: 120ms;
 }
 
+.search-hero {
+  /* Open hero — atmosphere from stage wash */
+}
+
+.search-hero-vignette {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 90% 80% at 50% 0%,
+    transparent 40%,
+    color-mix(in oklab, var(--background) 55%, transparent) 100%
+  );
+  opacity: 0.55;
+}
+
+.search-hero-glow {
+  pointer-events: none;
+  position: absolute;
+  right: -12%;
+  top: -45%;
+  width: min(24rem, 75%);
+  height: 150%;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 6%, transparent) 0%,
+    transparent 68%
+  );
+  opacity: 0.95;
+  animation: dash-glow-breathe-secondary 8s ease-in-out infinite;
+}
+
+.dark .search-hero-glow {
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 9%, transparent) 0%,
+    transparent 68%
+  );
+}
+
+.search-composer {
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--foreground) 3.5%, transparent);
+}
+
 .search-hero-input {
   box-shadow:
     inset 0 1px 0 color-mix(in oklab, var(--foreground) 4%, transparent),
-    0 18px 40px -28px color-mix(in oklab, var(--foreground) 28%, transparent);
+    0 14px 32px -24px color-mix(in oklab, var(--foreground) 24%, transparent);
   backdrop-filter: blur(10px);
+}
+
+.search-spotlight {
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--foreground) 4%, transparent);
+}
+
+.search-spotlight-glow {
+  pointer-events: none;
+  position: absolute;
+  right: -10%;
+  top: -45%;
+  width: min(22rem, 70%);
+  height: 150%;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 6%, transparent) 0%,
+    transparent 68%
+  );
+  opacity: 0.9;
+}
+
+.dark .search-spotlight-glow {
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 9%, transparent) 0%,
+    transparent 68%
+  );
+}
+
+.search-recent-chip {
+  animation: dash-reveal-up 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--i, 0) * 28ms);
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--foreground) 3%, transparent);
 }
 
 .search-hit {
@@ -3946,44 +4301,108 @@ html[data-focus-session] body {
 }
 
 .search-result-card {
+  --search-accent: color-mix(in oklab, var(--foreground) 55%, transparent);
   box-shadow: inset 0 1px 0 color-mix(in oklab, var(--foreground) 3.5%, transparent);
+}
+
+.search-result-card[data-entity="task"] {
+  --search-accent: color-mix(in oklab, var(--activity-3) 70%, var(--foreground));
+}
+
+.search-result-card[data-entity="goal"] {
+  --search-accent: color-mix(in oklab, oklch(0.52 0.08 75) 55%, var(--foreground));
+}
+
+.search-result-card[data-entity="project"] {
+  --search-accent: color-mix(in oklab, oklch(0.5 0.07 200) 50%, var(--foreground));
+}
+
+.search-result-card[data-entity="note"] {
+  --search-accent: color-mix(in oklab, oklch(0.48 0.06 145) 45%, var(--foreground));
+}
+
+.search-result-card[data-entity="habit"] {
+  --search-accent: color-mix(in oklab, var(--activity-2) 65%, var(--foreground));
+}
+
+.search-result-card[data-entity="event"] {
+  --search-accent: color-mix(in oklab, oklch(0.5 0.09 30) 50%, var(--foreground));
+}
+
+.search-result-card[data-entity="book"] {
+  --search-accent: color-mix(in oklab, oklch(0.48 0.07 320) 40%, var(--foreground));
 }
 
 .search-result-accent {
   position: absolute;
   inset: 0 auto 0 0;
   width: 2px;
-  background: color-mix(in oklab, var(--foreground) 55%, transparent);
+  background: var(--search-accent);
   opacity: 0;
   transition: opacity 180ms ease;
 }
 
-.search-result-card:hover .search-result-accent {
+.search-result-card:hover .search-result-accent,
+.search-result-card:focus-visible .search-result-accent {
   opacity: 1;
 }
 
+.search-result-card:hover .search-result-icon {
+  color: var(--search-accent);
+}
+
 .search-result-row {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 5.5rem;
   animation: dash-reveal-up 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
   animation-delay: calc(var(--i, 0) * 28ms);
+}
+
+.search-jump-nav {
+  position: relative;
+}
+
+.search-jump-card {
+  animation: dash-reveal-up 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--i, 0) * 32ms);
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--foreground) 3.5%, transparent);
 }
 
 .search-palette {
   position: relative;
   isolation: isolate;
   background: color-mix(in oklab, var(--background) 92%, transparent);
-  backdrop-filter: blur(16px);
+  backdrop-filter: blur(18px);
+  box-shadow:
+    0 28px 64px -28px color-mix(in oklab, var(--foreground) 28%, transparent),
+    inset 0 1px 0 color-mix(in oklab, var(--foreground) 5%, transparent);
 }
 
 .search-palette-wash {
   pointer-events: none;
   position: absolute;
   inset: 0 0 auto;
-  height: 7rem;
+  height: 8rem;
   background: radial-gradient(
     ellipse 80% 100% at 50% 0%,
+    color-mix(in oklab, var(--foreground) 5.5%, transparent) 0%,
+    transparent 70%
+  );
+}
+
+.search-palette-glow {
+  pointer-events: none;
+  position: absolute;
+  top: -2rem;
+  right: 10%;
+  width: 14rem;
+  height: 10rem;
+  background: radial-gradient(
+    ellipse at center,
     color-mix(in oklab, var(--foreground) 5%, transparent) 0%,
     transparent 70%
   );
+  animation: dash-glow-breathe-secondary 8s ease-in-out infinite;
 }
 
 .dark .search-palette-wash {
@@ -3998,10 +4417,266 @@ html[data-focus-session] body {
   box-shadow: inset 0 1px 0 color-mix(in oklab, var(--foreground) 3%, transparent);
 }
 
+.search-palette-row {
+  animation: dash-reveal-up 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Skip layout/paint for off-screen dense lists */
+.imx-cv-row {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 3.35rem;
+}
+
+.search-skeleton .search-reveal,
+.search-skeleton .search-jump-card,
+.search-skeleton .search-hero-glow,
+.search-skeleton .search-stage-glow,
+.search-skeleton .search-stage-glow-soft {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .search-stage .search-reveal,
+  .search-stage .search-result-row,
+  .search-stage .search-jump-card,
+  .search-stage .search-recent-chip,
+  .search-stage-glow,
+  .search-stage-glow-soft,
+  .search-hero-glow,
+  .search-palette-glow {
+    animation: none !important;
+  }
+
+  .search-stage .search-reveal,
   .search-stage .search-result-row {
-    animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both !important;
+    opacity: 1;
+  }
+}
+
+/* ——— Analytics stage ——— */
+
+.analytics-stage {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+.analytics-stage-wash,
+.analytics-stage-glow,
+.analytics-stage-glow-soft {
+  pointer-events: none;
+  position: absolute;
+  z-index: 0;
+}
+
+.analytics-stage-wash {
+  top: -1.5rem;
+  left: 50%;
+  width: min(100%, 48rem);
+  height: 17rem;
+  transform: translateX(-50%);
+  background: radial-gradient(
+    ellipse 70% 80% at 50% 0%,
+    color-mix(in oklab, var(--foreground) 5%, transparent) 0%,
+    transparent 72%
+  );
+}
+
+.dark .analytics-stage-wash {
+  background: radial-gradient(
+    ellipse 70% 80% at 50% 0%,
+    color-mix(in oklab, var(--foreground) 7%, transparent) 0%,
+    transparent 72%
+  );
+}
+
+.analytics-stage-glow {
+  top: -0.75rem;
+  left: 12%;
+  width: min(22rem, 52%);
+  height: 13rem;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 5%, transparent) 0%,
+    transparent 70%
+  );
+  animation: dash-glow-breathe 8s ease-in-out infinite;
+}
+
+.analytics-stage-glow-soft {
+  top: 3rem;
+  right: 6%;
+  width: min(18rem, 44%);
+  height: 12rem;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 3.2%, transparent) 0%,
+    transparent 72%
+  );
+  animation: dash-glow-breathe-secondary 9.5s ease-in-out infinite;
+}
+
+.dark .analytics-stage-glow-soft {
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 5.5%, transparent) 0%,
+    transparent 72%
+  );
+}
+
+.analytics-stage-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+.analytics-reveal {
+  animation: dash-reveal-up 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.analytics-reveal-delay-1 {
+  animation-delay: 70ms;
+}
+
+.analytics-reveal-delay-2 {
+  animation-delay: 140ms;
+}
+
+.analytics-reveal-delay-3 {
+  animation-delay: 210ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .analytics-stage .analytics-reveal,
+  .analytics-stage-glow,
+  .analytics-stage-glow-soft {
+    animation: none !important;
+  }
+
+  .analytics-stage .analytics-reveal {
+    opacity: 1;
+  }
+}
+
+/* ——— Auth stage ——— */
+
+.auth-stage {
+  position: relative;
+  isolation: isolate;
+  min-height: 100dvh;
+  background:
+    radial-gradient(
+      ellipse 80% 55% at 50% -10%,
+      color-mix(in oklab, var(--foreground) 6%, transparent) 0%,
+      transparent 65%
+    ),
+    var(--background);
+}
+
+.auth-stage-wash,
+.auth-stage-glow {
+  pointer-events: none;
+  position: absolute;
+  z-index: 0;
+}
+
+.auth-stage-wash {
+  inset: 0;
+  background: radial-gradient(
+    ellipse 55% 40% at 50% 100%,
+    color-mix(in oklab, var(--foreground) 4%, transparent) 0%,
+    transparent 70%
+  );
+}
+
+.dark .auth-stage-wash {
+  background: radial-gradient(
+    ellipse 55% 40% at 50% 100%,
+    color-mix(in oklab, var(--foreground) 7%, transparent) 0%,
+    transparent 70%
+  );
+}
+
+.auth-stage-glow {
+  top: 18%;
+  left: 50%;
+  width: min(28rem, 90vw);
+  height: 16rem;
+  transform: translateX(-50%);
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 5%, transparent) 0%,
+    transparent 72%
+  );
+  animation: dash-glow-breathe 8.5s ease-in-out infinite;
+}
+
+.auth-card {
+  position: relative;
+  z-index: 1;
+  animation: dash-reveal-up 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.auth-card-glow {
+  pointer-events: none;
+  position: absolute;
+  inset: -20% -10% auto;
+  height: 10rem;
+  background: radial-gradient(
+    ellipse at 50% 0%,
+    color-mix(in oklab, var(--foreground) 5%, transparent) 0%,
+    transparent 70%
+  );
+  opacity: 0.9;
+}
+
+.auth-brand {
+  animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-stage-glow,
+  .auth-card,
+  .auth-brand {
+    animation: none !important;
+  }
+}
+
+/* ——— Task complete delight ——— */
+
+.task-check-burst {
+  animation: dash-habit-burst 440ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.task-check-burst::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: -3px;
+  border-radius: 9999px;
+  border: 2px solid color-mix(in oklab, var(--foreground) 32%, transparent);
+  animation: dash-habit-ring-burst 440ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .task-check-burst,
+  .task-check-burst::after {
+    animation: none !important;
+  }
+}
+
+@supports (view-transition-name: none) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 160ms;
   }
 }
 

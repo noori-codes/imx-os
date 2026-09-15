@@ -203,7 +203,10 @@ export const getTodayJournal = cache(async (): Promise<NoteListItem | null> => {
   return loadTodayJournal(null);
 });
 
-export async function createNote(type: NoteType = "note") {
+export async function createNote(
+  type: NoteType = "note",
+  journalDateOrFormData?: string | FormData,
+) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -214,9 +217,21 @@ export async function createNote(type: NoteType = "note") {
   }
 
   const today = toDateString(new Date());
+  const journalDate =
+    typeof journalDateOrFormData === "string" &&
+    /^\d{4}-\d{2}-\d{2}$/.test(journalDateOrFormData)
+      ? journalDateOrFormData
+      : undefined;
+  const day = type === "journal" ? (journalDate ?? today) : today;
 
   if (type === "journal") {
-    const existing = await getTodayJournal();
+    const { data: existing } = await supabase
+      .from("notes")
+      .select("id")
+      .eq("type", "journal")
+      .eq("journal_date", day)
+      .maybeSingle();
+
     if (existing) {
       redirect(`/notes/${existing.id}`);
     }
@@ -225,12 +240,12 @@ export async function createNote(type: NoteType = "note") {
       .from("notes")
       .insert({
         user_id: user.id,
-        title: `Journal · ${today}`,
+        title: `Journal · ${day}`,
         content: "",
         preview: "",
         word_count: 0,
         type: "journal",
-        journal_date: today,
+        journal_date: day,
       })
       .select("id")
       .single();

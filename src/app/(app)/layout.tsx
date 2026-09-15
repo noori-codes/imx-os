@@ -1,21 +1,17 @@
 import { Suspense } from "react";
-import dynamic from "next/dynamic";
 import { redirect } from "next/navigation";
 
+import { DeferredImxChat } from "@/components/ai/deferred-imx-chat";
 import { FocusAudioHost } from "@/components/focus/focus-audio-host";
+import { CaptureHotkey } from "@/components/layout/capture-hotkey";
+import { ClientShell } from "@/components/layout/client-shell";
+import { IdleRoutePrefetch } from "@/components/layout/idle-route-prefetch";
 import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
 import { NavigationProgress } from "@/components/layout/navigation-progress";
 import { Sidebar } from "@/components/layout/sidebar";
+import { SkipToContent } from "@/components/layout/skip-to-content";
 import { UserProvider } from "@/components/providers/user-provider";
 import { getCurrentUser } from "@/lib/auth";
-
-const ImxChat = dynamic(
-  () =>
-    import("@/components/ai/imx-chat").then((m) => ({
-      default: m.ImxChat,
-    })),
-  { loading: () => null },
-);
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
   const user = await getCurrentUser();
@@ -26,20 +22,30 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
 
   return (
     <UserProvider email={user.email ?? null}>
+      <SkipToContent />
       <FocusAudioHost />
-      <div className="flex min-h-svh">
-        <div className="hidden md:block">
-          <Sidebar />
+      <IdleRoutePrefetch />
+      <CaptureHotkey />
+      <ClientShell>
+        <div className="flex min-h-svh">
+          <div className="hidden md:block">
+            <Sidebar />
+          </div>
+          <div className="flex min-h-svh min-w-0 flex-1 flex-col">
+            <Suspense fallback={null}>
+              <NavigationProgress />
+            </Suspense>
+            <main
+              id="main-content"
+              className="flex min-h-0 min-w-0 flex-1 flex-col"
+            >
+              {children}
+            </main>
+          </div>
         </div>
-        <div className="flex min-h-svh min-w-0 flex-1 flex-col">
-          <Suspense fallback={null}>
-            <NavigationProgress />
-          </Suspense>
-          {children}
-        </div>
-      </div>
-      <MobileTabBar />
-      <ImxChat />
+        <MobileTabBar />
+        <DeferredImxChat />
+      </ClientShell>
     </UserProvider>
   );
 }

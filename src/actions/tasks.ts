@@ -490,6 +490,8 @@ export async function updateTask(
     title: string;
     due_date: string | null;
     recurrence?: TaskRecurrence;
+    /** Pass `null` to move to Inbox; omit to leave unchanged. */
+    project_id?: string | null;
   },
 ): Promise<TaskActionState> {
   const supabase = await createClient();
@@ -508,6 +510,7 @@ export async function updateTask(
     title: string;
     due_date: string | null;
     recurrence?: TaskRecurrence;
+    project_id?: string | null;
   } = {
     title,
     due_date:
@@ -520,6 +523,10 @@ export async function updateTask(
     patch.recurrence = recurrence;
   }
 
+  if (input.project_id !== undefined) {
+    patch.project_id = input.project_id;
+  }
+
   const { error } = await supabase.from("tasks").update(patch).eq("id", taskId);
 
   if (error) {
@@ -530,7 +537,51 @@ export async function updateTask(
   return {};
 }
 
-export async function toggleTaskComplete(taskId: string, completed: boolean) {
+/** Create one inbox task per non-empty line (used by Review → tomorrow focus). */
+export async function createTasksFromLines(
+  lines: string[],
+  dueDate: string | null,
+): Promise<{ error?: string; created?: number }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "You must be signed in." };
+  }
+
+  const titles = lines
+    .map((line) => line.replace(/^[-*•\d.)\s]+/, "").trim())
+    .filter((title) => title.length > 0)
+    .slice(0, 12);
+
+  if (titles.length === 0) {
+    return { error: "Add at least one line to create tasks." };
+  }
+
+  const { error } = await supabase.from("tasks").insert(
+    titles.map((title) => ({
+      user_id: user.id,
+      title,
+      due_date: dueDate,
+      project_id: null,
+      recurrence: null,
+    })),
+  );
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  await revalidateTaskViews();
+  return { created: titles.length };
+}
+
+export async function toggleTaskComplete(
+  taskId: string,
+  completed: boolean,
+): Promise<{ error?: string }> {
   const supabase = await createClient();
 
   const { error } = await supabase
@@ -540,10 +591,11 @@ export async function toggleTaskComplete(taskId: string, completed: boolean) {
 
   if (error) {
     console.error("[tasks] toggleTaskComplete:", error.message);
-    return;
+    return { error: error.message };
   }
 
   await revalidateTaskViews();
+  return {};
 }
 
 export async function deleteTask(taskId: string) {

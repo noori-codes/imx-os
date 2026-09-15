@@ -3,6 +3,7 @@
 import { cache } from "react";
 
 import { getCurrentUser } from "@/lib/auth";
+import { calendarHref } from "@/lib/calendar";
 import { CACHE_TTL, cacheTags, cachedQuery } from "@/lib/cache";
 import { createAdminClient, hasAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -58,7 +59,7 @@ async function fallbackSearch(
 
   let tasksQ = supabase
     .from("tasks")
-    .select("id, title, completed, due_date, project_id")
+    .select("id, title, completed, due_date, project_id, projects(goal_id)")
     .ilike("title", pattern)
     .limit(10);
   let goalsQ = supabase
@@ -133,6 +134,20 @@ async function fallbackSearch(
   const results: SearchResult[] = [];
 
   for (const task of tasks.data ?? []) {
+    const project = Array.isArray(task.projects)
+      ? task.projects[0]
+      : task.projects;
+    const goalId =
+      project && typeof project === "object" && "goal_id" in project
+        ? String((project as { goal_id: string }).goal_id)
+        : null;
+    const href =
+      task.project_id && goalId
+        ? `/goals/${goalId}/projects/${task.project_id}`
+        : task.completed
+          ? "/tasks"
+          : `/focus?task=${task.id}`;
+
     results.push({
       id: task.id,
       entity_type: "task",
@@ -142,7 +157,7 @@ async function fallbackSearch(
         : task.due_date
           ? `Task · due ${task.due_date}`
           : "Task",
-      href: task.project_id ? "/goals" : "/tasks",
+      href,
       rank: 0.5,
     });
   }
@@ -189,7 +204,7 @@ async function fallbackSearch(
       entity_type: "habit",
       title: habit.title,
       subtitle: habit.description || "Habit",
-      href: "/habits",
+      href: `/habits#habit-${habit.id}`,
       rank: 0.5,
     });
   }
@@ -200,7 +215,7 @@ async function fallbackSearch(
       entity_type: "event",
       title: event.title,
       subtitle: `Event · ${event.event_date}`,
-      href: `/calendar?date=${event.event_date}`,
+      href: `${calendarHref("week", event.event_date)}#event-${event.id}`,
       rank: 0.5,
     });
   }
@@ -221,7 +236,7 @@ async function fallbackSearch(
       subtitle: book.author
         ? `${statusLabel} · ${book.author}`
         : statusLabel,
-      href: "/books",
+      href: `/books#book-${book.id}`,
       rank: 0.5,
     });
   }
