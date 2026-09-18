@@ -38,7 +38,7 @@ function CreateNoteSubmit({
         "inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-medium transition-opacity disabled:opacity-60",
         tone === "primary"
           ? "bg-foreground text-background hover:opacity-90"
-          : "border border-border/55 bg-background/50 text-foreground hover:border-border",
+          : "border border-surface-border bg-surface text-foreground hover:border-border",
         className,
       )}
     >

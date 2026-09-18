@@ -54,7 +54,7 @@ export function LoginForm() {
               autoComplete="email"
               autoFocus
               disabled={pending}
-              className="h-11 rounded-xl border-border/60 bg-background/60"
+              className="h-11 rounded-xl border-surface-border bg-surface"
             />
           </div>
 
@@ -76,7 +76,7 @@ export function LoginForm() {
                 required
                 autoComplete="current-password"
                 disabled={pending}
-                className="h-11 rounded-xl border-border/60 bg-background/60 pr-11"
+                className="h-11 rounded-xl border-surface-border bg-surface pr-11"
               />
               <button
                 type="button"

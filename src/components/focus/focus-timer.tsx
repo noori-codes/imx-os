@@ -1182,7 +1182,7 @@ export function FocusTimer({
                 </div>
               ) : null}
 
-              <div className="focus-launch-atmosphere rounded-2xl border border-border/40 bg-background/40 px-3 py-3 sm:px-4">
+              <div className="focus-launch-atmosphere rounded-2xl imx-surface imx-surface-rim px-3 py-3 sm:px-4">
                 <FocusSounds embedded />
               </div>
 

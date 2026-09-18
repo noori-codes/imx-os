@@ -89,7 +89,7 @@ export function SettingsPulse({
               <a
                 key={item.href}
                 href={item.href}
-                className="inline-flex h-9 items-center rounded-xl border border-border/55 bg-background/50 px-3 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground"
+                className="inline-flex h-9 items-center rounded-xl border border-surface-border bg-surface px-3 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground"
               >
                 {item.label}
               </a>

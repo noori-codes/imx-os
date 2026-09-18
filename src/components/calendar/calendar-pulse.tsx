@@ -141,14 +141,14 @@ export function CalendarPulse({
                 <Link
                   href={calendarHref(view, prev)}
                   aria-label="Previous"
-                  className="inline-flex size-9 items-center justify-center rounded-xl border border-border/55 bg-background/50 text-muted-foreground transition-colors hover:border-border hover:text-foreground"
+                  className="inline-flex size-9 items-center justify-center rounded-xl border border-surface-border bg-surface text-muted-foreground transition-colors hover:border-border hover:text-foreground"
                 >
                   <ChevronLeft className="size-4" />
                 </Link>
                 <Link
                   href={calendarHref(view, next)}
                   aria-label="Next"
-                  className="inline-flex size-9 items-center justify-center rounded-xl border border-border/55 bg-background/50 text-muted-foreground transition-colors hover:border-border hover:text-foreground"
+                  className="inline-flex size-9 items-center justify-center rounded-xl border border-surface-border bg-surface text-muted-foreground transition-colors hover:border-border hover:text-foreground"
                 >
                   <ChevronRight className="size-4" />
                 </Link>
@@ -163,12 +163,12 @@ export function CalendarPulse({
                 "inline-flex h-9 items-center rounded-xl border px-3.5 text-sm font-medium transition-colors",
                 isToday
                   ? "border-foreground/15 bg-foreground text-background"
-                  : "border-border/55 bg-background/50 text-foreground hover:border-border",
+                  : "border-surface-border bg-surface text-foreground hover:border-border",
               )}
             >
               Today
             </Link>
-            <div className="inline-flex rounded-xl border border-border/55 bg-background/50 p-1">
+            <div className="inline-flex rounded-xl border border-surface-border bg-surface p-1">
               {(["month", "week"] as const).map((item) => (
                 <Link
                   key={item}

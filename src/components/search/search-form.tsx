@@ -65,7 +65,7 @@ export function SearchForm({
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search or jump — tasks, goals, habits…"
-          className="search-hero-input h-12 w-full rounded-xl border border-border/40 bg-background/80 pr-28 pl-11 text-base outline-none transition-[border-color,box-shadow] placeholder:text-muted-foreground/65 focus:border-foreground/20 focus:shadow-[0_0_0_4px_color-mix(in_oklab,var(--foreground)_5%,transparent)] sm:h-14 sm:pl-12 sm:text-[1.05rem]"
+          className="search-hero-input h-12 w-full rounded-xl border border-surface-border bg-surface pr-28 pl-11 text-base outline-none transition-[border-color,box-shadow] placeholder:text-muted-foreground/65 focus:border-foreground/20 focus:shadow-[0_0_0_4px_color-mix(in_oklab,var(--foreground)_5%,transparent)] sm:h-14 sm:pl-12 sm:text-[1.05rem]"
           autoFocus={autoFocus}
           name="q"
           aria-label="Search"
@@ -107,7 +107,7 @@ export function SearchForm({
             compact ? "Search…" : "Search or jump to tasks, goals…"
           }
           className={cn(
-            "h-11 w-full rounded-xl border border-border/50 bg-background/60 pl-10 text-sm outline-none focus:border-foreground/20",
+            "h-11 w-full rounded-xl border border-surface-border bg-surface pl-10 text-sm outline-none focus:border-foreground/20",
             compact && "h-9 pl-9",
           )}
           autoFocus={autoFocus}

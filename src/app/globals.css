@@ -43,6 +43,14 @@
   --surface-rim: color-mix(in oklab, var(--foreground) 2.5%, transparent);
   --surface-blur: 10px;
 
+  /* Quiet atmosphere — pulses only; secondary vessels stay glow-free */
+  --glow-pulse: color-mix(in oklab, var(--foreground) 3.2%, transparent);
+  --glow-pulse-opacity: 0.34;
+  --glow-stage: color-mix(in oklab, var(--foreground) 3%, transparent);
+  --glow-stage-soft: color-mix(in oklab, var(--foreground) 2%, transparent);
+  --glow-stage-opacity: 0.42;
+  --glow-stage-soft-opacity: 0.28;
+
   /* Mobile chrome stack — tab bar + optional Focus Continue */
   --mobile-tab-h: 0px;
   --mobile-continue-h: 0px;
@@ -122,6 +130,13 @@ html[data-focus-session="true"] {
   --surface-strong: color-mix(in oklab, var(--card) 52%, transparent);
   --surface-border: color-mix(in oklab, var(--border) 55%, transparent);
   --surface-rim: color-mix(in oklab, var(--foreground) 3.5%, transparent);
+
+  --glow-pulse: color-mix(in oklab, var(--foreground) 4%, transparent);
+  --glow-pulse-opacity: 0.28;
+  --glow-stage: color-mix(in oklab, var(--foreground) 4%, transparent);
+  --glow-stage-soft: color-mix(in oklab, var(--foreground) 2.5%, transparent);
+  --glow-stage-opacity: 0.36;
+  --glow-stage-soft-opacity: 0.22;
 }
 
 @theme inline {
@@ -182,6 +197,96 @@ html[data-focus-session="true"] {
 
 .imx-surface-rim {
   box-shadow: inset 0 1px 0 var(--surface-rim);
+}
+
+/* ——— Glow policy: quiet pulses, no glow on secondary boxes ——— */
+.goals-composer-glow,
+.habits-composer-glow,
+.tasks-composer-glow,
+.cal-composer-glow,
+.cal-dock-glow,
+.notes-editor-glow,
+.review-form-glow,
+.review-dock-glow,
+.auth-card-glow,
+.focus-panel-glow,
+.dash-panel-glow,
+.search-spotlight-glow,
+.search-palette-glow,
+.dash-stage-glow,
+.dash-stage-glow-secondary {
+  display: none !important;
+}
+
+.cal-pulse-glow,
+.notes-pulse-glow,
+.books-pulse-glow,
+.review-pulse-glow,
+.goals-pulse-glow,
+.habits-pulse-glow,
+.tasks-pulse-glow,
+.settings-pulse-glow,
+.search-hero-glow,
+.focus-launch-glow {
+  background: radial-gradient(
+    ellipse at center,
+    var(--glow-pulse) 0%,
+    transparent 72%
+  ) !important;
+  opacity: var(--glow-pulse-opacity) !important;
+  animation: none !important;
+}
+
+.cal-pulse-sealed .cal-pulse-glow,
+.notes-pulse-sealed .notes-pulse-glow,
+.books-pulse-sealed .books-pulse-glow,
+.review-pulse-sealed .review-pulse-glow,
+.goals-pulse-sealed .goals-pulse-glow,
+.habits-pulse-sealed .habits-pulse-glow,
+.tasks-pulse-sealed .tasks-pulse-glow,
+.settings-pulse-sealed .settings-pulse-glow {
+  opacity: 0.18 !important;
+}
+
+.cal-stage-glow,
+.notes-stage-glow,
+.books-stage-glow,
+.review-stage-glow,
+.goals-stage-glow,
+.habits-stage-glow,
+.tasks-stage-glow,
+.settings-stage-glow,
+.search-stage-glow,
+.analytics-stage-glow,
+.focus-studio-glow,
+.auth-stage-glow {
+  background: radial-gradient(
+    ellipse at center,
+    var(--glow-stage) 0%,
+    transparent 72%
+  ) !important;
+  opacity: var(--glow-stage-opacity) !important;
+  animation: none !important;
+}
+
+.cal-stage-glow-soft,
+.notes-stage-glow-soft,
+.books-stage-glow-soft,
+.review-stage-glow-soft,
+.goals-stage-glow-soft,
+.habits-stage-glow-soft,
+.tasks-stage-glow-soft,
+.settings-stage-glow-soft,
+.search-stage-glow-soft,
+.analytics-stage-glow-soft,
+.focus-studio-glow-soft {
+  background: radial-gradient(
+    ellipse at center,
+    var(--glow-stage-soft) 0%,
+    transparent 74%
+  ) !important;
+  opacity: var(--glow-stage-soft-opacity) !important;
+  animation: none !important;
 }
 
 @layer base {
@@ -1387,11 +1492,13 @@ html[data-focus-session] body {
   position: relative;
   overflow: hidden;
   border-radius: 1.65rem;
-  background: color-mix(in oklab, var(--dash-wash) 100%, transparent);
+  border: 1px solid var(--surface-border);
+  background: var(--surface);
+  backdrop-filter: blur(var(--surface-blur));
+  -webkit-backdrop-filter: blur(var(--surface-blur));
   box-shadow:
-    inset 0 1px 0 color-mix(in oklab, var(--foreground) 7%, transparent),
-    inset 0 0 100px color-mix(in oklab, var(--background) 28%, transparent),
-    0 32px 68px -44px color-mix(in oklab, var(--foreground) 22%, transparent);
+    inset 0 1px 0 var(--surface-rim),
+    0 28px 56px -40px color-mix(in oklab, var(--foreground) 16%, transparent);
 }
 
 .dash-stage-hero {
@@ -1399,36 +1506,7 @@ html[data-focus-session] body {
 }
 
 .dash-stage-vignette {
-  pointer-events: none;
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  background:
-    radial-gradient(
-      ellipse 88% 78% at 38% 42%,
-      transparent 38%,
-      color-mix(in oklab, var(--background) 28%, transparent) 100%
-    ),
-    radial-gradient(
-      circle at 0% 0%,
-      color-mix(in oklab, var(--background) 58%, transparent) 0%,
-      transparent 44%
-    ),
-    radial-gradient(
-      circle at 100% 0%,
-      color-mix(in oklab, var(--background) 58%, transparent) 0%,
-      transparent 44%
-    ),
-    radial-gradient(
-      circle at 0% 100%,
-      color-mix(in oklab, var(--background) 48%, transparent) 0%,
-      transparent 40%
-    ),
-    radial-gradient(
-      circle at 100% 100%,
-      color-mix(in oklab, var(--background) 48%, transparent) 0%,
-      transparent 40%
-    );
+  display: none;
 }
 
 .dash-hero-sky {
@@ -1684,24 +1762,24 @@ html[data-focus-session] body {
 @keyframes dash-glow-breathe {
   0%,
   100% {
-    opacity: 0.5;
-    transform: scale(0.9);
+    opacity: 0.75;
+    transform: scale(0.98);
   }
   50% {
     opacity: 1;
-    transform: scale(1.16);
+    transform: scale(1.03);
   }
 }
 
 @keyframes dash-glow-breathe-secondary {
   0%,
   100% {
-    opacity: 0.35;
-    transform: scale(0.88);
+    opacity: 0.6;
+    transform: scale(0.98);
   }
   50% {
-    opacity: 0.75;
-    transform: scale(1.12);
+    opacity: 0.85;
+    transform: scale(1.02);
   }
 }
 

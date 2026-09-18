@@ -67,7 +67,7 @@ export function RichTextEditor({
   const isEmpty = editor.isEmpty;
 
   return (
-    <div className="notes-rte mt-4 overflow-hidden rounded-xl border border-border/40 bg-background/40">
+    <div className="notes-rte mt-4 overflow-hidden rounded-xl imx-surface imx-surface-rim">
       <div
         className="flex flex-wrap gap-0.5 border-b border-border/40 px-2 py-1.5"
         role="toolbar"

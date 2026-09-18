@@ -91,7 +91,7 @@ function SuggestionList({
       {suggestions.map((item) => (
         <li
           key={`${item.text}-${item.href ?? "none"}`}
-          className="rounded-xl border border-border/40 bg-background/50 px-3 py-2.5"
+          className="rounded-xl border border-surface-border bg-surface px-3 py-2.5"
         >
           <p className="text-sm leading-snug text-foreground/90">{item.text}</p>
           {item.href ? (
@@ -366,7 +366,7 @@ export function ImxChat() {
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="inline-flex size-9 items-center justify-center rounded-full border border-border/50 bg-background/60 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                className="inline-flex size-9 items-center justify-center rounded-full border border-surface-border bg-surface text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 aria-label="Close IMX"
               >
                 <X className="size-4" />
@@ -423,7 +423,7 @@ export function ImxChat() {
               ) : null}
             </div>
 
-            <div className="relative z-[1] border-t border-border/40 bg-background/50 px-4 py-3.5 backdrop-blur-sm">
+            <div className="relative z-[1] border-t border-surface-border bg-surface px-4 py-3.5 backdrop-blur-sm">
               <form
                 className="mb-3 flex items-center gap-2"
                 onSubmit={(event) => {
@@ -438,7 +438,7 @@ export function ImxChat() {
                   placeholder="Ask IMX anything…"
                   maxLength={280}
                   disabled={pending}
-                  className="h-10 min-w-0 flex-1 rounded-xl border border-border/50 bg-background/70 px-3 text-sm outline-none transition-[border-color] placeholder:text-muted-foreground/65 focus:border-foreground/25 disabled:opacity-50"
+                  className="h-10 min-w-0 flex-1 rounded-xl border border-surface-border bg-surface px-3 text-sm outline-none transition-[border-color] placeholder:text-muted-foreground/65 focus:border-foreground/25 disabled:opacity-50"
                   aria-label="Ask IMX"
                 />
                 <button
@@ -467,7 +467,7 @@ export function ImxChat() {
                         "rounded-full px-3 py-1.5 text-left text-xs transition-all",
                         prompt.id === "surprise_me"
                           ? "bg-foreground text-background shadow-sm hover:opacity-90 active:scale-[0.98]"
-                          : "border border-border/55 bg-background/70 text-muted-foreground hover:border-foreground/25 hover:text-foreground",
+                          : "border border-surface-border bg-surface text-muted-foreground hover:border-foreground/25 hover:text-foreground",
                         "disabled:pointer-events-none disabled:opacity-50",
                       )}
                     >
@@ -491,7 +491,7 @@ export function ImxChat() {
                     type="button"
                     disabled={pending}
                     onClick={() => setUsedPromptIds([])}
-                    className="rounded-full border border-border/55 bg-background/70 px-3 py-1.5 text-xs text-foreground transition-colors hover:border-foreground/25 disabled:opacity-50"
+                    className="rounded-full border border-surface-border bg-surface px-3 py-1.5 text-xs text-foreground transition-colors hover:border-foreground/25 disabled:opacity-50"
                   >
                     Reset chips
                   </button>
@@ -505,7 +505,7 @@ export function ImxChat() {
                       setError(null);
                       clearCoachChat();
                     }}
-                    className="rounded-full border border-border/55 bg-background/70 px-3 py-1.5 text-xs text-foreground transition-colors hover:border-foreground/25 disabled:opacity-50"
+                    className="rounded-full border border-surface-border bg-surface px-3 py-1.5 text-xs text-foreground transition-colors hover:border-foreground/25 disabled:opacity-50"
                   >
                     Clear chat
                   </button>

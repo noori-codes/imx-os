@@ -246,7 +246,7 @@ function FeelingScale({
               <span
                 className={cn(
                   "flex flex-col items-center gap-1.5 rounded-2xl border px-1.5 py-3 transition-all duration-200",
-                  "border-border/45 bg-background/35",
+                  "imx-surface imx-surface-rim",
                   "hover:-translate-y-0.5 hover:border-border hover:bg-muted/45",
                   "peer-focus-visible:ring-2 peer-focus-visible:ring-ring/40",
                   isOn &&
@@ -329,7 +329,7 @@ function PromptField({
           : { defaultValue: defaultValue ?? "" })}
         placeholder={placeholder}
         data-imx-capture={capture ? true : undefined}
-        className="w-full resize-none rounded-xl border border-border/50 bg-background/40 px-3.5 py-3 text-sm leading-relaxed outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-border focus:ring-2 focus:ring-ring/30"
+        className="w-full resize-none rounded-xl imx-surface imx-surface-rim px-3.5 py-3 text-sm leading-relaxed outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-border focus:ring-2 focus:ring-ring/30"
       />
     </div>
   );

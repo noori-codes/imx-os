@@ -64,7 +64,7 @@ export function UpdatePasswordForm() {
                 autoComplete="new-password"
                 autoFocus
                 disabled={pending}
-                className="h-11 rounded-xl border-border/60 bg-background/60 pr-11"
+                className="h-11 rounded-xl border-surface-border bg-surface pr-11"
               />
               <button
                 type="button"
@@ -93,7 +93,7 @@ export function UpdatePasswordForm() {
                 minLength={8}
                 autoComplete="new-password"
                 disabled={pending}
-                className="h-11 rounded-xl border-border/60 bg-background/60 pr-11"
+                className="h-11 rounded-xl border-surface-border bg-surface pr-11"
               />
               <button
                 type="button"

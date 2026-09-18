@@ -134,7 +134,7 @@ export function SearchResults({
                       pushRecentSearch(recent);
                       router.push(`/search?q=${encodeURIComponent(recent)}`);
                     }}
-                    className="search-recent-chip rounded-full border border-border/55 bg-background/65 px-3.5 py-1.5 text-sm text-foreground/85 transition-colors hover:border-foreground/20 hover:bg-background hover:text-foreground"
+                    className="search-recent-chip rounded-full border border-surface-border bg-surface px-3.5 py-1.5 text-sm text-foreground/85 transition-colors hover:border-foreground/20 hover:bg-background hover:text-foreground"
                   >
                     {recent}
                   </button>

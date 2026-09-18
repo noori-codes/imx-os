@@ -123,9 +123,6 @@ export function DashboardHero({
       className="dash-stage dash-stage-hero px-6 py-9 sm:px-9 sm:py-11 lg:px-11 lg:py-12"
       data-phase={phase}
     >
-      <div className="dash-stage-vignette" aria-hidden="true" />
-      <div className="dash-stage-glow" aria-hidden="true" />
-      <div className="dash-stage-glow-secondary" aria-hidden="true" />
       <DashboardHeroSky
         sessions={focusSessions}
         focusMinutes={focusMinutes}
@@ -177,7 +174,7 @@ export function DashboardHero({
               ) : phase === "evening" || phase === "night" || !story ? (
                 <Link
                   href="/review"
-                  className="dash-hero-secondary-cta inline-flex items-center gap-2 rounded-xl border border-border/40 bg-background/25 px-3.5 py-2.5 text-sm font-medium text-foreground/90 transition-colors hover:border-border/60 hover:bg-background/40"
+                  className="dash-hero-secondary-cta inline-flex items-center gap-2 rounded-xl border border-surface-border bg-surface px-3.5 py-2.5 text-sm font-medium text-foreground/90 transition-colors hover:border-border/60 hover:bg-surface-strong"
                 >
                   <Moon className="size-3.5 opacity-70" aria-hidden="true" />
                   Review

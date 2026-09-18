@@ -110,14 +110,14 @@ export function ReviewPulse({ date, recap, review }: ReviewPulseProps) {
                 <Link
                   href={reviewHref(prev)}
                   aria-label="Previous day"
-                  className="inline-flex size-9 items-center justify-center rounded-xl border border-border/55 bg-background/50 text-muted-foreground transition-colors hover:border-border hover:text-foreground"
+                  className="inline-flex size-9 items-center justify-center rounded-xl border border-surface-border bg-surface text-muted-foreground transition-colors hover:border-border hover:text-foreground"
                 >
                   <ChevronLeft className="size-4" />
                 </Link>
                 <Link
                   href={reviewHref(next)}
                   aria-label="Next day"
-                  className="inline-flex size-9 items-center justify-center rounded-xl border border-border/55 bg-background/50 text-muted-foreground transition-colors hover:border-border hover:text-foreground"
+                  className="inline-flex size-9 items-center justify-center rounded-xl border border-surface-border bg-surface text-muted-foreground transition-colors hover:border-border hover:text-foreground"
                 >
                   <ChevronRight className="size-4" />
                 </Link>
@@ -129,7 +129,7 @@ export function ReviewPulse({ date, recap, review }: ReviewPulseProps) {
             {!isToday ? (
               <Link
                 href={reviewHref(today)}
-                className="inline-flex h-9 items-center rounded-xl border border-border/55 bg-background/50 px-3.5 text-sm font-medium text-foreground transition-colors hover:border-border"
+                className="inline-flex h-9 items-center rounded-xl border border-surface-border bg-surface px-3.5 text-sm font-medium text-foreground transition-colors hover:border-border"
               >
                 Today
               </Link>
@@ -139,7 +139,7 @@ export function ReviewPulse({ date, recap, review }: ReviewPulseProps) {
                   "inline-flex h-9 items-center rounded-xl border px-3.5 text-sm font-medium",
                   review
                     ? "border-foreground/15 bg-foreground text-background"
-                    : "border-border/55 bg-background/50 text-muted-foreground",
+                    : "border-surface-border bg-surface text-muted-foreground",
                 )}
               >
                 {review ? "Reviewed" : "Open"}

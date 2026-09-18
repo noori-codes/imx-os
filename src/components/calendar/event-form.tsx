@@ -142,7 +142,7 @@ export function EventForm({
           defaultValue={event?.title ?? ""}
           aria-invalid={state?.error ? true : undefined}
           aria-describedby={state?.error ? "event-form-error" : undefined}
-          className="bg-background/50"
+          className="bg-surface"
         />
       </div>
 
@@ -155,7 +155,7 @@ export function EventForm({
           required
           value={eventDate}
           onChange={(e) => setEventDate(e.target.value)}
-          className="bg-background/50"
+          className="bg-surface"
         />
         <div className="flex flex-wrap gap-1">
           {(
@@ -227,7 +227,7 @@ export function EventForm({
                   type="time"
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
-                  className="bg-background/50"
+                  className="bg-surface"
                 />
               </div>
               <div className="flex flex-col gap-2">
@@ -238,7 +238,7 @@ export function EventForm({
                   type="time"
                   value={endTime}
                   onChange={(e) => setEndTime(e.target.value)}
-                  className="bg-background/50"
+                  className="bg-surface"
                 />
               </div>
             </div>
@@ -314,7 +314,7 @@ export function EventForm({
           rows={2}
           placeholder="Optional"
           defaultValue={event?.description ?? ""}
-          className="min-h-9 resize-none bg-background/50"
+          className="min-h-9 resize-none bg-surface"
         />
       </div>
 

@@ -199,7 +199,7 @@ function EventRow({
       </div>
       <div
         className={cn(
-          "relative flex items-start gap-2 rounded-xl border bg-background/40 px-3 py-2.5 transition-shadow",
+          "relative flex items-start gap-2 rounded-xl imx-surface imx-surface-rim px-3 py-2.5 transition-shadow",
           editing
             ? "border-foreground/35 ring-1 ring-foreground/15"
             : highlighted
@@ -246,7 +246,7 @@ function TaskRow({ task }: { task: CalendarTask }) {
           Due
         </p>
       </div>
-      <div className="relative flex items-start gap-1 rounded-xl border border-border/50 bg-background/40 px-2 py-2">
+      <div className="relative flex items-start gap-1 rounded-xl imx-surface imx-surface-rim px-2 py-2">
         <span
           className="absolute top-3.5 -left-[1.05rem] size-2 rounded-full bg-foreground/45 ring-2 ring-card"
           aria-hidden

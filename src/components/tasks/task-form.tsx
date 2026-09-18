@@ -152,7 +152,7 @@ export function TaskForm({
       <form
         ref={formRef}
         action={formAction}
-        className="rounded-xl border bg-card p-4 shadow-sm"
+        className="rounded-xl imx-surface imx-surface-rim p-4"
       >
         {projectId ? (
           <input type="hidden" name="project_id" value={projectId} />

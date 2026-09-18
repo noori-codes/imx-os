@@ -41,7 +41,7 @@ export function NoteDetailSkeleton() {
                 <Bone className="h-8 w-56 max-w-full sm:h-9" />
               </div>
               <div className="px-2 pb-2 sm:px-4 sm:pb-4">
-                <div className="mt-4 overflow-hidden rounded-xl border border-border/40 bg-background/40">
+                <div className="mt-4 overflow-hidden rounded-xl imx-surface imx-surface-rim">
                   <div className="flex gap-0.5 border-b border-border/40 px-2 py-1.5">
                     {Array.from({ length: 6 }).map((_, i) => (
                       <Bone key={i} className="size-8 rounded-lg" />
