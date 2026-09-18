@@ -124,6 +124,7 @@ export function ImxChat() {
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
+  const [pendingLabel, setPendingLabel] = useState("Thinking…");
   const [messages, setMessages] = useState<ChatMessage[]>(
     defaultCoachChat().messages,
   );
@@ -245,6 +246,9 @@ export function ImxChat() {
 
   function handleAsk(promptId: AiCoachPromptId, label: string) {
     setError(null);
+    setPendingLabel(
+      promptId === "surprise_me" ? "Looking closer…" : "Reading your week…",
+    );
     setMessages((prev) => [
       ...prev,
       { id: `u-${promptId}-${Date.now()}`, role: "user", text: label },
@@ -289,6 +293,7 @@ export function ImxChat() {
     const question = draft.trim();
     if (question.length < 3 || pending) return;
     setError(null);
+    setPendingLabel("Thinking…");
     setDraft("");
     setMessages((prev) => [
       ...prev,
@@ -411,7 +416,7 @@ export function ImxChat() {
                 <AssistantBubble>
                   <p className="flex items-center gap-2 text-muted-foreground">
                     <span className="imx-chat-thinking" aria-hidden />
-                    Reading your week…
+                    {pendingLabel}
                   </p>
                 </AssistantBubble>
               ) : null}

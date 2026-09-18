@@ -548,7 +548,7 @@ export function SearchDialog({ defaultOpen = false }: SearchDialogProps) {
 
       <DialogContent
         showCloseButton={false}
-        className="search-palette top-[10vh] max-w-2xl translate-y-0 gap-0 overflow-hidden border-border/70 bg-background p-0 shadow-2xl ring-1 ring-black/5 dark:ring-white/10 sm:top-[12vh]"
+        className="search-palette fixed top-[min(12vh,5.5rem)] left-1/2 z-50 max-h-[min(72vh,36rem)] w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 translate-y-0 gap-0 overflow-hidden border-surface-border bg-surface-float p-0 sm:top-[14vh]"
         onOpenAutoFocus={(event) => {
           event.preventDefault();
           inputRef.current?.focus();
@@ -560,9 +560,6 @@ export function SearchDialog({ defaultOpen = false }: SearchDialogProps) {
             Run actions or search tasks, notes, books, goals, and more.
           </DialogDescription>
         </DialogHeader>
-
-        <div className="search-palette-wash" aria-hidden />
-        <div className="search-palette-glow" aria-hidden />
 
         <div className="relative z-[1] flex items-center gap-3 border-b border-border/60 px-4">
           {pending ? (
