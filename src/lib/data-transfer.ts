@@ -1,4 +1,25 @@
-/** Client helpers for JSON backup download / file pick. */
+/** Shared export schema + client helpers for JSON backup download / file pick. */
+
+export const DATA_EXPORT_VERSION = 1 as const;
+
+export type ImxExportPayload = {
+  version: typeof DATA_EXPORT_VERSION;
+  exported_at: string;
+  user_id: string;
+  data: {
+    user_settings: Record<string, unknown> | null;
+    goals: Record<string, unknown>[];
+    projects: Record<string, unknown>[];
+    tasks: Record<string, unknown>[];
+    habits: Record<string, unknown>[];
+    habit_logs: Record<string, unknown>[];
+    notes: Record<string, unknown>[];
+    calendar_events: Record<string, unknown>[];
+    daily_reviews: Record<string, unknown>[];
+    books: Record<string, unknown>[];
+    focus_sessions: Record<string, unknown>[];
+  };
+};
 
 export function downloadJson(filename: string, data: unknown) {
   const blob = new Blob([JSON.stringify(data, null, 2)], {

@@ -2,28 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 
+import {
+  DATA_EXPORT_VERSION,
+  type ImxExportPayload,
+} from "@/lib/data-transfer";
 import { createClient } from "@/lib/supabase/server";
-
-export const DATA_EXPORT_VERSION = 1 as const;
-
-export type ImxExportPayload = {
-  version: typeof DATA_EXPORT_VERSION;
-  exported_at: string;
-  user_id: string;
-  data: {
-    user_settings: Record<string, unknown> | null;
-    goals: Record<string, unknown>[];
-    projects: Record<string, unknown>[];
-    tasks: Record<string, unknown>[];
-    habits: Record<string, unknown>[];
-    habit_logs: Record<string, unknown>[];
-    notes: Record<string, unknown>[];
-    calendar_events: Record<string, unknown>[];
-    daily_reviews: Record<string, unknown>[];
-    books: Record<string, unknown>[];
-    focus_sessions: Record<string, unknown>[];
-  };
-};
 
 function asRows(data: unknown): Record<string, unknown>[] {
   if (!Array.isArray(data)) return [];

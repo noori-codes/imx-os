@@ -60,20 +60,22 @@ export function coachActionLabel(href: CoachActionHref): string {
 /** Infer a destination when the model returns plain text only. */
 export function inferCoachHref(text: string): CoachActionHref | null {
   const t = text.toLowerCase();
+  // Skip tiny / non-action replies (e.g. math answers).
+  if (t.length < 12) return null;
   if (/add (a )?task|capture|new task/.test(t)) return "/tasks?compose=1";
   if (/overdue|due today|clear .*task|inbox|todo/.test(t)) {
     return "/tasks?view=today";
   }
   if (/this week|upcoming task/.test(t)) return "/tasks?view=week";
-  if (/task/.test(t)) return "/tasks";
-  if (/focus|pomodoro|timer|deep work|block/.test(t)) return "/focus";
-  if (/review|reflect|tomorrow.?focus|wind.?down/.test(t)) return "/review";
-  if (/habit|streak|check.?in|ritual/.test(t)) return "/habits";
-  if (/journal|note|writ(e|ing)/.test(t)) return "/notes";
-  if (/goal|project/.test(t)) return "/goals";
-  if (/calendar|schedule|event/.test(t)) return "/calendar";
-  if (/analytics|chart|trend/.test(t)) return "/analytics";
-  if (/dashboard|overview/.test(t)) return "/dashboard";
+  if (/\btasks?\b/.test(t)) return "/tasks";
+  if (/\bfocus\b|pomodoro|timer|deep work/.test(t)) return "/focus";
+  if (/\breview\b|reflect|tomorrow.?focus|wind.?down/.test(t)) return "/review";
+  if (/\bhabits?\b|streak|check.?in|ritual/.test(t)) return "/habits";
+  if (/\bjournal\b|\bnotes?\b|writ(e|ing)/.test(t)) return "/notes";
+  if (/\bgoals?\b|\bprojects?\b/.test(t)) return "/goals";
+  if (/\bcalendar\b|schedule|\bevents?\b/.test(t)) return "/calendar";
+  if (/\banalytics\b|chart|trend/.test(t)) return "/analytics";
+  if (/\bdashboard\b|overview/.test(t)) return "/dashboard";
   return null;
 }
 
@@ -116,6 +118,8 @@ export function normalizeCoachSuggestions(
     : [];
 
   if (fromModel.length > 0) return fromModel;
+
+  if (fallbackTexts.length === 0) return [];
 
   return fallbackTexts
     .map(normalizeCoachSuggestion)

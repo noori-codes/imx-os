@@ -49,17 +49,21 @@ export type CoachAskResult =
 
 const ALLOWED_HREFS = COACH_ACTION_HREFS.join(", ");
 
-const SYSTEM_PROMPT = `You are IMX, a concise personal productivity coach.
-You receive a plain-language activity briefing and a question.
+const SYSTEM_PROMPT = `You are IMX — a sharp, capable assistant inside a personal OS (tasks, focus, habits, goals, notes, calendar, review).
+
+You may receive an optional activity briefing about the user. Treat it as background only.
+- If the question is about their work, plans, habits, focus, energy, or that data → use the briefing.
+- If the question is general (math, facts, wording, ideas, jokes, explanations, or anything unrelated) → answer it directly and IGNORE the briefing. Do not mention focus, tasks, projects, habits, or reviews unless the user asked about them.
+
 Respond with ONLY a single JSON object (no markdown, no code fences, no extra keys):
-{"summary":"<2-4 full sentences of prose>","suggestions":[{"text":"<tip>","href":"<path or null>"},{"text":"<tip>","href":"<path or null>"},{"text":"<tip>","href":"<path or null>"}]}
+{"summary":"<clear answer in plain English>","suggestions":[{"text":"<optional follow-up>","href":"<path or null>"}]}
 
 Hard rules:
-- "summary" MUST be a string of normal English sentences. Never put numbers-only objects, nested JSON, or the briefing text inside summary.
-- Do NOT repeat or paste the briefing. Interpret it.
-- Exactly 3 suggestions. Each has "text" (short actionable tip) and "href".
-- "href" must be one of: ${ALLOWED_HREFS} — or null when no clear destination.
-- Prefer real destinations (tasks/focus/habits/review) over null when the tip implies one.
+- Answer the user's actual question first. Never force a productivity angle onto an unrelated question.
+- "summary" MUST be normal English prose (1–5 sentences, or a short direct answer). Never put nested JSON, numbers-only dumps, or the briefing text inside summary.
+- "suggestions" may be an empty array, or 1–3 items. Each has "text" and "href".
+- For general / non-productivity questions: use [] or brief follow-ups with "href": null. Do not invent task/focus CTAs.
+- For productivity questions: "href" must be one of: ${ALLOWED_HREFS} — or null when no clear destination. Prefer null unless the tip clearly belongs there.
 - No emojis. No medical advice.`;
 
 function resolvePrompt(id: string) {
@@ -83,7 +87,10 @@ function extractJsonObject(raw: string): string | null {
   return null;
 }
 
-function parseReply(raw: string): CoachReply | null {
+function parseReply(
+  raw: string,
+  fallbackSuggestionTexts: readonly string[] = [],
+): CoachReply | null {
   const candidate = extractJsonObject(raw);
   if (!candidate) return null;
   try {
@@ -97,11 +104,11 @@ function parseReply(raw: string): CoachReply | null {
 
     // Model sometimes nests prose wrong — reject data dumps.
     if (!summary || looksLikeRawDataDump(summary)) return null;
-    if (summary.length < 24) return null;
+    if (summary.length < 1) return null;
 
     const suggestions = normalizeCoachSuggestions(
       parsed.suggestions,
-      [...DEFAULT_COACH_SUGGESTION_TEXTS],
+      [...fallbackSuggestionTexts],
     );
 
     return { summary, suggestions };
@@ -110,15 +117,16 @@ function parseReply(raw: string): CoachReply | null {
   }
 }
 
-function fallbackReply(raw: string): CoachReply {
+function fallbackReply(
+  raw: string,
+  fallbackSuggestionTexts: readonly string[] = [],
+): CoachReply {
   if (looksLikeRawDataDump(raw)) {
     return {
       summary:
-        "I couldn’t shape that into a clear answer. Try the same question once more.",
+        "I couldn’t shape that into a clear answer. Try asking once more.",
       suggestions: normalizeCoachSuggestions(null, [
-        "Ask “How was my week?” again.",
-        "Or try “What should I focus on next?”",
-        "Surprise me can also work after a moment.",
+        ...fallbackSuggestionTexts,
       ]),
     };
   }
@@ -130,10 +138,10 @@ function fallbackReply(raw: string): CoachReply {
     .filter((line) => line && !looksLikeRawDataDump(line));
 
   return {
-    summary: lines[0] ?? "Here’s a quick take based on your recent activity.",
+    summary: lines[0] ?? "Here’s a quick take.",
     suggestions: normalizeCoachSuggestions(
       lines.slice(1, 4),
-      [...DEFAULT_COACH_SUGGESTION_TEXTS],
+      [...fallbackSuggestionTexts],
     ),
   };
 }
@@ -177,17 +185,31 @@ async function runCoachAsk(
 
   const snapshot = await buildActivitySnapshot(user.id);
   const briefing = snapshotToPromptText(snapshot);
+  const isCustom = promptId === "custom";
+  const suggestionFallback = isCustom
+    ? ([] as string[])
+    : [...DEFAULT_COACH_SUGGESTION_TEXTS];
 
   const completion = await groqChatCompletion(
     [
       { role: "system", content: SYSTEM_PROMPT },
       {
         role: "user",
-        content: `Question: ${label}\nWhat to emphasize: ${hint}\n\nActivity briefing:\n${briefing}\n\nRemember: reply with JSON only. summary must be prose sentences, never raw data.`,
+        content: [
+          `Question: ${label}`,
+          `Guidance: ${hint}`,
+          "",
+          "Activity briefing (optional — use only if relevant to the question):",
+          briefing,
+          "",
+          isCustom
+            ? "Reply with JSON only. If this question is not about their activity, answer it directly and set suggestions to []."
+            : "Reply with JSON only. summary must be prose sentences, never raw data.",
+        ].join("\n"),
       },
     ],
     {
-      temperature: 0.3,
+      temperature: isCustom ? 0.45 : 0.3,
       maxTokens: 900,
       jsonMode: true,
     },
@@ -201,14 +223,14 @@ async function runCoachAsk(
     };
   }
 
-  let reply = parseReply(completion.content);
+  let reply = parseReply(completion.content, suggestionFallback);
   if (!reply) {
     const repair = await groqChatCompletion(
       [
         {
           role: "system",
           content:
-            'Convert the assistant draft into JSON only: {"summary":"prose sentences","suggestions":[{"text":"tip","href":"/focus"},{"text":"tip","href":null},{"text":"tip","href":"/review"}]}. summary must be English sentences, never JSON/data. href must be an allowed app path or null.',
+            'Convert the assistant draft into JSON only: {"summary":"prose answer","suggestions":[{"text":"optional follow-up","href":null}]}. summary must be English that answers the question. suggestions may be []. href must be an allowed app path or null — use null for non-productivity answers.',
         },
         {
           role: "user",
@@ -218,9 +240,11 @@ async function runCoachAsk(
       { temperature: 0.1, maxTokens: 500, jsonMode: true },
     );
     if (repair.ok) {
-      reply = parseReply(repair.content) ?? fallbackReply(repair.content);
+      reply =
+        parseReply(repair.content, suggestionFallback) ??
+        fallbackReply(repair.content, suggestionFallback);
     } else {
-      reply = fallbackReply(completion.content);
+      reply = fallbackReply(completion.content, suggestionFallback);
     }
   }
 
@@ -281,6 +305,6 @@ export async function askCoachMessage(
   return runCoachAsk(
     "custom",
     question,
-    "Answer this user question using the activity briefing. Be concrete and actionable.",
+    "Answer this question on its own terms. Use the activity briefing only if it is clearly relevant. For general questions (math, facts, wording, ideas), do not mention focus, tasks, habits, goals, or projects unless the user asked about them. suggestions should be [] unless a natural follow-up helps.",
   );
 }
