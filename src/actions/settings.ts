@@ -2,6 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 
+import {
+  DISPLAY_NAME_MAX,
+  normalizeDisplayName,
+} from "@/lib/display-name";
 import { createClient } from "@/lib/supabase/server";
 import { clampDailyFocusGoal } from "@/types/focus";
 import {
@@ -140,4 +144,43 @@ export async function updateUserSettings(
   revalidatePath("/focus");
   revalidatePath("/analytics");
   return {};
+}
+
+/** Prefers auth user_metadata.full_name (used by dashboard greeting). */
+export async function updateDisplayName(
+  rawName: string,
+): Promise<{ error?: string; name?: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "You must be signed in." };
+  }
+
+  const name = normalizeDisplayName(rawName);
+  if (name.length < 1) {
+    return { error: "Enter a name (at least 1 character)." };
+  }
+  if (name.length > DISPLAY_NAME_MAX) {
+    return { error: `Keep it under ${DISPLAY_NAME_MAX} characters.` };
+  }
+
+  const { error } = await supabase.auth.updateUser({
+    data: {
+      full_name: name,
+      name,
+    },
+  });
+
+  if (error) {
+    console.error("[settings] updateDisplayName:", error.message);
+    return { error: error.message };
+  }
+
+  revalidatePath("/", "layout");
+  revalidatePath("/dashboard");
+  revalidatePath("/settings");
+  return { name };
 }

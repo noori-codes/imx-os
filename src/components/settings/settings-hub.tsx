@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 
 import { exportUserData, importUserData } from "@/actions/data-transfer";
-import { updateUserSettings } from "@/actions/settings";
+import { updateDisplayName, updateUserSettings } from "@/actions/settings";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { FocusSounds } from "@/components/focus/focus-sounds";
 import { SettingsPulse } from "@/components/settings/settings-pulse";
@@ -30,6 +30,7 @@ import {
   playFocusChime,
   requestFocusNotifyPermission,
 } from "@/lib/focus-alerts";
+import { DISPLAY_NAME_MAX } from "@/lib/display-name";
 import { imxToast } from "@/lib/imx-toast";
 import {
   PREF_AUTO_START,
@@ -65,6 +66,7 @@ import { TASK_VIEWS, type TaskView } from "@/types/task";
 
 type SettingsHubProps = {
   email: string;
+  displayName: string;
   memberSince: string;
   memberShort: string;
   settings: UserSettings;
@@ -183,6 +185,7 @@ function ToggleRow({
 
 export function SettingsHub({
   email,
+  displayName,
   memberSince,
   memberShort,
   settings,
@@ -195,6 +198,9 @@ export function SettingsHub({
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [mounted, setMounted] = useState(false);
+  const [nameDraft, setNameDraft] = useState(displayName);
+  const [nameSaved, setNameSaved] = useState(displayName);
+  const [namePending, setNamePending] = useState(false);
   const [goal, setGoal] = useState(settings.daily_focus_goal_minutes);
   const [goalCustom, setGoalCustom] = useState(
     String(settings.daily_focus_goal_minutes),
@@ -221,6 +227,11 @@ export function SettingsHub({
     const isApple = /Mac|iPhone|iPad|iPod/.test(navigator.platform);
     setModKey(isApple ? "⌘" : "Ctrl");
   }, []);
+
+  useEffect(() => {
+    setNameDraft(displayName);
+    setNameSaved(displayName);
+  }, [displayName]);
 
   useEffect(() => {
     setMounted(true);
@@ -297,6 +308,29 @@ export function SettingsHub({
       });
       if (result.error) setGoalError(result.error);
     });
+  }
+
+  async function saveName() {
+    const next = nameDraft.trim().replace(/\s+/g, " ");
+    if (!next) {
+      imxToast("Enter a name", { tone: "error" });
+      return;
+    }
+    if (next === nameSaved) return;
+    setNamePending(true);
+    try {
+      const result = await updateDisplayName(next);
+      if (result.error) {
+        imxToast(result.error, { tone: "error" });
+        return;
+      }
+      const saved = result.name ?? next;
+      setNameDraft(saved);
+      setNameSaved(saved);
+      imxToast("Name updated", { tone: "success" });
+    } finally {
+      setNamePending(false);
+    }
   }
 
   async function enableNotifications() {
@@ -396,7 +430,7 @@ export function SettingsHub({
   return (
     <div className="flex flex-col gap-6">
       <SettingsPulse
-        email={email}
+        displayName={nameSaved}
         themeLabel={themeLabel}
         focusGoalLabel={formatFocusMinutesCompact(goal) || `${goal}m`}
         focusGoalMinutes={goal}
@@ -736,6 +770,47 @@ export function SettingsHub({
         description="Identity, backup, and session on this device."
       >
         <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label
+              htmlFor="settings-display-name"
+              className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground"
+            >
+              Name
+            </label>
+            <div className="mt-1.5 flex items-center gap-2">
+              <Input
+                id="settings-display-name"
+                value={nameDraft}
+                maxLength={DISPLAY_NAME_MAX}
+                autoComplete="nickname"
+                placeholder="How you want to be greeted"
+                onChange={(e) => setNameDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    void saveName();
+                  }
+                }}
+                className="h-9"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="shrink-0"
+                disabled={
+                  namePending ||
+                  nameDraft.trim().replace(/\s+/g, " ") === nameSaved
+                }
+                onClick={() => void saveName()}
+              >
+                Save
+              </Button>
+            </div>
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              Used in the dashboard greeting.
+            </p>
+          </div>
           <div>
             <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
               Email

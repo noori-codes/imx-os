@@ -4,7 +4,7 @@ import { ProgressRing } from "@/components/dashboard/progress-ring";
 import { cn } from "@/lib/utils";
 
 type SettingsPulseProps = {
-  email: string;
+  displayName: string;
   themeLabel: string;
   focusGoalLabel: string;
   focusGoalMinutes: number;
@@ -22,15 +22,14 @@ const JUMPS = [
 ] as const;
 
 function pulseCopy({
-  email,
+  displayName,
   synced,
   notifyLabel,
 }: {
-  email: string;
+  displayName: string;
   synced: boolean;
   notifyLabel: string;
 }) {
-  const handle = email.includes("@") ? email.split("@")[0] : email;
   if (!synced) {
     return {
       title: "Fresh control room",
@@ -39,14 +38,14 @@ function pulseCopy({
     };
   }
   return {
-    title: handle || "Your OS",
+    title: displayName || "Your OS",
     body: `Prefs synced · alerts ${notifyLabel.toLowerCase()} · tune appearance, focus, and backups below.`,
     sealed: notifyLabel === "On",
   };
 }
 
 export function SettingsPulse({
-  email,
+  displayName,
   themeLabel,
   focusGoalLabel,
   focusGoalMinutes,
@@ -55,7 +54,7 @@ export function SettingsPulse({
   memberSince,
   synced,
 }: SettingsPulseProps) {
-  const copy = pulseCopy({ email, synced, notifyLabel });
+  const copy = pulseCopy({ displayName, synced, notifyLabel });
   const ringValue = Math.max(
     0,
     Math.min(100, Math.round((focusGoalMinutes / 240) * 100)),
