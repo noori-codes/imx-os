@@ -193,7 +193,7 @@ export function HabitItem({
   if (editing) {
     return (
       <li
-        className="habits-card rounded-2xl border border-border/40 bg-card/70 p-4"
+        className="habits-card rounded-2xl imx-surface imx-surface-rim p-4"
         style={{ ["--i" as string]: index }}
       >
         <div className="space-y-3">
@@ -269,7 +269,7 @@ export function HabitItem({
     <li
       id={`habit-${optimistic.id}`}
       className={cn(
-        "habits-card group relative scroll-mt-24 overflow-hidden rounded-2xl border border-border/40 bg-card/70 p-4 transition-colors hover:border-border",
+        "habits-card group relative scroll-mt-24 overflow-hidden rounded-2xl imx-surface imx-surface-rim p-4 transition-colors hover:border-border",
         optimistic.completed_today && !archivedView && "habits-card-done",
       )}
       style={

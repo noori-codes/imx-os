@@ -64,7 +64,7 @@ async function NoteDetailBody({ noteId }: { noteId: string }) {
             />
             <Link
               href="/notes"
-              className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-border/55 bg-card/70 px-3 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground"
+              className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-surface-border bg-surface px-3 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground"
             >
               <ArrowLeft className="size-3.5" />
               Library

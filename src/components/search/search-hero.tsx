@@ -12,7 +12,7 @@ export function SearchHero({ children, className }: SearchHeroProps) {
   return (
     <section
       className={cn(
-        "search-hero relative mx-auto w-full max-w-2xl overflow-hidden rounded-[1.75rem] border border-border/50 bg-card/85 p-5 sm:p-7",
+        "search-hero relative mx-auto w-full max-w-2xl overflow-hidden rounded-[1.75rem] imx-surface p-5 sm:p-7",
         className,
       )}
     >

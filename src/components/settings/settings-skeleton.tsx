@@ -11,7 +11,7 @@ function Bone({ className }: { className?: string }) {
 function SettingsSkeletonBody() {
   return (
     <>
-      <div className="settings-pulse relative overflow-hidden rounded-[1.75rem] border border-border/50 bg-card/85 px-5 py-6 sm:px-7 sm:py-8">
+      <div className="settings-pulse relative overflow-hidden rounded-[1.75rem] imx-surface px-5 py-6 sm:px-7 sm:py-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:justify-between">
           <div className="space-y-2 text-center sm:text-left">
             <Bone className="mx-auto h-2.5 w-28 sm:mx-0" />
@@ -43,7 +43,7 @@ function SettingsSkeletonBody() {
       {Array.from({ length: 6 }).map((_, i) => (
         <div
           key={i}
-          className="rounded-[1.35rem] border border-border/50 bg-card/80 p-4 sm:p-5"
+          className="rounded-[1.35rem] imx-surface p-4 sm:p-5"
         >
           <Bone className="h-4 w-28" />
           <Bone className="mt-2 h-3 w-64 max-w-full opacity-55" />

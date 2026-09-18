@@ -530,7 +530,7 @@ export function SearchDialog({ defaultOpen = false }: SearchDialogProps) {
       </Button>
       <Button
         variant="outline"
-        className="search-trigger hidden h-9 w-[15.5rem] justify-start gap-2 border-border/60 bg-card/50 text-muted-foreground sm:inline-flex"
+        className="search-trigger hidden h-9 w-[15.5rem] justify-start gap-2 border-surface-border bg-surface text-muted-foreground sm:inline-flex"
         aria-label="Search IMX (⌘K or /)"
         onClick={() => setOpen(true)}
       >
@@ -786,7 +786,7 @@ export function SearchDialog({ defaultOpen = false }: SearchDialogProps) {
                   </button>
                   <button
                     type="button"
-                    className="inline-flex h-8 items-center rounded-lg border border-border/60 bg-card/70 px-3 text-xs font-medium text-foreground transition-colors hover:border-border"
+                    className="inline-flex h-8 items-center rounded-lg border border-surface-border bg-surface px-3 text-xs font-medium text-foreground transition-colors hover:border-border"
                     onClick={() => {
                       setOpen(false);
                       startTransition(() => {
@@ -798,14 +798,14 @@ export function SearchDialog({ defaultOpen = false }: SearchDialogProps) {
                   </button>
                   <button
                     type="button"
-                    className="inline-flex h-8 items-center rounded-lg border border-border/60 bg-card/70 px-3 text-xs font-medium text-foreground transition-colors hover:border-border"
+                    className="inline-flex h-8 items-center rounded-lg border border-surface-border bg-surface px-3 text-xs font-medium text-foreground transition-colors hover:border-border"
                     onClick={() => goTo("/calendar?compose=1")}
                   >
                     Add event
                   </button>
                   <button
                     type="button"
-                    className="inline-flex h-8 items-center rounded-lg border border-border/60 bg-card/70 px-3 text-xs font-medium text-foreground transition-colors hover:border-border"
+                    className="inline-flex h-8 items-center rounded-lg border border-surface-border bg-surface px-3 text-xs font-medium text-foreground transition-colors hover:border-border"
                     onClick={() => goTo("/habits?compose=1")}
                   >
                     Add habit

@@ -69,7 +69,7 @@ export function NoteLibrary({ notes }: NoteLibraryProps) {
             label="Start journal"
             icon="book"
             tone="outline"
-            className="border-border/60 bg-card/70"
+            className="border-surface-border bg-surface"
           />
         </div>
       </EmptyState>
@@ -79,7 +79,7 @@ export function NoteLibrary({ notes }: NoteLibraryProps) {
   return (
     <section className="notes-library space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="inline-flex rounded-xl border border-border/60 bg-card/70 p-1">
+        <div className="inline-flex rounded-xl border border-surface-border bg-surface p-1">
           {(
             [
               { id: "all", label: "All" },
@@ -109,7 +109,7 @@ export function NoteLibrary({ notes }: NoteLibraryProps) {
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search library…"
-            className="h-9 w-full rounded-xl border border-border/60 bg-card/70 pr-3 pl-9 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-border"
+            className="h-9 w-full rounded-xl border border-surface-border bg-surface pr-3 pl-9 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-border"
           />
         </label>
       </div>
@@ -126,7 +126,7 @@ export function NoteLibrary({ notes }: NoteLibraryProps) {
               setFilter("all");
               setQuery("");
             }}
-            className="mt-5 inline-flex h-10 items-center rounded-xl border border-border/60 bg-card/70 px-4 text-sm font-medium text-foreground transition-colors hover:border-border"
+            className="mt-5 inline-flex h-10 items-center rounded-xl border border-surface-border bg-surface px-4 text-sm font-medium text-foreground transition-colors hover:border-border"
           >
             Reset filters
           </button>
@@ -147,7 +147,7 @@ export function NoteLibrary({ notes }: NoteLibraryProps) {
                 <Link
                   href={`/notes/${note.id}`}
                   className={cn(
-                    "notes-card group flex h-full flex-col rounded-2xl border border-border/40 bg-card/70 p-4 transition-colors hover:border-border hover:bg-card sm:p-5",
+                    "notes-card group flex h-full flex-col rounded-2xl imx-surface imx-surface-rim p-4 transition-colors hover:border-border hover:bg-surface-strong sm:p-5",
                     isJournal && "border-amber-500/20 hover:border-amber-500/35",
                   )}
                 >

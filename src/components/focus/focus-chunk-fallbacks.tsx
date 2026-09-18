@@ -11,7 +11,7 @@ function Bone({ className }: { className?: string }) {
 export function FocusTimerChunkFallback() {
   return (
     <div
-      className="imx-skeleton overflow-hidden rounded-2xl border border-border/50 bg-card/80 p-5 sm:p-7 lg:p-8"
+      className="imx-skeleton overflow-hidden rounded-2xl imx-surface p-5 sm:p-7 lg:p-8"
       role="status"
       aria-label="Loading timer"
     >

@@ -84,7 +84,7 @@ function Section({
   return (
     <section
       id={id}
-      className="settings-panel scroll-mt-20 rounded-[1.35rem] border border-border/40 bg-card/70 p-4 sm:p-5"
+      className="settings-panel scroll-mt-20 rounded-[1.35rem] imx-surface imx-surface-rim p-4 sm:p-5"
     >
       <header className="mb-4">
         <h3 className="text-sm font-semibold tracking-tight text-foreground">

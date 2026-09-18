@@ -107,7 +107,7 @@ export function GoalsBoard({ goals, compose = false }: GoalsBoardProps) {
     <div className="flex flex-col gap-6">
       <div
         id="goals-composer"
-        className="goals-composer relative overflow-hidden rounded-2xl border border-border/40 bg-card/70 p-4 sm:p-5"
+        className="goals-composer relative overflow-hidden rounded-2xl imx-surface imx-surface-rim p-4 sm:p-5"
       >
         <div className="goals-composer-glow" aria-hidden />
         <div className="relative z-1">
@@ -136,7 +136,7 @@ export function GoalsBoard({ goals, compose = false }: GoalsBoardProps) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search goals…"
-            className="h-9 border-border/50 bg-card/80 pl-9"
+            className="h-9 border-surface-border bg-surface pl-9"
             aria-label="Search goals"
           />
         </div>
@@ -267,7 +267,7 @@ function GoalCard({
   if (editing) {
     return (
       <li
-        className="goals-card rounded-2xl border border-border/40 bg-card/70 p-4"
+        className="goals-card rounded-2xl imx-surface imx-surface-rim p-4"
         style={{ ["--i" as string]: index }}
       >
         <div className="space-y-3">
@@ -323,7 +323,7 @@ function GoalCard({
 
   return (
     <li
-      className="goals-card group relative rounded-2xl border border-border/40 bg-card/70 p-4 transition-colors hover:border-border"
+      className="goals-card group relative rounded-2xl imx-surface imx-surface-rim p-4 transition-colors hover:border-border"
       style={{ ["--i" as string]: index }}
     >
       <div className="flex items-start gap-3">

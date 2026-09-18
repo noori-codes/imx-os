@@ -134,13 +134,13 @@ export function AnalyticsHero({
               </Link>
               <Link
                 href="/habits"
-                className="inline-flex h-9 items-center rounded-xl border border-border/60 bg-card/70 px-3.5 text-sm font-medium text-foreground transition-colors hover:border-border"
+                className="inline-flex h-9 items-center rounded-xl border border-surface-border bg-surface px-3.5 text-sm font-medium text-foreground transition-colors hover:border-border"
               >
                 Habits
               </Link>
               <Link
                 href="/review"
-                className="inline-flex h-9 items-center rounded-xl border border-border/60 bg-card/70 px-3.5 text-sm font-medium text-foreground transition-colors hover:border-border"
+                className="inline-flex h-9 items-center rounded-xl border border-surface-border bg-surface px-3.5 text-sm font-medium text-foreground transition-colors hover:border-border"
               >
                 Review
               </Link>

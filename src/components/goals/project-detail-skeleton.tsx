@@ -22,7 +22,7 @@ export function ProjectDetailSkeleton() {
         <AppPageFrame className="max-w-5xl gap-8 md:py-8">
           <GoalsStage>
             <Bone className="h-3 w-56" />
-            <div className="goals-pulse relative overflow-hidden rounded-[1.35rem] border border-border/50 bg-card/80 px-5 py-5 sm:px-7 sm:py-6">
+            <div className="goals-pulse relative overflow-hidden rounded-[1.35rem] imx-surface px-5 py-5 sm:px-7 sm:py-6">
               <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0 flex-1 space-y-3">
                   <Bone className="h-2.5 w-20" />
@@ -32,11 +32,11 @@ export function ProjectDetailSkeleton() {
                 <Bone className="mx-auto size-28 shrink-0 rounded-full sm:mx-0" />
               </div>
             </div>
-            <div className="rounded-2xl border border-border/50 bg-card/80 p-4 sm:p-5">
+            <div className="rounded-2xl imx-surface p-4 sm:p-5">
               <Bone className="h-2.5 w-16" />
               <Bone className="mt-3 h-11 w-full" />
             </div>
-            <div className="overflow-hidden rounded-2xl border border-border/50 bg-card/80">
+            <div className="overflow-hidden rounded-2xl imx-surface">
               {Array.from({ length: 4 }).map((_, i) => (
                 <div
                   key={i}

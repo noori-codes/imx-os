@@ -82,8 +82,8 @@ export function BrandSelect({
             aria-label={ariaLabel}
             disabled={disabled}
             className={cn(
-              "group inline-flex w-full items-center justify-between gap-2 border border-border/50 bg-card/70 text-left text-sm text-foreground outline-none transition-colors",
-              "hover:border-border hover:bg-card",
+              "group inline-flex w-full items-center justify-between gap-2 imx-surface imx-surface-rim text-left text-sm text-foreground outline-none transition-colors",
+              "hover:border-border hover:bg-surface-strong",
               "focus-visible:border-border focus-visible:ring-2 focus-visible:ring-ring/40",
               "disabled:pointer-events-none disabled:opacity-50",
               !selected && "text-muted-foreground",

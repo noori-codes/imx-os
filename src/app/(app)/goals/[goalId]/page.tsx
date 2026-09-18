@@ -80,7 +80,7 @@ async function GoalDetailBody({ goalId }: { goalId: string }) {
           </div>
 
           <div className="goals-reveal goals-reveal-delay-2 space-y-5">
-            <div className="goals-composer relative overflow-hidden rounded-2xl border border-border/50 bg-card/80 p-4 sm:p-5">
+            <div className="goals-composer relative overflow-hidden rounded-2xl imx-surface p-4 sm:p-5">
               <div className="goals-composer-glow" aria-hidden />
               <div className="relative z-1">
                 <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">

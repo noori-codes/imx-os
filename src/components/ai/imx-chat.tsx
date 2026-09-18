@@ -72,7 +72,7 @@ function AssistantBubble({ children }: { children: ReactNode }) {
   return (
     <div className="imx-chat-msg flex gap-2.5">
       <BrandMark size={28} />
-      <div className="min-w-0 flex-1 rounded-2xl rounded-tl-md border border-border/35 bg-card/70 px-3.5 py-2.5 text-sm leading-relaxed text-foreground shadow-[inset_0_1px_0_color-mix(in_oklab,var(--foreground)_4%,transparent)]">
+      <div className="min-w-0 flex-1 rounded-2xl rounded-tl-md imx-surface imx-surface-rim px-3.5 py-2.5 text-sm leading-relaxed text-foreground">
         {children}
       </div>
     </div>

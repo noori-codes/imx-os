@@ -18,7 +18,7 @@ export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <div className="auth-card w-full max-w-sm overflow-hidden rounded-[1.35rem] border border-border/55 bg-card/90 shadow-[inset_0_1px_0_color-mix(in_oklab,var(--foreground)_4%,transparent)] backdrop-blur-sm">
+    <div className="auth-card w-full max-w-sm overflow-hidden rounded-[1.35rem] imx-surface imx-surface-rim">
       <div className="auth-card-glow" aria-hidden />
       <div className="relative z-1 space-y-6 p-6 sm:p-7">
         <header className="space-y-1.5 text-center sm:text-left">

@@ -17,7 +17,7 @@ export default function AuthError({ error, reset }: AuthErrorProps) {
   }, [error]);
 
   return (
-    <div className="auth-card w-full max-w-sm space-y-4 rounded-[1.35rem] border border-border/55 bg-card/90 p-6 text-center shadow-[inset_0_1px_0_color-mix(in_oklab,var(--foreground)_4%,transparent)] backdrop-blur-sm sm:p-7">
+    <div className="auth-card w-full max-w-sm space-y-4 rounded-[1.35rem] imx-surface imx-surface-rim p-6 text-center  sm:p-7">
       <AlertTriangle className="mx-auto size-8 text-muted-foreground" />
       <div className="space-y-1.5">
         <h1 className="text-xl font-semibold tracking-tight">Sign-in hit a snag</h1>

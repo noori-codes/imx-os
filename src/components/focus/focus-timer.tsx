@@ -908,7 +908,7 @@ export function FocusTimer({
           </div>
         </div>
       ) : (
-        <div className="focus-launch relative z-1 w-full overflow-hidden rounded-[1.75rem] border border-border/50 bg-card/80">
+        <div className="focus-launch relative z-1 w-full overflow-hidden rounded-[1.75rem] imx-surface">
           <div className="focus-launch-vignette" aria-hidden />
           <div className="focus-launch-glow" aria-hidden />
           <div className="relative grid items-start gap-8 p-5 sm:p-7 lg:grid-cols-2 lg:gap-12 lg:p-8">

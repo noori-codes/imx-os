@@ -147,7 +147,7 @@ export function ReviewRecapCard({ recap }: ReviewRecapCardProps) {
   }
 
   return (
-    <aside className="review-recap relative overflow-hidden rounded-[1.35rem] border border-border/40 bg-card/70">
+    <aside className="review-recap relative overflow-hidden rounded-[1.35rem] imx-surface imx-surface-rim">
       <div className="review-dock-glow" aria-hidden />
       <div className="relative z-1 border-b border-border/40 px-5 py-4">
         <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">

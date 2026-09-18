@@ -120,7 +120,7 @@ export function CalendarPulse({
   return (
     <section
       className={cn(
-        "cal-pulse relative overflow-hidden rounded-[1.75rem] border border-border/50 bg-card/85 px-5 py-6 sm:px-7 sm:py-8",
+        "cal-pulse relative overflow-hidden rounded-[1.75rem] imx-surface px-5 py-6 sm:px-7 sm:py-8",
         copy.clear && "cal-pulse-sealed",
       )}
     >
@@ -213,7 +213,7 @@ export function CalendarPulse({
                 className={cn(
                   "inline-flex h-9 items-center rounded-xl px-3.5 text-sm font-medium transition-colors",
                   nextUp || !copy.clear
-                    ? "border border-border/60 bg-card/70 text-foreground hover:border-border"
+                    ? "border border-surface-border bg-surface text-foreground hover:border-border"
                     : "bg-foreground text-background hover:opacity-90",
                 )}
               >
@@ -222,7 +222,7 @@ export function CalendarPulse({
               {copy.clear ? (
                 <Link
                   href="/tasks?compose=1"
-                  className="inline-flex h-9 items-center rounded-xl border border-border/60 bg-card/70 px-3.5 text-sm font-medium text-foreground transition-colors hover:border-border"
+                  className="inline-flex h-9 items-center rounded-xl border border-surface-border bg-surface px-3.5 text-sm font-medium text-foreground transition-colors hover:border-border"
                 >
                   Add task
                 </Link>

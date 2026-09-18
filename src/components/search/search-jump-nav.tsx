@@ -145,7 +145,7 @@ export function SearchJumpNav({
               ? "border-foreground/30 bg-foreground text-background shadow-sm"
               : isMatched
                 ? "border-foreground/20 bg-foreground/5 text-foreground"
-                : "border-border/50 bg-card/75 hover:-translate-y-0.5 hover:border-border hover:bg-muted/40 hover:shadow-sm",
+                : "border-surface-border bg-surface hover:-translate-y-0.5 hover:border-border hover:bg-muted/40 hover:shadow-sm",
           );
 
           if (onJump) {

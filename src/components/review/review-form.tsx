@@ -88,7 +88,7 @@ export function ReviewForm({ date, review }: ReviewFormProps) {
       id="review-form"
       action={formAction}
       className={cn(
-        "review-form relative overflow-hidden rounded-[1.35rem] border border-border/40 bg-card/70",
+        "review-form relative overflow-hidden rounded-[1.35rem] imx-surface imx-surface-rim",
         review && "border-foreground/10",
       )}
     >
@@ -166,7 +166,7 @@ export function ReviewForm({ date, review }: ReviewFormProps) {
             type="button"
             disabled={spawnPending}
             onClick={spawnTomorrowTasks}
-            className="inline-flex h-10 items-center gap-2 rounded-xl border border-border/60 bg-card/70 px-4 text-sm font-medium text-foreground transition-colors hover:border-border disabled:opacity-60"
+            className="inline-flex h-10 items-center gap-2 rounded-xl border border-surface-border bg-surface px-4 text-sm font-medium text-foreground transition-colors hover:border-border disabled:opacity-60"
           >
             <ListTodo className="size-3.5" />
             {spawnPending

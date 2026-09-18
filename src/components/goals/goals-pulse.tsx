@@ -73,7 +73,7 @@ export function GoalsPulse({ stats }: GoalsPulseProps) {
   return (
     <section
       className={cn(
-        "goals-pulse relative overflow-hidden rounded-[1.75rem] border border-border/50 bg-card/85 px-5 py-6 sm:px-7 sm:py-8",
+        "goals-pulse relative overflow-hidden rounded-[1.75rem] imx-surface px-5 py-6 sm:px-7 sm:py-8",
         copy.sealed && "goals-pulse-sealed",
       )}
     >

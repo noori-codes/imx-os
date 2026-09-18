@@ -9,7 +9,7 @@ function Bone({ className }: { className?: string }) {
 function BooksSkeletonBody() {
   return (
     <>
-      <div className="books-pulse relative overflow-hidden rounded-[1.75rem] border border-border/50 bg-card/85 px-5 py-6 sm:px-7 sm:py-8">
+      <div className="books-pulse relative overflow-hidden rounded-[1.75rem] imx-surface px-5 py-6 sm:px-7 sm:py-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:justify-between">
           <div className="space-y-2 text-center sm:text-left">
             <Bone className="mx-auto h-2.5 w-28 sm:mx-0" />
@@ -42,7 +42,7 @@ function BooksSkeletonBody() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-border/50 bg-card/80">
+      <div className="overflow-hidden rounded-2xl imx-surface">
         <div className="grid grid-cols-6 gap-3 border-b border-border/40 px-4 py-3">
           {Array.from({ length: 6 }).map((_, i) => (
             <Bone key={i} className="h-2.5 w-14" />

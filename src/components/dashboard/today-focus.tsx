@@ -257,7 +257,7 @@ export function TodayFocus({ tasks, onToggle, onSchedule }: TodayFocusProps) {
               </Link>
               <Link
                 href="/calendar?compose=1"
-                className="inline-flex h-8 items-center rounded-lg border border-border/60 bg-card/70 px-3 text-xs font-medium text-foreground transition-colors hover:border-border"
+                className="inline-flex h-8 items-center rounded-lg border border-surface-border bg-surface px-3 text-xs font-medium text-foreground transition-colors hover:border-border"
               >
                 Add event
               </Link>

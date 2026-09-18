@@ -88,7 +88,7 @@ export function ReviewPulse({ date, recap, review }: ReviewPulseProps) {
   return (
     <section
       className={cn(
-        "review-pulse relative overflow-hidden rounded-[1.75rem] border border-border/50 bg-card/85 px-5 py-6 sm:px-7 sm:py-8",
+        "review-pulse relative overflow-hidden rounded-[1.75rem] imx-surface px-5 py-6 sm:px-7 sm:py-8",
         copy.sealed && "review-pulse-sealed",
       )}
     >

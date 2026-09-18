@@ -32,7 +32,7 @@ function Bone({ className }: { className?: string }) {
 function SearchResultsFallback({ query }: { query: string }) {
   if (query.length < 2) {
     return (
-      <div className="mx-auto w-full max-w-2xl rounded-[1.5rem] border border-border/50 bg-card/80 p-5 sm:p-6">
+      <div className="mx-auto w-full max-w-2xl rounded-[1.5rem] imx-surface p-5 sm:p-6">
         <Bone className="h-2.5 w-24" />
         <Bone className="mt-3 h-3.5 w-48 max-w-full opacity-55" />
         <div className="mt-5 flex flex-wrap gap-2">
@@ -56,7 +56,7 @@ function SearchResultsFallback({ query }: { query: string }) {
         {Array.from({ length: 4 }).map((_, i) => (
           <div
             key={i}
-            className="flex gap-3 rounded-2xl border border-border/50 bg-card/80 p-4"
+            className="flex gap-3 rounded-2xl imx-surface p-4"
           >
             <Bone className="size-10 shrink-0 rounded-xl" />
             <div className="min-w-0 flex-1 space-y-2">
@@ -110,7 +110,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 </p>
               </header>
 
-              <div className="search-composer rounded-2xl border border-border/45 bg-background/55 p-2 sm:p-2.5">
+              <div className="search-composer rounded-2xl imx-surface imx-surface-rim p-2 sm:p-2.5">
                 <SearchForm initialQuery={query} autoFocus hero />
               </div>
             </SearchHero>

@@ -321,7 +321,7 @@ export function BooksShelf({ books, compose = false }: BooksShelfProps) {
   return (
     <section className="books-shelf space-y-4">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="inline-flex max-w-full flex-wrap rounded-xl border border-border/60 bg-card/70 p-1">
+        <div className="inline-flex max-w-full flex-wrap rounded-xl border border-surface-border bg-surface p-1">
           <button
             type="button"
             onClick={() => setFilter("all")}
@@ -358,7 +358,7 @@ export function BooksShelf({ books, compose = false }: BooksShelfProps) {
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search shelf…"
-              className="h-9 w-full rounded-xl border border-border/60 bg-card/70 pr-3 pl-9 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-border"
+              className="h-9 w-full rounded-xl border border-surface-border bg-surface pr-3 pl-9 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-border"
             />
           </label>
           <BookFormDialog />
@@ -377,7 +377,7 @@ export function BooksShelf({ books, compose = false }: BooksShelfProps) {
               setFilter("all");
               setQuery("");
             }}
-            className="mt-5 inline-flex h-10 items-center rounded-xl border border-border/60 bg-card/70 px-4 text-sm font-medium text-foreground transition-colors hover:border-border"
+            className="mt-5 inline-flex h-10 items-center rounded-xl border border-surface-border bg-surface px-4 text-sm font-medium text-foreground transition-colors hover:border-border"
           >
             Reset filters
           </button>
@@ -385,7 +385,7 @@ export function BooksShelf({ books, compose = false }: BooksShelfProps) {
       ) : (
         <>
           {/* Desktop table */}
-          <div className="hidden overflow-hidden rounded-2xl border border-border/40 bg-card/70 md:block">
+          <div className="hidden overflow-hidden rounded-2xl imx-surface imx-surface-rim md:block">
             <table className="w-full text-left text-sm">
               <thead className="border-b border-border/40 text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
                 <tr>
@@ -499,7 +499,7 @@ export function BooksShelf({ books, compose = false }: BooksShelfProps) {
               <li
                 id={`book-${book.id}`}
                 key={book.id}
-                className="scroll-mt-24 rounded-2xl border border-border/40 bg-card/70 p-4"
+                className="scroll-mt-24 rounded-2xl imx-surface imx-surface-rim p-4"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">

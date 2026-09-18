@@ -134,7 +134,7 @@ export function CalendarGrid({
   const isWeek = view === "week";
 
   return (
-    <div className="cal-grid overflow-hidden rounded-2xl border border-border/40 bg-card/70">
+    <div className="cal-grid overflow-hidden rounded-2xl imx-surface imx-surface-rim">
       <div className="grid grid-cols-7 border-b border-border/40">
         {WEEKDAYS.map((day) => (
           <div
@@ -217,7 +217,7 @@ export function CalendarGrid({
                 <>
                   <DensityMarks items={items} />
                   {peeks.length > 0 ? (
-                    <div className="cal-peek pointer-events-none absolute inset-x-1 bottom-1 z-2 hidden flex-col gap-0.5 rounded-lg border border-border/50 bg-card/95 p-1.5 shadow-sm sm:group-hover:flex sm:group-focus-visible:flex sm:group-[[data-selected=true]]:flex">
+                    <div className="cal-peek pointer-events-none absolute inset-x-1 bottom-1 z-2 hidden flex-col gap-0.5 rounded-lg border border-surface-border bg-surface-strong p-1.5 shadow-sm sm:group-hover:flex sm:group-focus-visible:flex sm:group-[[data-selected=true]]:flex">
                       {peeks.map((line) => (
                         <span
                           key={line}

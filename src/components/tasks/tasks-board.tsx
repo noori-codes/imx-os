@@ -85,7 +85,7 @@ export function TasksBoard({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search tasks…"
-            className="h-9 border-border/50 bg-card/80 pl-9"
+            className="h-9 border-surface-border bg-surface pl-9"
             aria-label="Search tasks"
           />
         </div>
@@ -93,7 +93,7 @@ export function TasksBoard({
 
       <div
         id="tasks-composer"
-        className="tasks-composer relative overflow-hidden rounded-2xl border border-border/40 bg-card/70 p-4 sm:p-5"
+        className="tasks-composer relative overflow-hidden rounded-2xl imx-surface imx-surface-rim p-4 sm:p-5"
       >
         <div className="tasks-composer-glow" aria-hidden />
         <div className="relative z-1">

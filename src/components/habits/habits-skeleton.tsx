@@ -11,7 +11,7 @@ function Bone({ className }: { className?: string }) {
 function HabitsSkeletonBody() {
   return (
     <div className="flex flex-col gap-6">
-      <div className="habits-pulse relative overflow-hidden rounded-[1.75rem] border border-border/50 bg-card/85 px-5 py-6 sm:px-7 sm:py-8">
+      <div className="habits-pulse relative overflow-hidden rounded-[1.75rem] imx-surface px-5 py-6 sm:px-7 sm:py-8">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0 flex-1 space-y-3 text-center sm:text-left">
             <Bone className="mx-auto h-2.5 w-24 sm:mx-0" />
@@ -32,7 +32,7 @@ function HabitsSkeletonBody() {
 
       <Bone className="h-9 w-full max-w-sm rounded-full" />
 
-      <div className="rounded-2xl border border-border/50 bg-card/80 p-4 sm:p-5">
+      <div className="rounded-2xl imx-surface p-4 sm:p-5">
         <Bone className="h-2.5 w-20" />
         <Bone className="mt-3 h-10 w-full" />
       </div>
@@ -41,7 +41,7 @@ function HabitsSkeletonBody() {
         {Array.from({ length: 4 }).map((_, i) => (
           <div
             key={i}
-            className="rounded-2xl border border-border/50 bg-card/80 p-4"
+            className="rounded-2xl imx-surface p-4"
           >
             <div className="flex gap-3">
               <Bone className="size-10 shrink-0 rounded-full" />

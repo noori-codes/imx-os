@@ -25,7 +25,7 @@ export function NoteDetailSkeleton() {
               <Bone className="h-3 w-36" />
               <Bone className="h-8 w-28 rounded-xl" />
             </div>
-            <div className="notes-editor relative overflow-hidden rounded-[1.35rem] border border-border/50 bg-card/80">
+            <div className="notes-editor relative overflow-hidden rounded-[1.35rem] imx-surface">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/40 px-5 py-4 sm:px-6">
                 <div className="space-y-2">
                   <Bone className="h-2.5 w-16" />

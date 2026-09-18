@@ -9,7 +9,7 @@ function Bone({ className }: { className?: string }) {
 function ReviewSkeletonBody() {
   return (
     <>
-      <div className="review-pulse relative overflow-hidden rounded-[1.75rem] border border-border/50 bg-card/85 px-5 py-6 sm:px-7 sm:py-8">
+      <div className="review-pulse relative overflow-hidden rounded-[1.75rem] imx-surface px-5 py-6 sm:px-7 sm:py-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:justify-between">
           <div className="space-y-2">
             <Bone className="h-2.5 w-28" />
@@ -40,7 +40,7 @@ function ReviewSkeletonBody() {
 
       <div className="border-t border-border/30 pt-8">
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(17rem,0.85fr)]">
-          <div className="overflow-hidden rounded-[1.35rem] border border-border/50 bg-card/80">
+          <div className="overflow-hidden rounded-[1.35rem] imx-surface">
             <div className="space-y-2 border-b border-border/40 px-5 py-4">
               <Bone className="h-2.5 w-20" />
               <Bone className="h-5 w-36" />
@@ -57,7 +57,7 @@ function ReviewSkeletonBody() {
           </div>
 
           <div className="flex flex-col gap-4">
-            <div className="overflow-hidden rounded-[1.35rem] border border-border/50 bg-card/80">
+            <div className="overflow-hidden rounded-[1.35rem] imx-surface">
               <div className="space-y-2 border-b border-border/40 px-5 py-4">
                 <Bone className="h-2.5 w-16" />
                 <Bone className="h-4 w-28" />
@@ -68,7 +68,7 @@ function ReviewSkeletonBody() {
                 <Bone className="h-4 w-40 max-w-full" />
               </div>
             </div>
-            <div className="overflow-hidden rounded-[1.35rem] border border-border/50 bg-card/80">
+            <div className="overflow-hidden rounded-[1.35rem] imx-surface">
               <div className="space-y-2 border-b border-border/40 px-5 py-4">
                 <Bone className="h-2.5 w-16" />
                 <Bone className="h-4 w-32" />

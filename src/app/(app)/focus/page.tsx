@@ -55,7 +55,7 @@ async function FocusBody({ taskParam }: { taskParam: string | null }) {
       sessions={
         <div className="focus-secondary space-y-6">
           <FocusSessionList sessions={sessions} />
-          <section className="focus-panel relative overflow-hidden rounded-2xl border border-border/50 bg-card/80 p-4 sm:p-5">
+          <section className="focus-panel relative overflow-hidden rounded-2xl imx-surface p-4 sm:p-5">
             <div className="focus-panel-glow" aria-hidden="true" />
             <div className="relative z-1">
               <LogFocusForm tasks={tasks} />

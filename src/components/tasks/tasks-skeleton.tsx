@@ -11,7 +11,7 @@ function Bone({ className }: { className?: string }) {
 function TasksSkeletonBody() {
   return (
     <>
-      <div className="tasks-pulse relative overflow-hidden rounded-[1.75rem] border border-border/50 bg-card/85 px-5 py-6 sm:px-7 sm:py-8">
+      <div className="tasks-pulse relative overflow-hidden rounded-[1.75rem] imx-surface px-5 py-6 sm:px-7 sm:py-8">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0 flex-1 space-y-3 text-center sm:text-left">
             <Bone className="mx-auto h-2.5 w-28 sm:mx-0" />
@@ -39,7 +39,7 @@ function TasksSkeletonBody() {
         <Bone className="h-9 w-full max-w-xs rounded-xl" />
       </div>
 
-      <div className="rounded-2xl border border-border/50 bg-card/80 p-4 sm:p-5">
+      <div className="rounded-2xl imx-surface p-4 sm:p-5">
         <Bone className="h-2.5 w-16" />
         <Bone className="mt-3 h-11 w-full" />
         <div className="mt-3 flex gap-1.5">
@@ -49,7 +49,7 @@ function TasksSkeletonBody() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-border/50 bg-card/80">
+      <div className="overflow-hidden rounded-2xl imx-surface">
         <div className="flex justify-between border-b border-border/40 px-4 py-3">
           <Bone className="h-2.5 w-16" />
           <Bone className="h-2.5 w-4" />

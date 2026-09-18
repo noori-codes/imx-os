@@ -40,7 +40,7 @@ export function FocusSkeleton() {
                   <Bone key={i} className="h-14 w-full rounded-xl" />
                 ))}
               </div>
-              <div className="overflow-hidden rounded-2xl border border-border/50 bg-card/80 p-4 sm:p-5">
+              <div className="overflow-hidden rounded-2xl imx-surface p-4 sm:p-5">
                 <Bone className="h-3 w-32" />
                 <Bone className="mt-3 h-10 w-full rounded-xl" />
                 <Bone className="mt-3 h-10 w-36 rounded-xl" />

@@ -41,7 +41,7 @@ function InsightItem({
 const pillPrimary =
   "inline-flex h-8 items-center rounded-lg bg-foreground px-3 text-xs font-medium text-background transition-opacity hover:opacity-90";
 const pillOutline =
-  "inline-flex h-8 items-center rounded-lg border border-border/60 bg-card/70 px-3 text-xs font-medium text-foreground transition-colors hover:border-border";
+  "inline-flex h-8 items-center rounded-lg border border-surface-border bg-surface px-3 text-xs font-medium text-foreground transition-colors hover:border-border";
 
 export function DashboardInsightStrip({
   focusMinutes,

@@ -56,7 +56,7 @@ export function OfflineBanner() {
           "inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-medium shadow-sm backdrop-blur-md",
           offline
             ? "border-destructive/25 bg-destructive/10 text-destructive"
-            : "border-border/60 bg-card/90 text-foreground",
+            : "border-surface-border bg-surface-strong text-foreground",
         )}
       >
         {offline ? <WifiOff className="size-3.5 shrink-0" /> : null}

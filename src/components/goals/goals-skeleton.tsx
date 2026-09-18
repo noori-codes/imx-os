@@ -11,7 +11,7 @@ function Bone({ className }: { className?: string }) {
 function GoalsSkeletonBody() {
   return (
     <>
-      <div className="goals-pulse relative overflow-hidden rounded-[1.75rem] border border-border/50 bg-card/85 px-5 py-6 sm:px-7 sm:py-8">
+      <div className="goals-pulse relative overflow-hidden rounded-[1.75rem] imx-surface px-5 py-6 sm:px-7 sm:py-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:justify-between">
           <div className="space-y-2 text-center sm:text-left">
             <Bone className="mx-auto h-2.5 w-28 sm:mx-0" />
@@ -36,7 +36,7 @@ function GoalsSkeletonBody() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-border/50 bg-card/80 p-4 sm:p-5">
+      <div className="rounded-2xl imx-surface p-4 sm:p-5">
         <Bone className="h-2.5 w-16" />
         <Bone className="mt-3 h-10 w-full" />
       </div>
@@ -54,7 +54,7 @@ function GoalsSkeletonBody() {
         {Array.from({ length: 4 }).map((_, i) => (
           <div
             key={i}
-            className="rounded-2xl border border-border/50 bg-card/80 p-4"
+            className="rounded-2xl imx-surface p-4"
           >
             <div className="flex gap-3">
               <Bone className="size-14 shrink-0 rounded-full" />

@@ -114,7 +114,7 @@ function ListEmpty({
         {showElsewhere ? (
           <Link
             href={elsewhereHref}
-            className="inline-flex h-10 items-center rounded-xl border border-border/60 bg-card/70 px-4 text-sm font-medium text-foreground transition-colors hover:border-border"
+            className="inline-flex h-10 items-center rounded-xl border border-surface-border bg-surface px-4 text-sm font-medium text-foreground transition-colors hover:border-border"
           >
             {elsewhereLabel}
           </Link>
@@ -193,7 +193,7 @@ export function TaskList({
       {groups.map((group) => (
         <section
           key={group.id}
-          className="tasks-group overflow-hidden rounded-2xl border border-border/40 bg-card/70"
+          className="tasks-group overflow-hidden rounded-2xl imx-surface imx-surface-rim"
         >
           <div className="flex items-baseline justify-between gap-3 border-b border-border/40 px-4 py-3">
             <h2
@@ -230,7 +230,7 @@ export function TaskList({
       ))}
 
       {completed.length > 0 ? (
-        <section className="tasks-group overflow-hidden rounded-2xl border border-border/40 bg-card/55">
+        <section className="tasks-group overflow-hidden rounded-2xl imx-surface imx-surface-rim">
           <Button
             type="button"
             variant="ghost"

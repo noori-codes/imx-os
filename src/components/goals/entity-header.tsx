@@ -69,7 +69,7 @@ export function EntityHeader({
 
   if (editing) {
     return (
-      <div className="relative overflow-hidden rounded-[1.35rem] border border-border/50 bg-card/80 p-5 sm:p-6">
+      <div className="relative overflow-hidden rounded-[1.35rem] imx-surface p-5 sm:p-6">
         <div className="goals-composer-glow" aria-hidden />
         <div className="relative z-1 space-y-3">
           <Input
@@ -129,7 +129,7 @@ export function EntityHeader({
   return (
     <div
       className={cn(
-        "goals-pulse group relative overflow-hidden rounded-[1.35rem] border border-border/50 bg-card/80 px-5 py-5 sm:px-7 sm:py-6",
+        "goals-pulse group relative overflow-hidden rounded-[1.35rem] imx-surface px-5 py-5 sm:px-7 sm:py-6",
         sealed && "goals-pulse-sealed",
       )}
     >

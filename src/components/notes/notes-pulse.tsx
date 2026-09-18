@@ -66,7 +66,7 @@ export function NotesPulse({
   return (
     <section
       className={cn(
-        "notes-pulse relative overflow-hidden rounded-[1.75rem] border border-border/50 bg-card/85 px-5 py-6 sm:px-7 sm:py-8",
+        "notes-pulse relative overflow-hidden rounded-[1.75rem] imx-surface px-5 py-6 sm:px-7 sm:py-8",
         journal && "notes-pulse-journal",
         copy.sealed && "notes-pulse-sealed",
       )}

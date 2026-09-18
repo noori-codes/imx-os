@@ -247,7 +247,7 @@ export function NoteEditor({ note }: NoteEditorProps) {
     <form
       action={formAction}
       className={cn(
-        "notes-editor relative overflow-hidden rounded-[1.35rem] border border-border/40 bg-card/70",
+        "notes-editor relative overflow-hidden rounded-[1.35rem] imx-surface imx-surface-rim",
         isJournal && "notes-editor-journal border-amber-500/20",
       )}
     >
@@ -301,7 +301,7 @@ export function NoteEditor({ note }: NoteEditorProps) {
           <button
             type="button"
             onClick={() => void handleCopyLink()}
-            className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-border/60 bg-card/70 px-3 text-sm font-medium text-foreground transition-colors hover:border-border"
+            className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-surface-border bg-surface px-3 text-sm font-medium text-foreground transition-colors hover:border-border"
           >
             <Link2 className="size-3.5" />
             Copy link
@@ -310,7 +310,7 @@ export function NoteEditor({ note }: NoteEditorProps) {
             type="button"
             onClick={spawnTasksFromNote}
             disabled={busy}
-            className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-border/60 bg-card/70 px-3 text-sm font-medium text-foreground transition-colors hover:border-border disabled:opacity-60"
+            className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-surface-border bg-surface px-3 text-sm font-medium text-foreground transition-colors hover:border-border disabled:opacity-60"
           >
             <ListTodo className="size-3.5" />
             Tasks
@@ -319,7 +319,7 @@ export function NoteEditor({ note }: NoteEditorProps) {
             type="button"
             onClick={scheduleNoteOnCalendar}
             disabled={busy}
-            className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-border/60 bg-card/70 px-3 text-sm font-medium text-foreground transition-colors hover:border-border disabled:opacity-60"
+            className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-surface-border bg-surface px-3 text-sm font-medium text-foreground transition-colors hover:border-border disabled:opacity-60"
           >
             <CalendarDays className="size-3.5" />
             Schedule
@@ -327,7 +327,7 @@ export function NoteEditor({ note }: NoteEditorProps) {
           <button
             type="button"
             onClick={handleDelete}
-            className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-border/60 bg-card/70 px-3 text-sm font-medium text-destructive transition-colors hover:border-destructive/40"
+            className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-surface-border bg-surface px-3 text-sm font-medium text-destructive transition-colors hover:border-destructive/40"
           >
             <Trash2 className="size-3.5" />
             Delete

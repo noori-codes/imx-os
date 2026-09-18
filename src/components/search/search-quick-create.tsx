@@ -52,7 +52,7 @@ export function SearchQuickCreate() {
   const [, startTransition] = useTransition();
 
   return (
-    <section className="mx-auto w-full max-w-3xl rounded-[1.35rem] border border-border/50 bg-card/80 px-5 py-5 sm:px-6">
+    <section className="mx-auto w-full max-w-3xl rounded-[1.35rem] imx-surface px-5 py-5 sm:px-6">
       <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
         Create
       </p>
@@ -69,7 +69,7 @@ export function SearchQuickCreate() {
               className={
                 action.id === "task"
                   ? "inline-flex h-9 items-center gap-1.5 rounded-xl bg-foreground px-3.5 text-sm font-medium text-background transition-opacity hover:opacity-90"
-                  : "inline-flex h-9 items-center gap-1.5 rounded-xl border border-border/60 bg-card/70 px-3.5 text-sm font-medium text-foreground transition-colors hover:border-border"
+                  : "inline-flex h-9 items-center gap-1.5 rounded-xl border border-surface-border bg-surface px-3.5 text-sm font-medium text-foreground transition-colors hover:border-border"
               }
             >
               <Icon className="size-3.5" />
@@ -84,7 +84,7 @@ export function SearchQuickCreate() {
               void createNote("note");
             });
           }}
-          className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-border/60 bg-card/70 px-3.5 text-sm font-medium text-foreground transition-colors hover:border-border"
+          className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-surface-border bg-surface px-3.5 text-sm font-medium text-foreground transition-colors hover:border-border"
         >
           New note
         </button>
@@ -95,7 +95,7 @@ export function SearchQuickCreate() {
               void createNote("journal");
             });
           }}
-          className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-border/60 bg-card/70 px-3.5 text-sm font-medium text-foreground transition-colors hover:border-border"
+          className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-surface-border bg-surface px-3.5 text-sm font-medium text-foreground transition-colors hover:border-border"
         >
           Today’s journal
         </button>

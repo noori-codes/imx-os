@@ -85,7 +85,7 @@ export function SearchResults({
   if (query.length < 2) {
     return (
       <div className="mx-auto w-full max-w-2xl">
-        <section className="search-spotlight relative overflow-hidden rounded-[1.5rem] border border-border/50 bg-card/80 p-5 sm:p-6">
+        <section className="search-spotlight relative overflow-hidden rounded-[1.5rem] imx-surface p-5 sm:p-6">
           <div className="search-spotlight-glow" aria-hidden="true" />
           <div className="relative z-[1]">
             <div className="mb-4 flex items-start justify-between gap-3">
@@ -158,25 +158,25 @@ export function SearchResults({
                   </Link>
                   <Link
                     href="/calendar?compose=1"
-                    className="inline-flex h-8 items-center rounded-lg border border-border/60 bg-card/70 px-3 text-xs font-medium text-foreground transition-colors hover:border-border"
+                    className="inline-flex h-8 items-center rounded-lg border border-surface-border bg-surface px-3 text-xs font-medium text-foreground transition-colors hover:border-border"
                   >
                     Add event
                   </Link>
                   <Link
                     href="/habits?compose=1"
-                    className="inline-flex h-8 items-center rounded-lg border border-border/60 bg-card/70 px-3 text-xs font-medium text-foreground transition-colors hover:border-border"
+                    className="inline-flex h-8 items-center rounded-lg border border-surface-border bg-surface px-3 text-xs font-medium text-foreground transition-colors hover:border-border"
                   >
                     Add habit
                   </Link>
                   <Link
                     href="/goals?compose=1"
-                    className="inline-flex h-8 items-center rounded-lg border border-border/60 bg-card/70 px-3 text-xs font-medium text-foreground transition-colors hover:border-border"
+                    className="inline-flex h-8 items-center rounded-lg border border-surface-border bg-surface px-3 text-xs font-medium text-foreground transition-colors hover:border-border"
                   >
                     Add goal
                   </Link>
                   <Link
                     href="/books?compose=1"
-                    className="inline-flex h-8 items-center rounded-lg border border-border/60 bg-card/70 px-3 text-xs font-medium text-foreground transition-colors hover:border-border"
+                    className="inline-flex h-8 items-center rounded-lg border border-surface-border bg-surface px-3 text-xs font-medium text-foreground transition-colors hover:border-border"
                   >
                     Add book
                   </Link>
@@ -206,25 +206,25 @@ export function SearchResults({
             </Link>
             <Link
               href="/calendar?compose=1"
-              className="inline-flex h-10 items-center rounded-xl border border-border/60 bg-card/70 px-4 text-sm font-medium text-foreground transition-colors hover:border-border"
+              className="inline-flex h-10 items-center rounded-xl border border-surface-border bg-surface px-4 text-sm font-medium text-foreground transition-colors hover:border-border"
             >
               Add event
             </Link>
             <Link
               href="/habits?compose=1"
-              className="inline-flex h-10 items-center rounded-xl border border-border/60 bg-card/70 px-4 text-sm font-medium text-foreground transition-colors hover:border-border"
+              className="inline-flex h-10 items-center rounded-xl border border-surface-border bg-surface px-4 text-sm font-medium text-foreground transition-colors hover:border-border"
             >
               Add habit
             </Link>
             <Link
               href="/goals?compose=1"
-              className="inline-flex h-10 items-center rounded-xl border border-border/60 bg-card/70 px-4 text-sm font-medium text-foreground transition-colors hover:border-border"
+              className="inline-flex h-10 items-center rounded-xl border border-surface-border bg-surface px-4 text-sm font-medium text-foreground transition-colors hover:border-border"
             >
               Add goal
             </Link>
             <Link
               href="/books?compose=1"
-              className="inline-flex h-10 items-center rounded-xl border border-border/60 bg-card/70 px-4 text-sm font-medium text-foreground transition-colors hover:border-border"
+              className="inline-flex h-10 items-center rounded-xl border border-surface-border bg-surface px-4 text-sm font-medium text-foreground transition-colors hover:border-border"
             >
               Add book
             </Link>
@@ -327,7 +327,7 @@ export function SearchResults({
                     href={item.href}
                     data-entity={item.entity_type}
                     onClick={() => pushRecentSearch(query)}
-                    className="search-result-card group relative flex h-full gap-3 overflow-hidden rounded-2xl border border-border/50 bg-card/80 p-4 transition-[border-color,background-color,transform,box-shadow] hover:-translate-y-0.5 hover:border-border hover:bg-card hover:shadow-sm"
+                    className="search-result-card group relative flex h-full gap-3 overflow-hidden rounded-2xl imx-surface p-4 transition-[border-color,background-color,transform,box-shadow] hover:-translate-y-0.5 hover:border-border hover:bg-surface-strong hover:shadow-sm"
                   >
                     <span className="search-result-accent" aria-hidden />
                     <div className="search-result-icon flex size-10 shrink-0 items-center justify-center rounded-xl border border-border/50 bg-muted/60 text-muted-foreground transition-colors group-hover:border-border group-hover:text-foreground">

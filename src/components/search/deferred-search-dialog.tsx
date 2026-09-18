@@ -34,7 +34,7 @@ function SearchTriggers({
       </Button>
       <Button
         variant="outline"
-        className="search-trigger hidden h-9 w-[15.5rem] justify-start gap-2 border-border/60 bg-card/50 text-muted-foreground sm:inline-flex"
+        className="search-trigger hidden h-9 w-[15.5rem] justify-start gap-2 border-surface-border bg-surface text-muted-foreground sm:inline-flex"
         aria-label="Search IMX (⌘K or /)"
         onClick={onOpen}
       >
