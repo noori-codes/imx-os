@@ -268,7 +268,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
 
   setMode: (mode) => {
     const current = get();
-    if (current.isRunning) return;
+    if (current.isRunning || sessionInProgress(current)) return;
     const durationSeconds = durationForMode(mode, current);
     set({
       mode,
@@ -287,7 +287,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
 
   setClock: (clock) => {
     const current = get();
-    if (current.isRunning) return;
+    if (current.isRunning || sessionInProgress(current)) return;
     if (typeof window !== "undefined") {
       window.localStorage.setItem(FOCUS_CLOCK_KEY, clock);
     }
@@ -327,7 +327,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
 
   setDuration: (seconds) => {
     const current = get();
-    if (current.isRunning) return;
+    if (current.isRunning || sessionInProgress(current)) return;
     if (current.clock === "up") return;
     const durationSeconds = clampSeconds(seconds);
     const next = {
@@ -374,7 +374,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
 
   applyProfile: (profileId) => {
     const current = get();
-    if (current.isRunning) return;
+    if (current.isRunning || sessionInProgress(current)) return;
     const profile = getFocusProfile(profileId);
     const lastFocusSeconds = profile.focus * 60;
     const lastShortBreakSeconds = profile.short_break * 60;
@@ -395,6 +395,9 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
       durationSeconds,
       remainingSeconds: durationSeconds,
       elapsedSeconds: 0,
+      progressBaseSeconds: 0,
+      continuedSessionId: null,
+      continuedMergeIds: [],
       startedAt: null,
       sessionStartedAt: null,
       endsAt: null,
@@ -404,6 +407,8 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
 
   hydrateProfile: () => {
     if (typeof window === "undefined") return;
+    // Remounts after pause must not wipe in-progress time.
+    if (sessionInProgress(get())) return;
     const storedClock = window.localStorage.getItem(FOCUS_CLOCK_KEY);
     const clock: FocusClock =
       storedClock === "up" || storedClock === "down"

@@ -9,7 +9,7 @@ import {
 
 import { useDocumentVisible } from "@/hooks/use-document-visible";
 import { useRouter } from "next/navigation";
-import { CircleCheck, Pause, Play, RotateCcw, SkipForward } from "lucide-react";
+import { CircleCheck, Pause, Play, RotateCcw, SkipForward, Square } from "lucide-react";
 
 import { logFocusSession, updateFocusSession } from "@/actions/focus";
 import { toggleTaskComplete } from "@/actions/tasks";
@@ -533,13 +533,13 @@ export function FocusTimer({
   }
 
   function handleSealStopwatch() {
-    stopFocusSound();
-    if (isRunning) pause();
-    sealStopwatch(useFocusTimer.getState().displaySeconds());
+    handleStopAndSave();
   }
 
-  function handleDiscardStopwatch() {
-    const actual = useFocusTimer.getState().displaySeconds();
+  function handleDiscardSession() {
+    const actual = isStopwatch
+      ? useFocusTimer.getState().displaySeconds()
+      : Math.max(0, durationSeconds - remainingSeconds);
     if (actual >= 5) {
       void (async () => {
         const ok = await confirm({
@@ -568,9 +568,45 @@ export function FocusTimer({
       } else if (actual > 0) {
         reset();
       }
+    } else if (canContinueFocusSession(useFocusTimer.getState())) {
+      const actual = durationSeconds - remainingSeconds;
+      if (actual >= 5 && mode === "focus") {
+        const startedAt = new Date(Date.now() - actual * 1000).toISOString();
+        commitFocusSessionOptimistic(
+          buildOptimisticFocusSession({
+            mode: "focus",
+            planned_seconds: durationSeconds,
+            actual_seconds: actual,
+            completed: false,
+            note: intention,
+            task_id: linkedTaskId,
+            task_title: linkedTask?.title ?? null,
+            started_at: startedAt,
+          }),
+        );
+        void logFocusSession({
+          mode: "focus",
+          planned_seconds: durationSeconds,
+          actual_seconds: actual,
+          completed: false,
+          note: intention,
+          task_id: linkedTaskId,
+        }).then(() => router.refresh());
+      }
+      reset();
     }
 
     setClock(next);
+  }
+
+  function handleStopAndSave() {
+    stopFocusSound();
+    if (isStopwatch) {
+      if (isRunning) pause();
+      sealStopwatch(useFocusTimer.getState().displaySeconds());
+      return;
+    }
+    handleReset();
   }
 
   function handleStart() {
@@ -595,7 +631,7 @@ export function FocusTimer({
     stopFocusSound();
 
     if (isStopwatch) {
-      handleDiscardStopwatch();
+      handleDiscardSession();
       return;
     }
 
@@ -713,8 +749,8 @@ export function FocusTimer({
 
       if ((e.key === "r" || e.key === "R") && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
-        if (isStopwatch) {
-          handleSealStopwatch();
+        if (isStopwatch || canContinue || isRunning) {
+          handleStopAndSave();
           return;
         }
         handleReset();
@@ -779,13 +815,13 @@ export function FocusTimer({
       data-visible={pageVisible ? "true" : "false"}
       className={cn(
         "focus-stage group relative flex w-full flex-col overflow-hidden",
-        isRunning
+        isRunning || canContinue
           ? "h-full min-h-0 flex-1 items-center justify-center px-5 py-6 sm:px-8 sm:py-8"
           : "px-0 py-0",
       )}
       id="focus-timer"
       style={
-        isRunning
+        isRunning || canContinue
           ? ({
               ["--focus-progress" as string]: sessionProgress.toFixed(3),
             } as CSSProperties)
@@ -800,12 +836,12 @@ export function FocusTimer({
       <div className="focus-stage-glow-soft" aria-hidden />
       <div className="focus-stage-glow" aria-hidden />
 
-      {isRunning ? (
+      {isRunning || canContinue ? (
         <div className="focus-run relative z-1 mx-auto flex w-full max-w-lg flex-col items-center justify-center gap-8 text-center sm:gap-10">
           <div className="flex items-center gap-2.5">
-            <span className="focus-live-dot" aria-hidden />
+            {isRunning ? <span className="focus-live-dot" aria-hidden /> : null}
             <p className="text-[10px] font-medium uppercase tracking-[0.32em] text-muted-foreground">
-              {runningLabel}
+              {isRunning ? runningLabel : "Paused"}
             </p>
           </div>
 
@@ -862,11 +898,10 @@ export function FocusTimer({
           <div className="focus-run-controls flex items-center justify-center gap-4 sm:gap-5">
             <button
               type="button"
-              onClick={handleReset}
+              onClick={handleDiscardSession}
               className="flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
-              aria-label={
-                canSealStopwatch ? "Discard session" : "Reset timer"
-              }
+              aria-label="Discard session"
+              title="Discard without saving"
             >
               <RotateCcw className="size-4" />
             </button>
@@ -874,33 +909,33 @@ export function FocusTimer({
               type="button"
               onClick={handleToggle}
               className="focus-run-pause flex size-[4.5rem] items-center justify-center rounded-full text-background transition-transform hover:scale-[1.03] active:scale-95"
-              aria-label="Pause timer"
+              aria-label={isRunning ? "Pause timer" : "Resume timer"}
             >
-              <Pause className="size-6 fill-current" />
+              {isRunning ? (
+                <Pause className="size-6 fill-current" />
+              ) : (
+                <Play className="size-6 fill-current" />
+              )}
             </button>
-            {!isStopwatch ? (
-              <button
-                type="button"
-                onClick={handleSkip}
-                className="flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
-                aria-label="Skip to next phase"
-              >
-                <SkipForward className="size-4" />
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handleSealStopwatch}
-                disabled={!canSealStopwatch}
-                className={cn(
-                  "flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground",
-                  !canSealStopwatch && "pointer-events-none opacity-30",
-                )}
-                aria-label="Seal session"
-              >
+            <button
+              type="button"
+              onClick={handleStopAndSave}
+              disabled={isStopwatch ? !canSealStopwatch : false}
+              className={cn(
+                "flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground",
+                isStopwatch &&
+                  !canSealStopwatch &&
+                  "pointer-events-none opacity-30",
+              )}
+              aria-label="Stop and save"
+              title="Stop and save"
+            >
+              {isStopwatch ? (
+                <Square className="size-4 fill-current" />
+              ) : (
                 <CircleCheck className="size-4" />
-              </button>
-            )}
+              )}
+            </button>
           </div>
 
           <div className="focus-run-dock flex w-full max-w-sm flex-col items-center gap-3 opacity-70 transition-opacity hover:opacity-100 focus-within:opacity-100">
@@ -1244,7 +1279,7 @@ export function FocusTimer({
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Space to {canContinue ? "continue" : "begin"} · R to reset
+                  Space to {canContinue ? "continue" : "begin"} · R to save
                 </p>
               </div>
             </div>

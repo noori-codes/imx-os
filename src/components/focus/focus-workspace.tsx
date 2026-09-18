@@ -4,7 +4,6 @@ import { useEffect, type ReactNode } from "react";
 
 import { useFocusContinueBarVisible } from "@/components/focus/focus-continue-bar";
 import { AppPageFrame } from "@/components/shared/app-page-frame";
-import { cn } from "@/lib/utils";
 import { useFocusTimer } from "@/stores/focus-timer";
 
 type FocusWorkspaceProps = {
@@ -20,9 +19,11 @@ export function FocusWorkspace({
 }: FocusWorkspaceProps) {
   const isRunning = useFocusTimer((s) => s.isRunning);
   const continueBarVisible = useFocusContinueBarVisible();
+  // Keep the session shell while paused so the timer doesn't remount and wipe time.
+  const inSession = isRunning || continueBarVisible;
 
   useEffect(() => {
-    if (!isRunning) return;
+    if (!inSession) return;
 
     const html = document.documentElement;
     const body = document.body;
@@ -39,9 +40,9 @@ export function FocusWorkspace({
       body.style.overflow = prevBody;
       delete html.dataset.focusSession;
     };
-  }, [isRunning]);
+  }, [inSession]);
 
-  if (isRunning) {
+  if (inSession) {
     return (
       <div className="focus-session-lock flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden">
         <div className="flex min-h-0 flex-1 flex-col">{timer}</div>
@@ -55,13 +56,7 @@ export function FocusWorkspace({
         <div className="focus-studio-wash" aria-hidden="true" />
         <div className="focus-studio-glow" aria-hidden="true" />
         <div className="focus-studio-glow-soft" aria-hidden="true" />
-        <div
-          className={cn(
-            "focus-studio-content flex w-full flex-col gap-8",
-            continueBarVisible &&
-              "pb-[calc(var(--mobile-continue-h)+0.75rem)]",
-          )}
-        >
+        <div className="focus-studio-content flex w-full flex-col gap-8">
           <div className="focus-reveal w-full">{timer}</div>
 
           <div className="focus-reveal focus-reveal-delay-1 w-full border-t border-border/40 pt-8">

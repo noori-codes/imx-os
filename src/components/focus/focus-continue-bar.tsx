@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Play } from "lucide-react";
 
 import {
@@ -21,6 +21,7 @@ function scrollToTimer() {
 
 export function FocusContinueBar() {
   const router = useRouter();
+  const pathname = usePathname();
   const clock = useFocusTimer((s) => s.clock);
   const mode = useFocusTimer((s) => s.mode);
   const elapsedSeconds = useFocusTimer((s) => s.elapsedSeconds);
@@ -51,7 +52,8 @@ export function FocusContinueBar() {
     };
   }, [canContinue]);
 
-  if (!canContinue) return null;
+  // Focus run room already has resume controls while paused.
+  if (!canContinue || pathname === "/focus") return null;
 
   // Bar only shows while paused — frozen elapsed, no 1 Hz tick.
   const stopwatchSession =
