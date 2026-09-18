@@ -219,11 +219,11 @@ export function TodayFocus({ tasks, onToggle, onSchedule }: TodayFocusProps) {
       )}
     >
       <div className="dash-panel-glow" aria-hidden="true" />
-      <div className="relative z-[1] flex items-center justify-between gap-3 border-b border-border/40 px-5 py-4">
+      <div className="relative z-[1] flex items-center justify-between gap-3 border-b border-border/25 px-5 py-3.5">
         <div>
           <p className="dash-panel-eyebrow">On deck</p>
-          <h3 className="mt-0.5 text-sm font-semibold text-foreground">Today</h3>
-          <p className="mt-0.5 text-xs text-muted-foreground">
+          <h3 className="mt-0.5 text-sm font-semibold tracking-tight text-foreground">Today</h3>
+          <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
             {tasks.length === 0
               ? "Nothing due"
               : clear

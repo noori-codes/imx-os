@@ -226,7 +226,7 @@ export function DashboardStage({ name, greeting, data }: DashboardStageProps) {
             onSchedule={onTaskSchedule}
           />
         </div>
-        <div className="dash-bento-side flex min-h-0 flex-col gap-4">
+        <div className="dash-bento-side flex min-h-0 flex-col gap-3">
           <div className="min-h-44 flex-1">
             <HabitsToday
               habits={optimisticHabits}

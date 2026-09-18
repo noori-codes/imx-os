@@ -55,13 +55,13 @@ export function HabitsToday({ habits, onToggle }: HabitsTodayProps) {
       )}
     >
       <div className="dash-panel-glow" aria-hidden="true" />
-      <div className="relative z-[1] flex items-center justify-between gap-3 border-b border-border/40 px-5 py-4">
+      <div className="relative z-[1] flex items-center justify-between gap-3 border-b border-border/25 px-5 py-3.5">
         <div>
           <p className="dash-panel-eyebrow">Today’s pulse</p>
-          <h3 className="mt-0.5 text-sm font-semibold text-foreground">
+          <h3 className="mt-0.5 text-sm font-semibold tracking-tight text-foreground">
             Habits
           </h3>
-          <p className="mt-0.5 text-xs text-muted-foreground">
+          <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
             {total === 0
               ? "No habits yet"
               : clear

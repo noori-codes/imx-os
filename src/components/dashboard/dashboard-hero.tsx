@@ -120,7 +120,7 @@ export function DashboardHero({
 
   return (
     <section
-      className="dash-stage dash-stage-hero px-6 py-8 sm:px-8 sm:py-10 lg:px-10 lg:py-12"
+      className="dash-stage dash-stage-hero px-6 py-9 sm:px-9 sm:py-11 lg:px-11 lg:py-12"
       data-phase={phase}
     >
       <div className="dash-stage-vignette" aria-hidden="true" />
@@ -132,35 +132,35 @@ export function DashboardHero({
         emphasize={heroKind === "focus"}
       />
 
-      <div className="relative z-[2] flex min-h-[min(42vh,22rem)] flex-col justify-between gap-10 sm:min-h-[24rem] sm:gap-12">
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-          <div className="dash-reveal min-w-0 text-center sm:text-left">
+      <div className="relative z-[2] flex min-h-[min(44vh,23rem)] flex-col justify-between gap-12 sm:min-h-[25rem] sm:gap-14">
+        <div className="flex flex-col gap-7 sm:flex-row sm:items-start sm:justify-between">
+          <div className="dash-reveal min-w-0 max-w-xl text-center sm:text-left">
             <p className="dash-hero-eyebrow">
               <span>{PHASE_LABEL[phase]}</span>
               {dateLabel ? (
                 <>
-                  <span className="text-muted-foreground/40" aria-hidden>
+                  <span className="text-muted-foreground/35" aria-hidden>
                     ·
                   </span>
                   <span>{dateLabel}</span>
                 </>
               ) : null}
             </p>
-            <h2 className="dash-hero-greeting mt-3 text-2xl font-medium tracking-tight text-foreground sm:text-3xl">
+            <h2 className="dash-hero-greeting mt-3.5 text-[1.85rem] font-medium text-foreground sm:mt-4 sm:text-[2.35rem]">
               {greeting}, {name}
             </h2>
             {story ? (
-              <p className="mt-3 max-w-md text-sm leading-relaxed text-muted-foreground/90">
+              <p className="dash-hero-story mt-3.5 max-w-md text-[0.9375rem] leading-relaxed text-muted-foreground/85">
                 {story}
               </p>
             ) : (
-              <p className="mt-3 max-w-sm text-sm text-muted-foreground/70">
+              <p className="dash-hero-story mt-3.5 max-w-sm text-[0.9375rem] leading-relaxed text-muted-foreground/60">
                 One clear room for what matters today.
               </p>
             )}
           </div>
 
-          <div className="dash-reveal dash-reveal-delay-1 flex flex-col items-center gap-3 sm:items-end">
+          <div className="dash-reveal dash-reveal-delay-1 flex flex-col items-center gap-2.5 sm:items-end">
             {streak >= 7 ? (
               <StreakPill streak={streakDisplay} tier={streakLevel} />
             ) : null}
@@ -169,17 +169,17 @@ export function DashboardHero({
               {hasTodayReview ? (
                 <Link
                   href="/review"
-                  className="inline-flex items-center gap-2 rounded-xl border border-foreground/15 bg-foreground/5 px-4 py-2.5 text-sm font-medium text-foreground/80 transition-colors hover:border-border hover:bg-muted/40"
+                  className="dash-hero-secondary-cta inline-flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-medium text-foreground/75 transition-colors hover:bg-foreground/[0.04] hover:text-foreground"
                 >
-                  <Moon className="size-3.5" aria-hidden="true" />
+                  <Moon className="size-3.5 opacity-70" aria-hidden="true" />
                   Reviewed
                 </Link>
               ) : phase === "evening" || phase === "night" || !story ? (
                 <Link
                   href="/review"
-                  className="inline-flex items-center gap-2 rounded-xl border border-border/60 bg-background/40 px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:border-border hover:bg-muted/40"
+                  className="dash-hero-secondary-cta inline-flex items-center gap-2 rounded-xl border border-border/40 bg-background/25 px-3.5 py-2.5 text-sm font-medium text-foreground/90 transition-colors hover:border-border/60 hover:bg-background/40"
                 >
-                  <Moon className="size-3.5" aria-hidden="true" />
+                  <Moon className="size-3.5 opacity-70" aria-hidden="true" />
                   Review
                 </Link>
               ) : null}
@@ -187,7 +187,7 @@ export function DashboardHero({
           </div>
         </div>
 
-        <div className="dash-reveal dash-reveal-delay-2 flex flex-col gap-8 sm:flex-row sm:items-end sm:justify-between sm:gap-12">
+        <div className="dash-reveal dash-reveal-delay-2 flex flex-col gap-9 sm:flex-row sm:items-end sm:justify-between sm:gap-14">
           <div className="relative text-center sm:text-left">
             <p className="dash-hero-label">
               {heroKind === "due" ? "Needs you" : "Focus today"}
@@ -209,17 +209,17 @@ export function DashboardHero({
                 : formatFocusMinutes(focusDisplay)}
             </p>
             {heroKind === "due" && overdue > 0 ? (
-              <p className="mt-2.5 text-xs tabular-nums tracking-wide text-muted-foreground">
+              <p className="mt-3 text-[0.7rem] tabular-nums tracking-[0.08em] text-muted-foreground/80">
                 {dueToday} today · {overdue} overdue
               </p>
             ) : heroKind === "focus" && focusSessions > 0 ? (
-              <p className="mt-2.5 text-xs tabular-nums tracking-wide text-muted-foreground">
+              <p className="mt-3 text-[0.7rem] tabular-nums tracking-[0.08em] text-muted-foreground/80">
                 {focusSessions} {focusSessions === 1 ? "star" : "stars"} lit
               </p>
             ) : null}
           </div>
 
-          <div className="dash-hero-instrument grid grid-cols-3 gap-5 sm:min-w-[17.5rem] sm:gap-7">
+          <div className="dash-hero-instrument grid grid-cols-3 gap-6 sm:min-w-[18rem] sm:gap-8">
             {heroKind === "due" ? (
               <SecondaryStat
                 label="Focus"

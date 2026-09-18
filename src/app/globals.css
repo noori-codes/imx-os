@@ -1267,63 +1267,67 @@ html[data-focus-session] body {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
 }
 
 .dash-panel {
   height: 100%;
   overflow: hidden;
-  border-radius: 1rem;
-  border: 1px solid color-mix(in oklab, var(--border) 80%, transparent);
-  background: color-mix(in oklab, var(--card) 88%, transparent);
-  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--foreground) 3.5%, transparent);
+  border-radius: 1.15rem;
+  border: 1px solid color-mix(in oklab, var(--border) 45%, transparent);
+  background: color-mix(in oklab, var(--card) 52%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--foreground) 2.5%, transparent);
 }
 
 .dark .dash-panel {
-  background: color-mix(in oklab, var(--card) 72%, transparent);
+  border-color: color-mix(in oklab, var(--border) 55%, transparent);
+  background: color-mix(in oklab, var(--card) 38%, transparent);
 }
 
 .dash-panel-eyebrow {
-  font-size: 0.6875rem;
+  font-size: 0.625rem;
   font-weight: 500;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: color-mix(in oklab, var(--muted-foreground) 92%, transparent);
+  color: color-mix(in oklab, var(--muted-foreground) 88%, transparent);
 }
 
 .dash-panel-glow {
   pointer-events: none;
   position: absolute;
-  right: -12%;
-  top: -48%;
-  width: min(18rem, 70%);
-  height: 140%;
+  right: -14%;
+  top: -52%;
+  width: min(16rem, 62%);
+  height: 130%;
   background: radial-gradient(
     ellipse at center,
-    color-mix(in oklab, var(--foreground) 5%, transparent) 0%,
-    transparent 68%
+    color-mix(in oklab, var(--foreground) 3%, transparent) 0%,
+    transparent 70%
   );
-  opacity: 0.85;
+  opacity: 0.55;
 }
 
 .dark .dash-panel-glow {
   background: radial-gradient(
     ellipse at center,
-    color-mix(in oklab, var(--foreground) 8%, transparent) 0%,
-    transparent 68%
+    color-mix(in oklab, var(--foreground) 5%, transparent) 0%,
+    transparent 70%
   );
+  opacity: 0.45;
 }
 
 .dash-bento {
   display: grid;
-  gap: 1rem;
+  gap: 0.875rem;
 }
 
 @media (min-width: 1024px) {
   .dash-bento {
     grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
     grid-template-rows: auto auto;
-    gap: 1rem;
+    gap: 1rem 0.875rem;
   }
 
   .dash-bento-today {
@@ -1348,18 +1352,21 @@ html[data-focus-session] body {
 
 /* Dashboard — today's stage */
 .dash-stage {
-  --dash-glow: oklch(0.62 0.04 235 / 0.22);
-  --dash-wash: oklch(0.72 0.03 235 / 0.09);
+  --dash-glow: oklch(0.62 0.04 235 / 0.28);
+  --dash-wash: oklch(0.72 0.03 235 / 0.12);
   isolation: isolate;
   position: relative;
   overflow: hidden;
-  border-radius: 1.5rem;
+  border-radius: 1.65rem;
   background: color-mix(in oklab, var(--dash-wash) 100%, transparent);
-  box-shadow: inset 0 0 80px color-mix(in oklab, var(--background) 35%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--foreground) 7%, transparent),
+    inset 0 0 100px color-mix(in oklab, var(--background) 28%, transparent),
+    0 32px 68px -44px color-mix(in oklab, var(--foreground) 22%, transparent);
 }
 
 .dash-stage-hero {
-  min-height: min(52vh, 28rem);
+  min-height: min(54vh, 29rem);
 }
 
 .dash-stage-vignette {
@@ -1608,29 +1615,9 @@ html[data-focus-session] body {
   pointer-events: none;
   position: absolute;
   z-index: 0;
-  left: 6%;
-  top: 8%;
-  width: min(22rem, 58%);
-  aspect-ratio: 1;
-  height: auto;
-  border-radius: 9999px;
-  background: radial-gradient(
-    circle at center,
-    var(--dash-glow) 0%,
-    transparent 68%
-  );
-  opacity: 0.95;
-  transform-origin: center;
-  animation: dash-glow-breathe 6s ease-in-out infinite;
-}
-
-.dash-stage-glow-secondary {
-  pointer-events: none;
-  position: absolute;
-  z-index: 0;
-  right: 4%;
-  bottom: 4%;
-  width: min(16rem, 44%);
+  left: 5%;
+  top: 6%;
+  width: min(24rem, 62%);
   aspect-ratio: 1;
   height: auto;
   border-radius: 9999px;
@@ -1639,9 +1626,29 @@ html[data-focus-session] body {
     var(--dash-glow) 0%,
     transparent 70%
   );
-  opacity: 0.6;
+  opacity: 0.9;
   transform-origin: center;
-  animation: dash-glow-breathe-secondary 7.5s ease-in-out infinite;
+  animation: dash-glow-breathe 7s ease-in-out infinite;
+}
+
+.dash-stage-glow-secondary {
+  pointer-events: none;
+  position: absolute;
+  z-index: 0;
+  right: 2%;
+  bottom: 2%;
+  width: min(14rem, 40%);
+  aspect-ratio: 1;
+  height: auto;
+  border-radius: 9999px;
+  background: radial-gradient(
+    circle at center,
+    var(--dash-glow) 0%,
+    transparent 72%
+  );
+  opacity: 0.4;
+  transform-origin: center;
+  animation: dash-glow-breathe-secondary 8.5s ease-in-out infinite;
   animation-delay: -2.5s;
 }
 
@@ -1810,21 +1817,26 @@ html[data-focus-session] body {
 .dash-hero-eyebrow {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.5rem;
   font-size: 0.625rem;
   font-weight: 500;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.24em;
   text-transform: uppercase;
-  color: color-mix(in oklab, var(--muted-foreground) 88%, transparent);
+  color: color-mix(in oklab, var(--muted-foreground) 82%, transparent);
 }
 
 .dash-hero-greeting {
-  letter-spacing: -0.03em;
-  line-height: 1.15;
+  letter-spacing: -0.035em;
+  line-height: 1.08;
+  text-wrap: balance;
+}
+
+.dash-hero-story {
+  text-wrap: pretty;
 }
 
 .dash-hero-cta-wrap {
-  opacity: 0.78;
+  opacity: 0.88;
   transition: opacity 280ms ease;
 }
 
@@ -1833,64 +1845,69 @@ html[data-focus-session] body {
   opacity: 1;
 }
 
+.dash-hero-secondary-cta {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
 .dash-hero-instrument {
-  padding-top: 0.35rem;
-  border-top: 1px solid color-mix(in oklab, var(--foreground) 7%, transparent);
+  padding-top: 0.85rem;
+  border-top: 1px solid color-mix(in oklab, var(--foreground) 5%, transparent);
 }
 
 @media (min-width: 640px) {
   .dash-hero-instrument {
     border-top: none;
     padding-top: 0;
-    padding-left: 1.5rem;
-    border-left: 1px solid color-mix(in oklab, var(--foreground) 8%, transparent);
+    padding-left: 1.75rem;
+    border-left: 1px solid color-mix(in oklab, var(--foreground) 6%, transparent);
   }
 }
 
 .dash-hero-label {
   font-size: 0.625rem;
   font-weight: 500;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.24em;
   text-transform: uppercase;
-  color: color-mix(in oklab, var(--muted-foreground) 86%, transparent);
+  color: color-mix(in oklab, var(--muted-foreground) 78%, transparent);
 }
 
 .dash-hero-stat {
-  margin-top: 0.55rem;
-  font-size: 4rem;
+  margin-top: 0.65rem;
+  font-size: 4.25rem;
   font-weight: 500;
-  letter-spacing: -0.04em;
-  line-height: 0.92;
+  letter-spacing: -0.045em;
+  line-height: 0.9;
   font-variant-numeric: tabular-nums lining-nums;
-  text-shadow: 0 0 48px color-mix(in oklab, var(--foreground) 12%, transparent);
+  text-shadow: 0 0 56px color-mix(in oklab, var(--foreground) 10%, transparent);
 }
 
 @media (min-width: 640px) {
   .dash-hero-stat {
-    font-size: 5rem;
+    font-size: 5.25rem;
   }
 }
 
 .dash-hero-secondary-label {
   font-size: 0.625rem;
   font-weight: 500;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: color-mix(in oklab, var(--muted-foreground) 80%, transparent);
+  color: color-mix(in oklab, var(--muted-foreground) 72%, transparent);
 }
 
 .dash-hero-secondary-value {
-  margin-top: 0.25rem;
-  font-size: 1rem;
+  margin-top: 0.35rem;
+  font-size: 1.05rem;
   font-weight: 500;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
   font-variant-numeric: tabular-nums lining-nums;
 }
 
 @media (min-width: 640px) {
   .dash-hero-secondary-value {
-    font-size: 1.125rem;
+    font-size: 1.2rem;
   }
 }
 
@@ -1993,16 +2010,14 @@ html[data-focus-session] body {
   align-items: center;
   gap: 0.4rem;
   border-radius: 9999px;
-  border: 1px solid color-mix(in oklab, var(--dash-streak-accent) 32%, transparent);
-  background: color-mix(in oklab, var(--dash-streak-accent) 14%, transparent);
-  padding: 0.4rem 0.85rem;
-  font-size: 0.75rem;
+  border: 1px solid color-mix(in oklab, var(--dash-streak-accent) 24%, transparent);
+  background: color-mix(in oklab, var(--dash-streak-accent) 10%, transparent);
+  padding: 0.35rem 0.75rem;
+  font-size: 0.7rem;
   font-weight: 600;
   letter-spacing: -0.01em;
   color: var(--dash-streak-accent);
-  box-shadow:
-    inset 0 1px 0 color-mix(in oklab, white 18%, transparent),
-    0 8px 22px -14px color-mix(in oklab, var(--dash-streak-accent) 55%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in oklab, white 12%, transparent);
   animation: dash-streak-pill-pulse 3.6s ease-in-out infinite;
 }
 

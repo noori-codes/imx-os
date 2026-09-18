@@ -24,20 +24,20 @@ function PanelHeader({ withRing = false }: { withRing?: boolean }) {
 function DashboardSkeletonBody() {
   return (
     <div className="dash-page-content flex flex-1 flex-col gap-6">
-      <section className="dash-stage dash-stage-hero relative overflow-hidden px-6 py-8 sm:px-8 sm:py-10">
-        <div className="relative z-[2] flex min-h-[min(42vh,22rem)] flex-col justify-between gap-10 sm:min-h-[24rem]">
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-            <div className="space-y-3 text-center sm:text-left">
+      <section className="dash-stage dash-stage-hero relative overflow-hidden px-6 py-9 sm:px-9 sm:py-11">
+        <div className="relative z-[2] flex min-h-[min(44vh,23rem)] flex-col justify-between gap-12 sm:min-h-[25rem]">
+          <div className="flex flex-col gap-7 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-3.5 text-center sm:text-left">
               <Bone className="mx-auto h-2.5 w-36 sm:mx-0" />
-              <Bone className="mx-auto h-8 w-56 max-w-full sm:mx-0 sm:h-9 sm:w-72" />
-              <Bone className="mx-auto h-3.5 w-48 max-w-full opacity-55 sm:mx-0" />
+              <Bone className="mx-auto h-9 w-60 max-w-full sm:mx-0 sm:h-10 sm:w-80" />
+              <Bone className="mx-auto h-3.5 w-52 max-w-full opacity-55 sm:mx-0" />
             </div>
             <Bone className="mx-auto h-10 w-28 rounded-xl sm:mx-0" />
           </div>
-          <div className="flex flex-col gap-8 sm:flex-row sm:items-end sm:justify-between">
-            <div className="space-y-2 text-center sm:text-left">
+          <div className="flex flex-col gap-9 sm:flex-row sm:items-end sm:justify-between">
+            <div className="space-y-2.5 text-center sm:text-left">
               <Bone className="mx-auto h-2.5 w-20 sm:mx-0" />
-              <Bone className="mx-auto h-14 w-24 sm:mx-0 sm:h-16" />
+              <Bone className="mx-auto h-16 w-28 sm:mx-0 sm:h-[4.5rem]" />
             </div>
             <div className="grid grid-cols-3 gap-5 sm:min-w-[17.5rem] sm:gap-7">
               {Array.from({ length: 3 }).map((_, i) => (
@@ -69,7 +69,7 @@ function DashboardSkeletonBody() {
           </section>
         </div>
 
-        <div className="dash-bento-side flex flex-col gap-4">
+        <div className="dash-bento-side flex flex-col gap-3">
           <section className="dash-panel min-h-44">
             <PanelHeader withRing />
             <div className="flex flex-wrap gap-3 px-5 py-4">
