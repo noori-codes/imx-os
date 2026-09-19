@@ -3,11 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { getSiteOrigin } from "@/lib/site-url";
 import { createClient } from "@/lib/supabase/server";
-
-function siteOrigin() {
-  return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-}
 
 export type AuthState = {
   error?: string;
@@ -58,7 +55,7 @@ export async function signup(
     email,
     password,
     options: {
-      emailRedirectTo: `${siteOrigin()}/auth/callback`,
+      emailRedirectTo: `${getSiteOrigin()}/auth/callback`,
     },
   });
 
@@ -84,7 +81,7 @@ export async function requestPasswordReset(
   }
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${siteOrigin()}/auth/callback?next=${encodeURIComponent("/update-password")}`,
+    redirectTo: `${getSiteOrigin()}/auth/callback?next=${encodeURIComponent("/update-password")}`,
   });
 
   if (error) {

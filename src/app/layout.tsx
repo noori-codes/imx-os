@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { ConfirmProvider } from "@/components/ui/confirm-dialog";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { getSiteOrigin } from "@/lib/site-url";
 
 import "./globals.css";
 
@@ -19,9 +20,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "https://imx-os.vercel.app",
-  ),
+  metadataBase: new URL(getSiteOrigin()),
   title: {
     default: "IMX OS — Personal Operating System",
     template: "%s · IMX OS",
