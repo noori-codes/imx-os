@@ -7,6 +7,16 @@ export const metadata: Metadata = {
   description: "Sign in to IMX OS",
 };
 
-export default function LoginPage() {
-  return <LoginForm />;
+type LoginPageProps = {
+  searchParams: Promise<{ error?: string }>;
+};
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const { error } = await searchParams;
+  const callbackError =
+    error === "auth_callback_failed"
+      ? "Social sign-in didn’t finish. Try again, or use email."
+      : null;
+
+  return <LoginForm callbackError={callbackError} />;
 }

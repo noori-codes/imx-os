@@ -134,3 +134,31 @@ export async function signOut() {
   revalidatePath("/", "layout");
   redirect("/login");
 }
+
+export type OAuthProvider = "google" | "github";
+
+export async function signInWithOAuthProvider(
+  provider: OAuthProvider,
+): Promise<AuthState> {
+  if (provider !== "google" && provider !== "github") {
+    return { error: "Unsupported sign-in provider." };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider,
+    options: {
+      redirectTo: `${getSiteOrigin()}/auth/callback`,
+    },
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  if (!data.url) {
+    return { error: "Couldn’t start social sign-in. Try again." };
+  }
+
+  redirect(data.url);
+}

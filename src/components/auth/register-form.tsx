@@ -5,6 +5,7 @@ import { useActionState, useState } from "react";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 import { signup, type AuthState } from "@/actions/auth";
+import { OAuthButtons } from "@/components/auth/oauth-buttons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,6 +34,8 @@ export function RegisterForm() {
             Your private OS for focus, goals, and daily rhythm.
           </p>
         </header>
+
+        <OAuthButtons />
 
         <form action={formAction} className="space-y-4">
           {state?.error ? (

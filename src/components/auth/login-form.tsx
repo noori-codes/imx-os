@@ -5,12 +5,17 @@ import { useActionState, useState } from "react";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 import { login, type AuthState } from "@/actions/auth";
+import { OAuthButtons } from "@/components/auth/oauth-buttons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
-export function LoginForm() {
+type LoginFormProps = {
+  callbackError?: string | null;
+};
+
+export function LoginForm({ callbackError = null }: LoginFormProps) {
   const [state, formAction, pending] = useActionState<AuthState | null, FormData>(
     login,
     null,
@@ -32,6 +37,8 @@ export function LoginForm() {
             Pick up your tasks, focus, habits, and notes.
           </p>
         </header>
+
+        <OAuthButtons initialError={callbackError} />
 
         <form action={formAction} className="space-y-4">
           {state?.error ? (
