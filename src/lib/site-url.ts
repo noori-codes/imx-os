@@ -22,3 +22,22 @@ export function getSiteOrigin(): string {
 
   return "http://localhost:3000";
 }
+
+/**
+ * Origin of the current browser request (for OAuth redirectTo).
+ * Must match where the user started so PKCE cookies stay on the same host.
+ */
+export async function getRequestOrigin(): Promise<string> {
+  const { headers } = await import("next/headers");
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host");
+  if (!host) return getSiteOrigin();
+
+  const proto =
+    h.get("x-forwarded-proto") ??
+    (host.startsWith("localhost") || host.startsWith("127.0.0.1")
+      ? "http"
+      : "https");
+
+  return `${proto}://${host}`.replace(/\/$/, "");
+}

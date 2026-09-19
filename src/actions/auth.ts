@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { getSiteOrigin } from "@/lib/site-url";
+import { getRequestOrigin, getSiteOrigin } from "@/lib/site-url";
 import { createClient } from "@/lib/supabase/server";
 
 export type AuthState = {
@@ -145,10 +145,11 @@ export async function signInWithOAuthProvider(
   }
 
   const supabase = await createClient();
+  const origin = await getRequestOrigin();
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
-      redirectTo: `${getSiteOrigin()}/auth/callback`,
+      redirectTo: `${origin}/auth/callback`,
     },
   });
 
