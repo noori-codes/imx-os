@@ -44,7 +44,7 @@ export function RichTextEditor({
         "aria-multiline": "true",
         "aria-label": placeholder,
         class:
-          "note-editor min-h-72 px-3 py-4 text-[15px] leading-7 focus:outline-none sm:min-h-96 sm:px-4 sm:py-5 sm:text-base sm:leading-8",
+          "note-editor min-h-[min(70vh,36rem)] px-2 py-5 text-[16px] leading-8 focus:outline-none sm:px-4 sm:py-6 sm:text-[17px] sm:leading-8",
       },
     },
     onUpdate: ({ editor: ed }) => {
@@ -55,7 +55,7 @@ export function RichTextEditor({
   if (!editor) {
     return (
       <div
-        className="min-h-80 rounded-xl border border-border/40 px-4 py-5 text-sm text-muted-foreground"
+        className="min-h-[min(70vh,36rem)] px-4 py-6 text-sm text-muted-foreground"
         role="status"
         aria-label="Loading editor"
       >
@@ -67,9 +67,9 @@ export function RichTextEditor({
   const isEmpty = editor.isEmpty;
 
   return (
-    <div className="notes-rte mt-4 overflow-hidden rounded-xl imx-surface imx-surface-rim">
+    <div className="notes-rte mt-5">
       <div
-        className="flex flex-wrap gap-0.5 border-b border-border/40 px-2 py-1.5"
+        className="notes-rte-toolbar sticky top-0 z-2 -mx-1 mb-1 flex flex-wrap gap-0.5 rounded-xl border border-border/25 bg-background/70 px-1.5 py-1.5 backdrop-blur-md supports-[backdrop-filter]:bg-background/55"
         role="toolbar"
         aria-label="Formatting"
         aria-controls={editorId}
@@ -124,7 +124,7 @@ export function RichTextEditor({
         {isEmpty ? (
           <p
             id={`${editorId}-placeholder`}
-            className="pointer-events-none absolute top-4 left-3 text-[15px] text-muted-foreground sm:top-5 sm:left-4 sm:text-base"
+            className="pointer-events-none absolute top-5 left-2 text-[16px] leading-8 text-muted-foreground/70 sm:top-6 sm:left-4 sm:text-[17px]"
             aria-hidden
           >
             {placeholder}
@@ -151,7 +151,7 @@ function ToolbarButton({
     <button
       type="button"
       className={cn(
-        "inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+        "inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground",
         active && "bg-muted text-foreground",
       )}
       onClick={onClick}

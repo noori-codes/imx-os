@@ -40,20 +40,11 @@ async function NoteDetailBody({ noteId }: { noteId: string }) {
   }
 
   const displayTitle = note.title?.trim() || "Untitled";
-  const kind = note.type === "journal" ? "Journal" : "Note";
 
   return (
     <>
-      <Header
-        chrome
-        title={displayTitle}
-        description={
-          note.type === "journal" && note.journal_date
-            ? `Journal · ${note.journal_date}`
-            : kind
-        }
-      />
-      <AppPageFrame className="max-w-3xl gap-6 md:py-8">
+      <Header chrome title={displayTitle} />
+      <AppPageFrame className="max-w-4xl gap-5 md:py-8">
         <NotesStage>
           <div className="notes-reveal flex flex-wrap items-center justify-between gap-3">
             <Breadcrumbs

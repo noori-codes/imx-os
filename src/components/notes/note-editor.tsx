@@ -10,14 +10,25 @@ import {
   useTransition,
 } from "react";
 import { useRouter } from "next/navigation";
-import { Trash2, Link2, ListTodo, CalendarDays } from "lucide-react";
+import {
+  Trash2,
+  Link2,
+  ListTodo,
+  CalendarDays,
+  Save,
+} from "lucide-react";
 
 import { createEventFromNote } from "@/actions/calendar";
 import { deleteNote, updateNote, type NoteActionState } from "@/actions/notes";
 import { createTasksFromLines } from "@/actions/tasks";
 import { confirm } from "@/components/ui/confirm-dialog";
 import { calendarHref } from "@/lib/calendar";
-import { toDateString, startOfDay } from "@/lib/date-utils";
+import {
+  formatWeekdayLong,
+  parseDateString,
+  toDateString,
+  startOfDay,
+} from "@/lib/date-utils";
 import { imxToast } from "@/lib/imx-toast";
 import { countNoteWords, noteContentToTaskLines } from "@/lib/note-preview";
 import { cn } from "@/lib/utils";
@@ -32,12 +43,12 @@ const RichTextEditor = dynamic(
     ssr: false,
     loading: () => (
       <div
-        className="imx-skeleton min-h-80 rounded-2xl border border-border/40 p-4"
+        className="imx-skeleton min-h-[min(70vh,36rem)] rounded-2xl p-4"
         role="status"
         aria-label="Loading editor"
       >
-        <div className="imx-skeleton-bone mb-3 h-8 w-40 rounded-md" />
-        <div className="imx-skeleton-bone h-48 w-full rounded-lg" />
+        <div className="imx-skeleton-bone mb-3 h-8 w-48 rounded-md" />
+        <div className="imx-skeleton-bone h-64 w-full rounded-lg" />
       </div>
     ),
   },
@@ -48,6 +59,37 @@ type NoteEditorProps = {
 };
 
 type SaveStatus = "idle" | "dirty" | "saving" | "saved" | "error";
+
+function IconAction({
+  label,
+  onClick,
+  disabled,
+  destructive,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  destructive?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      title={label}
+      aria-label={label}
+      className={cn(
+        "inline-flex size-9 items-center justify-center rounded-xl border border-surface-border bg-surface text-muted-foreground transition-colors hover:border-border hover:text-foreground disabled:opacity-60",
+        destructive &&
+          "text-destructive hover:border-destructive/40 hover:text-destructive",
+      )}
+    >
+      {children}
+    </button>
+  );
+}
 
 export function NoteEditor({ note }: NoteEditorProps) {
   const router = useRouter();
@@ -68,6 +110,10 @@ export function NoteEditor({ note }: NoteEditorProps) {
   const words = countNoteWords(content);
   const isJournal = note.type === "journal";
   const busy = pending || manualPending || status === "saving";
+  const journalLabel =
+    isJournal && note.journal_date
+      ? formatWeekdayLong(parseDateString(note.journal_date))
+      : null;
 
   const markSaved = useEffectEvent((nextTitle: string, nextContent: string) => {
     baseline.current = { title: nextTitle, content: nextContent };
@@ -236,45 +282,44 @@ export function NoteEditor({ note }: NoteEditorProps) {
     status === "saving" || busy
       ? "Saving…"
       : status === "dirty"
-        ? "Unsaved changes"
+        ? "Unsaved"
         : status === "error"
           ? "Couldn’t save"
           : savedAt
             ? `Saved · ${savedAt}`
-            : "All changes saved";
+            : "Saved";
 
   return (
     <form
       action={formAction}
       className={cn(
-        "notes-editor relative overflow-hidden rounded-[1.35rem] imx-surface imx-surface-rim",
-        isJournal && "notes-editor-journal border-amber-500/20",
+        "notes-editor notes-studio relative overflow-hidden rounded-[1.75rem] imx-surface imx-surface-rim",
+        isJournal && "notes-editor-journal",
       )}
     >
       <div className="notes-editor-glow" aria-hidden />
+      <div className="notes-studio-wash" aria-hidden />
       <input type="hidden" name="content" value={content} />
       <input type="hidden" name="title" value={title} />
 
-      <div className="relative z-1 flex flex-wrap items-center justify-between gap-3 border-b border-border/40 px-5 py-4 sm:px-6">
-        <div>
+      <div className="relative z-1 flex flex-wrap items-center justify-between gap-3 border-b border-border/30 px-5 py-3.5 sm:px-8 sm:py-4">
+        <div className="min-w-0 space-y-1">
           <p
             className={cn(
-              "text-[11px] font-medium uppercase tracking-[0.14em]",
+              "text-[11px] font-medium uppercase tracking-[0.16em]",
               isJournal
-                ? "text-amber-800/80 dark:text-amber-300/90"
+                ? "text-amber-800/75 dark:text-amber-300/85"
                 : "text-muted-foreground",
             )}
           >
             {isJournal ? "Journal" : "Note"}
-            {note.journal_date ? (
-              <span className="ml-2 tabular-nums text-muted-foreground">
-                {note.journal_date}
-              </span>
-            ) : null}
           </p>
+          {journalLabel ? (
+            <p className="truncate text-sm text-foreground/80">{journalLabel}</p>
+          ) : null}
           <p
             className={cn(
-              "mt-1 text-xs",
+              "text-xs",
               status === "error"
                 ? "text-destructive"
                 : status === "dirty"
@@ -284,69 +329,64 @@ export function NoteEditor({ note }: NoteEditorProps) {
             aria-live="polite"
           >
             {statusLabel}
+            <span className="mx-1.5 text-border">·</span>
+            <span className="tabular-nums">
+              {words} word{words === 1 ? "" : "s"}
+            </span>
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="hidden text-xs tabular-nums text-muted-foreground sm:inline">
-            {words} word{words === 1 ? "" : "s"}
-          </span>
+        <div className="flex flex-wrap items-center gap-1.5">
           <button
             type="submit"
             disabled={busy}
-            className="inline-flex h-9 items-center rounded-xl bg-foreground px-3.5 text-sm font-medium text-background transition-opacity hover:opacity-90 disabled:opacity-60"
+            className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-foreground px-3.5 text-sm font-medium text-background transition-opacity hover:opacity-90 disabled:opacity-60"
           >
+            <Save className="size-3.5" />
             {busy ? "Saving…" : "Save"}
           </button>
-          <button
-            type="button"
+          <IconAction
+            label="Copy link"
             onClick={() => void handleCopyLink()}
-            className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-surface-border bg-surface px-3 text-sm font-medium text-foreground transition-colors hover:border-border"
           >
             <Link2 className="size-3.5" />
-            Copy link
-          </button>
-          <button
-            type="button"
+          </IconAction>
+          <IconAction
+            label="Turn into tasks"
             onClick={spawnTasksFromNote}
             disabled={busy}
-            className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-surface-border bg-surface px-3 text-sm font-medium text-foreground transition-colors hover:border-border disabled:opacity-60"
           >
             <ListTodo className="size-3.5" />
-            Tasks
-          </button>
-          <button
-            type="button"
+          </IconAction>
+          <IconAction
+            label="Schedule on calendar"
             onClick={scheduleNoteOnCalendar}
             disabled={busy}
-            className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-surface-border bg-surface px-3 text-sm font-medium text-foreground transition-colors hover:border-border disabled:opacity-60"
           >
             <CalendarDays className="size-3.5" />
-            Schedule
-          </button>
-          <button
-            type="button"
+          </IconAction>
+          <IconAction
+            label="Delete"
             onClick={handleDelete}
-            className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-surface-border bg-surface px-3 text-sm font-medium text-destructive transition-colors hover:border-destructive/40"
+            destructive
           >
             <Trash2 className="size-3.5" />
-            Delete
-          </button>
+          </IconAction>
         </div>
       </div>
 
-      <div className="relative z-1 px-5 pt-5 sm:px-8 sm:pt-7">
+      <div className="relative z-1 px-5 pt-8 sm:px-10 sm:pt-10">
         <input
           id="note-title"
           value={title}
           onChange={(event) => setTitle(event.target.value)}
           placeholder="Untitled"
           aria-label="Title"
-          className="w-full bg-transparent text-2xl font-semibold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/55 sm:text-3xl"
+          className="notes-studio-title w-full bg-transparent text-3xl font-semibold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/45 sm:text-4xl sm:leading-[1.15]"
         />
       </div>
 
-      <div className="relative z-1 px-2 pb-2 sm:px-4 sm:pb-4">
+      <div className="relative z-1 px-3 pb-6 sm:px-6 sm:pb-8">
         <RichTextEditor
           key={note.id}
           content={note.content}
@@ -360,17 +400,10 @@ export function NoteEditor({ note }: NoteEditorProps) {
       </div>
 
       {state?.error ? (
-        <p className="relative z-1 border-t border-border/40 px-5 py-3 text-sm text-destructive sm:px-6">
+        <p className="relative z-1 border-t border-border/40 px-5 py-3 text-sm text-destructive sm:px-8">
           {state.error}
         </p>
       ) : null}
-
-      <div className="relative z-1 flex items-center justify-between border-t border-border/40 px-5 py-3 text-xs text-muted-foreground sm:px-6 sm:hidden">
-        <span className="tabular-nums">
-          {words} word{words === 1 ? "" : "s"}
-        </span>
-        <span>{statusLabel}</span>
-      </div>
     </form>
   );
 }

@@ -19,35 +19,37 @@ export function NoteDetailSkeleton() {
         aria-live="polite"
         aria-label="Loading note"
       >
-        <AppPageFrame className="max-w-3xl gap-6 md:py-8">
+        <AppPageFrame className="max-w-4xl gap-5 md:py-8">
           <NotesStage>
             <div className="flex items-center justify-between gap-3">
               <Bone className="h-3 w-36" />
               <Bone className="h-8 w-28 rounded-xl" />
             </div>
-            <div className="notes-editor relative overflow-hidden rounded-[1.35rem] imx-surface">
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/40 px-5 py-4 sm:px-6">
+            <div className="notes-editor notes-studio relative overflow-hidden rounded-[1.75rem] imx-surface">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/30 px-5 py-3.5 sm:px-8 sm:py-4">
                 <div className="space-y-2">
-                  <Bone className="h-2.5 w-16" />
-                  <Bone className="h-3 w-28 opacity-55" />
+                  <Bone className="h-2.5 w-14" />
+                  <Bone className="h-3 w-40 opacity-55" />
+                  <Bone className="h-3 w-28 opacity-40" />
                 </div>
-                <div className="flex gap-2">
-                  <Bone className="h-9 w-16 rounded-xl" />
-                  <Bone className="h-9 w-24 rounded-xl" />
+                <div className="flex gap-1.5">
                   <Bone className="h-9 w-20 rounded-xl" />
+                  <Bone className="size-9 rounded-xl" />
+                  <Bone className="size-9 rounded-xl" />
+                  <Bone className="size-9 rounded-xl" />
                 </div>
               </div>
-              <div className="space-y-4 px-5 pt-5 sm:px-8 sm:pt-7">
-                <Bone className="h-8 w-56 max-w-full sm:h-9" />
+              <div className="space-y-4 px-5 pt-8 sm:px-10 sm:pt-10">
+                <Bone className="h-10 w-72 max-w-full sm:h-11" />
               </div>
-              <div className="px-2 pb-2 sm:px-4 sm:pb-4">
-                <div className="mt-4 overflow-hidden rounded-xl imx-surface imx-surface-rim">
-                  <div className="flex gap-0.5 border-b border-border/40 px-2 py-1.5">
+              <div className="px-3 pb-6 sm:px-6 sm:pb-8">
+                <div className="mt-5 space-y-3">
+                  <div className="flex gap-1">
                     {Array.from({ length: 6 }).map((_, i) => (
                       <Bone key={i} className="size-8 rounded-lg" />
                     ))}
                   </div>
-                  <Bone className="min-h-80 w-full rounded-none" />
+                  <Bone className="min-h-[min(70vh,36rem)] w-full rounded-2xl" />
                 </div>
               </div>
             </div>

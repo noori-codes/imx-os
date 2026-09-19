@@ -23,6 +23,13 @@ type QueryClient =
 const NOTES_LIST_SELECT =
   "id, user_id, title, type, journal_date, created_at, updated_at, preview, word_count";
 
+const NOTES_LIST_SELECT_LEGACY =
+  "id, user_id, title, type, journal_date, created_at, updated_at";
+
+function missingPreviewColumn(message: string) {
+  return /notes\.preview|column .*preview.* does not exist/i.test(message);
+}
+
 async function revalidateNotes(noteId?: string) {
   revalidatePath("/notes");
   revalidatePath("/calendar");
@@ -73,20 +80,36 @@ async function loadNotes(
 ): Promise<NoteListItem[]> {
   const supabase = await notesClient(userId);
 
-  let query = supabase
-    .from("notes")
-    .select(NOTES_LIST_SELECT)
-    .order("updated_at", { ascending: false });
+  async function run(select: string) {
+    let query = supabase
+      .from("notes")
+      .select(select)
+      .order("updated_at", { ascending: false });
 
-  if (userId && hasAdminClient()) {
-    query = query.eq("user_id", userId);
+    if (userId && hasAdminClient()) {
+      query = query.eq("user_id", userId);
+    }
+
+    if (type) {
+      query = query.eq("type", type);
+    }
+
+    return query;
   }
 
-  if (type) {
-    query = query.eq("type", type);
-  }
+  const { data, error } = await run(NOTES_LIST_SELECT);
 
-  const { data, error } = await query;
+  if (error && missingPreviewColumn(error.message)) {
+    console.warn(
+      "[notes] preview/word_count missing — run supabase/migrations/015_notes_list_preview.sql",
+    );
+    const legacy = await run(NOTES_LIST_SELECT_LEGACY);
+    if (legacy.error) {
+      console.error("[notes] getNotes:", legacy.error.message);
+      return [];
+    }
+    return (legacy.data ?? []).map(mapListItem);
+  }
 
   if (error) {
     console.error("[notes] getNotes:", error.message);
@@ -124,17 +147,30 @@ async function loadTodayJournal(
   const supabase = await notesClient(userId);
   const today = toDateString(new Date());
 
-  let query = supabase
-    .from("notes")
-    .select(NOTES_LIST_SELECT)
-    .eq("type", "journal")
-    .eq("journal_date", today);
+  async function run(select: string) {
+    let query = supabase
+      .from("notes")
+      .select(select)
+      .eq("type", "journal")
+      .eq("journal_date", today);
 
-  if (userId && hasAdminClient()) {
-    query = query.eq("user_id", userId);
+    if (userId && hasAdminClient()) {
+      query = query.eq("user_id", userId);
+    }
+
+    return query.maybeSingle();
   }
 
-  const { data, error } = await query.maybeSingle();
+  const { data, error } = await run(NOTES_LIST_SELECT);
+
+  if (error && missingPreviewColumn(error.message)) {
+    const legacy = await run(NOTES_LIST_SELECT_LEGACY);
+    if (legacy.error) {
+      console.error("[notes] getTodayJournal:", legacy.error.message);
+      return null;
+    }
+    return legacy.data ? mapListItem(legacy.data) : null;
+  }
 
   if (error) {
     console.error("[notes] getTodayJournal:", error.message);
@@ -312,7 +348,18 @@ export async function updateNote(
     })
     .eq("id", noteId);
 
-  if (error) {
+  if (error && missingPreviewColumn(error.message)) {
+    const legacy = await supabase
+      .from("notes")
+      .update({
+        title: title || "Untitled",
+        content,
+      })
+      .eq("id", noteId);
+    if (legacy.error) {
+      return { error: legacy.error.message };
+    }
+  } else if (error) {
     return { error: error.message };
   }
 
