@@ -242,8 +242,6 @@ export async function createNote(
         user_id: user.id,
         title: `Journal · ${day}`,
         content: "",
-        preview: "",
-        word_count: 0,
         type: "journal",
         journal_date: day,
       })
@@ -252,7 +250,7 @@ export async function createNote(
 
     if (error) {
       console.error("[notes] createNote journal:", error.message);
-      redirect("/notes");
+      redirect("/notes?error=create_failed");
     }
 
     await revalidateNotes();
@@ -265,8 +263,6 @@ export async function createNote(
       user_id: user.id,
       title: "Untitled",
       content: "",
-      preview: "",
-      word_count: 0,
       type: "note",
       journal_date: null,
     })
@@ -275,11 +271,24 @@ export async function createNote(
 
   if (error) {
     console.error("[notes] createNote:", error.message);
-    redirect("/notes");
+    redirect("/notes?error=create_failed");
   }
 
   await revalidateNotes();
   redirect(`/notes/${data.id}`);
+}
+
+/** Form action — new plain note (no .bind needed). */
+export async function createPlainNoteAction() {
+  await createNote("note");
+}
+
+/** Form action — today's journal, or `journal_date` hidden field (YYYY-MM-DD). */
+export async function createJournalNoteAction(formData?: FormData) {
+  const raw = formData?.get("journal_date");
+  const journalDate =
+    typeof raw === "string" && /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : undefined;
+  await createNote("journal", journalDate);
 }
 
 export async function updateNote(

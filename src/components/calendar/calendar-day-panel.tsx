@@ -20,7 +20,7 @@ import {
   deleteCalendarEvent,
   duplicateCalendarEvent,
 } from "@/actions/calendar";
-import { createNote } from "@/actions/notes";
+import { createJournalNoteAction } from "@/actions/notes";
 import { toggleTaskComplete, updateTask } from "@/actions/tasks";
 import { EventForm } from "@/components/calendar/event-form";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -399,7 +399,8 @@ export function CalendarDayPanel({
                 <ListTodo className="size-3.5" />
                 Task
               </Button>
-              <form action={createNote.bind(null, "journal", date)}>
+              <form action={createJournalNoteAction}>
+                <input type="hidden" name="journal_date" value={date} />
                 <Button type="submit" size="sm" variant="outline">
                   <BookOpen className="size-3.5" />
                   Journal
@@ -433,7 +434,8 @@ export function CalendarDayPanel({
                 <h3 className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
                   Journal
                 </h3>
-                <form action={createNote.bind(null, "journal", date)}>
+                <form action={createJournalNoteAction}>
+                  <input type="hidden" name="journal_date" value={date} />
                   <Button
                     type="submit"
                     size="sm"

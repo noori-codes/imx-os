@@ -33,6 +33,18 @@ function hasSupabaseAuthCookie(request: NextRequest) {
 export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // OAuth PKCE / magic links land with ?code= on Site URL. Never leave that on /login.
+  const authCode = request.nextUrl.searchParams.get("code");
+  const authError = request.nextUrl.searchParams.get("error");
+  if (
+    (authCode || authError) &&
+    !pathname.startsWith("/auth/callback")
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/auth/callback";
+    return NextResponse.redirect(url);
+  }
+
   if (!isSupabaseConfigured()) {
     if (pathname !== "/setup") {
       return NextResponse.redirect(new URL("/setup", request.url));

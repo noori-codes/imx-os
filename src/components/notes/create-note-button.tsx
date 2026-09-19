@@ -3,7 +3,10 @@
 import { useFormStatus } from "react-dom";
 import { BookOpen, Loader2, Plus } from "lucide-react";
 
-import { createNote } from "@/actions/notes";
+import {
+  createJournalNoteAction,
+  createPlainNoteAction,
+} from "@/actions/notes";
 import { cn } from "@/lib/utils";
 import type { NoteType } from "@/types/note";
 
@@ -62,12 +65,13 @@ export function CreateNoteButton({
   capture,
 }: CreateNoteButtonProps) {
   const action =
-    journalDate !== undefined
-      ? createNote.bind(null, type, journalDate)
-      : createNote.bind(null, type);
+    type === "journal" ? createJournalNoteAction : createPlainNoteAction;
 
   return (
     <form action={action}>
+      {type === "journal" && journalDate ? (
+        <input type="hidden" name="journal_date" value={journalDate} />
+      ) : null}
       <CreateNoteSubmit
         label={label}
         icon={icon}

@@ -5,7 +5,7 @@ import { useEffect, useState, useTransition } from "react";
 import { BookOpen, CheckCircle2, Circle, Timer } from "lucide-react";
 
 import { toggleHabitOnDate } from "@/actions/habits";
-import { createNote } from "@/actions/notes";
+import { createJournalNoteAction } from "@/actions/notes";
 import { toggleTaskComplete, updateTask } from "@/actions/tasks";
 import { calendarHref } from "@/lib/calendar";
 import {
@@ -168,7 +168,8 @@ export function ReviewRecapCard({ recap }: ReviewRecapCardProps) {
             Open today&apos;s journal
           </Link>
         ) : (
-          <form action={createNote.bind(null, "journal", recap.date)}>
+          <form action={createJournalNoteAction}>
+            <input type="hidden" name="journal_date" value={recap.date} />
             <button
               type="submit"
               className="flex w-full items-center gap-2.5 rounded-xl border border-border/50 px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:border-border hover:text-foreground"
