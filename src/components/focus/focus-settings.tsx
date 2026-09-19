@@ -53,6 +53,8 @@ type FocusSettingsProps = {
   /** Extra class on the trigger button. */
   className?: string;
   align?: "center" | "start";
+  /** Icon-only gear for the launch panel. */
+  iconOnly?: boolean;
 };
 
 export function FocusSettings({
@@ -60,6 +62,7 @@ export function FocusSettings({
   onClockChange,
   className,
   align = "center",
+  iconOnly = false,
 }: FocusSettingsProps) {
   const router = useRouter();
   const mode = useFocusTimer((s) => s.mode);
@@ -124,15 +127,22 @@ export function FocusSettings({
         <button
           type="button"
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground",
-            align === "start" ? "justify-start" : "justify-center",
+            "inline-flex items-center text-muted-foreground transition-colors hover:text-foreground",
+            iconOnly
+              ? "size-9 justify-center rounded-full hover:bg-muted/50"
+              : "gap-1.5 rounded-full px-3 py-1.5 text-sm",
+            !iconOnly && (align === "start" ? "justify-start" : "justify-center"),
             className,
           )}
+          aria-label={iconOnly ? `Focus settings · ${summary}` : undefined}
+          title={iconOnly ? `Settings · ${summary}` : undefined}
         >
           <Settings2 className="size-3.5 shrink-0" />
-          <span className="tabular-nums max-sm:text-xs">
-            Settings · {summary}
-          </span>
+          {iconOnly ? null : (
+            <span className="tabular-nums max-sm:text-xs">
+              Settings · {summary}
+            </span>
+          )}
         </button>
       </DialogTrigger>
 

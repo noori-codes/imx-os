@@ -39,8 +39,6 @@ import { cn } from "@/lib/utils";
 import { stopFocusSound, useFocusSound } from "@/stores/focus-sound";
 import { nextFocusMode, useFocusTimer, canContinueFocusSession } from "@/stores/focus-timer";
 import {
-  BREAK_DURATION_PRESETS,
-  FOCUS_DURATION_PRESETS,
   FOCUS_MAX_SECONDS,
   FOCUS_POMODOROS_PER_LONG_BREAK,
   FOCUS_PRESETS,
@@ -110,9 +108,7 @@ export function FocusTimer({
   const linkedTaskId = useFocusTimer((s) => s.linkedTaskId);
   const profileId = useFocusTimer((s) => s.profileId);
   const progressBaseSeconds = useFocusTimer((s) => s.progressBaseSeconds);
-  const setMode = useFocusTimer((s) => s.setMode);
   const setClock = useFocusTimer((s) => s.setClock);
-  const setDuration = useFocusTimer((s) => s.setDuration);
   const setIntention = useFocusTimer((s) => s.setIntention);
   const setLinkedTaskId = useFocusTimer((s) => s.setLinkedTaskId);
   const setAutoStartNext = useFocusTimer((s) => s.setAutoStartNext);
@@ -946,7 +942,7 @@ export function FocusTimer({
         <div className="focus-launch relative z-1 w-full overflow-hidden rounded-[1.75rem] imx-surface">
           <div className="focus-launch-vignette" aria-hidden />
           <div className="focus-launch-glow" aria-hidden />
-          <div className="relative grid items-start gap-8 p-5 sm:p-7 lg:grid-cols-2 lg:gap-12 lg:p-8">
+          <div className="relative grid items-center gap-8 p-5 sm:p-7 lg:grid-cols-2 lg:gap-12 lg:p-8">
             {/* Visual column */}
             <div className="flex flex-col items-center gap-5 lg:items-start">
               <div className="w-full text-center lg:text-left">
@@ -971,7 +967,7 @@ export function FocusTimer({
                 </p>
               </div>
 
-              <div className="relative mx-auto flex size-[min(58vw,15rem)] items-center justify-center sm:size-60 lg:mx-0 lg:size-64">
+              <div className="relative mx-auto flex size-[min(68vw,17rem)] items-center justify-center sm:size-[19rem] lg:mx-0 lg:size-[21rem]">
                 <FocusClockFace
                   isRunning={isRunning}
                   isStopwatch={isStopwatch}
@@ -1013,162 +1009,88 @@ export function FocusTimer({
             </div>
 
             {/* Action column */}
-            <div className="flex min-w-0 flex-col gap-5">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p
+            <div className="flex min-w-0 flex-col gap-4">
+              <div className="flex items-center gap-2">
+                <div
+                  className="flex flex-1 gap-1 rounded-full bg-muted/35 p-1"
+                  role="tablist"
+                  aria-label="Clock style"
+                >
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={!isStopwatch}
+                    onClick={() => handleClockChange("down")}
                     className={cn(
-                      "font-semibold leading-none tracking-tight text-foreground",
-                      isStopwatch
-                        ? "text-3xl sm:text-4xl"
-                        : "text-3xl tabular-nums sm:text-4xl",
+                      "min-w-0 flex-1 rounded-full px-3 py-2 text-xs font-medium transition-colors sm:text-sm",
+                      !isStopwatch
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground",
                     )}
                   >
-                    {isStopwatch
-                      ? canContinue
-                        ? "Continue"
-                        : "Count up"
-                      : formatFocusMinutes(Math.round(durationSeconds / 60))}
-                  </p>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    {canContinue
-                      ? pickupHint ?? "Space to resume"
-                      : isStopwatch
-                        ? "Seal when the work is done"
-                        : mode === "focus"
-                          ? "Name the work. Begin when ready."
-                          : "Break · Space to begin"}
-                  </p>
+                    Timed
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={isStopwatch}
+                    onClick={() => handleClockChange("up")}
+                    className={cn(
+                      "min-w-0 flex-1 rounded-full px-3 py-2 text-xs font-medium transition-colors sm:text-sm",
+                      isStopwatch
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    Count up
+                  </button>
                 </div>
                 <FocusSettings
                   dailyGoalMinutes={dailyGoalMinutes}
                   onClockChange={handleClockChange}
-                  align="start"
+                  iconOnly
                   className="shrink-0"
                 />
               </div>
 
-              <div className="flex flex-wrap gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => handleClockChange("down")}
-                  className={cn(
-                    "rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors",
-                    !isStopwatch
-                      ? "bg-foreground text-background"
-                      : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground",
-                  )}
-                >
-                  Timed
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleClockChange("up")}
-                  className={cn(
-                    "rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors",
-                    isStopwatch
-                      ? "bg-foreground text-background"
-                      : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground",
-                  )}
-                >
-                  Count up
-                </button>
-              </div>
-
               {!isStopwatch ? (
-                <div className="space-y-3">
-                  <div className="grid grid-cols-3 gap-1.5">
-                    {FOCUS_PROFILES.map((profile) => {
-                      const active = profileId === profile.id;
-                      return (
-                        <button
-                          key={profile.id}
-                          type="button"
-                          onClick={() => applyProfile(profile.id)}
+                <div className="grid grid-cols-3 gap-1.5">
+                  {FOCUS_PROFILES.map((profile) => {
+                    const active = profileId === profile.id;
+                    return (
+                      <button
+                        key={profile.id}
+                        type="button"
+                        onClick={() => applyProfile(profile.id)}
+                        className={cn(
+                          "rounded-xl px-2.5 py-2 text-left transition-colors",
+                          active
+                            ? "bg-foreground text-background"
+                            : "bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:text-foreground",
+                        )}
+                        aria-pressed={active}
+                      >
+                        <span className="block text-xs font-medium sm:text-sm">
+                          {profile.label}
+                        </span>
+                        <span
                           className={cn(
-                            "rounded-xl px-2.5 py-2 text-left transition-colors",
+                            "mt-0.5 block text-[10px] tabular-nums sm:text-[11px]",
                             active
-                              ? "bg-foreground text-background"
-                              : "bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:text-foreground",
-                          )}
-                          aria-pressed={active}
-                        >
-                          <span className="block text-xs font-medium sm:text-sm">
-                            {profile.label}
-                          </span>
-                          <span
-                            className={cn(
-                              "mt-0.5 block text-[10px] tabular-nums sm:text-[11px]",
-                              active
-                                ? "text-background/70"
-                                : "text-muted-foreground",
-                            )}
-                          >
-                            {profile.hint}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <div
-                    className="flex w-full gap-1 rounded-full bg-muted/35 p-1"
-                    role="tablist"
-                    aria-label="Timer mode"
-                  >
-                    {(["focus", "short_break", "long_break"] as FocusMode[]).map(
-                      (m) => {
-                        const isActive = mode === m;
-                        return (
-                          <button
-                            key={m}
-                            type="button"
-                            role="tab"
-                            aria-selected={isActive}
-                            onClick={() => setMode(m)}
-                            className={cn(
-                              "min-w-0 flex-1 rounded-full px-2 py-1.5 text-xs transition-colors sm:text-sm",
-                              isActive
-                                ? "bg-background font-medium text-foreground shadow-sm"
-                                : "text-muted-foreground hover:text-foreground",
-                            )}
-                          >
-                            {FOCUS_PRESETS[m].label}
-                          </button>
-                        );
-                      },
-                    )}
-                  </div>
-
-                  <div className="flex flex-wrap gap-1.5">
-                    {(mode === "focus"
-                      ? FOCUS_DURATION_PRESETS
-                      : BREAK_DURATION_PRESETS[mode]
-                    ).map((preset) => {
-                      const active =
-                        Math.round(durationSeconds / 60) === preset.minutes;
-                      return (
-                        <button
-                          key={preset.minutes}
-                          type="button"
-                          onClick={() => setDuration(preset.minutes * 60)}
-                          className={cn(
-                            "rounded-full px-2.5 py-1 text-xs tabular-nums transition-colors",
-                            active
-                              ? "bg-foreground text-background"
-                              : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                              ? "text-background/70"
+                              : "text-muted-foreground",
                           )}
                         >
-                          {preset.label}
-                        </button>
-                      );
-                    })}
-                  </div>
+                          {profile.hint}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               ) : null}
 
               {mode === "focus" || isStopwatch ? (
-                <div className="space-y-2.5">
+                <div className="space-y-2">
                   <Input
                     value={intention}
                     onChange={(e) => setIntention(e.target.value)}
@@ -1177,14 +1099,6 @@ export function FocusTimer({
                     data-imx-capture
                     className="h-11 w-full rounded-xl border-border/50 bg-muted/40 px-4 text-sm font-medium tracking-tight shadow-none placeholder:font-normal focus-visible:ring-1"
                   />
-                  {linkedTask ? (
-                    <p className="px-0.5 text-xs text-muted-foreground">
-                      Linked · {linkedTask.title}
-                      {!intention.trim()
-                        ? " · used if the field stays empty"
-                        : null}
-                    </p>
-                  ) : null}
                   {tasks.length > 0 ? (
                     <BrandSelect
                       value={linkedTaskId ?? ""}
@@ -1217,70 +1131,63 @@ export function FocusTimer({
                 </div>
               ) : null}
 
-              <div className="focus-launch-atmosphere rounded-2xl imx-surface imx-surface-rim px-3 py-3 sm:px-4">
-                <FocusSounds embedded />
-              </div>
+              <FocusSounds compact />
 
-              <div className="flex flex-col gap-2.5">
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={handleReset}
-                    className="flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                    aria-label={
-                      canSealStopwatch ? "Discard session" : "Reset timer"
-                    }
-                  >
-                    <RotateCcw className="size-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleToggle}
-                    className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-foreground px-5 text-sm font-medium text-background transition-transform hover:scale-[1.01] active:scale-[0.99]"
-                    aria-label={
-                      canContinue
-                        ? "Continue session"
-                        : isStopwatch
-                          ? "Start focus"
-                          : "Begin session"
-                    }
-                  >
-                    <Play className="size-4 fill-current" />
-                    {canContinue
-                      ? "Continue"
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleReset}
+                  className="flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  aria-label={
+                    canSealStopwatch ? "Discard session" : "Reset timer"
+                  }
+                >
+                  <RotateCcw className="size-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleToggle}
+                  className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-foreground px-5 text-sm font-medium text-background transition-transform hover:scale-[1.01] active:scale-[0.99]"
+                  aria-label={
+                    canContinue
+                      ? "Continue session"
                       : isStopwatch
-                        ? "Start"
-                        : mode === "focus"
-                          ? "Begin"
-                          : "Start break"}
+                        ? "Start focus"
+                        : "Begin session"
+                  }
+                >
+                  <Play className="size-4 fill-current" />
+                  {canContinue
+                    ? "Continue"
+                    : isStopwatch
+                      ? "Start"
+                      : mode === "focus"
+                        ? "Begin"
+                        : "Start break"}
+                </button>
+                {!isStopwatch ? (
+                  <button
+                    type="button"
+                    onClick={handleSkip}
+                    className="flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    aria-label="Skip to next phase"
+                  >
+                    <SkipForward className="size-4" />
                   </button>
-                  {!isStopwatch ? (
-                    <button
-                      type="button"
-                      onClick={handleSkip}
-                      className="flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                      aria-label="Skip to next phase"
-                    >
-                      <SkipForward className="size-4" />
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={handleSealStopwatch}
-                      disabled={!canSealStopwatch}
-                      className={cn(
-                        "flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
-                        !canSealStopwatch && "pointer-events-none opacity-30",
-                      )}
-                      aria-label="Seal session"
-                    >
-                      <CircleCheck className="size-4" />
-                    </button>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Space to {canContinue ? "continue" : "begin"} · R to save
-                </p>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleSealStopwatch}
+                    disabled={!canSealStopwatch}
+                    className={cn(
+                      "flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+                      !canSealStopwatch && "pointer-events-none opacity-30",
+                    )}
+                    aria-label="Seal session"
+                  >
+                    <CircleCheck className="size-4" />
+                  </button>
+                )}
               </div>
             </div>
           </div>
