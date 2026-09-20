@@ -50,7 +50,7 @@ function notesClient(userId: string | null): QueryClient | Promise<QueryClient> 
   return createClient();
 }
 
-function mapListItem(row: {
+type NoteListRow = {
   id: string;
   user_id: string;
   title: string;
@@ -60,7 +60,9 @@ function mapListItem(row: {
   updated_at: string;
   preview?: string | null;
   word_count?: number | null;
-}): NoteListItem {
+};
+
+function mapListItem(row: NoteListRow): NoteListItem {
   return {
     id: row.id,
     user_id: row.user_id,
@@ -72,6 +74,15 @@ function mapListItem(row: {
     preview: row.preview ?? "",
     word_count: row.word_count ?? 0,
   };
+}
+
+function asNoteListRows(data: unknown): NoteListRow[] {
+  return (Array.isArray(data) ? data : []) as NoteListRow[];
+}
+
+function asNoteListRow(data: unknown): NoteListRow | null {
+  if (!data || typeof data !== "object") return null;
+  return data as NoteListRow;
 }
 
 async function loadNotes(
@@ -108,7 +119,7 @@ async function loadNotes(
       console.error("[notes] getNotes:", legacy.error.message);
       return [];
     }
-    return (legacy.data ?? []).map(mapListItem);
+    return asNoteListRows(legacy.data).map(mapListItem);
   }
 
   if (error) {
@@ -116,7 +127,7 @@ async function loadNotes(
     return [];
   }
 
-  return (data ?? []).map(mapListItem);
+  return asNoteListRows(data).map(mapListItem);
 }
 
 async function loadNote(
@@ -169,7 +180,8 @@ async function loadTodayJournal(
       console.error("[notes] getTodayJournal:", legacy.error.message);
       return null;
     }
-    return legacy.data ? mapListItem(legacy.data) : null;
+    const row = asNoteListRow(legacy.data);
+    return row ? mapListItem(row) : null;
   }
 
   if (error) {
@@ -177,7 +189,8 @@ async function loadTodayJournal(
     return null;
   }
 
-  return data ? mapListItem(data) : null;
+  const row = asNoteListRow(data);
+  return row ? mapListItem(row) : null;
 }
 
 /** Notes list — request memoized; cross-request cached when service role is set. */
