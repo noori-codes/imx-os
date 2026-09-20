@@ -3,7 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { getRequestOrigin, getSiteOrigin } from "@/lib/site-url";
+import {
+  friendlyAuthError,
+  isValidEmail,
+  normalizeEmail,
+  normalizePassword,
+  validatePassword,
+} from "@/lib/auth-messages";
+import { getOAuthRedirectOrigin, getSiteOrigin } from "@/lib/site-url";
 import { createClient } from "@/lib/supabase/server";
 
 export type AuthState = {
@@ -15,18 +22,24 @@ export async function login(
   _prevState: AuthState | null,
   formData: FormData,
 ): Promise<AuthState> {
+  const email = normalizeEmail(formData.get("email"));
+  const password = normalizePassword(formData.get("password"));
+
+  if (!email || !isValidEmail(email)) {
+    return { error: "Enter a valid email address." };
+  }
+  if (!password) {
+    return { error: "Password is required." };
+  }
+
   const supabase = await createClient();
-
-  const email = formData.get("email") as string;
-  const password = formData.get("password") as string;
-
   const { error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
 
   if (error) {
-    return { error: error.message };
+    return { error: friendlyAuthError(error.message) };
   }
 
   revalidatePath("/", "layout");
@@ -37,30 +50,52 @@ export async function signup(
   _prevState: AuthState | null,
   formData: FormData,
 ): Promise<AuthState> {
-  const supabase = await createClient();
+  const email = normalizeEmail(formData.get("email"));
+  const password = normalizePassword(formData.get("password"));
+  const confirmPassword = normalizePassword(formData.get("confirmPassword"));
 
-  const email = formData.get("email") as string;
-  const password = formData.get("password") as string;
-  const confirmPassword = formData.get("confirmPassword") as string;
+  if (!email || !isValidEmail(email)) {
+    return { error: "Enter a valid email address." };
+  }
+
+  const passwordError = validatePassword(password);
+  if (passwordError) {
+    return { error: passwordError };
+  }
 
   if (password !== confirmPassword) {
     return { error: "Passwords do not match." };
   }
 
-  if (password.length < 8) {
-    return { error: "Password must be at least 8 characters." };
-  }
+  const supabase = await createClient();
+  // Prefer live host so confirm links match the app the user signed up on.
+  const origin =
+    (await getOAuthRedirectOrigin().catch(() => null)) ?? getSiteOrigin();
 
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      emailRedirectTo: `${getSiteOrigin()}/auth/callback`,
+      emailRedirectTo: `${origin}/auth/callback`,
     },
   });
 
   if (error) {
-    return { error: error.message };
+    return { error: friendlyAuthError(error.message) };
+  }
+
+  // Supabase returns an empty identities list when the email is already taken
+  // (and "Confirm email" is on) — treat that as a clear conflict.
+  if (data.user && (data.user.identities?.length ?? 0) === 0) {
+    return {
+      error: "An account with this email already exists. Sign in instead.",
+    };
+  }
+
+  // Email confirmation disabled → session is created immediately.
+  if (data.session) {
+    revalidatePath("/", "layout");
+    redirect("/dashboard");
   }
 
   return {
@@ -73,19 +108,22 @@ export async function requestPasswordReset(
   _prevState: AuthState | null,
   formData: FormData,
 ): Promise<AuthState> {
-  const supabase = await createClient();
-  const email = (formData.get("email") as string)?.trim();
+  const email = normalizeEmail(formData.get("email"));
 
-  if (!email) {
-    return { error: "Email is required." };
+  if (!email || !isValidEmail(email)) {
+    return { error: "Enter a valid email address." };
   }
 
+  const supabase = await createClient();
+  const origin =
+    (await getOAuthRedirectOrigin().catch(() => null)) ?? getSiteOrigin();
+
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${getSiteOrigin()}/auth/callback?next=${encodeURIComponent("/update-password")}`,
+    redirectTo: `${origin}/auth/callback?next=${encodeURIComponent("/update-password")}`,
   });
 
   if (error) {
-    return { error: error.message };
+    return { error: friendlyAuthError(error.message) };
   }
 
   return {
@@ -107,21 +145,22 @@ export async function updatePassword(
     return { error: "Your reset link expired. Request a new one." };
   }
 
-  const password = formData.get("password") as string;
-  const confirmPassword = formData.get("confirmPassword") as string;
+  const password = normalizePassword(formData.get("password"));
+  const confirmPassword = normalizePassword(formData.get("confirmPassword"));
+
+  const passwordError = validatePassword(password);
+  if (passwordError) {
+    return { error: passwordError };
+  }
 
   if (password !== confirmPassword) {
     return { error: "Passwords do not match." };
   }
 
-  if (password.length < 8) {
-    return { error: "Password must be at least 8 characters." };
-  }
-
   const { error } = await supabase.auth.updateUser({ password });
 
   if (error) {
-    return { error: error.message };
+    return { error: friendlyAuthError(error.message) };
   }
 
   revalidatePath("/", "layout");
@@ -145,7 +184,7 @@ export async function signInWithOAuthProvider(
   }
 
   const supabase = await createClient();
-  const origin = await getRequestOrigin();
+  const origin = await getOAuthRedirectOrigin();
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
@@ -154,7 +193,7 @@ export async function signInWithOAuthProvider(
   });
 
   if (error) {
-    return { error: error.message };
+    return { error: friendlyAuthError(error.message) };
   }
 
   if (!data.url) {

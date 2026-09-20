@@ -39,7 +39,22 @@ Find `<your-project-ref>` in **Project Settings → API → Project URL**.
 
 ## 5. App env
 
-Ensure `NEXT_PUBLIC_SITE_URL` matches the origin you use (production on Vercel, localhost for local). OAuth `redirectTo` is built from that origin + `/auth/callback`.
+On **Vercel**, set:
+
+```text
+NEXT_PUBLIC_SITE_URL=https://imx-os.vercel.app
+```
+
+Do **not** set it to `http://localhost:3000` in Production.
+
+Local `.env.local` may use `http://localhost:3000` for local OAuth/PKCE.
+
+OAuth `redirectTo` uses the live request host in production (never localhost).
+
+In Supabase → **URL Configuration**:
+
+- **Site URL** must be `https://imx-os.vercel.app` (not localhost)
+- **Redirect URLs** must include that origin’s `/auth/callback` (and localhost if you test locally)
 
 ## 6. Test
 

@@ -33,11 +33,14 @@ function hasSupabaseAuthCookie(request: NextRequest) {
 export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // OAuth PKCE / magic links land with ?code= on Site URL. Never leave that on /login.
+  // OAuth PKCE codes must hit the exchange route (never /login?code=…).
+  // Provider errors include error_description / error_code — not our UI ?error=.
   const authCode = request.nextUrl.searchParams.get("code");
-  const authError = request.nextUrl.searchParams.get("error");
+  const providerError =
+    request.nextUrl.searchParams.has("error_description") ||
+    request.nextUrl.searchParams.has("error_code");
   if (
-    (authCode || authError) &&
+    (authCode || providerError) &&
     !pathname.startsWith("/auth/callback")
   ) {
     const url = request.nextUrl.clone();

@@ -21,6 +21,9 @@ export function LoginForm({ callbackError = null }: LoginFormProps) {
     null,
   );
   const [showPassword, setShowPassword] = useState(false);
+  const [oauthPending, setOauthPending] = useState(false);
+
+  const busy = pending || oauthPending;
 
   return (
     <div className="auth-card w-full max-w-sm overflow-hidden rounded-[1.35rem] imx-surface imx-surface-rim">
@@ -38,7 +41,11 @@ export function LoginForm({ callbackError = null }: LoginFormProps) {
           </p>
         </header>
 
-        <OAuthButtons initialError={callbackError} />
+        <OAuthButtons
+          initialError={callbackError}
+          disabled={pending}
+          onPendingChange={setOauthPending}
+        />
 
         <form action={formAction} className="space-y-4">
           {state?.error ? (
@@ -56,11 +63,12 @@ export function LoginForm({ callbackError = null }: LoginFormProps) {
               id="email"
               name="email"
               type="email"
+              inputMode="email"
               placeholder="you@example.com"
               required
               autoComplete="email"
               autoFocus
-              disabled={pending}
+              disabled={busy}
               className="h-11 rounded-xl border-surface-border bg-surface"
             />
           </div>
@@ -82,13 +90,13 @@ export function LoginForm({ callbackError = null }: LoginFormProps) {
                 type={showPassword ? "text" : "password"}
                 required
                 autoComplete="current-password"
-                disabled={pending}
+                disabled={busy}
                 className="h-11 rounded-xl border-surface-border bg-surface pr-11"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                disabled={pending}
+                disabled={busy}
                 className="absolute top-1/2 right-2.5 inline-flex size-8 -translate-y-1/2 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground disabled:opacity-50"
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
@@ -104,7 +112,7 @@ export function LoginForm({ callbackError = null }: LoginFormProps) {
           <Button
             type="submit"
             className="h-11 w-full rounded-xl"
-            disabled={pending}
+            disabled={busy}
           >
             {pending ? (
               <>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { Loader2 } from "lucide-react";
 
 import {
@@ -65,11 +65,25 @@ type OAuthButtonsProps = {
   className?: string;
   /** Shown above the divider (e.g. callback failure). */
   initialError?: string | null;
+  disabled?: boolean;
+  onPendingChange?: (pending: boolean) => void;
 };
+
+function isNextRedirectError(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "digest" in error &&
+    typeof (error as { digest?: unknown }).digest === "string" &&
+    String((error as { digest: string }).digest).startsWith("NEXT_REDIRECT")
+  );
+}
 
 export function OAuthButtons({
   className,
   initialError = null,
+  disabled = false,
+  onPendingChange,
 }: OAuthButtonsProps) {
   const [pendingProvider, setPendingProvider] = useState<OAuthProvider | null>(
     null,
@@ -77,13 +91,29 @@ export function OAuthButtons({
   const [error, setError] = useState<string | null>(initialError);
   const [pending, startTransition] = useTransition();
 
+  useEffect(() => {
+    setError(initialError);
+  }, [initialError]);
+
+  useEffect(() => {
+    onPendingChange?.(pending);
+  }, [pending, onPendingChange]);
+
   function handleProvider(provider: OAuthProvider) {
+    if (disabled || pending) return;
     setError(null);
     setPendingProvider(provider);
     startTransition(async () => {
-      const result = await signInWithOAuthProvider(provider);
-      if (result?.error) {
-        setError(result.error);
+      try {
+        const result = await signInWithOAuthProvider(provider);
+        if (result?.error) {
+          setError(result.error);
+          setPendingProvider(null);
+        }
+      } catch (err) {
+        // Successful OAuth starts with a Next.js redirect — not a real failure.
+        if (isNextRedirectError(err)) throw err;
+        setError("Couldn’t start social sign-in. Try again.");
         setPendingProvider(null);
       }
     });
@@ -109,7 +139,7 @@ export function OAuthButtons({
               type="button"
               variant="outline"
               className="h-11 w-full rounded-xl border-surface-border bg-surface"
-              disabled={pending}
+              disabled={disabled || pending}
               onClick={() => handleProvider(id)}
             >
               {busy ? (
