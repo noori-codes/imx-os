@@ -5,6 +5,7 @@ import { useActionState, useState } from "react";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 import { signup, type AuthState } from "@/actions/auth";
+import { AuthFeedback } from "@/components/auth/auth-feedback";
 import { OAuthButtons } from "@/components/auth/oauth-buttons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,16 +27,17 @@ export function RegisterForm({ callbackError = null }: RegisterFormProps) {
 
   const busy = pending || oauthPending;
   const done = Boolean(state?.success);
+  const formError = state?.error ?? null;
 
   return (
-    <div className="auth-card w-full max-w-sm overflow-hidden rounded-[1.35rem] imx-surface imx-surface-rim">
+    <div className="auth-card w-full max-w-[24rem] overflow-hidden rounded-[1.5rem] imx-surface imx-surface-rim">
       <div className="auth-card-glow" aria-hidden />
-      <div className="relative z-1 space-y-6 p-6 sm:p-7">
-        <header className="space-y-1.5 text-center sm:text-left">
+      <div className="relative z-1 space-y-6 p-6 sm:p-8">
+        <header className="space-y-2 text-center sm:text-left">
           <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
             Get started
           </p>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+          <h1 className="text-[1.65rem] font-semibold tracking-tight text-foreground sm:text-3xl">
             Create account
           </h1>
           <p className="text-sm leading-relaxed text-muted-foreground">
@@ -43,38 +45,21 @@ export function RegisterForm({ callbackError = null }: RegisterFormProps) {
           </p>
         </header>
 
+        {done && state?.success ? (
+          <AuthFeedback tone="success" message={state.success} />
+        ) : null}
+
         {!done ? (
           <OAuthButtons
             initialError={callbackError}
             disabled={pending}
             onPendingChange={setOauthPending}
+            hideInlineError={Boolean(formError)}
           />
         ) : null}
 
         <form action={formAction} className="space-y-4">
-          {state?.error ? (
-            <p
-              role="alert"
-              className="rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-2.5 text-sm text-destructive"
-            >
-              {state.error}
-            </p>
-          ) : null}
-
-          {state?.success ? (
-            <p
-              role="status"
-              className="rounded-xl border border-border/50 bg-foreground/5 px-3 py-2.5 text-sm text-foreground"
-            >
-              {state.success}{" "}
-              <Link
-                href="/login"
-                className="font-medium underline-offset-4 hover:underline"
-              >
-                Sign in
-              </Link>
-            </p>
-          ) : null}
+          {formError ? <AuthFeedback tone="error" message={formError} /> : null}
 
           {!done ? (
             <>
@@ -90,7 +75,8 @@ export function RegisterForm({ callbackError = null }: RegisterFormProps) {
                   autoComplete="email"
                   autoFocus
                   disabled={busy}
-                  className="h-11 rounded-xl border-surface-border bg-surface"
+                  aria-invalid={Boolean(formError)}
+                  className="h-11 rounded-xl border-surface-border bg-surface transition-[border-color,box-shadow] focus-visible:border-foreground/25"
                 />
               </div>
 
@@ -106,7 +92,8 @@ export function RegisterForm({ callbackError = null }: RegisterFormProps) {
                     maxLength={72}
                     autoComplete="new-password"
                     disabled={busy}
-                    className="h-11 rounded-xl border-surface-border bg-surface pr-11"
+                    aria-invalid={Boolean(formError)}
+                    className="h-11 rounded-xl border-surface-border bg-surface pr-11 transition-[border-color,box-shadow] focus-visible:border-foreground/25"
                   />
                   <button
                     type="button"
@@ -139,7 +126,8 @@ export function RegisterForm({ callbackError = null }: RegisterFormProps) {
                     maxLength={72}
                     autoComplete="new-password"
                     disabled={busy}
-                    className="h-11 rounded-xl border-surface-border bg-surface pr-11"
+                    aria-invalid={Boolean(formError)}
+                    className="h-11 rounded-xl border-surface-border bg-surface pr-11 transition-[border-color,box-shadow] focus-visible:border-foreground/25"
                   />
                   <button
                     type="button"
@@ -147,7 +135,9 @@ export function RegisterForm({ callbackError = null }: RegisterFormProps) {
                     disabled={busy}
                     className="absolute top-1/2 right-2.5 inline-flex size-8 -translate-y-1/2 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground disabled:opacity-50"
                     aria-label={
-                      showConfirm ? "Hide confirm password" : "Show confirm password"
+                      showConfirm
+                        ? "Hide confirm password"
+                        : "Show confirm password"
                     }
                   >
                     {showConfirm ? (

@@ -5,6 +5,7 @@ import { useActionState, useState } from "react";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 import { login, type AuthState } from "@/actions/auth";
+import { AuthFeedback } from "@/components/auth/auth-feedback";
 import { OAuthButtons } from "@/components/auth/oauth-buttons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,16 +25,17 @@ export function LoginForm({ callbackError = null }: LoginFormProps) {
   const [oauthPending, setOauthPending] = useState(false);
 
   const busy = pending || oauthPending;
+  const formError = state?.error ?? null;
 
   return (
-    <div className="auth-card w-full max-w-sm overflow-hidden rounded-[1.35rem] imx-surface imx-surface-rim">
+    <div className="auth-card w-full max-w-[24rem] overflow-hidden rounded-[1.5rem] imx-surface imx-surface-rim">
       <div className="auth-card-glow" aria-hidden />
-      <div className="relative z-1 space-y-6 p-6 sm:p-7">
-        <header className="space-y-1.5 text-center sm:text-left">
+      <div className="relative z-1 space-y-6 p-6 sm:p-8">
+        <header className="space-y-2 text-center sm:text-left">
           <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
             Welcome back
           </p>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+          <h1 className="text-[1.65rem] font-semibold tracking-tight text-foreground sm:text-3xl">
             Sign in
           </h1>
           <p className="text-sm leading-relaxed text-muted-foreground">
@@ -45,17 +47,11 @@ export function LoginForm({ callbackError = null }: LoginFormProps) {
           initialError={callbackError}
           disabled={pending}
           onPendingChange={setOauthPending}
+          hideInlineError={Boolean(formError)}
         />
 
         <form action={formAction} className="space-y-4">
-          {state?.error ? (
-            <p
-              role="alert"
-              className="rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-2.5 text-sm text-destructive"
-            >
-              {state.error}
-            </p>
-          ) : null}
+          {formError ? <AuthFeedback tone="error" message={formError} /> : null}
 
           <div className="flex flex-col gap-2">
             <Label htmlFor="email">Email</Label>
@@ -69,7 +65,8 @@ export function LoginForm({ callbackError = null }: LoginFormProps) {
               autoComplete="email"
               autoFocus
               disabled={busy}
-              className="h-11 rounded-xl border-surface-border bg-surface"
+              aria-invalid={Boolean(formError)}
+              className="h-11 rounded-xl border-surface-border bg-surface transition-[border-color,box-shadow] focus-visible:border-foreground/25"
             />
           </div>
 
@@ -91,7 +88,8 @@ export function LoginForm({ callbackError = null }: LoginFormProps) {
                 required
                 autoComplete="current-password"
                 disabled={busy}
-                className="h-11 rounded-xl border-surface-border bg-surface pr-11"
+                aria-invalid={Boolean(formError)}
+                className="h-11 rounded-xl border-surface-border bg-surface pr-11 transition-[border-color,box-shadow] focus-visible:border-foreground/25"
               />
               <button
                 type="button"

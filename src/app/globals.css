@@ -4785,6 +4785,9 @@ html[data-focus-session] body {
 .auth-card {
   position: relative;
   z-index: 1;
+  box-shadow:
+    0 1px 0 color-mix(in oklab, var(--foreground) 4%, transparent),
+    0 18px 48px -28px color-mix(in oklab, var(--foreground) 22%, transparent);
   animation: dash-reveal-up 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
@@ -4792,23 +4795,39 @@ html[data-focus-session] body {
   pointer-events: none;
   position: absolute;
   inset: -20% -10% auto;
-  height: 10rem;
+  height: 11rem;
   background: radial-gradient(
     ellipse at 50% 0%,
-    color-mix(in oklab, var(--foreground) 5%, transparent) 0%,
-    transparent 70%
+    color-mix(in oklab, var(--foreground) 7%, transparent) 0%,
+    transparent 72%
   );
-  opacity: 0.9;
+  opacity: 0.95;
 }
 
 .auth-brand {
   animation: dash-reveal-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+.auth-feedback {
+  animation: auth-feedback-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes auth-feedback-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .auth-stage-glow,
   .auth-card,
-  .auth-brand {
+  .auth-brand,
+  .auth-feedback {
     animation: none !important;
   }
 }

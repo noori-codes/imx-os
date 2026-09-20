@@ -5,6 +5,7 @@ import { useActionState } from "react";
 import { Loader2 } from "lucide-react";
 
 import { requestPasswordReset, type AuthState } from "@/actions/auth";
+import { AuthFeedback } from "@/components/auth/auth-feedback";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,14 +17,14 @@ export function ForgotPasswordForm() {
   >(requestPasswordReset, null);
 
   return (
-    <div className="auth-card w-full max-w-sm overflow-hidden rounded-[1.35rem] imx-surface imx-surface-rim">
+    <div className="auth-card w-full max-w-[24rem] overflow-hidden rounded-[1.5rem] imx-surface imx-surface-rim">
       <div className="auth-card-glow" aria-hidden />
-      <div className="relative z-1 space-y-6 p-6 sm:p-7">
-        <header className="space-y-1.5 text-center sm:text-left">
+      <div className="relative z-1 space-y-6 p-6 sm:p-8">
+        <header className="space-y-2 text-center sm:text-left">
           <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
             Account recovery
           </p>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+          <h1 className="text-[1.65rem] font-semibold tracking-tight text-foreground sm:text-3xl">
             Reset password
           </h1>
           <p className="text-sm leading-relaxed text-muted-foreground">
@@ -33,31 +34,13 @@ export function ForgotPasswordForm() {
 
         {state?.success ? (
           <div className="space-y-4">
-            <p
-              role="status"
-              className="rounded-xl border border-border/50 bg-foreground/5 px-3 py-2.5 text-sm text-foreground"
-            >
-              {state.success}
-            </p>
-            <p className="text-center text-sm text-muted-foreground">
-              <Link
-                href="/login"
-                className="font-medium text-foreground underline-offset-4 hover:underline"
-              >
-                Back to sign in
-              </Link>
-            </p>
+            <AuthFeedback tone="success" message={state.success} />
           </div>
         ) : (
           <>
             <form action={formAction} className="space-y-4">
               {state?.error ? (
-                <p
-                  role="alert"
-                  className="rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-2.5 text-sm text-destructive"
-                >
-                  {state.error}
-                </p>
+                <AuthFeedback tone="error" message={state.error} />
               ) : null}
 
               <div className="flex flex-col gap-2">
@@ -66,12 +49,14 @@ export function ForgotPasswordForm() {
                   id="email"
                   name="email"
                   type="email"
+                  inputMode="email"
                   placeholder="you@example.com"
                   required
                   autoComplete="email"
                   autoFocus
                   disabled={pending}
-                  className="h-11 rounded-xl border-surface-border bg-surface"
+                  aria-invalid={Boolean(state?.error)}
+                  className="h-11 rounded-xl border-surface-border bg-surface transition-[border-color,box-shadow] focus-visible:border-foreground/25"
                 />
               </div>
 

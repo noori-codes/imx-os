@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useActionState, useState } from "react";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 import { updatePassword, type AuthState } from "@/actions/auth";
+import { AuthFeedback } from "@/components/auth/auth-feedback";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,14 +18,14 @@ export function UpdatePasswordForm() {
   const [showConfirm, setShowConfirm] = useState(false);
 
   return (
-    <div className="auth-card w-full max-w-sm overflow-hidden rounded-[1.35rem] imx-surface imx-surface-rim">
+    <div className="auth-card w-full max-w-[24rem] overflow-hidden rounded-[1.5rem] imx-surface imx-surface-rim">
       <div className="auth-card-glow" aria-hidden />
-      <div className="relative z-1 space-y-6 p-6 sm:p-7">
-        <header className="space-y-1.5 text-center sm:text-left">
+      <div className="relative z-1 space-y-6 p-6 sm:p-8">
+        <header className="space-y-2 text-center sm:text-left">
           <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
             Security
           </p>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+          <h1 className="text-[1.65rem] font-semibold tracking-tight text-foreground sm:text-3xl">
             New password
           </h1>
           <p className="text-sm leading-relaxed text-muted-foreground">
@@ -35,21 +35,7 @@ export function UpdatePasswordForm() {
 
         <form action={formAction} className="space-y-4">
           {state?.error ? (
-            <p
-              role="alert"
-              className="rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-2.5 text-sm text-destructive"
-            >
-              {state.error}{" "}
-              {state.error.toLowerCase().includes("expired") ||
-              state.error.toLowerCase().includes("reset") ? (
-                <Link
-                  href="/forgot-password"
-                  className="font-medium underline underline-offset-4"
-                >
-                  Request a new link
-                </Link>
-              ) : null}
-            </p>
+            <AuthFeedback tone="error" message={state.error} />
           ) : null}
 
           <div className="flex flex-col gap-2">
@@ -61,10 +47,12 @@ export function UpdatePasswordForm() {
                 type={showPassword ? "text" : "password"}
                 required
                 minLength={8}
+                maxLength={72}
                 autoComplete="new-password"
                 autoFocus
                 disabled={pending}
-                className="h-11 rounded-xl border-surface-border bg-surface pr-11"
+                aria-invalid={Boolean(state?.error)}
+                className="h-11 rounded-xl border-surface-border bg-surface pr-11 transition-[border-color,box-shadow] focus-visible:border-foreground/25"
               />
               <button
                 type="button"
@@ -91,9 +79,11 @@ export function UpdatePasswordForm() {
                 type={showConfirm ? "text" : "password"}
                 required
                 minLength={8}
+                maxLength={72}
                 autoComplete="new-password"
                 disabled={pending}
-                className="h-11 rounded-xl border-surface-border bg-surface pr-11"
+                aria-invalid={Boolean(state?.error)}
+                className="h-11 rounded-xl border-surface-border bg-surface pr-11 transition-[border-color,box-shadow] focus-visible:border-foreground/25"
               />
               <button
                 type="button"

@@ -7,6 +7,7 @@ import {
   signInWithOAuthProvider,
   type OAuthProvider,
 } from "@/actions/auth";
+import { AuthFeedback } from "@/components/auth/auth-feedback";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -67,6 +68,8 @@ type OAuthButtonsProps = {
   initialError?: string | null;
   disabled?: boolean;
   onPendingChange?: (pending: boolean) => void;
+  /** When parent already shows a form-level error banner. */
+  hideInlineError?: boolean;
 };
 
 function isNextRedirectError(error: unknown) {
@@ -84,6 +87,7 @@ export function OAuthButtons({
   initialError = null,
   disabled = false,
   onPendingChange,
+  hideInlineError = false,
 }: OAuthButtonsProps) {
   const [pendingProvider, setPendingProvider] = useState<OAuthProvider | null>(
     null,
@@ -119,18 +123,15 @@ export function OAuthButtons({
     });
   }
 
+  const showError = Boolean(error) && !hideInlineError;
+
   return (
     <div className={cn("space-y-4", className)}>
-      {error ? (
-        <p
-          role="alert"
-          className="rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-2.5 text-sm text-destructive"
-        >
-          {error}
-        </p>
+      {showError && error ? (
+        <AuthFeedback tone="error" message={error} />
       ) : null}
 
-      <div className="grid gap-2">
+      <div className="grid gap-2.5">
         {PROVIDERS.map(({ id, label, icon: Icon }) => {
           const busy = pending && pendingProvider === id;
           return (
@@ -138,7 +139,7 @@ export function OAuthButtons({
               key={id}
               type="button"
               variant="outline"
-              className="h-11 w-full rounded-xl border-surface-border bg-surface"
+              className="h-11 w-full rounded-xl border-surface-border bg-surface transition-[border-color,background-color] hover:border-foreground/15 hover:bg-muted/40"
               disabled={disabled || pending}
               onClick={() => handleProvider(id)}
             >
