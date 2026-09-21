@@ -65,6 +65,19 @@ export function commitFocusSessionOptimistic(
       seconds: sealSeconds,
     });
   }
+
+  if (typeof window !== "undefined" && session.mode === "focus") {
+    const label =
+      session.note?.trim() ||
+      session.task_title?.trim() ||
+      "Focus session";
+    const href = session.task_id
+      ? `/focus?task=${session.task_id}`
+      : "/focus";
+    void import("@/lib/imx-continue").then(({ writeContinuePointer }) => {
+      writeContinuePointer({ kind: "focus", label, href });
+    });
+  }
 }
 
 export function rollbackFocusSessionOptimistic() {

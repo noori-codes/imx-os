@@ -14,6 +14,7 @@ import { AnalyticsHero } from "@/components/analytics/analytics-hero";
 import { AnalyticsSkeleton } from "@/components/analytics/analytics-skeleton";
 import { AnalyticsStage } from "@/components/analytics/analytics-stage";
 import { HabitStreaksList } from "@/components/analytics/habit-streaks-list";
+import { LifeConstellation } from "@/components/analytics/life-constellation";
 import { Header } from "@/components/layout/header";
 import { AppPageFrame } from "@/components/shared/app-page-frame";
 import { cn } from "@/lib/utils";
@@ -103,6 +104,10 @@ async function AnalyticsCoreBody({
             tasksCompleted={summary.tasks_completed}
             dailyFocusGoalMinutes={summary.daily_focus_goal_minutes}
           />
+        </div>
+
+        <div className="analytics-reveal analytics-reveal-delay-1 border-t border-border/30 pt-8">
+          <LifeConstellation series={data.series} />
         </div>
 
         <div className="analytics-reveal analytics-reveal-delay-1 border-t border-border/30 pt-8">

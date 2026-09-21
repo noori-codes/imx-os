@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 
 import { getDashboardData } from "@/actions/dashboard";
+import { getDailyFocusGoal } from "@/actions/focus";
 import { getCurrentUser } from "@/lib/auth";
 import { resolveGreetingName } from "@/lib/display-name";
 import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
@@ -22,15 +23,21 @@ function getGreeting() {
 }
 
 async function DashboardBody() {
-  const [user, data] = await Promise.all([
+  const [user, data, dailyGoal] = await Promise.all([
     getCurrentUser(),
     getDashboardData(),
+    getDailyFocusGoal(),
   ]);
   const name = user ? resolveGreetingName(user) : "there";
 
   return (
     <AppPageFrame className="max-w-6xl gap-8 md:py-8">
-      <DashboardStage name={name} greeting={getGreeting()} data={data} />
+      <DashboardStage
+        name={name}
+        greeting={getGreeting()}
+        data={data}
+        focusGoalMinutes={dailyGoal.minutes}
+      />
     </AppPageFrame>
   );
 }

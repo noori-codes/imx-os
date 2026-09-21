@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { WeeklyRecap } from "@/components/analytics/weekly-recap";
 import { cn } from "@/lib/utils";
 import {
   ANALYTICS_RANGES,
@@ -147,8 +148,21 @@ export function AnalyticsHero({
             </div>
           ) : null}
         </div>
-        <div className="flex justify-center sm:justify-end">
+        <div className="flex flex-col items-center gap-3 sm:items-end">
           <AnalyticsRangeToggle rangeDays={rangeDays} />
+          {!isEmpty ? (
+            <WeeklyRecap
+              stats={{
+                focusMinutes,
+                focusSessions,
+                habitsAvgRate,
+                bestHabitStreak,
+                tasksCompleted,
+                focusGoalHitDays,
+                focusGoalDays,
+              }}
+            />
+          ) : null}
         </div>
       </div>
 

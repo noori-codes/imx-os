@@ -30,12 +30,13 @@
   --sidebar-ring: oklch(0.55 0.04 255);
   --radius: 0.625rem;
 
-  /* Activity heatmap — ink/slate brand ramp (readable in light + dark) */
-  --activity-0: oklch(0.92 0.012 255);
-  --activity-1: oklch(0.8 0.045 255);
-  --activity-2: oklch(0.65 0.085 255);
-  --activity-3: oklch(0.48 0.11 255);
-  --activity-4: oklch(0.34 0.12 255);
+  /* Activity heatmap — brand ink wash (same hue family as primary/foreground) */
+  --activity-0: color-mix(in oklab, var(--foreground) 6%, var(--muted));
+  --activity-1: color-mix(in oklab, var(--foreground) 18%, oklch(0.88 0.02 255));
+  --activity-2: color-mix(in oklab, var(--foreground) 38%, oklch(0.72 0.04 255));
+  --activity-3: color-mix(in oklab, var(--primary) 72%, oklch(0.42 0.05 255));
+  --activity-4: var(--primary);
+
 
   /* Frosted vessel surfaces — one box language app-wide */
   --surface: color-mix(in oklab, var(--card) 58%, transparent);
@@ -125,11 +126,12 @@ html[data-focus-session="true"] {
   --sidebar-border: oklch(0.92 0.01 250 / 8%);
   --sidebar-ring: oklch(0.62 0.04 255);
 
-  --activity-0: oklch(0.26 0.025 255);
-  --activity-1: oklch(0.36 0.065 255);
-  --activity-2: oklch(0.48 0.1 255);
-  --activity-3: oklch(0.6 0.12 255);
-  --activity-4: oklch(0.72 0.1 255);
+  /* Activity — luminous ink on dark stage (builds toward primary/foreground) */
+  --activity-0: color-mix(in oklab, var(--foreground) 8%, var(--muted));
+  --activity-1: color-mix(in oklab, var(--foreground) 22%, var(--muted));
+  --activity-2: color-mix(in oklab, var(--foreground) 42%, var(--muted));
+  --activity-3: color-mix(in oklab, var(--primary) 70%, var(--foreground));
+  --activity-4: var(--primary);
 
   --surface: color-mix(in oklab, var(--card) 42%, transparent);
   --surface-strong: color-mix(in oklab, var(--card) 58%, transparent);

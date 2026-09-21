@@ -5,8 +5,10 @@ import { useOptimistic, useTransition } from "react";
 import { toggleHabitToday } from "@/actions/habits";
 import { toggleTaskComplete } from "@/actions/tasks";
 import { DashboardAtmosphere } from "@/components/dashboard/dashboard-atmosphere";
+import { DashboardContinueChip } from "@/components/dashboard/dashboard-continue-chip";
 import { DashboardHero } from "@/components/dashboard/dashboard-hero";
 import { DashboardInsightStrip } from "@/components/dashboard/dashboard-insight-strip";
+import { DashboardMorningBrief } from "@/components/dashboard/dashboard-morning-brief";
 import { GoalProgressList } from "@/components/dashboard/goal-progress-list";
 import { HabitsToday } from "@/components/dashboard/habits-today";
 import { TodayFocus } from "@/components/dashboard/today-focus";
@@ -24,6 +26,7 @@ type DashboardStageProps = {
   name: string;
   greeting: string;
   data: DashboardData;
+  focusGoalMinutes: number;
 };
 
 type TaskToggle = { id: string; completed: boolean };
@@ -104,7 +107,12 @@ function weekWithTaskToggle(
   );
 }
 
-export function DashboardStage({ name, greeting, data }: DashboardStageProps) {
+export function DashboardStage({
+  name,
+  greeting,
+  data,
+  focusGoalMinutes,
+}: DashboardStageProps) {
   const [, startTransition] = useTransition();
   const todayStr = toDateString(startOfDay(new Date()));
 
@@ -215,6 +223,19 @@ export function DashboardStage({ name, greeting, data }: DashboardStageProps) {
           habitsTotal={optimisticHabits.length}
           streak={data.stats.activity_streak}
           attention={dueToday + overdue}
+        />
+      </div>
+
+      <div className="dash-reveal dash-reveal-delay-1 space-y-3">
+        <DashboardContinueChip />
+        <DashboardMorningBrief
+          tasks={optimisticTasks}
+          habitsDone={habitsDone}
+          habitsTotal={optimisticHabits.length}
+          focusMinutes={focusMinutes}
+          focusGoalMinutes={focusGoalMinutes}
+          hasTodayReview={data.review.has_today}
+          intent={data.review.intent}
         />
       </div>
 

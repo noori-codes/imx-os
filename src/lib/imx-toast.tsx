@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
@@ -11,11 +12,15 @@ function ToastCard({
   description,
   tone = "default",
   toastId,
+  actionHref,
+  actionLabel,
 }: {
   title: string;
   description?: string;
   tone?: ImxToastTone;
   toastId: string | number;
+  actionHref?: string;
+  actionLabel?: string;
 }) {
   return (
     <div
@@ -37,6 +42,15 @@ function ToastCard({
               {description}
             </p>
           ) : null}
+          {actionHref && actionLabel ? (
+            <Link
+              href={actionHref}
+              onClick={() => toast.dismiss(toastId)}
+              className="mt-2 inline-flex text-xs font-medium text-foreground underline-offset-2 hover:underline"
+            >
+              {actionLabel}
+            </Link>
+          ) : null}
         </div>
         <button
           type="button"
@@ -53,7 +67,12 @@ function ToastCard({
 
 export function imxToast(
   title: string,
-  options?: { description?: string; tone?: ImxToastTone },
+  options?: {
+    description?: string;
+    tone?: ImxToastTone;
+    actionHref?: string;
+    actionLabel?: string;
+  },
 ) {
   toast.custom(
     (id) => (
@@ -62,8 +81,10 @@ export function imxToast(
         title={title}
         description={options?.description}
         tone={options?.tone}
+        actionHref={options?.actionHref}
+        actionLabel={options?.actionLabel}
       />
     ),
-    { duration: options?.tone === "error" ? 5200 : 3200 },
+    { duration: options?.tone === "error" ? 5200 : 3800 },
   );
 }

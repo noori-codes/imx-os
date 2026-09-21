@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 
 import { DeferredImxChat } from "@/components/ai/deferred-imx-chat";
+import { DeferredQuickCapture } from "@/components/capture/deferred-quick-capture";
 import { FocusAudioHost } from "@/components/focus/focus-audio-host";
 import { CaptureHotkey } from "@/components/layout/capture-hotkey";
 import { ClientShell } from "@/components/layout/client-shell";
@@ -44,6 +45,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           </div>
         </div>
         <MobileTabBar />
+        <DeferredQuickCapture />
         <DeferredImxChat />
       </ClientShell>
     </UserProvider>

@@ -716,6 +716,11 @@ export function SettingsHub({
         <ul className="space-y-2.5">
           {[
             {
+              keys: "C",
+              action:
+                "Open Quick Capture — save a task, note, journal, habit, or event from anywhere",
+            },
+            {
               keys: "N",
               action:
                 "Focus or open the page’s primary capture (task, habit, note, book…)",
