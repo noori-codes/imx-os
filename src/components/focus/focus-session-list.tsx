@@ -1,7 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useOptimistic, useRef, useState, useTransition } from "react";
+import {
+  useEffect,
+  useId,
+  useMemo,
+  useOptimistic,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { ChevronDown, Clock, Play, Trash2 } from "lucide-react";
 
 import { deleteFocusSessions } from "@/actions/focus";
@@ -30,6 +38,9 @@ import {
 type FocusSessionListProps = {
   sessions: FocusSession[];
 };
+
+/** Keep the log short: a few recent days, rest behind a fold. */
+const PREVIEW_DAY_GROUPS = 4;
 
 function dayKey(iso: string) {
   const d = new Date(iso);
@@ -103,10 +114,12 @@ function threadTimeRange(sessions: FocusSession[]) {
 
 export function FocusSessionList({ sessions }: FocusSessionListProps) {
   const [, startTransition] = useTransition();
+  const earlierDaysId = useId();
   const isRunning = useFocusTimer((s) => s.isRunning);
   const optimisticLogs = useFocusTimer((s) => s.optimisticLogs);
   const pruneOptimisticLogs = useFocusTimer((s) => s.pruneOptimisticLogs);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [showEarlierDays, setShowEarlierDays] = useState(false);
   const [flashIds, setFlashIds] = useState<Set<string>>(new Set());
   const prevOptimisticCount = useRef(optimisticLogs.length);
 
@@ -176,6 +189,13 @@ export function FocusSessionList({ sessions }: FocusSessionListProps) {
 
   const groups = groupSessions(displaySessions);
   const hasPending = optimisticLogs.length > 0;
+  const previewGroups = groups.slice(0, PREVIEW_DAY_GROUPS);
+  const earlierGroups = groups.slice(PREVIEW_DAY_GROUPS);
+  const earlierSessionCount = earlierGroups.reduce(
+    (sum, group) => sum + group.sessions.length,
+    0,
+  );
+  const hasEarlierDays = earlierGroups.length > 0;
 
   function handleDelete(sessionsToDelete: FocusSession[], event: React.MouseEvent) {
     event.stopPropagation();
@@ -212,6 +232,239 @@ export function FocusSessionList({ sessions }: FocusSessionListProps) {
     scrollToTimer();
   }
 
+  function toggleEarlierDays() {
+    setShowEarlierDays((current) => {
+      const next = !current;
+      if (!next) {
+        // Snap back to the recent fold so the log form stays close.
+        requestAnimationFrame(() => {
+          document
+            .getElementById("focus-recent-sessions")
+            ?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        });
+      }
+      return next;
+    });
+  }
+
+  function renderDayGroup(group: {
+    key: string;
+    label: string;
+    sessions: FocusSession[];
+  }) {
+    const threads = groupDaySessionsIntoThreads(group.sessions);
+    return (
+      <div key={group.key}>
+        <div className="mb-3 flex items-baseline justify-between gap-3">
+          <h3 className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+            {group.label}
+          </h3>
+          <span className="text-xs tabular-nums text-muted-foreground">
+            {threads.length}
+          </span>
+        </div>
+
+        <ul className="space-y-1">
+          {threads.map((thread) => {
+            const latest = thread.sessions[0];
+            const isThread = thread.sessions.length > 1;
+            const open = expanded[thread.key] === true;
+            const canContinue = canContinueLoggedSession(latest, isRunning);
+            const subject = continueSubject(latest.note, latest.task_title);
+            const pickupHint = canContinue
+              ? buildPickupHint(thread.totalSeconds, subject)
+              : null;
+            const isFresh =
+              flashIds.has(latest.id) ||
+              thread.sessions.some((session) => flashIds.has(session.id));
+            const isPending =
+              isOptimisticSessionId(latest.id) ||
+              thread.sessions.some((session) =>
+                isOptimisticSessionId(session.id),
+              );
+
+            return (
+              <li key={thread.key}>
+                <div
+                  role={canContinue ? "button" : undefined}
+                  tabIndex={canContinue ? 0 : undefined}
+                  onClick={
+                    canContinue
+                      ? () => handleContinue(thread.sessions)
+                      : undefined
+                  }
+                  onKeyDown={
+                    canContinue
+                      ? (event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            handleContinue(thread.sessions);
+                          }
+                        }
+                      : undefined
+                  }
+                  className={cn(
+                    "group rounded-2xl px-2.5 py-2.5 transition-colors",
+                    isFresh && "focus-session-flash bg-muted/35",
+                    isPending && !isFresh && "bg-muted/20",
+                    canContinue &&
+                      "cursor-pointer hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    !canContinue && "hover:bg-muted/20",
+                  )}
+                  aria-label={
+                    canContinue
+                      ? `Continue session · ${pickupHint ?? formatFocusDuration(thread.totalSeconds)}`
+                      : undefined
+                  }
+                >
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={cn(
+                        "size-2 shrink-0 rounded-full",
+                        modeTone(latest.mode),
+                        isFresh && "ring-2 ring-foreground/30",
+                      )}
+                      aria-hidden
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">
+                        {isThread
+                          ? thread.title
+                          : FOCUS_PRESETS[latest.mode].label}
+                        {isPending ? (
+                          <span className="ml-2 text-xs font-normal text-muted-foreground">
+                            just now
+                          </span>
+                        ) : null}
+                        {!latest.completed && !isThread && !isPending ? (
+                          <span className="ml-2 text-xs font-normal text-muted-foreground">
+                            stopped early
+                          </span>
+                        ) : null}
+                      </p>
+                      {pickupHint ? (
+                        <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                          {pickupHint}
+                        </p>
+                      ) : isThread ? (
+                        <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                          {thread.sessions.length} blocks ·{" "}
+                          {threadTimeRange(thread.sessions)}
+                        </p>
+                      ) : latest.note ? (
+                        <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                          {latest.note}
+                        </p>
+                      ) : null}
+                      {!isThread && latest.task_title ? (
+                        <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                          Task{" "}
+                          <Link
+                            href={
+                              latest.task_id
+                                ? `/focus?task=${latest.task_id}`
+                                : "/tasks"
+                            }
+                            className="text-foreground/80 underline-offset-2 hover:underline"
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            {latest.task_title}
+                          </Link>
+                        </p>
+                      ) : null}
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <p className="focus-clock text-sm text-foreground">
+                        {formatFocusDuration(thread.totalSeconds)}
+                      </p>
+                      <p className="mt-0.5 text-[11px] tabular-nums text-muted-foreground">
+                        {isThread
+                          ? `${thread.sessions.length} blocks`
+                          : formatTime(latest.started_at)}
+                      </p>
+                    </div>
+                    {isThread ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="size-8 shrink-0 text-muted-foreground"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setExpanded((current) => ({
+                            ...current,
+                            [thread.key]: !open,
+                          }));
+                        }}
+                        aria-expanded={open}
+                        aria-label={open ? "Hide blocks" : "Show blocks"}
+                      >
+                        <ChevronDown
+                          className={cn(
+                            "size-3.5 transition-transform",
+                            open && "rotate-180",
+                          )}
+                        />
+                      </Button>
+                    ) : null}
+                    {canContinue ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="size-8 shrink-0 text-foreground"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleContinue(thread.sessions);
+                        }}
+                        aria-label="Continue session"
+                      >
+                        <Play className="size-3.5 fill-current" />
+                      </Button>
+                    ) : null}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-8 shrink-0 text-muted-foreground opacity-100 hover:text-destructive sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
+                      onClick={(event) => handleDelete(thread.sessions, event)}
+                      aria-label={
+                        isThread ? "Delete thread" : "Delete session"
+                      }
+                    >
+                      <Trash2 className="size-3.5" />
+                    </Button>
+                  </div>
+
+                  {isThread && open ? (
+                    <ul className="mt-2 space-y-1 border-l border-border/50 pl-4">
+                      {thread.sessions.map((session) => (
+                        <li
+                          key={session.id}
+                          className="flex items-center justify-between gap-3 py-1 text-xs text-muted-foreground"
+                        >
+                          <span className="truncate">
+                            {formatTime(session.started_at)}
+                            {session.note && session.note !== thread.title
+                              ? ` · ${session.note}`
+                              : ""}
+                          </span>
+                          <span className="focus-clock shrink-0 tabular-nums">
+                            {formatFocusDuration(session.actual_seconds)}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    );
+  }
+
   return (
     <section>
       <div className="mb-6 flex items-end justify-between gap-3">
@@ -229,233 +482,38 @@ export function FocusSessionList({ sessions }: FocusSessionListProps) {
       </div>
 
       <div className="space-y-7">
-        {groups.map((group) => {
-          const threads = groupDaySessionsIntoThreads(group.sessions);
-          return (
-            <div key={group.key}>
-              <div className="mb-3 flex items-baseline justify-between gap-3">
-                <h3 className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-                  {group.label}
-                </h3>
-                <span className="text-xs tabular-nums text-muted-foreground">
-                  {threads.length}
-                </span>
-              </div>
+        {previewGroups.map(renderDayGroup)}
 
-              <ul className="space-y-1">
-                {threads.map((thread) => {
-                  const latest = thread.sessions[0];
-                  const isThread = thread.sessions.length > 1;
-                  const open = expanded[thread.key] === true;
-                  const canContinue = canContinueLoggedSession(
-                    latest,
-                    isRunning,
-                  );
-                  const subject = continueSubject(
-                    latest.note,
-                    latest.task_title,
-                  );
-                  const pickupHint = canContinue
-                    ? buildPickupHint(thread.totalSeconds, subject)
-                    : null;
-                  const isFresh =
-                    flashIds.has(latest.id) ||
-                    thread.sessions.some((session) => flashIds.has(session.id));
-                  const isPending =
-                    isOptimisticSessionId(latest.id) ||
-                    thread.sessions.some((session) =>
-                      isOptimisticSessionId(session.id),
-                    );
+        {hasEarlierDays ? (
+          <button
+            type="button"
+            onClick={toggleEarlierDays}
+            aria-expanded={showEarlierDays}
+            aria-controls={showEarlierDays ? earlierDaysId : undefined}
+            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-border/50 bg-transparent px-3 py-3 text-sm text-muted-foreground transition-colors hover:border-border hover:bg-muted/25 hover:text-foreground"
+          >
+            <span>
+              {showEarlierDays
+                ? "Show less"
+                : earlierGroups.length === 1
+                  ? `Show earlier day · ${earlierSessionCount}`
+                  : `Show ${earlierGroups.length} earlier days · ${earlierSessionCount}`}
+            </span>
+            <ChevronDown
+              className={cn(
+                "size-3.5 shrink-0 transition-transform duration-200",
+                showEarlierDays && "rotate-180",
+              )}
+              aria-hidden
+            />
+          </button>
+        ) : null}
 
-                  return (
-                    <li key={thread.key}>
-                      <div
-                        role={canContinue ? "button" : undefined}
-                        tabIndex={canContinue ? 0 : undefined}
-                        onClick={
-                          canContinue
-                            ? () => handleContinue(thread.sessions)
-                            : undefined
-                        }
-                        onKeyDown={
-                          canContinue
-                            ? (event) => {
-                                if (
-                                  event.key === "Enter" ||
-                                  event.key === " "
-                                ) {
-                                  event.preventDefault();
-                                  handleContinue(thread.sessions);
-                                }
-                              }
-                            : undefined
-                        }
-                        className={cn(
-                          "group rounded-2xl px-2.5 py-2.5 transition-colors",
-                          isFresh && "focus-session-flash bg-muted/35",
-                          isPending && !isFresh && "bg-muted/20",
-                          canContinue &&
-                            "cursor-pointer hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                          !canContinue && "hover:bg-muted/20",
-                        )}
-                        aria-label={
-                          canContinue
-                            ? `Continue session · ${pickupHint ?? formatFocusDuration(thread.totalSeconds)}`
-                            : undefined
-                        }
-                      >
-                        <div className="flex items-center gap-3">
-                          <span
-                            className={cn(
-                              "size-2 shrink-0 rounded-full",
-                              modeTone(latest.mode),
-                              isFresh && "ring-2 ring-foreground/30",
-                            )}
-                            aria-hidden
-                          />
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-medium">
-                              {isThread
-                                ? thread.title
-                                : FOCUS_PRESETS[latest.mode].label}
-                              {isPending ? (
-                                <span className="ml-2 text-xs font-normal text-muted-foreground">
-                                  just now
-                                </span>
-                              ) : null}
-                              {!latest.completed && !isThread && !isPending ? (
-                                <span className="ml-2 text-xs font-normal text-muted-foreground">
-                                  stopped early
-                                </span>
-                              ) : null}
-                            </p>
-                            {pickupHint ? (
-                              <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                                {pickupHint}
-                              </p>
-                            ) : isThread ? (
-                              <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                                {thread.sessions.length} blocks ·{" "}
-                                {threadTimeRange(thread.sessions)}
-                              </p>
-                            ) : latest.note ? (
-                              <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                                {latest.note}
-                              </p>
-                            ) : null}
-                            {!isThread && latest.task_title ? (
-                              <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                                Task{" "}
-                                <Link
-                                  href={
-                                    latest.task_id
-                                      ? `/focus?task=${latest.task_id}`
-                                      : "/tasks"
-                                  }
-                                  className="text-foreground/80 underline-offset-2 hover:underline"
-                                  onClick={(event) => event.stopPropagation()}
-                                >
-                                  {latest.task_title}
-                                </Link>
-                              </p>
-                            ) : null}
-                          </div>
-                          <div className="shrink-0 text-right">
-                            <p className="focus-clock text-sm text-foreground">
-                              {formatFocusDuration(thread.totalSeconds)}
-                            </p>
-                            <p className="mt-0.5 text-[11px] tabular-nums text-muted-foreground">
-                              {isThread
-                                ? `${thread.sessions.length} blocks`
-                                : formatTime(latest.started_at)}
-                            </p>
-                          </div>
-                          {isThread ? (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="size-8 shrink-0 text-muted-foreground"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                setExpanded((current) => ({
-                                  ...current,
-                                  [thread.key]: !open,
-                                }));
-                              }}
-                              aria-expanded={open}
-                              aria-label={
-                                open ? "Hide blocks" : "Show blocks"
-                              }
-                            >
-                              <ChevronDown
-                                className={cn(
-                                  "size-3.5 transition-transform",
-                                  open && "rotate-180",
-                                )}
-                              />
-                            </Button>
-                          ) : null}
-                          {canContinue ? (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="size-8 shrink-0 text-foreground"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                handleContinue(thread.sessions);
-                              }}
-                              aria-label="Continue session"
-                            >
-                              <Play className="size-3.5 fill-current" />
-                            </Button>
-                          ) : null}
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="size-8 shrink-0 text-muted-foreground opacity-100 hover:text-destructive sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
-                            onClick={(event) =>
-                              handleDelete(thread.sessions, event)
-                            }
-                            aria-label={
-                              isThread ? "Delete thread" : "Delete session"
-                            }
-                          >
-                            <Trash2 className="size-3.5" />
-                          </Button>
-                        </div>
-
-                        {isThread && open ? (
-                          <ul className="mt-2 space-y-1 border-l border-border/50 pl-4">
-                            {thread.sessions.map((session) => (
-                              <li
-                                key={session.id}
-                                className="flex items-center justify-between gap-3 py-1 text-xs text-muted-foreground"
-                              >
-                                <span className="truncate">
-                                  {formatTime(session.started_at)}
-                                  {session.note &&
-                                  session.note !== thread.title
-                                    ? ` · ${session.note}`
-                                    : ""}
-                                </span>
-                                <span className="focus-clock shrink-0 tabular-nums">
-                                  {formatFocusDuration(session.actual_seconds)}
-                                </span>
-                              </li>
-                            ))}
-                          </ul>
-                        ) : null}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          );
-        })}
+        {hasEarlierDays && showEarlierDays ? (
+          <div id={earlierDaysId} className="space-y-7">
+            {earlierGroups.map(renderDayGroup)}
+          </div>
+        ) : null}
       </div>
     </section>
   );
