@@ -3,56 +3,57 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.141 0.005 285.823);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.141 0.005 285.823);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.141 0.005 285.823);
-  --primary: oklch(0.21 0.006 285.885);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.967 0.001 286.375);
-  --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted: oklch(0.967 0.001 286.375);
-  --muted-foreground: oklch(0.552 0.016 285.938);
-  --accent: oklch(0.967 0.001 286.375);
-  --accent-foreground: oklch(0.21 0.006 285.885);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.92 0.004 286.32);
-  --input: oklch(0.92 0.004 286.32);
-  --ring: oklch(0.705 0.015 286.067);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.141 0.005 285.823);
-  --sidebar-accent: oklch(0.955 0.004 286);
-  --sidebar-accent-foreground: oklch(0.18 0.006 286);
-  --sidebar-border: oklch(0.9 0.004 286.32);
-  --sidebar-ring: oklch(0.705 0.015 286.067);
+  /* Cool ink slate — clean paper, deep ink, no purple cast */
+  --background: oklch(0.985 0.004 250);
+  --foreground: oklch(0.195 0.018 255);
+  --card: oklch(0.995 0.002 250);
+  --card-foreground: oklch(0.195 0.018 255);
+  --popover: oklch(0.995 0.002 250);
+  --popover-foreground: oklch(0.195 0.018 255);
+  --primary: oklch(0.27 0.032 255);
+  --primary-foreground: oklch(0.99 0.002 250);
+  --secondary: oklch(0.958 0.008 250);
+  --secondary-foreground: oklch(0.27 0.028 255);
+  --muted: oklch(0.955 0.007 250);
+  --muted-foreground: oklch(0.48 0.022 255);
+  --accent: oklch(0.948 0.012 250);
+  --accent-foreground: oklch(0.24 0.028 255);
+  --destructive: oklch(0.55 0.22 25);
+  --border: oklch(0.90 0.01 250);
+  --input: oklch(0.90 0.01 250);
+  --ring: oklch(0.55 0.04 255);
+  --sidebar: oklch(0.972 0.007 250);
+  --sidebar-foreground: oklch(0.22 0.02 255);
+  --sidebar-accent: oklch(0.935 0.014 250);
+  --sidebar-accent-foreground: oklch(0.2 0.028 255);
+  --sidebar-border: oklch(0.895 0.012 250);
+  --sidebar-ring: oklch(0.55 0.04 255);
   --radius: 0.625rem;
 
   /* Activity heatmap — ink/slate brand ramp (readable in light + dark) */
-  --activity-0: oklch(0.9 0.015 255);
-  --activity-1: oklch(0.78 0.05 255);
-  --activity-2: oklch(0.64 0.09 255);
-  --activity-3: oklch(0.48 0.12 255);
-  --activity-4: oklch(0.34 0.13 255);
+  --activity-0: oklch(0.92 0.012 255);
+  --activity-1: oklch(0.8 0.045 255);
+  --activity-2: oklch(0.65 0.085 255);
+  --activity-3: oklch(0.48 0.11 255);
+  --activity-4: oklch(0.34 0.12 255);
 
   /* Frosted vessel surfaces — one box language app-wide */
-  --surface: color-mix(in oklab, var(--card) 52%, transparent);
-  --surface-strong: color-mix(in oklab, var(--card) 68%, transparent);
+  --surface: color-mix(in oklab, var(--card) 58%, transparent);
+  --surface-strong: color-mix(in oklab, var(--card) 74%, transparent);
   /* Floating overlays (search, chat) — solid so page content doesn’t bleed through */
   --surface-float: var(--card);
-  --surface-border: color-mix(in oklab, var(--border) 45%, transparent);
-  --surface-rim: color-mix(in oklab, var(--foreground) 2.5%, transparent);
-  --surface-blur: 10px;
-  --surface-elev: oklch(0 0 0 / 0.1);
+  --surface-border: color-mix(in oklab, var(--border) 55%, transparent);
+  --surface-rim: color-mix(in oklab, var(--foreground) 3%, transparent);
+  --surface-blur: 12px;
+  --surface-elev: oklch(0.25 0.03 255 / 0.1);
 
-  /* Quiet atmosphere — pulses only; secondary vessels stay glow-free */
-  --glow-pulse: color-mix(in oklab, var(--foreground) 3.2%, transparent);
-  --glow-pulse-opacity: 0.34;
-  --glow-stage: color-mix(in oklab, var(--foreground) 3%, transparent);
-  --glow-stage-soft: color-mix(in oklab, var(--foreground) 2%, transparent);
-  --glow-stage-opacity: 0.42;
-  --glow-stage-soft-opacity: 0.28;
+  /* Quiet atmosphere — cool slate wash, not purple glow */
+  --glow-pulse: color-mix(in oklab, oklch(0.55 0.06 255) 8%, transparent);
+  --glow-pulse-opacity: 0.3;
+  --glow-stage: color-mix(in oklab, oklch(0.55 0.05 255) 7%, transparent);
+  --glow-stage-soft: color-mix(in oklab, oklch(0.6 0.04 250) 5%, transparent);
+  --glow-stage-opacity: 0.38;
+  --glow-stage-soft-opacity: 0.24;
 
   /* Mobile chrome stack — tab bar + optional Focus Continue */
   --mobile-tab-h: 0px;
@@ -97,51 +98,52 @@ html[data-focus-session="true"] {
 }
 
 .dark {
-  --background: oklch(0.141 0.005 285.823);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.21 0.006 285.885);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.21 0.006 285.885);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.92 0.004 286.32);
-  --primary-foreground: oklch(0.21 0.006 285.885);
-  --secondary: oklch(0.274 0.006 286.033);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.274 0.006 286.033);
-  --muted-foreground: oklch(0.705 0.015 286.067);
-  --accent: oklch(0.274 0.006 286.033);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.552 0.016 285.938);
+  /* Deep charcoal-slate stage — cool ink, recessed sidebar */
+  --background: oklch(0.148 0.014 255);
+  --foreground: oklch(0.97 0.006 250);
+  --card: oklch(0.2 0.016 255);
+  --card-foreground: oklch(0.97 0.006 250);
+  --popover: oklch(0.2 0.016 255);
+  --popover-foreground: oklch(0.97 0.006 250);
+  --primary: oklch(0.93 0.01 250);
+  --primary-foreground: oklch(0.22 0.025 255);
+  --secondary: oklch(0.255 0.016 255);
+  --secondary-foreground: oklch(0.96 0.006 250);
+  --muted: oklch(0.255 0.016 255);
+  --muted-foreground: oklch(0.68 0.022 255);
+  --accent: oklch(0.265 0.02 255);
+  --accent-foreground: oklch(0.97 0.006 250);
+  --destructive: oklch(0.68 0.19 22);
+  --border: oklch(0.92 0.01 250 / 10%);
+  --input: oklch(0.92 0.01 250 / 14%);
+  --ring: oklch(0.62 0.04 255);
   /* Recessed rail — darker than the page so content stays the stage */
-  --sidebar: oklch(0.115 0.005 286);
-  --sidebar-foreground: oklch(0.96 0.002 286);
-  --sidebar-accent: oklch(0.195 0.006 286);
-  --sidebar-accent-foreground: oklch(0.99 0 0);
-  --sidebar-border: oklch(1 0 0 / 7%);
-  --sidebar-ring: oklch(0.55 0.016 286);
+  --sidebar: oklch(0.118 0.014 255);
+  --sidebar-foreground: oklch(0.95 0.006 250);
+  --sidebar-accent: oklch(0.2 0.018 255);
+  --sidebar-accent-foreground: oklch(0.99 0.002 250);
+  --sidebar-border: oklch(0.92 0.01 250 / 8%);
+  --sidebar-ring: oklch(0.62 0.04 255);
 
-  --activity-0: oklch(0.28 0.025 255);
-  --activity-1: oklch(0.38 0.07 255);
-  --activity-2: oklch(0.5 0.11 255);
-  --activity-3: oklch(0.62 0.13 255);
-  --activity-4: oklch(0.74 0.11 255);
+  --activity-0: oklch(0.26 0.025 255);
+  --activity-1: oklch(0.36 0.065 255);
+  --activity-2: oklch(0.48 0.1 255);
+  --activity-3: oklch(0.6 0.12 255);
+  --activity-4: oklch(0.72 0.1 255);
 
-  --surface: color-mix(in oklab, var(--card) 38%, transparent);
-  --surface-strong: color-mix(in oklab, var(--card) 52%, transparent);
+  --surface: color-mix(in oklab, var(--card) 42%, transparent);
+  --surface-strong: color-mix(in oklab, var(--card) 58%, transparent);
   --surface-float: var(--card);
-  --surface-border: color-mix(in oklab, var(--border) 55%, transparent);
-  --surface-rim: color-mix(in oklab, var(--foreground) 3.5%, transparent);
-  --surface-elev: oklch(0 0 0 / 0.42);
+  --surface-border: color-mix(in oklab, var(--border) 65%, transparent);
+  --surface-rim: color-mix(in oklab, var(--foreground) 4%, transparent);
+  --surface-elev: oklch(0 0 0 / 0.48);
 
-  --glow-pulse: color-mix(in oklab, var(--foreground) 4%, transparent);
-  --glow-pulse-opacity: 0.28;
-  --glow-stage: color-mix(in oklab, var(--foreground) 4%, transparent);
-  --glow-stage-soft: color-mix(in oklab, var(--foreground) 2.5%, transparent);
-  --glow-stage-opacity: 0.36;
-  --glow-stage-soft-opacity: 0.22;
+  --glow-pulse: color-mix(in oklab, oklch(0.55 0.07 255) 12%, transparent);
+  --glow-pulse-opacity: 0.26;
+  --glow-stage: color-mix(in oklab, oklch(0.5 0.06 255) 10%, transparent);
+  --glow-stage-soft: color-mix(in oklab, oklch(0.55 0.05 250) 7%, transparent);
+  --glow-stage-opacity: 0.32;
+  --glow-stage-soft-opacity: 0.2;
 }
 
 @theme inline {

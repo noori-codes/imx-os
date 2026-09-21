@@ -410,9 +410,9 @@ function ConstellationSky({
       >
         <defs>
           <linearGradient id="focus-sky-dome" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="oklch(0.84 0.11 58)" stopOpacity="0.28" />
-            <stop offset="45%" stopColor="oklch(0.78 0.05 235)" stopOpacity="0.12" />
-            <stop offset="100%" stopColor="oklch(0.58 0.14 285)" stopOpacity="0.32" />
+            <stop offset="0%" stopColor="oklch(0.86 0.08 230)" stopOpacity="0.26" />
+            <stop offset="45%" stopColor="oklch(0.82 0.04 250)" stopOpacity="0.12" />
+            <stop offset="100%" stopColor="oklch(0.62 0.09 255)" stopOpacity="0.28" />
           </linearGradient>
           <linearGradient id="focus-sky-vignette" x1="0.5" y1="0" x2="0.5" y2="1">
             <stop offset="0%" stopColor="white" stopOpacity="0.95" />
@@ -423,9 +423,9 @@ function ConstellationSky({
             <rect x="0" y="0" width="100" height="68" fill="url(#focus-sky-vignette)" />
           </mask>
           <linearGradient id="focus-arc-shimmer" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="oklch(0.88 0.1 62)" stopOpacity="0.55" />
-            <stop offset="48%" stopColor="oklch(0.95 0.02 240)" stopOpacity="0.75" />
-            <stop offset="100%" stopColor="oklch(0.72 0.12 290)" stopOpacity="0.6" />
+            <stop offset="0%" stopColor="oklch(0.88 0.06 235)" stopOpacity="0.5" />
+            <stop offset="48%" stopColor="oklch(0.94 0.02 250)" stopOpacity="0.72" />
+            <stop offset="100%" stopColor="oklch(0.72 0.08 255)" stopOpacity="0.55" />
           </linearGradient>
         </defs>
 
