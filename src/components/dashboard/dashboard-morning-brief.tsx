@@ -64,19 +64,21 @@ export function DashboardMorningBrief({
             <p className="dash-panel-eyebrow">{eyebrow}</p>
             <h3 className="mt-0.5 text-sm font-semibold text-foreground">
               {showEveningClose
-                ? "Seal the day"
+                ? "Close the loop"
                 : isMorning
-                  ? "What matters first"
-                  : "Still open"}
+                  ? "Start with the sharpest three"
+                  : "Still on the table"}
             </h3>
             <p className="mt-0.5 text-xs text-muted-foreground">
               {showEveningClose
                 ? intent?.trim()
-                  ? "Review is waiting — close the loop."
+                  ? "Review is waiting — seal mood and one line."
                   : "A short review turns the day into signal."
                 : topTasks.length === 0 && habitsLeft === 0 && focusMet
                   ? "Deck looks clear — keep the streak warm."
-                  : "A thin slice of today, ready to act on."}
+                  : isMorning
+                    ? "Overdue, due, then Focus — a thin cut of today."
+                    : "A thin slice of today, ready to act on."}
             </p>
           </div>
           {showEveningClose ? (

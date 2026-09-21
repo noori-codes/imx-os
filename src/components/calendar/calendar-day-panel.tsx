@@ -19,6 +19,7 @@ import {
 import {
   deleteCalendarEvent,
   duplicateCalendarEvent,
+  createCalendarEvent,
 } from "@/actions/calendar";
 import { createJournalNoteAction } from "@/actions/notes";
 import { toggleTaskComplete, updateTask } from "@/actions/tasks";
@@ -32,6 +33,11 @@ import {
   compareEventsByTime,
   formatEventWhen,
 } from "@/lib/calendar";
+import {
+  defaultFocusBlockTimes,
+  encodeFocusBlock,
+  focusHrefFromBlock,
+} from "@/lib/focus-calendar-block";
 import {
   addDays,
   formatWeekdayLong,
@@ -93,7 +99,13 @@ function DayTaskToggle({
   );
 }
 
-function DayTaskDueChips({ task }: { task: CalendarTask }) {
+function DayTaskDueChips({
+  task,
+  onScheduleFocusBlock,
+}: {
+  task: CalendarTask;
+  onScheduleFocusBlock?: (taskId: string) => void;
+}) {
   const [, startTransition] = useTransition();
   const today = toDateString(startOfDay(new Date()));
   const tomorrow = toDateString(addDays(startOfDay(new Date()), 1));
@@ -164,6 +176,15 @@ function DayTaskDueChips({ task }: { task: CalendarTask }) {
         <Timer className="size-3" />
         Focus
       </Link>
+      {onScheduleFocusBlock ? (
+        <button
+          type="button"
+          onClick={() => onScheduleFocusBlock(task.id)}
+          className="rounded-md px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          Block
+        </button>
+      ) : null}
     </div>
   );
 }
@@ -179,6 +200,17 @@ function EventRow({
   highlighted: boolean;
   onEdit: () => void;
 }) {
+  const focusHref = focusHrefFromBlock(event.description);
+  const isFocusBlock = Boolean(focusHref);
+  const displayDescription =
+    isFocusBlock || !event.description
+      ? null
+      : event.description
+          .split("\n")
+          .filter((line) => !line.trim().startsWith("imx:focus"))
+          .join("\n")
+          .trim() || null;
+
   return (
     <li
       id={`event-${event.id}`}
@@ -204,20 +236,44 @@ function EventRow({
             ? "border-foreground/35 ring-1 ring-foreground/15"
             : highlighted
               ? "border-foreground/30 ring-1 ring-foreground/20"
-              : "border-border/50",
+              : isFocusBlock
+                ? "border-foreground/25"
+                : "border-border/50",
         )}
       >
         <span
-          className="absolute top-3 -left-[1.05rem] size-2 rounded-full bg-sky-500/80 ring-2 ring-card"
+          className={cn(
+            "absolute top-3 -left-[1.05rem] size-2 rounded-full ring-2 ring-card",
+            isFocusBlock ? "bg-foreground/70" : "bg-sky-500/80",
+          )}
           aria-hidden
         />
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-foreground">{event.title}</p>
+          {focusHref ? (
+            <Link
+              href={focusHref}
+              className="text-sm font-medium text-foreground underline-offset-2 hover:underline"
+            >
+              {event.title}
+            </Link>
+          ) : (
+            <p className="text-sm font-medium text-foreground">{event.title}</p>
+          )}
           <p className="mt-0.5 text-xs text-muted-foreground">
+            {isFocusBlock ? "Focus block · " : ""}
             {formatEventWhen(event)}
           </p>
-          {event.description ? (
-            <p className="mt-1 text-xs text-muted-foreground">{event.description}</p>
+          {displayDescription ? (
+            <p className="mt-1 text-xs text-muted-foreground">{displayDescription}</p>
+          ) : null}
+          {focusHref ? (
+            <Link
+              href={focusHref}
+              className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            >
+              <Timer className="size-3" />
+              Open Focus
+            </Link>
           ) : null}
         </div>
         <Button
@@ -238,7 +294,13 @@ function EventRow({
   );
 }
 
-function TaskRow({ task }: { task: CalendarTask }) {
+function TaskRow({
+  task,
+  onScheduleFocusBlock,
+}: {
+  task: CalendarTask;
+  onScheduleFocusBlock?: (taskId: string) => void;
+}) {
   return (
     <li className="cal-timeline-row grid grid-cols-[3.25rem_minmax(0,1fr)] gap-2">
       <div className="pt-3 text-right">
@@ -276,7 +338,10 @@ function TaskRow({ task }: { task: CalendarTask }) {
               Standalone task
             </Link>
           )}
-          <DayTaskDueChips task={task} />
+          <DayTaskDueChips
+            task={task}
+            onScheduleFocusBlock={onScheduleFocusBlock}
+          />
         </div>
       </div>
     </li>
@@ -298,6 +363,31 @@ export function CalendarDayPanel({
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [highlightEventId, setHighlightEventId] = useState<string | null>(null);
   const [focusComposer, setFocusComposer] = useState(compose);
+  const [focusBlockPending, startFocusBlock] = useTransition();
+
+  function createFocusBlock(taskId?: string | null) {
+    startFocusBlock(async () => {
+      const times = defaultFocusBlockTimes(25);
+      const fd = new FormData();
+      fd.set("title", "Focus block");
+      fd.set("description", encodeFocusBlock(taskId));
+      fd.set("event_date", date);
+      fd.set("start_time", times.start);
+      fd.set("end_time", times.end);
+      const result = await createCalendarEvent(null, fd);
+      if (result.error) {
+        imxToast("Couldn’t add Focus block", {
+          description: result.error,
+          tone: "error",
+        });
+        return;
+      }
+      imxToast("Focus block scheduled", {
+        description: `${times.start}–${times.end} · open from the agenda`,
+        tone: "success",
+      });
+    });
+  }
 
   const sortedEvents = useMemo(
     () => [...items.events].sort(compareEventsByTime),
@@ -394,6 +484,16 @@ export function CalendarDayPanel({
                 type="button"
                 size="sm"
                 variant="outline"
+                disabled={focusBlockPending}
+                onClick={() => createFocusBlock()}
+              >
+                <Timer className="size-3.5" />
+                Focus block
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
                 onClick={() => focusDayField("#cal-task-title")}
               >
                 <ListTodo className="size-3.5" />
@@ -454,13 +554,23 @@ export function CalendarDayPanel({
                 <h3 className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
                   Day agenda
                 </h3>
-                <button
-                  type="button"
-                  onClick={() => focusDayField("#event-title")}
-                  className="text-[11px] font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-                >
-                  Add event
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={focusBlockPending}
+                    onClick={() => createFocusBlock()}
+                    className="text-[11px] font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline disabled:opacity-50"
+                  >
+                    Focus block
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => focusDayField("#event-title")}
+                    className="text-[11px] font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                  >
+                    Add event
+                  </button>
+                </div>
               </div>
 
               {sortedEvents.length === 0 && openTaskList.length === 0 ? (
@@ -499,7 +609,11 @@ export function CalendarDayPanel({
                     />
                   ))}
                   {openTaskList.map((task) => (
-                    <TaskRow key={task.id} task={task} />
+                    <TaskRow
+                      key={task.id}
+                      task={task}
+                      onScheduleFocusBlock={createFocusBlock}
+                    />
                   ))}
                 </ol>
               )}
@@ -511,7 +625,11 @@ export function CalendarDayPanel({
                   </h4>
                   <ul className="space-y-2">
                     {doneTaskList.map((task) => (
-                      <TaskRow key={task.id} task={task} />
+                      <TaskRow
+                        key={task.id}
+                        task={task}
+                        onScheduleFocusBlock={createFocusBlock}
+                      />
                     ))}
                   </ul>
                 </div>

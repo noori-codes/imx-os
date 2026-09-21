@@ -243,6 +243,7 @@ export function DashboardStage({
         <div className="dash-bento-today min-h-88 lg:min-h-112">
           <TodayFocus
             tasks={optimisticTasks}
+            overdueTasks={data.overdue_tasks}
             onToggle={onTaskToggle}
             onSchedule={onTaskSchedule}
           />

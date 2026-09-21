@@ -13,6 +13,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  defaultFocusBlockTimes,
+  encodeFocusBlock,
+  parseFocusBlock,
+} from "@/lib/focus-calendar-block";
 import { addDays, startOfDay, toDateString } from "@/lib/date-utils";
 import { imxToast } from "@/lib/imx-toast";
 import { cn } from "@/lib/utils";
@@ -48,13 +53,16 @@ export function EventForm({
   const [allDay, setAllDay] = useState(!event?.start_time);
   const [startTime, setStartTime] = useState(event?.start_time?.slice(0, 5) ?? "");
   const [endTime, setEndTime] = useState(event?.end_time?.slice(0, 5) ?? "");
+  const [description, setDescription] = useState(event?.description ?? "");
+  const isFocusBlock = parseFocusBlock(description).isFocusBlock;
 
   useEffect(() => {
     setEventDate(event?.event_date ?? date);
     setAllDay(!event?.start_time);
     setStartTime(event?.start_time?.slice(0, 5) ?? "");
     setEndTime(event?.end_time?.slice(0, 5) ?? "");
-  }, [event?.event_date, event?.id, event?.start_time, event?.end_time, date]);
+    setDescription(event?.description ?? "");
+  }, [event?.event_date, event?.id, event?.start_time, event?.end_time, event?.description, date]);
 
   const today = toDateString(startOfDay(new Date()));
   const tomorrow = toDateString(addDays(startOfDay(new Date()), 1));
@@ -77,6 +85,7 @@ export function EventForm({
     setAllDay(true);
     setStartTime("");
     setEndTime("");
+    setDescription("");
     imxToast("Event added", { tone: "success" });
     if (eventDate !== date) {
       const params = new URLSearchParams(window.location.search);
@@ -104,11 +113,17 @@ export function EventForm({
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-            {editing ? "Edit event" : "New event"}
+            {editing
+              ? isFocusBlock
+                ? "Edit Focus block"
+                : "Edit event"
+              : "New event"}
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
             {editing
-              ? "Change day, time, or details"
+              ? isFocusBlock
+                ? "Timed block that deep-links into Focus"
+                : "Change day, time, or details"
               : "Pick a day, then title and time"}
           </p>
         </div>
@@ -267,6 +282,7 @@ export function EventForm({
               ))}
               {(
                 [
+                  { label: "+25m", minutes: 25 },
                   { label: "+30m", minutes: 30 },
                   { label: "+1h", minutes: 60 },
                   { label: "+2h", minutes: 120 },
@@ -307,15 +323,49 @@ export function EventForm({
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="event-description">Notes</Label>
+        <div className="flex items-center justify-between gap-2">
+          <Label htmlFor="event-description">Notes</Label>
+          {!editing ? (
+            <button
+              type="button"
+              onClick={() => {
+                const times = defaultFocusBlockTimes(25);
+                setAllDay(false);
+                setStartTime(times.start);
+                setEndTime(times.end);
+                setDescription(encodeFocusBlock());
+                const title = formRef.current?.querySelector<HTMLInputElement>(
+                  "#event-title",
+                );
+                if (title && !title.value.trim()) {
+                  title.value = "Focus block";
+                }
+              }}
+              className="text-[11px] font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            >
+              Mark as Focus block
+            </button>
+          ) : null}
+        </div>
         <Textarea
           id="event-description"
           name="description"
           rows={2}
-          placeholder="Optional"
-          defaultValue={event?.description ?? ""}
+          placeholder={
+            isFocusBlock
+              ? "imx:focus (links into Focus)"
+              : "Optional"
+          }
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
           className="min-h-9 resize-none bg-surface"
         />
+        {isFocusBlock ? (
+          <p className="text-[11px] text-muted-foreground">
+            Keep the <code className="text-[10px]">imx:focus</code> line so the
+            block opens Focus.
+          </p>
+        ) : null}
       </div>
 
       <Button type="submit" disabled={pending} size="sm" className="rounded-xl">

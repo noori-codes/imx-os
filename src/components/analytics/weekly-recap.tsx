@@ -14,6 +14,7 @@ import {
 import { fireFocusGoalConfetti } from "@/lib/focus-celebrate";
 import { imxToast } from "@/lib/imx-toast";
 import { startOfWeek, toDateString } from "@/lib/date-utils";
+import { cn } from "@/lib/utils";
 import { formatFocusMinutes } from "@/types/focus";
 
 export type WeeklyRecapStats = {
@@ -26,6 +27,14 @@ export type WeeklyRecapStats = {
   focusGoalDays: number;
 };
 
+const BEATS = [
+  { id: "focus", label: "Focus" },
+  { id: "habits", label: "Habits" },
+  { id: "tasks", label: "Tasks" },
+  { id: "streak", label: "Streak" },
+  { id: "seal", label: "Seal" },
+] as const;
+
 function weekSealKey(date = new Date()) {
   const start = startOfWeek(date);
   return `imx-week-seal:${toDateString(start)}`;
@@ -34,6 +43,11 @@ function weekSealKey(date = new Date()) {
 function isWeekendish(date = new Date()) {
   const day = date.getDay(); // 0 Sun … 6 Sat
   return day === 0 || day === 5 || day === 6;
+}
+
+function prefersReducedMotion() {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
 export function WeeklyRecap({
@@ -46,6 +60,7 @@ export function WeeklyRecap({
 }) {
   const [open, setOpen] = useState(false);
   const [sealed, setSealed] = useState(false);
+  const [beat, setBeat] = useState(0);
   const key = useMemo(() => weekSealKey(), []);
 
   useEffect(() => {
@@ -55,6 +70,29 @@ export function WeeklyRecap({
       setSealed(false);
     }
   }, [key]);
+
+  useEffect(() => {
+    if (!open) {
+      setBeat(0);
+      return;
+    }
+    if (prefersReducedMotion()) {
+      setBeat(BEATS.length - 1);
+      return;
+    }
+    setBeat(0);
+    const timers: number[] = [];
+    for (let i = 1; i < BEATS.length; i += 1) {
+      timers.push(
+        window.setTimeout(() => {
+          setBeat(i);
+        }, i * 400),
+      );
+    }
+    return () => {
+      for (const timer of timers) window.clearTimeout(timer);
+    };
+  }, [open]);
 
   const showNudge = compact ? isWeekendish() && !sealed : true;
   if (!showNudge && compact) return null;
@@ -73,6 +111,12 @@ export function WeeklyRecap({
     });
     setOpen(false);
   }
+
+  const showFocus = beat >= 0;
+  const showHabits = beat >= 1;
+  const showTasks = beat >= 2;
+  const showStreak = beat >= 3;
+  const showSeal = beat >= 4;
 
   return (
     <>
@@ -101,38 +145,73 @@ export function WeeklyRecap({
               {sealed ? "This week, sealed" : "Look what you built"}
             </DialogTitle>
             <DialogDescription className="mt-1 text-sm text-muted-foreground">
-              A quiet scoreboard for the last stretch — private, just for you.
+              A short story of the stretch — private, just for you.
             </DialogDescription>
+            <div
+              className="mt-3 flex items-center gap-1.5"
+              aria-hidden
+            >
+              {BEATS.map((item, index) => (
+                <span
+                  key={item.id}
+                  className={cn(
+                    "h-1 flex-1 rounded-full transition-colors duration-300",
+                    index <= beat ? "bg-foreground/55" : "bg-border/60",
+                  )}
+                />
+              ))}
+            </div>
           </DialogHeader>
 
           <div className="grid grid-cols-2 gap-4 px-5 py-5">
             <RecapStat
+              className={cn(
+                "recap-beat",
+                showFocus ? "recap-beat-in" : "recap-beat-out",
+              )}
               label="Focus"
               value={formatFocusMinutes(stats.focusMinutes)}
               hint={`${stats.focusSessions} sessions`}
             />
             <RecapStat
-              label="Goal days"
-              value={`${stats.focusGoalHitDays}/${stats.focusGoalDays}`}
-              hint="daily focus hit"
-            />
-            <RecapStat
+              className={cn(
+                "recap-beat",
+                showHabits ? "recap-beat-in" : "recap-beat-out",
+              )}
               label="Habits"
               value={`${stats.habitsAvgRate}%`}
               hint="avg completion"
             />
             <RecapStat
+              className={cn(
+                "recap-beat",
+                showTasks ? "recap-beat-in" : "recap-beat-out",
+              )}
+              label="Tasks"
+              value={`${stats.tasksCompleted}`}
+              hint="completed this week"
+            />
+            <RecapStat
+              className={cn(
+                "recap-beat",
+                showStreak ? "recap-beat-in" : "recap-beat-out",
+              )}
               label="Streak"
               value={`${stats.bestHabitStreak}d`}
               hint={
-                stats.tasksCompleted > 0
-                  ? `${stats.tasksCompleted} tasks done`
+                stats.focusGoalHitDays > 0
+                  ? `${stats.focusGoalHitDays}/${stats.focusGoalDays} goal days`
                   : "best habit run"
               }
             />
           </div>
 
-          <div className="border-t border-border/40 px-5 py-4">
+          <div
+            className={cn(
+              "border-t border-border/40 px-5 py-4 recap-beat",
+              showSeal ? "recap-beat-in" : "recap-beat-out",
+            )}
+          >
             {sealed ? (
               <p className="text-center text-sm text-muted-foreground">
                 Already sealed for this week. Keep going if you want.
@@ -157,13 +236,15 @@ function RecapStat({
   label,
   value,
   hint,
+  className,
 }: {
   label: string;
   value: string;
   hint: string;
+  className?: string;
 }) {
   return (
-    <div>
+    <div className={className}>
       <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
         {label}
       </p>

@@ -173,6 +173,11 @@ export function CalendarGrid({
               data-intensity={intensity}
               data-today={day.isToday ? "true" : undefined}
               data-selected={selected ? "true" : undefined}
+              data-mood={
+                items?.mood && items.mood >= 1 && items.mood <= 5
+                  ? String(items.mood)
+                  : undefined
+              }
             >
               <div className="flex items-start justify-between gap-1">
                 <span

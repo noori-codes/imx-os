@@ -33,7 +33,7 @@ async function ReviewBody({ date }: { date: string }) {
 
   return (
     <AppPageFrame className="max-w-5xl gap-8 md:py-8">
-      <ReviewStage>
+      <ReviewStage mood={review?.mood}>
         <div className="review-reveal">
           <ReviewPulse date={date} recap={recap} review={review} />
         </div>

@@ -36,7 +36,7 @@ import {
   continueSubject,
 } from "@/lib/focus-continue";
 import { cn } from "@/lib/utils";
-import { stopFocusSound, useFocusSound } from "@/stores/focus-sound";
+import { focusSceneForTrack, stopFocusSound, useFocusSound } from "@/stores/focus-sound";
 import { nextFocusMode, useFocusTimer, canContinueFocusSession } from "@/stores/focus-timer";
 import {
   FOCUS_MAX_SECONDS,
@@ -807,6 +807,7 @@ export function FocusTimer({
     <section
       data-mode={mode}
       data-sound={soundPlaying ? soundId : undefined}
+      data-focus-scene={focusSceneForTrack(soundId)}
       data-running={isRunning && pageVisible ? "true" : "false"}
       data-visible={pageVisible ? "true" : "false"}
       className={cn(

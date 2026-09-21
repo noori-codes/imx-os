@@ -10,6 +10,7 @@ import {
   dashboardPhaseFromHour,
   type DashboardPhase,
 } from "@/lib/dashboard-phase";
+import { streakSeasonFor } from "@/lib/streak-seasons";
 import { cn } from "@/lib/utils";
 import { formatFocusMinutes } from "@/types/focus";
 
@@ -327,10 +328,13 @@ function StreakPill({
   streak: number;
   tier: ReturnType<typeof streakTier>;
 }) {
+  const season = streakSeasonFor(streak);
   return (
     <div className="dash-hero-streak-pill" data-tier={tier}>
       <Flame className="size-3.5 shrink-0" aria-hidden="true" />
-      <span className="tabular-nums">{streak} day streak</span>
+      <span className="tabular-nums">
+        {streak}d{season ? ` · ${season.label}` : " streak"}
+      </span>
     </div>
   );
 }

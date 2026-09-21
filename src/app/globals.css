@@ -3110,6 +3110,64 @@ html[data-focus-session] body {
   opacity: 0.55;
 }
 
+/* Mood weather — soft atmospheric wash from review mood scale */
+.review-stage[data-mood="1"] .review-stage-wash,
+.review-pulse[data-mood="1"] .review-pulse-glow {
+  background: radial-gradient(
+    ellipse at 70% 20%,
+    color-mix(in oklab, oklch(0.55 0.06 250) 22%, transparent) 0%,
+    transparent 70%
+  );
+}
+.review-stage[data-mood="2"] .review-stage-wash,
+.review-pulse[data-mood="2"] .review-pulse-glow {
+  background: radial-gradient(
+    ellipse at 70% 20%,
+    color-mix(in oklab, oklch(0.62 0.04 250) 18%, transparent) 0%,
+    transparent 70%
+  );
+}
+.review-stage[data-mood="3"] .review-stage-wash,
+.review-pulse[data-mood="3"] .review-pulse-glow {
+  background: radial-gradient(
+    ellipse at 70% 20%,
+    color-mix(in oklab, oklch(0.7 0.04 255) 16%, transparent) 0%,
+    transparent 70%
+  );
+}
+.review-stage[data-mood="4"] .review-stage-wash,
+.review-pulse[data-mood="4"] .review-pulse-glow {
+  background: radial-gradient(
+    ellipse at 70% 20%,
+    color-mix(in oklab, oklch(0.78 0.05 230) 18%, transparent) 0%,
+    transparent 70%
+  );
+}
+.review-stage[data-mood="5"] .review-stage-wash,
+.review-pulse[data-mood="5"] .review-pulse-glow {
+  background: radial-gradient(
+    ellipse at 70% 20%,
+    color-mix(in oklab, oklch(0.85 0.06 95) 16%, transparent) 0%,
+    transparent 70%
+  );
+}
+
+.cal-cell[data-mood="1"] {
+  background: color-mix(in oklab, oklch(0.55 0.05 250) 8%, transparent);
+}
+.cal-cell[data-mood="2"] {
+  background: color-mix(in oklab, oklch(0.62 0.04 250) 7%, transparent);
+}
+.cal-cell[data-mood="3"] {
+  background: color-mix(in oklab, oklch(0.7 0.04 255) 6%, transparent);
+}
+.cal-cell[data-mood="4"] {
+  background: color-mix(in oklab, oklch(0.78 0.05 230) 7%, transparent);
+}
+.cal-cell[data-mood="5"] {
+  background: color-mix(in oklab, oklch(0.85 0.06 95) 8%, transparent);
+}
+
 .review-form,
 .review-recap,
 .review-history {
@@ -4031,6 +4089,55 @@ html[data-focus-session] body {
   z-index: 1;
 }
 
+/* Ambient Focus scene washes — ink-slate, soft tint only */
+.focus-studio[data-focus-scene="warm-desk"] .focus-studio-wash,
+.focus-session-lock[data-focus-scene="warm-desk"] .focus-run-mist,
+.focus-stage[data-focus-scene="warm-desk"] .focus-run-mist {
+  background: radial-gradient(
+    ellipse 70% 80% at 50% 0%,
+    color-mix(in oklab, oklch(0.72 0.06 75) 14%, transparent) 0%,
+    transparent 72%
+  );
+}
+
+.focus-studio[data-focus-scene="night-air"] .focus-studio-wash,
+.focus-session-lock[data-focus-scene="night-air"] .focus-run-mist,
+.focus-stage[data-focus-scene="night-air"] .focus-run-mist {
+  background: radial-gradient(
+    ellipse 70% 80% at 50% 0%,
+    color-mix(in oklab, oklch(0.62 0.05 240) 12%, transparent) 0%,
+    transparent 72%
+  );
+}
+
+.focus-studio[data-focus-scene="soft-rain"] .focus-studio-wash,
+.focus-session-lock[data-focus-scene="soft-rain"] .focus-run-mist,
+.focus-stage[data-focus-scene="soft-rain"] .focus-run-mist {
+  background: radial-gradient(
+    ellipse 70% 80% at 50% 0%,
+    color-mix(in oklab, oklch(0.58 0.02 250) 11%, transparent) 0%,
+    transparent 72%
+  );
+}
+
+.focus-studio[data-focus-scene="deep-library"] .focus-studio-wash,
+.focus-session-lock[data-focus-scene="deep-library"] .focus-run-mist,
+.focus-stage[data-focus-scene="deep-library"] .focus-run-mist {
+  background: radial-gradient(
+    ellipse 70% 80% at 50% 0%,
+    color-mix(in oklab, oklch(0.55 0.04 160) 12%, transparent) 0%,
+    transparent 72%
+  );
+}
+
+.focus-progress[data-calm="true"] .focus-studio-wash,
+.focus-progress[data-calm="true"] .focus-run-mist,
+.focus-studio[data-calm="true"] .focus-studio-glow,
+.focus-studio[data-calm="true"] .focus-studio-glow-soft {
+  animation: none;
+  opacity: 0.55;
+}
+
 .focus-reveal {
   animation: dash-reveal-up 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
@@ -4867,3 +4974,32 @@ html[data-focus-session] body {
 }
 
 
+
+/* Weekly recap movie beats */
+.recap-beat {
+  transition:
+    opacity 380ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 380ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.recap-beat-out {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.recap-beat-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .recap-beat {
+    transition: none;
+  }
+
+  .recap-beat-out,
+  .recap-beat-in {
+    opacity: 1;
+    transform: none;
+  }
+}
