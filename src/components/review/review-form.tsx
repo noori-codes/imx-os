@@ -246,18 +246,19 @@ function FeelingScale({
               <span
                 className={cn(
                   "flex flex-col items-center gap-1.5 rounded-2xl border px-1.5 py-3 transition-all duration-200",
-                  "imx-surface imx-surface-rim",
-                  "hover:-translate-y-0.5 hover:border-border hover:bg-muted/45",
                   "peer-focus-visible:ring-2 peer-focus-visible:ring-ring/40",
-                  isOn &&
-                    "review-feeling-on -translate-y-0.5 border-foreground bg-foreground text-background shadow-[0_10px_28px_oklch(0_0_0/0.14)]",
+                  isOn
+                    ? "review-feeling-on -translate-y-0.5"
+                    : "imx-surface imx-surface-rim hover:-translate-y-0.5 hover:border-border hover:bg-muted/45",
                 )}
                 data-level={option.value}
               >
                 <span
                   className={cn(
                     "flex size-9 items-center justify-center rounded-xl transition-colors",
-                    isOn ? "bg-background/15" : "bg-muted/50",
+                    isOn
+                      ? "bg-background/15 dark:bg-foreground/10"
+                      : "bg-muted/50",
                   )}
                 >
                   <Icon
@@ -271,7 +272,9 @@ function FeelingScale({
                 <span
                   className={cn(
                     "text-[10px] font-semibold tracking-wide",
-                    isOn ? "text-background" : "text-muted-foreground",
+                    isOn
+                      ? "text-background dark:text-foreground"
+                      : "text-muted-foreground",
                   )}
                 >
                   {option.label}

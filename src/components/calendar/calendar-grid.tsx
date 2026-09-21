@@ -92,9 +92,9 @@ function DensityMarks({ items }: { items: CalendarDayItems | undefined }) {
           key={mark.key}
           className={cn(
             "cal-dot size-1.5 rounded-full",
-            mark.kind === "event" && "bg-sky-500/80",
-            mark.kind === "task" && "bg-foreground/45",
-            mark.kind === "journal" && "bg-amber-500/85",
+            mark.kind === "event" && "bg-foreground/55",
+            mark.kind === "task" && "bg-foreground/35",
+            mark.kind === "journal" && "bg-foreground/70",
           )}
         />
       ))}
@@ -108,13 +108,13 @@ function WeekChip({ chip }: { chip: Chip }) {
       className={cn(
         "cal-chip flex items-baseline gap-1 truncate rounded-md px-1.5 py-1 text-left text-[10px] font-medium leading-tight",
         chip.kind === "event" &&
-          "bg-sky-500/12 text-sky-800 dark:text-sky-300",
+          "bg-foreground/8 text-foreground/85",
         chip.kind === "task" &&
           (chip.meta === "done"
             ? "bg-muted/70 text-muted-foreground line-through"
             : "bg-muted text-foreground/80"),
         chip.kind === "journal" &&
-          "bg-amber-500/12 text-amber-800 dark:text-amber-300",
+          "bg-foreground/12 text-foreground/90",
       )}
     >
       {chip.kind === "event" && chip.timeLabel ? (

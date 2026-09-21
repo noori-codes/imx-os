@@ -8,7 +8,7 @@ export const FOCUS_TRACKS = [
     label: "Warm desk",
     hint: "Warm",
     scene: "warm-desk",
-    tone: "from-amber-500/25 to-orange-500/5",
+    tone: "from-foreground/20 to-foreground/5",
     src: "/first-audio.mp3",
   },
   {
@@ -16,7 +16,7 @@ export const FOCUS_TRACKS = [
     label: "Night air",
     hint: "Air",
     scene: "night-air",
-    tone: "from-sky-500/25 to-cyan-500/5",
+    tone: "from-foreground/25 to-muted/40",
     src: "/second-audio.mp3",
   },
   {
@@ -24,7 +24,7 @@ export const FOCUS_TRACKS = [
     label: "Soft rain",
     hint: "Soft",
     scene: "soft-rain",
-    tone: "from-stone-400/30 to-zinc-500/10",
+    tone: "from-muted-foreground/25 to-foreground/5",
     src: "/third-audio.mp3",
   },
   {
@@ -32,7 +32,7 @@ export const FOCUS_TRACKS = [
     label: "Deep library",
     hint: "Deep",
     scene: "deep-library",
-    tone: "from-emerald-500/25 to-teal-500/5",
+    tone: "from-foreground/18 to-muted/50",
     src: "/forth-audio.mp3",
   },
 ] as const;

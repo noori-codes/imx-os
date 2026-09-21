@@ -244,7 +244,7 @@ function EventRow({
         <span
           className={cn(
             "absolute top-3 -left-[1.05rem] size-2 rounded-full ring-2 ring-card",
-            isFocusBlock ? "bg-foreground/70" : "bg-sky-500/80",
+            isFocusBlock ? "bg-foreground/70" : "bg-foreground/45",
           )}
           aria-hidden
         />
@@ -520,9 +520,9 @@ export function CalendarDayPanel({
                     <li key={note.id}>
                       <Link
                         href={`/notes/${note.id}`}
-                        className="flex items-center gap-2.5 rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2.5 text-sm transition-colors hover:bg-amber-500/15"
+                        className="flex items-center gap-2.5 rounded-xl border border-foreground/10 bg-foreground/5 px-3 py-2.5 text-sm transition-colors hover:bg-foreground/8"
                       >
-                        <BookOpen className="size-4 shrink-0 text-amber-700 dark:text-amber-400" />
+                        <BookOpen className="size-4 shrink-0 text-foreground/70" />
                         <span className="truncate font-medium">{note.title}</span>
                       </Link>
                     </li>

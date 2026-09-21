@@ -162,9 +162,9 @@ export function ReviewRecapCard({ recap }: ReviewRecapCardProps) {
         {recap.has_journal && recap.journal_id ? (
           <Link
             href={`/notes/${recap.journal_id}`}
-            className="flex items-center gap-2.5 rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2.5 text-sm font-medium transition-colors hover:bg-amber-500/15"
+            className="flex items-center gap-2.5 rounded-xl border border-foreground/10 bg-foreground/5 px-3 py-2.5 text-sm font-medium transition-colors hover:bg-foreground/8"
           >
-            <BookOpen className="size-4 shrink-0 text-amber-700 dark:text-amber-400" />
+            <BookOpen className="size-4 shrink-0 text-foreground/70" />
             Open today&apos;s journal
           </Link>
         ) : (
