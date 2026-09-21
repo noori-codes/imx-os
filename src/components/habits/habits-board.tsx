@@ -12,6 +12,7 @@ import { HabitViewTabs } from "@/components/habits/habit-view-tabs";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
 import { toDateString } from "@/lib/date-utils";
+import { streakSeasonFor } from "@/lib/streak-seasons";
 import { cn } from "@/lib/utils";
 import type { HabitView, HabitWithStats } from "@/types/habit";
 
@@ -156,6 +157,12 @@ function TodayPulse({
               <p className="mt-1 text-lg font-semibold tabular-nums tracking-tight">
                 {pulseStats.bestStreak > 0 ? `${pulseStats.bestStreak}d` : "—"}
               </p>
+              {pulseStats.bestStreak > 0 &&
+              streakSeasonFor(pulseStats.bestStreak) ? (
+                <p className="mt-0.5 text-[10px] font-medium text-muted-foreground">
+                  {streakSeasonFor(pulseStats.bestStreak)?.label}
+                </p>
+              ) : null}
             </div>
             <div>
               <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">

@@ -34,7 +34,7 @@ type TaskRow = Task & {
 };
 
 function emptyDay(date: string): CalendarDayItems {
-  return { date, events: [], tasks: [], journals: [] };
+  return { date, events: [], tasks: [], journals: [], mood: null };
 }
 
 function mapTask(row: TaskRow): CalendarTask {
@@ -74,7 +74,8 @@ export async function getCalendarData(
 ): Promise<CalendarData> {
   const supabase = await createClient();
 
-  const [eventsResult, tasksResult, journalsResult] = await Promise.all([
+  const [eventsResult, tasksResult, journalsResult, reviewsResult] =
+    await Promise.all([
     supabase
       .from("calendar_events")
       .select("*")
@@ -104,6 +105,11 @@ export async function getCalendarData(
       .gte("journal_date", rangeStart)
       .lte("journal_date", rangeEnd)
       .order("journal_date", { ascending: true }),
+    supabase
+      .from("daily_reviews")
+      .select("review_date, mood")
+      .gte("review_date", rangeStart)
+      .lte("review_date", rangeEnd),
   ]);
 
   if (eventsResult.error) {
@@ -114,6 +120,9 @@ export async function getCalendarData(
   }
   if (journalsResult.error) {
     console.error("[calendar] journals:", journalsResult.error.message);
+  }
+  if (reviewsResult.error) {
+    console.error("[calendar] reviews:", reviewsResult.error.message);
   }
 
   const days: Record<string, CalendarDayItems> = {};
@@ -137,6 +146,14 @@ export async function getCalendarData(
   for (const note of (journalsResult.data ?? []) as Note[]) {
     if (!note.journal_date) continue;
     dayFor(note.journal_date).journals.push(note);
+  }
+
+  for (const row of (reviewsResult.data ?? []) as {
+    review_date: string;
+    mood: number | null;
+  }[]) {
+    if (!row.review_date || row.mood == null) continue;
+    dayFor(row.review_date).mood = row.mood;
   }
 
   return { rangeStart, rangeEnd, days };

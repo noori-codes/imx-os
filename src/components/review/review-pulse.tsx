@@ -91,6 +91,11 @@ export function ReviewPulse({ date, recap, review }: ReviewPulseProps) {
         "review-pulse relative overflow-hidden rounded-[1.75rem] imx-surface px-5 py-6 sm:px-7 sm:py-8",
         copy.sealed && "review-pulse-sealed",
       )}
+      data-mood={
+        review?.mood && review.mood >= 1 && review.mood <= 5
+          ? String(review.mood)
+          : undefined
+      }
     >
       <div className="review-pulse-vignette" aria-hidden />
       <div className="review-pulse-glow" aria-hidden />

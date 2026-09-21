@@ -61,7 +61,7 @@ export function FocusSounds({
         <div
           className="flex items-center gap-2.5 sm:gap-3"
           role="listbox"
-          aria-label="Ambient tracks"
+          aria-label="Ambient scenes"
         >
           {FOCUS_TRACKS.map((track) => {
             const isLive = playing && activeId === track.id;
@@ -70,7 +70,7 @@ export function FocusSounds({
                 key={track.id}
                 type="button"
                 role="option"
-                aria-label={track.hint}
+                aria-label={track.label}
                 aria-selected={isLive}
                 onClick={() => void toggle(track.id)}
                 className="group/orb relative flex size-9 items-center justify-center sm:size-10"
@@ -96,7 +96,7 @@ export function FocusSounds({
         </div>
         {playing ? (
           <p className="hidden min-w-0 truncate text-[11px] tracking-wide text-muted-foreground sm:block">
-            {active.hint}
+            {active.label}
           </p>
         ) : null}
       </div>
@@ -109,10 +109,10 @@ export function FocusSounds({
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-              Atmosphere
+              Scene
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              {playing ? `${active.hint} room` : "Choose a texture for the room"}
+              {playing ? active.label : "Choose a room for the session"}
             </p>
           </div>
           <VolumeControls volume={volume} setVolume={setVolume} />
@@ -120,7 +120,7 @@ export function FocusSounds({
         <div
           className="grid grid-cols-4 gap-2 sm:gap-3"
           role="listbox"
-          aria-label="Ambient tracks"
+          aria-label="Ambient scenes"
         >
           {FOCUS_TRACKS.map((track) => {
             const isLive = playing && activeId === track.id;
@@ -156,7 +156,7 @@ export function FocusSounds({
                     isLive ? "text-foreground" : "text-muted-foreground",
                   )}
                 >
-                  {track.hint}
+                  {track.label}
                 </span>
               </button>
             );
@@ -182,7 +182,7 @@ export function FocusSounds({
       <div className="relative flex items-end justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-            Atmosphere
+            Scene
           </p>
           <p className="mt-1 truncate text-xs text-muted-foreground">
             {playing ? (
@@ -202,10 +202,10 @@ export function FocusSounds({
                     />
                   ))}
                 </span>
-                {active.hint} room
+                {active.label}
               </span>
             ) : (
-              "Choose a texture for the room"
+              "Choose a room for the session"
             )}
           </p>
         </div>
@@ -216,7 +216,7 @@ export function FocusSounds({
       <div
         className="relative mt-5 grid grid-cols-4 gap-3 sm:gap-4"
         role="listbox"
-        aria-label="Ambient tracks"
+        aria-label="Ambient scenes"
       >
         {FOCUS_TRACKS.map((track) => {
           const isLive = playing && activeId === track.id;
@@ -253,7 +253,7 @@ export function FocusSounds({
                     isLive ? "text-foreground" : "text-muted-foreground",
                   )}
                 >
-                  {track.hint}
+                  {track.label}
                 </span>
                 <span className="block text-[10px] text-muted-foreground/70">
                   {isLive ? "Playing" : "Cue"}

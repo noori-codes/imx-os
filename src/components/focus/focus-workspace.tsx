@@ -4,6 +4,11 @@ import { useEffect, type ReactNode } from "react";
 
 import { useFocusContinueBarVisible } from "@/components/focus/focus-continue-bar";
 import { AppPageFrame } from "@/components/shared/app-page-frame";
+import {
+  focusSceneForTrack,
+  hydrateFocusScene,
+  useFocusSound,
+} from "@/stores/focus-sound";
 import { useFocusTimer } from "@/stores/focus-timer";
 
 type FocusWorkspaceProps = {
@@ -21,6 +26,12 @@ export function FocusWorkspace({
   const continueBarVisible = useFocusContinueBarVisible();
   // Keep the session shell while paused so the timer doesn't remount and wipe time.
   const inSession = isRunning || continueBarVisible;
+  const soundId = useFocusSound((s) => s.activeId);
+  const scene = focusSceneForTrack(soundId);
+
+  useEffect(() => {
+    hydrateFocusScene();
+  }, []);
 
   useEffect(() => {
     if (!inSession) return;
@@ -44,7 +55,10 @@ export function FocusWorkspace({
 
   if (inSession) {
     return (
-      <div className="focus-session-lock flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden">
+      <div
+        className="focus-session-lock flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden"
+        data-focus-scene={scene}
+      >
         <div className="flex min-h-0 flex-1 flex-col">{timer}</div>
       </div>
     );
@@ -52,7 +66,7 @@ export function FocusWorkspace({
 
   return (
     <AppPageFrame className="max-w-5xl gap-8 md:py-8">
-      <div className="focus-studio">
+      <div className="focus-studio" data-focus-scene={scene}>
         <div className="focus-studio-wash" aria-hidden="true" />
         <div className="focus-studio-glow" aria-hidden="true" />
         <div className="focus-studio-glow-soft" aria-hidden="true" />

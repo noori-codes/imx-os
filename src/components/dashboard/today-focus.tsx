@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { CheckCircle2, Circle, ListTodo, Timer } from "lucide-react";
 
 import { updateTask } from "@/actions/tasks";
@@ -13,26 +13,41 @@ import {
   startOfDay,
   toDateString,
 } from "@/lib/date-utils";
+import { readContinuePointer } from "@/lib/imx-continue";
 import { imxToast } from "@/lib/imx-toast";
+import {
+  rankSmartToday,
+  smartReasonLabel,
+  type SmartReason,
+} from "@/lib/smart-today";
 import { cn } from "@/lib/utils";
 import type { TaskWithContext } from "@/types/dashboard";
 
 type TodayFocusProps = {
   tasks: TaskWithContext[];
+  overdueTasks?: TaskWithContext[];
   onToggle: (taskId: string, completed: boolean) => void;
   onSchedule?: (taskId: string, dueDate: string | null) => void;
 };
+
+function reasonTone(reason: SmartReason) {
+  if (reason === "overdue") return "text-destructive/85";
+  if (reason === "focus") return "text-foreground";
+  return "text-muted-foreground";
+}
 
 function TaskRow({
   task,
   index,
   flash,
+  reason,
   onToggle,
   onSchedule,
 }: {
   task: TaskWithContext;
   index: number;
   flash: boolean;
+  reason: SmartReason;
   onToggle: (taskId: string, completed: boolean) => void;
   onSchedule?: (taskId: string, dueDate: string | null) => void;
 }) {
@@ -40,15 +55,6 @@ function TaskRow({
   const overdue = Boolean(
     task.due_date && !task.completed && isOverdue(task.due_date),
   );
-  const tag = overdue
-    ? "Overdue"
-    : task.recurrence === "daily"
-      ? "Everyday"
-      : task.recurrence === "weekdays"
-        ? "Weekdays"
-        : task.context
-          ? task.context
-          : null;
 
   const today = toDateString(startOfDay(new Date()));
   const tomorrow = toDateString(addDays(startOfDay(new Date()), 1));
@@ -118,16 +124,16 @@ function TaskRow({
           >
             {task.title}
           </p>
-          {tag ? (
-            <p
-              className={cn(
-                "mt-0.5 truncate text-[11px] text-muted-foreground",
-                overdue && "text-destructive/80",
-              )}
-            >
-              {tag}
-            </p>
-          ) : null}
+          <p
+            className={cn(
+              "mt-0.5 truncate text-[11px] font-medium",
+              reasonTone(reason),
+              overdue && reason === "overdue" && "text-destructive/80",
+            )}
+          >
+            {smartReasonLabel(reason)}
+            {task.context ? ` · ${task.context}` : ""}
+          </p>
         </div>
 
         {!task.completed ? (
@@ -180,13 +186,32 @@ function TaskRow({
   );
 }
 
-export function TodayFocus({ tasks, onToggle, onSchedule }: TodayFocusProps) {
-  const openCount = tasks.filter((t) => !t.completed).length;
-  const clear = tasks.length > 0 && openCount === 0;
+export function TodayFocus({
+  tasks,
+  overdueTasks = [],
+  onToggle,
+  onSchedule,
+}: TodayFocusProps) {
+  const [continueHref, setContinueHref] = useState<string | null>(null);
+  const smart = useMemo(
+    () => rankSmartToday(tasks, overdueTasks, continueHref),
+    [tasks, overdueTasks, continueHref],
+  );
+  const openCount = smart.length;
+  const clear = tasks.length > 0 && tasks.every((t) => t.completed) && openCount === 0;
   const [flashTaskId, setFlashTaskId] = useState<string | null>(null);
   const [celebrateClear, setCelebrateClear] = useState(false);
   const prevClear = useRef(clear);
   const mounted = useRef(false);
+
+  useEffect(() => {
+    function refresh() {
+      setContinueHref(readContinuePointer()?.href ?? null);
+    }
+    refresh();
+    window.addEventListener("imx:continue-updated", refresh);
+    return () => window.removeEventListener("imx:continue-updated", refresh);
+  }, []);
 
   useEffect(() => {
     if (!mounted.current) {
@@ -219,28 +244,30 @@ export function TodayFocus({ tasks, onToggle, onSchedule }: TodayFocusProps) {
       )}
     >
       <div className="dash-panel-glow" aria-hidden="true" />
-      <div className="relative z-[1] flex items-center justify-between gap-3 border-b border-border/25 px-5 py-3.5">
+      <div className="relative z-1 flex items-center justify-between gap-3 border-b border-border/25 px-5 py-3.5">
         <div>
-          <p className="dash-panel-eyebrow">On deck</p>
-          <h3 className="mt-0.5 text-sm font-semibold tracking-tight text-foreground">Today</h3>
+          <p className="dash-panel-eyebrow">Smart today</p>
+          <h3 className="mt-0.5 text-sm font-semibold tracking-tight text-foreground">
+            Today
+          </h3>
           <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
-            {tasks.length === 0
+            {smart.length === 0
               ? "Nothing due"
               : clear
                 ? "All clear"
-                : `${openCount} open`}
+                : `${openCount} prioritized`}
           </p>
         </div>
         <Link
-          href="/tasks"
+          href="/tasks?view=today"
           className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
           View all
         </Link>
       </div>
 
-      {tasks.length === 0 ? (
-        <div className="relative z-[1] flex flex-1 flex-col justify-center px-3 py-4">
+      {smart.length === 0 ? (
+        <div className="relative z-1 flex flex-1 flex-col justify-center px-3 py-4">
           <EmptyState
             icon={ListTodo}
             title="Nothing due today"
@@ -265,13 +292,14 @@ export function TodayFocus({ tasks, onToggle, onSchedule }: TodayFocusProps) {
           </EmptyState>
         </div>
       ) : (
-        <ul className="dash-stagger relative z-[1] min-h-0 flex-1 space-y-0.5 overflow-y-auto px-3 py-3">
-          {tasks.map((task, index) => (
+        <ul className="dash-stagger relative z-1 min-h-0 flex-1 space-y-0.5 overflow-y-auto px-3 py-3">
+          {smart.map((item, index) => (
             <TaskRow
-              key={task.id}
-              task={task}
+              key={item.task.id}
+              task={item.task}
               index={index}
-              flash={flashTaskId === task.id}
+              reason={item.reason}
+              flash={flashTaskId === item.task.id}
               onToggle={handleToggle}
               onSchedule={onSchedule}
             />

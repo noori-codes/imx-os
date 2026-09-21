@@ -5,37 +5,44 @@ import { create } from "zustand";
 export const FOCUS_TRACKS = [
   {
     id: "first",
-    label: "Sound 1",
+    label: "Warm desk",
     hint: "Warm",
+    scene: "warm-desk",
     tone: "from-amber-500/25 to-orange-500/5",
     src: "/first-audio.mp3",
   },
   {
     id: "second",
-    label: "Sound 2",
+    label: "Night air",
     hint: "Air",
+    scene: "night-air",
     tone: "from-sky-500/25 to-cyan-500/5",
     src: "/second-audio.mp3",
   },
   {
     id: "third",
-    label: "Sound 3",
+    label: "Soft rain",
     hint: "Soft",
+    scene: "soft-rain",
     tone: "from-stone-400/30 to-zinc-500/10",
     src: "/third-audio.mp3",
   },
   {
     id: "fourth",
-    label: "Sound 4",
+    label: "Deep library",
     hint: "Deep",
+    scene: "deep-library",
     tone: "from-emerald-500/25 to-teal-500/5",
     src: "/forth-audio.mp3",
   },
 ] as const;
 
+export type FocusSceneId = (typeof FOCUS_TRACKS)[number]["scene"];
+
 export const DEFAULT_FOCUS_TRACK = "fourth";
 
 const VOLUME_KEY = "imx-focus-sound-volume";
+const SCENE_KEY = "imx-focus-scene";
 const AUDIO_ID = "imx-focus-audio";
 
 type FocusSoundState = {
@@ -46,6 +53,7 @@ type FocusSoundState = {
   pause: () => void;
   toggle: (id?: string) => Promise<void>;
   setVolume: (volume: number) => void;
+  setScene: (id: string) => void;
 };
 
 declare global {
@@ -169,11 +177,42 @@ function trackById(id: string) {
   return FOCUS_TRACKS.find((track) => track.id === id) ?? FOCUS_TRACKS[3];
 }
 
+export function focusSceneForTrack(id: string): FocusSceneId {
+  return trackById(id).scene;
+}
+
 function readVolume() {
   if (typeof window === "undefined") return 0.7;
   const saved = window.localStorage.getItem(VOLUME_KEY);
   const next = saved ? Number(saved) : 0.7;
   return Number.isFinite(next) && next >= 0 && next <= 1 ? next : 0.7;
+}
+
+function readSavedTrack() {
+  if (typeof window === "undefined") return DEFAULT_FOCUS_TRACK;
+  const saved = window.localStorage.getItem(SCENE_KEY);
+  if (saved && FOCUS_TRACKS.some((track) => track.id === saved)) return saved;
+  return DEFAULT_FOCUS_TRACK;
+}
+
+function persistTrack(id: string) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(SCENE_KEY, id);
+  } catch {
+    /* ignore */
+  }
+}
+
+function applySceneAttr(id: string) {
+  if (typeof document === "undefined") return;
+  const scene = focusSceneForTrack(id);
+  document.documentElement.dataset.focusScene = scene;
+  document
+    .querySelectorAll<HTMLElement>(".focus-studio, .focus-session-lock, .focus-stage")
+    .forEach((el) => {
+      el.dataset.focusScene = scene;
+    });
 }
 
 export const useFocusSound = create<FocusSoundState>((set, get) => ({
@@ -188,12 +227,14 @@ export const useFocusSound = create<FocusSoundState>((set, get) => ({
 
     window.__imxFocusWantSound = true;
 
-    const trackId = id ?? DEFAULT_FOCUS_TRACK;
+    const trackId = id ?? get().activeId ?? DEFAULT_FOCUS_TRACK;
     const track = trackById(trackId);
     const nextSrc = new URL(track.src, window.location.origin).href;
 
     el.muted = false;
     el.volume = get().volume;
+    persistTrack(trackId);
+    applySceneAttr(trackId);
     set({ activeId: trackId, playing: true });
 
     if (el.src !== nextSrc) {
@@ -238,6 +279,13 @@ export const useFocusSound = create<FocusSoundState>((set, get) => ({
     await get().play(target);
   },
 
+  setScene: (id) => {
+    const track = trackById(id);
+    persistTrack(track.id);
+    applySceneAttr(track.id);
+    set({ activeId: track.id });
+  },
+
   setVolume: (volume) => {
     const next = Math.min(1, Math.max(0, volume));
     const el = getAudio();
@@ -249,8 +297,17 @@ export const useFocusSound = create<FocusSoundState>((set, get) => ({
   },
 }));
 
+/** Hydrate persisted scene on Focus mount (client only). */
+export function hydrateFocusScene() {
+  if (typeof window === "undefined") return;
+  const id = readSavedTrack();
+  useFocusSound.setState({ activeId: id });
+  applySceneAttr(id);
+}
+
 export function playDefaultFocusSound() {
-  void useFocusSound.getState().play(DEFAULT_FOCUS_TRACK);
+  const id = useFocusSound.getState().activeId || readSavedTrack();
+  void useFocusSound.getState().play(id);
 }
 
 export function stopFocusSound() {

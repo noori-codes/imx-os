@@ -78,13 +78,21 @@ export function HabitItem({
           ? `Checked in · ${nextStreak}d streak`
           : "Checked in",
       );
-      if (
-        readBoolPref(PREF_CELEBRATE, true) &&
-        [3, 7, 14, 30].includes(nextStreak)
-      ) {
-        imxToast(`${nextStreak}-day streak`, {
-          description: optimistic.title,
-          tone: "success",
+      if (readBoolPref(PREF_CELEBRATE, true)) {
+        void Promise.all([
+          import("@/lib/streak-seasons"),
+          import("@/lib/focus-celebrate"),
+        ]).then(([seasons, celebrate]) => {
+          const milestone = seasons.claimStreakMilestone(nextStreak);
+          if (milestone == null) return;
+          const season = seasons.streakSeasonFor(nextStreak);
+          celebrate.fireFocusGoalConfetti(milestone >= 30 ? "full" : "light");
+          imxToast(`${milestone}-day streak`, {
+            description: season
+              ? `${optimistic.title} · ${season.label} season`
+              : optimistic.title,
+            tone: "success",
+          });
         });
       }
     } else {

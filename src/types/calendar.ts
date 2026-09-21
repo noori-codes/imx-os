@@ -27,6 +27,8 @@ export type CalendarDayItems = {
   events: CalendarEvent[];
   tasks: CalendarTask[];
   journals: Note[];
+  /** Daily review mood 1–5 when present. */
+  mood: number | null;
 };
 
 export type CalendarData = {
