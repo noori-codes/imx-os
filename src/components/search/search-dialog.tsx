@@ -584,7 +584,7 @@ export function SearchDialog({ defaultOpen = false }: SearchDialogProps) {
             <button
               type="button"
               onClick={() => setQuery("")}
-              className="inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               aria-label="Clear search"
             >
               <X className="size-3.5" />
@@ -598,9 +598,9 @@ export function SearchDialog({ defaultOpen = false }: SearchDialogProps) {
               type="button"
               onClick={() => setEntityFilter("all")}
               className={cn(
-                "shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors",
+                "shrink-0 rounded-lg px-2.5 py-1 text-[11px] font-medium transition-colors",
                 entityFilter === "all"
-                  ? "bg-foreground text-background"
+                  ? "bg-foreground text-background dark:bg-foreground/12 dark:text-foreground dark:ring-1 dark:ring-foreground/20"
                   : "bg-muted/60 text-muted-foreground hover:text-foreground",
               )}
             >
@@ -616,9 +616,9 @@ export function SearchDialog({ defaultOpen = false }: SearchDialogProps) {
                   type="button"
                   onClick={() => setEntityFilter(type)}
                   className={cn(
-                    "shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors",
+                    "shrink-0 rounded-lg px-2.5 py-1 text-[11px] font-medium transition-colors",
                     entityFilter === type
-                      ? "bg-foreground text-background"
+                      ? "bg-foreground text-background dark:bg-foreground/12 dark:text-foreground dark:ring-1 dark:ring-foreground/20"
                       : "bg-muted/60 text-muted-foreground hover:text-foreground",
                   )}
                 >

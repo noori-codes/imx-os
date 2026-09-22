@@ -86,15 +86,15 @@ function StatusBadge({ status }: { status: BookStatus }) {
   return (
     <span
       className={cn(
-        "inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium",
+        "inline-flex rounded-md border px-2 py-0.5 text-[11px] font-medium",
         status === "reading" &&
-          "bg-foreground/10 text-foreground",
+          "border-foreground/15 bg-foreground/8 text-foreground",
         status === "finished" &&
-          "bg-muted text-muted-foreground",
+          "border-border/50 bg-muted text-muted-foreground",
         status === "want_to_read" &&
-          "bg-muted/70 text-muted-foreground",
+          "border-border/40 bg-muted/60 text-muted-foreground",
         status === "abandoned" &&
-          "bg-destructive/10 text-destructive",
+          "border-destructive/20 bg-destructive/10 text-destructive",
       )}
     >
       {bookStatusLabel(status)}
@@ -321,14 +321,14 @@ export function BooksShelf({ books, compose = false }: BooksShelfProps) {
   return (
     <section className="books-shelf space-y-4">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="inline-flex max-w-full flex-wrap rounded-xl border border-surface-border bg-surface p-1">
+        <div className="inline-flex max-w-full flex-wrap rounded-xl border border-border/40 bg-muted/30 p-1">
           <button
             type="button"
             onClick={() => setFilter("all")}
             className={cn(
               "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
               filter === "all"
-                ? "bg-foreground text-background"
+                ? "bg-foreground text-background dark:bg-foreground/12 dark:text-foreground dark:ring-1 dark:ring-foreground/20"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
@@ -342,7 +342,7 @@ export function BooksShelf({ books, compose = false }: BooksShelfProps) {
               className={cn(
                 "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
                 filter === item.value
-                  ? "bg-foreground text-background"
+                  ? "bg-foreground text-background dark:bg-foreground/12 dark:text-foreground dark:ring-1 dark:ring-foreground/20"
                   : "text-muted-foreground hover:text-foreground",
               )}
             >

@@ -134,7 +134,7 @@ export function SearchResults({
                       pushRecentSearch(recent);
                       router.push(`/search?q=${encodeURIComponent(recent)}`);
                     }}
-                    className="search-recent-chip rounded-full border border-surface-border bg-surface px-3.5 py-1.5 text-sm text-foreground/85 transition-colors hover:border-foreground/20 hover:bg-background hover:text-foreground"
+                    className="search-recent-chip rounded-xl border border-surface-border bg-surface px-3.5 py-1.5 text-sm text-foreground/85 transition-colors hover:border-foreground/20 hover:bg-background hover:text-foreground"
                   >
                     {recent}
                   </button>
@@ -254,9 +254,9 @@ export function SearchResults({
             type="button"
             onClick={() => setFilter("all")}
             className={cn(
-              "shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors",
+              "shrink-0 rounded-lg px-2.5 py-1 text-[11px] font-medium transition-colors",
               filter === "all"
-                ? "bg-foreground text-background"
+                ? "bg-foreground text-background dark:bg-foreground/12 dark:text-foreground dark:ring-1 dark:ring-foreground/20"
                 : "bg-muted/60 text-muted-foreground hover:text-foreground",
             )}
           >
@@ -271,9 +271,9 @@ export function SearchResults({
                 type="button"
                 onClick={() => setFilter(type)}
                 className={cn(
-                  "shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors",
+                  "shrink-0 rounded-lg px-2.5 py-1 text-[11px] font-medium transition-colors",
                   filter === type
-                    ? "bg-foreground text-background"
+                    ? "bg-foreground text-background dark:bg-foreground/12 dark:text-foreground dark:ring-1 dark:ring-foreground/20"
                     : "bg-muted/60 text-muted-foreground hover:text-foreground",
                 )}
               >

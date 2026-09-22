@@ -11,7 +11,7 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
           href="/"
           className="auth-brand mb-8 flex flex-col items-center gap-3 text-center"
         >
-          <span className="relative size-14 overflow-hidden rounded-2xl border border-border/60 bg-black shadow-sm sm:size-16">
+          <span className="relative size-14 overflow-hidden rounded-2xl border border-border/50 bg-foreground/5 shadow-sm sm:size-16">
             <Image
               src="/imx-logo-64.png"
               alt=""
