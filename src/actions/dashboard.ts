@@ -51,6 +51,7 @@ const emptyDashboard: DashboardData = {
   habits_today: [],
   focus_today: { sessions: 0, focus_minutes: 0 },
   review: { has_today: false, intent: null },
+  reading_book: null,
 };
 
 async function loadActivity(
@@ -154,19 +155,28 @@ async function loadDashboardExtras(
     .select("tomorrow_focus, review_date")
     .eq("review_date", yesterdayStr);
 
+  let readingBookQuery = supabase
+    .from("books")
+    .select("id, title, current_page, total_pages")
+    .eq("status", "reading")
+    .order("updated_at", { ascending: false })
+    .limit(1);
+
   if (userId) {
     habitsQuery = habitsQuery.eq("user_id", userId);
     focusQuery = focusQuery.eq("user_id", userId);
     todayReviewQuery = todayReviewQuery.eq("user_id", userId);
     intentReviewQuery = intentReviewQuery.eq("user_id", userId);
+    readingBookQuery = readingBookQuery.eq("user_id", userId);
   }
 
-  const [habitsResult, focusResult, todayReview, intentReview] =
+  const [habitsResult, focusResult, todayReview, intentReview, readingBookResult] =
     await Promise.all([
       habitsQuery,
       focusQuery,
       todayReviewQuery.maybeSingle(),
       intentReviewQuery.maybeSingle(),
+      readingBookQuery.maybeSingle(),
     ]);
 
   const habits = habitsResult.data ?? [];
@@ -215,6 +225,25 @@ async function loadDashboardExtras(
 
   const intent = intentReview.data?.tomorrow_focus?.trim() || null;
 
+  const readingRow = readingBookResult.data;
+  let reading_book: {
+    id: string;
+    title: string;
+    progress: number | null;
+  } | null = null;
+  if (readingRow) {
+    const total = readingRow.total_pages;
+    const progress =
+      total && total > 0
+        ? Math.min(100, Math.round((readingRow.current_page / total) * 100))
+        : null;
+    reading_book = {
+      id: readingRow.id as string,
+      title: (readingRow.title as string) || "Untitled",
+      progress,
+    };
+  }
+
   return {
     habits_today,
     focus_today: {
@@ -225,6 +254,7 @@ async function loadDashboardExtras(
       has_today: Boolean(todayReview.data?.id),
       intent,
     },
+    reading_book,
   };
 }
 
@@ -444,6 +474,7 @@ async function loadDashboardData(
     habits_today: extras.habits_today,
     focus_today: extras.focus_today,
     review: extras.review,
+    reading_book: extras.reading_book,
   };
 }
 
@@ -456,7 +487,7 @@ export const getDashboardData = cache(async (): Promise<DashboardData> => {
 
   if (hasAdminClient()) {
     return cachedQuery(
-      ["dashboard", user.id, "v10"],
+      ["dashboard", user.id, "v11"],
       [cacheTags.dashboard(user.id)],
       CACHE_TTL.dashboard,
       async () => loadDashboardData(user.id),

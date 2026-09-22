@@ -9,6 +9,10 @@ import {
   parseDateString,
   toDateString,
 } from "@/lib/date-utils";
+import {
+  markFocusBlockDone,
+  parseFocusBlock,
+} from "@/lib/focus-calendar-block";
 import { stripNoteHtml } from "@/lib/note-preview";
 import { createClient } from "@/lib/supabase/server";
 import type {
@@ -387,4 +391,57 @@ export async function createEventFromNote(noteId: string) {
   await revalidateCalendar();
   revalidatePath(`/notes/${noteId}`);
   return { id: created.id as string, event_date: created.event_date as string };
+}
+
+/** Stamp today's open Focus blocks as done after a sealed Focus session. */
+export async function completeTodayFocusBlocks(input?: {
+  taskId?: string | null;
+}): Promise<{ completed: number; error?: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { completed: 0, error: "You must be signed in." };
+
+  const today = toDateString(new Date());
+  const { data: events, error } = await supabase
+    .from("calendar_events")
+    .select("id, description, start_time")
+    .eq("user_id", user.id)
+    .eq("event_date", today);
+
+  if (error) return { completed: 0, error: error.message };
+
+  const openBlocks = (events ?? [])
+    .map((event) => ({
+      ...event,
+      parsed: parseFocusBlock(event.description),
+    }))
+    .filter((event) => event.parsed.isFocusBlock && !event.parsed.done)
+    .sort((a, b) =>
+      (a.start_time ?? "").localeCompare(b.start_time ?? ""),
+    );
+
+  if (openBlocks.length === 0) return { completed: 0 };
+
+  const taskId = input?.taskId?.trim() || null;
+  const matched = taskId
+    ? openBlocks.filter((event) => event.parsed.taskId === taskId)
+    : [];
+  const targets = matched.length > 0 ? matched.slice(0, 1) : openBlocks.slice(0, 1);
+
+  let completed = 0;
+  for (const event of targets) {
+    const nextDescription = markFocusBlockDone(event.description);
+    const { error: updateError } = await supabase
+      .from("calendar_events")
+      .update({ description: nextDescription })
+      .eq("id", event.id)
+      .eq("user_id", user.id);
+    if (!updateError) completed += 1;
+  }
+
+  if (completed > 0) await revalidateCalendar();
+  return { completed };
 }

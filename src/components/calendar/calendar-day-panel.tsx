@@ -37,6 +37,7 @@ import {
   defaultFocusBlockTimes,
   encodeFocusBlock,
   focusHrefFromBlock,
+  parseFocusBlock,
 } from "@/lib/focus-calendar-block";
 import {
   addDays,
@@ -200,8 +201,10 @@ function EventRow({
   highlighted: boolean;
   onEdit: () => void;
 }) {
+  const focusBlock = parseFocusBlock(event.description);
   const focusHref = focusHrefFromBlock(event.description);
-  const isFocusBlock = Boolean(focusHref);
+  const isFocusBlock = focusBlock.isFocusBlock;
+  const focusDone = focusBlock.done;
   const displayDescription =
     isFocusBlock || !event.description
       ? null
@@ -237,14 +240,20 @@ function EventRow({
             : highlighted
               ? "border-foreground/30 ring-1 ring-foreground/20"
               : isFocusBlock
-                ? "border-foreground/25"
+                ? focusDone
+                  ? "border-border/40 opacity-80"
+                  : "border-foreground/25"
                 : "border-border/50",
         )}
       >
         <span
           className={cn(
             "absolute top-3 -left-[1.05rem] size-2 rounded-full ring-2 ring-card",
-            isFocusBlock ? "bg-foreground/70" : "bg-foreground/45",
+            isFocusBlock
+              ? focusDone
+                ? "bg-foreground/35"
+                : "bg-foreground/70"
+              : "bg-foreground/45",
           )}
           aria-hidden
         />
@@ -257,10 +266,17 @@ function EventRow({
               {event.title}
             </Link>
           ) : (
-            <p className="text-sm font-medium text-foreground">{event.title}</p>
+            <p
+              className={cn(
+                "text-sm font-medium text-foreground",
+                focusDone && "line-through decoration-foreground/30",
+              )}
+            >
+              {event.title}
+            </p>
           )}
           <p className="mt-0.5 text-xs text-muted-foreground">
-            {isFocusBlock ? "Focus block · " : ""}
+            {isFocusBlock ? (focusDone ? "Focus done · " : "Focus block · ") : ""}
             {formatEventWhen(event)}
           </p>
           {displayDescription ? (
@@ -274,6 +290,11 @@ function EventRow({
               <Timer className="size-3" />
               Open Focus
             </Link>
+          ) : focusDone ? (
+            <p className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
+              <CheckCircle2 className="size-3" />
+              Sealed
+            </p>
           ) : null}
         </div>
         <Button

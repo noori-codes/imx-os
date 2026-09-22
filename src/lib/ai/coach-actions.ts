@@ -12,6 +12,7 @@ export const COACH_ACTION_HREFS = [
   "/goals",
   "/calendar",
   "/analytics",
+  "/books",
 ] as const;
 
 export type CoachActionHref = (typeof COACH_ACTION_HREFS)[number];
@@ -54,6 +55,8 @@ export function coachActionLabel(href: CoachActionHref): string {
       return "Calendar";
     case "/analytics":
       return "Analytics";
+    case "/books":
+      return "Books";
   }
 }
 
@@ -75,6 +78,7 @@ export function inferCoachHref(text: string): CoachActionHref | null {
   if (/\bgoals?\b|\bprojects?\b/.test(t)) return "/goals";
   if (/\bcalendar\b|schedule|\bevents?\b/.test(t)) return "/calendar";
   if (/\banalytics\b|chart|trend/.test(t)) return "/analytics";
+  if (/\bbooks?\b|reading|shelf|novel/.test(t)) return "/books";
   if (/\bdashboard\b|overview/.test(t)) return "/dashboard";
   return null;
 }

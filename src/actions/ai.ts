@@ -49,7 +49,7 @@ export type CoachAskResult =
 
 const ALLOWED_HREFS = COACH_ACTION_HREFS.join(", ");
 
-const SYSTEM_PROMPT = `You are IMX — a sharp, capable assistant inside a personal OS (tasks, focus, habits, goals, notes, calendar, review).
+const SYSTEM_PROMPT = `You are IMX — a sharp, capable assistant inside a personal OS (tasks, focus, habits, goals, notes, books, calendar, review).
 
 You may receive an optional activity briefing about the user. Treat it as background only.
 - If the question is about their work, plans, habits, focus, energy, or that data → use the briefing.

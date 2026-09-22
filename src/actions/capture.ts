@@ -14,7 +14,8 @@ export type QuickCaptureKind =
   | "note"
   | "journal"
   | "habit"
-  | "event";
+  | "event"
+  | "book";
 
 export type QuickCaptureResult = {
   error?: string;
@@ -117,6 +118,28 @@ export async function quickCapture(
       title: "Event added",
       href: "/calendar",
       openLabel: "Open Calendar",
+    };
+  }
+
+  if (kind === "book") {
+    const { error } = await supabase.from("books").insert({
+      user_id: user.id,
+      title,
+      author: null,
+      status: "want_to_read",
+      current_page: 0,
+      total_pages: null,
+      rating: null,
+      notes: null,
+      started_at: null,
+      finished_at: null,
+    });
+    if (error) return { error: error.message };
+    await revalidateCapture(["/books", "/dashboard", "/search"]);
+    return {
+      title: "Book queued",
+      href: "/books",
+      openLabel: "Open shelf",
     };
   }
 
