@@ -131,7 +131,7 @@ function ChoiceRow<T extends string>({
               className={cn(
                 "rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors",
                 active
-                  ? "bg-foreground text-background"
+                  ? "bg-foreground text-background dark:bg-foreground/12 dark:text-foreground dark:ring-1 dark:ring-foreground/20"
                   : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground",
               )}
               title={option.hint}
@@ -168,8 +168,8 @@ function ToggleRow({
         aria-checked={checked}
         onClick={() => onChange(!checked)}
         className={cn(
-          "relative h-7 w-12 shrink-0 rounded-full transition-colors",
-          checked ? "bg-foreground" : "bg-muted",
+          "relative h-7 w-12 shrink-0 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+          checked ? "bg-foreground" : "bg-muted ring-1 ring-border/50",
         )}
       >
         <span
@@ -466,7 +466,7 @@ export function SettingsHub({
                 className={cn(
                   "flex items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors",
                   active
-                    ? "border-foreground/30 bg-foreground text-background"
+                    ? "border-foreground/30 bg-foreground text-background dark:border-foreground/25 dark:bg-foreground/12 dark:text-foreground"
                     : "border-border/50 bg-muted/30 text-foreground hover:bg-muted/50",
                 )}
               >
@@ -476,7 +476,9 @@ export function SettingsHub({
                   <span
                     className={cn(
                       "ml-auto text-[10px] uppercase tracking-wide",
-                      active ? "text-background/70" : "text-muted-foreground",
+                      active
+                        ? "text-background/70 dark:text-foreground/55"
+                        : "text-muted-foreground",
                     )}
                   >
                     {resolvedTheme}
@@ -514,7 +516,7 @@ export function SettingsHub({
                     className={cn(
                       "rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors",
                       active
-                        ? "bg-foreground text-background"
+                        ? "bg-foreground text-background dark:bg-foreground/12 dark:text-foreground dark:ring-1 dark:ring-foreground/20"
                         : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground",
                     )}
                   >

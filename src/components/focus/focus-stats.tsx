@@ -1036,7 +1036,7 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
                   <button
                     type="button"
                     onClick={() => start()}
-                    className="inline-flex items-center gap-2 rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-90"
+                    className="inline-flex items-center gap-2 rounded-xl bg-foreground px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-90"
                   >
                     <Play className="size-3.5 fill-current" />
                     Continue · {formatFocusDuration(sessionSeconds)}
@@ -1051,7 +1051,7 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
                 <div className="text-center lg:text-left">
                   <a
                     href="#focus-timer"
-                    className="inline-flex items-center gap-2 rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-90"
+                    className="inline-flex items-center gap-2 rounded-xl bg-foreground px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-90"
                   >
                     <Play className="size-3.5 fill-current" />
                     Start block

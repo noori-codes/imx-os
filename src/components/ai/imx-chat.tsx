@@ -52,7 +52,7 @@ function BrandMark({
   return (
     <span
       className={cn(
-        "relative shrink-0 overflow-hidden rounded-[0.7rem] border border-border bg-black shadow-sm dark:border-white/12",
+        "relative shrink-0 overflow-hidden rounded-[0.7rem] border border-border/50 bg-foreground/5 shadow-sm",
         className,
       )}
       style={{ width: size, height: size }}
@@ -98,7 +98,7 @@ function SuggestionList({
             <Link
               href={item.href}
               onClick={onNavigate}
-              className="mt-2 inline-flex items-center gap-1 rounded-full bg-foreground px-2.5 py-1 text-[11px] font-medium text-background transition-opacity hover:opacity-90"
+              className="mt-2 inline-flex items-center gap-1 rounded-lg bg-foreground px-2.5 py-1 text-[11px] font-medium text-background transition-opacity hover:opacity-90"
             >
               {coachActionLabel(item.href)}
               <ArrowUpRight className="size-3 opacity-80" />
@@ -113,7 +113,7 @@ function SuggestionList({
 function UserBubble({ text }: { text: string }) {
   return (
     <div className="imx-chat-msg flex justify-end">
-      <div className="max-w-[85%] rounded-2xl rounded-tr-md bg-foreground px-3.5 py-2.5 text-sm leading-relaxed text-background">
+      <div className="max-w-[85%] rounded-2xl rounded-tr-md bg-foreground px-3.5 py-2.5 text-sm leading-relaxed text-background dark:bg-foreground/14 dark:text-foreground dark:ring-1 dark:ring-foreground/15">
         {text}
       </div>
     </div>
@@ -342,7 +342,7 @@ export function ImxChat() {
       {open ? (
         <button
           type="button"
-          className="pointer-events-auto fixed inset-0 z-0 cursor-default bg-background/20 backdrop-blur-[1px]"
+          className="pointer-events-auto fixed inset-0 z-0 cursor-default bg-background/55 backdrop-blur-[2px] dark:bg-background/70"
           aria-label="Close IMX"
           onClick={() => setOpen(false)}
         />
@@ -359,7 +359,7 @@ export function ImxChat() {
             <div className="imx-chat-wash" aria-hidden />
 
             <header className="relative z-[1] flex items-center gap-3 border-b border-border/40 px-4 pb-3.5 pt-4">
-              <BrandMark size={42} className="rounded-xl shadow-md" />
+              <BrandMark size={42} className="rounded-xl" />
               <div className="min-w-0 flex-1">
                 <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
                   Coach
@@ -371,7 +371,7 @@ export function ImxChat() {
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="inline-flex size-9 items-center justify-center rounded-full border border-surface-border bg-surface text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                className="inline-flex size-9 items-center justify-center rounded-xl border border-surface-border bg-surface text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 aria-label="Close IMX"
               >
                 <X className="size-4" />
@@ -469,9 +469,9 @@ export function ImxChat() {
                       disabled={pending}
                       onClick={() => handleAsk(prompt.id, prompt.label)}
                       className={cn(
-                        "rounded-full px-3 py-1.5 text-left text-xs transition-all",
+                        "rounded-xl px-3 py-1.5 text-left text-xs transition-all",
                         prompt.id === "surprise_me"
-                          ? "bg-foreground text-background shadow-sm hover:opacity-90 active:scale-[0.98]"
+                          ? "bg-foreground text-background hover:opacity-90 active:scale-[0.98] dark:bg-foreground/14 dark:text-foreground dark:ring-1 dark:ring-foreground/20"
                           : "border border-surface-border bg-surface text-muted-foreground hover:border-foreground/25 hover:text-foreground",
                         "disabled:pointer-events-none disabled:opacity-50",
                       )}
@@ -496,7 +496,7 @@ export function ImxChat() {
                     type="button"
                     disabled={pending}
                     onClick={() => setUsedPromptIds([])}
-                    className="rounded-full border border-surface-border bg-surface px-3 py-1.5 text-xs text-foreground transition-colors hover:border-foreground/25 disabled:opacity-50"
+                    className="rounded-xl border border-surface-border bg-surface px-3 py-1.5 text-xs text-foreground transition-colors hover:border-foreground/25 disabled:opacity-50"
                   >
                     Reset chips
                   </button>
@@ -510,7 +510,7 @@ export function ImxChat() {
                       setError(null);
                       clearCoachChat();
                     }}
-                    className="rounded-full border border-surface-border bg-surface px-3 py-1.5 text-xs text-foreground transition-colors hover:border-foreground/25 disabled:opacity-50"
+                    className="rounded-xl border border-surface-border bg-surface px-3 py-1.5 text-xs text-foreground transition-colors hover:border-foreground/25 disabled:opacity-50"
                   >
                     Clear chat
                   </button>

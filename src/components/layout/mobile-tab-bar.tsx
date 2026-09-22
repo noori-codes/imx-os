@@ -114,10 +114,10 @@ export function MobileTabBar() {
         <SheetContent
           id="mobile-more-sheet"
           side="bottom"
-          className="rounded-t-2xl border-border/60 px-0 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2 md:hidden"
+          className="rounded-t-[1.35rem] border-surface-border px-0 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2 md:hidden"
         >
           <div
-            className="mx-auto mb-1 h-1 w-10 rounded-full bg-border/80"
+            className="mx-auto mb-1.5 h-1 w-10 rounded-full bg-foreground/15"
             aria-hidden
           />
           <SheetHeader className="px-5 pb-2 text-left">
@@ -163,12 +163,18 @@ export function MobileTabBar() {
                   onClick={() => setMoreOpen(false)}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "flex items-center gap-3 rounded-xl px-3 py-3 text-sm transition-colors",
+                    "relative flex items-center gap-3 rounded-xl px-3 py-3 text-sm transition-colors",
                     active
-                      ? "bg-muted font-medium text-foreground"
+                      ? "bg-foreground/8 font-medium text-foreground"
                       : "text-muted-foreground hover:bg-muted/70 hover:text-foreground",
                   )}
                 >
+                  {active ? (
+                    <span
+                      aria-hidden
+                      className="absolute left-1 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-foreground"
+                    />
+                  ) : null}
                   <Icon className="size-4 shrink-0 opacity-80" />
                   <span className="min-w-0 flex-1">
                     <span className="block">{item.title}</span>
