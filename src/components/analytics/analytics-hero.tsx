@@ -15,7 +15,7 @@ type AnalyticsRangeToggleProps = {
 export function AnalyticsRangeToggle({ rangeDays }: AnalyticsRangeToggleProps) {
   return (
     <div
-      className="inline-flex rounded-full bg-muted/40 p-1"
+      className="inline-flex rounded-xl border border-border/40 bg-muted/30 p-1"
       role="tablist"
       aria-label="Analytics range"
     >
@@ -29,9 +29,9 @@ export function AnalyticsRangeToggle({ rangeDays }: AnalyticsRangeToggleProps) {
             role="tab"
             aria-selected={active}
             className={cn(
-              "rounded-full px-3 py-1.5 text-xs tabular-nums transition-colors",
+              "rounded-lg px-3 py-1.5 text-xs tabular-nums transition-colors",
               active
-                ? "bg-background font-medium text-foreground shadow-sm"
+                ? "bg-foreground font-medium text-background"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >

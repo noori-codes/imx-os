@@ -108,7 +108,7 @@ export function FocusSealToast({
                 onMarkDone();
                 toast.dismiss(id);
               }}
-              className="rounded-full bg-foreground px-3.5 py-1.5 text-xs font-medium text-background transition-opacity hover:opacity-90"
+              className="rounded-xl bg-foreground px-3.5 py-1.5 text-xs font-medium text-background transition-opacity hover:opacity-90"
             >
               Mark done
             </button>

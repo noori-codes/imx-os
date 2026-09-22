@@ -231,7 +231,7 @@ export function QuickCapture({
                     className={cn(
                       "inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-xs font-medium transition-colors",
                       selected
-                        ? "border-foreground/25 bg-foreground text-background"
+                        ? "border-foreground/30 bg-foreground text-background dark:border-foreground/25 dark:bg-foreground/12 dark:text-foreground"
                         : "border-surface-border bg-surface text-muted-foreground hover:border-border hover:text-foreground",
                     )}
                   >

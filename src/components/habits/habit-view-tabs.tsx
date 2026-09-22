@@ -32,7 +32,7 @@ export function HabitViewTabs({
 
   return (
     <nav
-      className="habits-tabs inline-flex w-full max-w-sm rounded-full bg-muted/40 p-1"
+      className="habits-tabs inline-flex w-full max-w-sm rounded-xl border border-border/40 bg-muted/30 p-1"
       aria-label="Habit views"
     >
       {tabs.map((tab) => {
@@ -42,9 +42,9 @@ export function HabitViewTabs({
             key={tab.id}
             href={tab.href}
             className={cn(
-              "habits-tab min-w-0 flex-1 rounded-full px-3 py-1.5 text-center text-xs font-medium transition-colors",
+              "habits-tab min-w-0 flex-1 rounded-lg px-3 py-1.5 text-center text-xs font-medium transition-colors",
               isActive
-                ? "bg-background text-foreground shadow-sm"
+                ? "bg-foreground text-background"
                 : "text-muted-foreground hover:text-foreground",
             )}
             aria-current={isActive ? "page" : undefined}
@@ -54,7 +54,7 @@ export function HabitViewTabs({
               <span
                 className={cn(
                   "ml-1.5 tabular-nums",
-                  isActive ? "text-foreground/60" : "text-muted-foreground",
+                  isActive ? "text-background/70" : "text-muted-foreground",
                 )}
               >
                 {tab.count}

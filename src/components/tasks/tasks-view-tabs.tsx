@@ -26,7 +26,7 @@ export function TasksViewTabs({ active, counts }: TasksViewTabsProps) {
             className={cn(
               "rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors",
               isActive
-                ? "bg-foreground text-background"
+                ? "bg-foreground text-background dark:bg-foreground/12 dark:text-foreground dark:ring-1 dark:ring-foreground/20"
                 : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground",
             )}
             aria-current={isActive ? "page" : undefined}
@@ -36,7 +36,9 @@ export function TasksViewTabs({ active, counts }: TasksViewTabsProps) {
               <span
                 className={cn(
                   "ml-1.5 tabular-nums",
-                  isActive ? "text-background/70" : "text-muted-foreground",
+                  isActive
+                    ? "text-background/70 dark:text-foreground/60"
+                    : "text-muted-foreground",
                 )}
               >
                 {count}

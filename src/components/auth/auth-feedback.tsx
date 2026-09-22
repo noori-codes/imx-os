@@ -40,14 +40,14 @@ export function AuthFeedback({
         "auth-feedback flex gap-3 rounded-2xl border px-3.5 py-3.5",
         tone === "error"
           ? "border-destructive/25 bg-destructive/10 text-destructive"
-          : "border-emerald-500/25 bg-emerald-500/10 text-emerald-900 dark:text-emerald-100",
+          : "border-foreground/15 bg-foreground/5 text-foreground",
         className,
       )}
     >
       <Icon
         className={cn(
           "mt-0.5 size-4 shrink-0",
-          tone === "success" && "text-emerald-600 dark:text-emerald-400",
+          tone === "success" ? "text-foreground/80" : "text-destructive",
         )}
         aria-hidden
       />
@@ -60,7 +60,7 @@ export function AuthFeedback({
             "text-sm leading-relaxed",
             tone === "error"
               ? "text-destructive/90"
-              : "text-emerald-900/85 dark:text-emerald-50/85",
+              : "text-muted-foreground",
           )}
         >
           {resolved.body}
@@ -71,9 +71,7 @@ export function AuthFeedback({
               href={resolved.href}
               className={cn(
                 "text-sm font-medium underline-offset-4 hover:underline",
-                tone === "error"
-                  ? "text-destructive"
-                  : "text-emerald-800 dark:text-emerald-200",
+                tone === "error" ? "text-destructive" : "text-foreground",
               )}
             >
               {resolved.hrefLabel}

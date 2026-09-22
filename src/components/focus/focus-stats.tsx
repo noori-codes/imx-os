@@ -652,7 +652,7 @@ function ConstellationSky({
         <div className="mt-2 flex justify-center">
           <a
             href="#focus-timer"
-            className="inline-flex items-center gap-2 rounded-full bg-foreground px-3.5 py-1.5 text-xs font-medium text-background transition-opacity hover:opacity-90"
+            className="inline-flex items-center gap-2 rounded-xl bg-foreground px-3.5 py-1.5 text-xs font-medium text-background transition-opacity hover:opacity-90"
           >
             <Play className="size-3 fill-current" />
             Start block

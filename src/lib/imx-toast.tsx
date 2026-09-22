@@ -25,11 +25,11 @@ function ToastCard({
   return (
     <div
       className={cn(
-        "relative w-full overflow-hidden rounded-2xl border px-4 py-3 shadow-lg backdrop-blur-xl",
-        "bg-background/92 dark:bg-card/92",
+        "relative w-full overflow-hidden rounded-2xl border px-4 py-3 shadow-[0_18px_40px_-28px_color-mix(in_oklab,var(--foreground)_28%,transparent)] backdrop-blur-xl",
+        "imx-surface-float",
         tone === "success" && "border-foreground/20",
         tone === "error" && "border-destructive/30",
-        tone === "default" && "border-border/55",
+        tone === "default" && "border-surface-border",
       )}
     >
       <div className="flex items-start justify-between gap-3">
@@ -55,7 +55,7 @@ function ToastCard({
         <button
           type="button"
           onClick={() => toast.dismiss(toastId)}
-          className="-mr-1 -mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full text-muted-foreground/70 transition-colors hover:bg-muted/60 hover:text-foreground"
+          className="-mr-1 -mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-lg text-muted-foreground/70 transition-colors hover:bg-muted/60 hover:text-foreground"
           aria-label="Dismiss"
         >
           <span className="text-sm leading-none">×</span>

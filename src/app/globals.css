@@ -387,9 +387,9 @@ html[data-focus-session="true"] {
   background-image: linear-gradient(
     105deg,
     transparent 0%,
-    color-mix(in oklab, white 8%, transparent) 40%,
-    color-mix(in oklab, white 12%, transparent) 50%,
-    color-mix(in oklab, white 8%, transparent) 60%,
+    color-mix(in oklab, var(--foreground) 7%, transparent) 40%,
+    color-mix(in oklab, var(--foreground) 11%, transparent) 50%,
+    color-mix(in oklab, var(--foreground) 7%, transparent) 60%,
     transparent 100%
   );
 }
@@ -980,24 +980,24 @@ html[data-focus-session] body {
 }
 
 .focus-progress[data-mode="short_break"] {
-  --companion-wash: oklch(0.78 0.05 70 / 0.09);
+  --companion-wash: oklch(0.62 0.03 250 / 0.08);
 }
 
 .focus-progress[data-mode="long_break"] {
-  --companion-wash: oklch(0.76 0.045 50 / 0.1);
+  --companion-wash: oklch(0.58 0.025 255 / 0.09);
 }
 
 /* Celestial sky dome */
 .focus-sky-dome {
-  --sky-dawn: oklch(0.84 0.11 58 / 0.28);
-  --sky-noon: oklch(0.78 0.05 235 / 0.12);
-  --sky-night: oklch(0.58 0.14 285 / 0.32);
+  --sky-dawn: oklch(0.78 0.04 70 / 0.18);
+  --sky-noon: oklch(0.72 0.035 245 / 0.1);
+  --sky-night: oklch(0.52 0.04 255 / 0.22);
 }
 
 .dark .focus-sky-dome {
-  --sky-dawn: oklch(0.72 0.09 58 / 0.22);
-  --sky-noon: oklch(0.62 0.04 235 / 0.1);
-  --sky-night: oklch(0.48 0.12 285 / 0.28);
+  --sky-dawn: oklch(0.62 0.035 70 / 0.16);
+  --sky-noon: oklch(0.58 0.03 245 / 0.1);
+  --sky-night: oklch(0.48 0.035 255 / 0.2);
 }
 
 .focus-sky-fill {

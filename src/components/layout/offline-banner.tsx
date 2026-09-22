@@ -53,7 +53,7 @@ export function OfflineBanner() {
     >
       <div
         className={cn(
-          "inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-medium shadow-sm backdrop-blur-md",
+          "inline-flex items-center gap-2 rounded-xl border px-3.5 py-1.5 text-xs font-medium shadow-sm backdrop-blur-md",
           offline
             ? "border-destructive/25 bg-destructive/10 text-destructive"
             : "border-surface-border bg-surface-strong text-foreground",
@@ -71,7 +71,7 @@ export function OfflineBanner() {
                 router.refresh();
                 setFlashOnline(false);
               }}
-              className="rounded-full bg-foreground px-2 py-0.5 text-[10px] font-semibold tracking-wide text-background transition-opacity hover:opacity-90"
+              className="rounded-lg bg-foreground px-2 py-0.5 text-[10px] font-semibold tracking-wide text-background transition-opacity hover:opacity-90"
             >
               Refresh
             </button>

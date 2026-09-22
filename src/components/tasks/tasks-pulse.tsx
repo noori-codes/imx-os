@@ -152,7 +152,7 @@ export function TasksPulse({ stats, focusNext }: TasksPulseProps) {
                 </p>
                 <Link
                   href={`/focus?task=${focusNext.id}`}
-                  className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-full bg-foreground px-3.5 text-xs font-medium text-background transition-opacity hover:opacity-90"
+                  className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-foreground px-3.5 text-xs font-medium text-background transition-opacity hover:opacity-90"
                 >
                   <Timer className="size-3.5" />
                   Start
