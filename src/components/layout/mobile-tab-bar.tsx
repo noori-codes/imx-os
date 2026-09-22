@@ -44,8 +44,8 @@ export function MobileTabBar() {
         aria-label="Primary"
         className={cn(
           "mobile-tab-bar fixed inset-x-0 bottom-0 z-30 md:hidden",
-          "border-t border-border/60 bg-background/95 backdrop-blur",
-          "supports-[backdrop-filter]:bg-background/80",
+          "border-t border-border/40 bg-background/90 backdrop-blur-md",
+          "supports-[backdrop-filter]:bg-background/70",
         )}
       >
         <div className="mobile-tab-bar-inner grid grid-cols-5">
@@ -139,14 +139,14 @@ export function MobileTabBar() {
             <Link
               href="/calendar?compose=1"
               onClick={() => setMoreOpen(false)}
-              className="inline-flex h-8 items-center rounded-lg border border-border/60 bg-muted/50 px-3 text-xs font-medium text-foreground transition-colors hover:border-border"
+              className="inline-flex h-8 items-center rounded-lg border border-surface-border bg-surface px-3 text-xs font-medium text-foreground transition-colors hover:border-border"
             >
               Add event
             </Link>
             <Link
               href="/habits?compose=1"
               onClick={() => setMoreOpen(false)}
-              className="inline-flex h-8 items-center rounded-lg border border-border/60 bg-muted/50 px-3 text-xs font-medium text-foreground transition-colors hover:border-border"
+              className="inline-flex h-8 items-center rounded-lg border border-surface-border bg-surface px-3 text-xs font-medium text-foreground transition-colors hover:border-border"
             >
               Add habit
             </Link>

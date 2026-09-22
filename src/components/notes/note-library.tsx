@@ -148,7 +148,7 @@ export function NoteLibrary({ notes }: NoteLibraryProps) {
                   href={`/notes/${note.id}`}
                   className={cn(
                     "notes-card group flex h-full flex-col rounded-2xl imx-surface imx-surface-rim p-4 transition-colors hover:border-border hover:bg-surface-strong sm:p-5",
-                    isJournal && "border-amber-500/20 hover:border-amber-500/35",
+                    isJournal && "border-foreground/15 hover:border-foreground/25",
                   )}
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -156,7 +156,7 @@ export function NoteLibrary({ notes }: NoteLibraryProps) {
                       className={cn(
                         "inline-flex size-9 items-center justify-center rounded-xl",
                         isJournal
-                          ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
+                          ? "bg-foreground/10 text-foreground/80"
                           : "bg-muted text-muted-foreground",
                       )}
                     >

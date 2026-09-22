@@ -31,7 +31,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
           prefetch
           className="group/brand flex min-w-0 items-center gap-2.5 rounded-lg outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-sidebar-ring"
         >
-          <span className="relative size-8 shrink-0 overflow-hidden rounded-lg border border-sidebar-border bg-black dark:border-white/10">
+          <span className="relative size-8 shrink-0 overflow-hidden rounded-lg border border-sidebar-border bg-foreground/5">
             <Image
               src="/imx-logo-64.png"
               alt="IMX"

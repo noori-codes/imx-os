@@ -413,7 +413,7 @@ export function HabitItem({
               className={cn(
                 "inline-flex items-center gap-1 tabular-nums",
                 optimistic.current_streak > 0 &&
-                  "font-medium text-amber-700 dark:text-amber-300",
+                  "font-medium text-foreground",
               )}
             >
               <Flame

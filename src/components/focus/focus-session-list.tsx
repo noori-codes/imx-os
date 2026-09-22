@@ -91,8 +91,8 @@ function groupSessions(sessions: FocusSession[]) {
 
 function modeTone(mode: FocusSession["mode"]) {
   if (mode === "focus") return "bg-foreground/80";
-  if (mode === "short_break") return "bg-amber-600/70 dark:bg-amber-400/70";
-  return "bg-emerald-700/60 dark:bg-emerald-400/60";
+  if (mode === "short_break") return "bg-foreground/45";
+  return "bg-foreground/25";
 }
 
 function scrollToTimer() {

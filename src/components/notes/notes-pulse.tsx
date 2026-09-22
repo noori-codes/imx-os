@@ -115,7 +115,7 @@ export function NotesPulse({
 
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
           <div className="min-w-0 flex-1 text-center sm:text-left">
-            <p className="inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.14em] text-amber-800/80 dark:text-amber-300/90">
+            <p className="inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
               <BookOpen className="size-3.5" />
               Today&apos;s journal
             </p>

@@ -88,6 +88,14 @@ html[data-focus-continue="true"] {
   height: 3.5rem;
 }
 
+.mobile-tab-item {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-tab-item[aria-current="page"] {
+  text-shadow: 0 0 24px color-mix(in oklab, var(--foreground) 18%, transparent);
+}
+
 html[data-focus-session="true"] .mobile-tab-bar,
 html[data-focus-session="true"] .imx-chat-dock {
   display: none !important;
@@ -2635,7 +2643,7 @@ html[data-focus-session] body {
 .notes-pulse-journal .notes-pulse-vignette {
   background: radial-gradient(
     ellipse 75% 65% at 82% 15%,
-    color-mix(in oklab, oklch(0.75 0.12 85) 12%, transparent) 0%,
+    color-mix(in oklab, var(--foreground) 7%, transparent) 0%,
     transparent 62%
   );
 }
@@ -2659,7 +2667,7 @@ html[data-focus-session] body {
 .notes-pulse-journal .notes-pulse-glow {
   background: radial-gradient(
     ellipse at center,
-    color-mix(in oklab, oklch(0.78 0.11 85) 14%, transparent) 0%,
+    color-mix(in oklab, var(--foreground) 9%, transparent) 0%,
     transparent 68%
   );
 }
@@ -2675,7 +2683,7 @@ html[data-focus-session] body {
 .dark .notes-pulse-journal .notes-pulse-glow {
   background: radial-gradient(
     ellipse at center,
-    color-mix(in oklab, oklch(0.78 0.11 85) 16%, transparent) 0%,
+    color-mix(in oklab, var(--foreground) 12%, transparent) 0%,
     transparent 68%
   );
 }
@@ -2714,7 +2722,7 @@ html[data-focus-session] body {
 .notes-editor-journal .notes-studio-wash {
   background: radial-gradient(
     ellipse 90% 85% at 20% 0%,
-    color-mix(in oklab, oklch(0.82 0.08 85) 14%, transparent) 0%,
+    color-mix(in oklab, var(--foreground) 6%, transparent) 0%,
     transparent 74%
   );
 }
@@ -2734,7 +2742,7 @@ html[data-focus-session] body {
 .notes-editor-journal .notes-editor-glow {
   background: radial-gradient(
     ellipse at 40% 0%,
-    color-mix(in oklab, oklch(0.78 0.11 85) 12%, transparent) 0%,
+    color-mix(in oklab, var(--foreground) 7%, transparent) 0%,
     transparent 70%
   );
 }

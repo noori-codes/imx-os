@@ -306,11 +306,7 @@ export function NoteEditor({ note }: NoteEditorProps) {
         <div className="min-w-0 space-y-1">
           <p
             className={cn(
-              "text-[11px] font-medium uppercase tracking-[0.16em]",
-              isJournal
-                ? "text-amber-800/75 dark:text-amber-300/85"
-                : "text-muted-foreground",
-            )}
+              "text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground",
           >
             {isJournal ? "Journal" : "Note"}
           </p>

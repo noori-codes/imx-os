@@ -27,7 +27,7 @@ function InsightItem({
       className={cn(
         "tabular-nums tracking-wide",
         highlight
-          ? "font-medium text-amber-700 dark:text-amber-400"
+          ? "font-medium text-foreground"
           : muted
             ? "text-muted-foreground/70"
             : "text-muted-foreground",

@@ -94,15 +94,15 @@ async function CalendarBody({
             <div className="flex flex-wrap items-center justify-between gap-3 px-1 text-xs text-muted-foreground">
               <div className="flex flex-wrap gap-4">
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="size-1.5 rounded-full bg-sky-500/80" />
+                  <span className="size-1.5 rounded-full bg-foreground/55" />
                   Event
                 </span>
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="size-1.5 rounded-full bg-foreground/45" />
+                  <span className="size-1.5 rounded-full bg-foreground/35" />
                   Task
                 </span>
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="size-1.5 rounded-full bg-amber-500/85" />
+                  <span className="size-1.5 rounded-full bg-foreground/70" />
                   Journal
                 </span>
               </div>

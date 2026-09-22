@@ -31,9 +31,10 @@ type TodayFocusProps = {
 };
 
 function reasonTone(reason: SmartReason) {
-  if (reason === "overdue") return "text-destructive/85";
-  if (reason === "focus") return "text-foreground";
-  return "text-muted-foreground";
+  if (reason === "focus") {
+    return "border-foreground/20 bg-foreground/8 text-foreground";
+  }
+  return "border-border/50 bg-muted/40 text-muted-foreground";
 }
 
 function TaskRow({
@@ -124,16 +125,23 @@ function TaskRow({
           >
             {task.title}
           </p>
-          <p
-            className={cn(
-              "mt-0.5 truncate text-[11px] font-medium",
-              reasonTone(reason),
-              overdue && reason === "overdue" && "text-destructive/80",
-            )}
-          >
-            {smartReasonLabel(reason)}
-            {task.context ? ` · ${task.context}` : ""}
-          </p>
+          <div className="mt-1 flex min-w-0 flex-wrap items-center gap-1.5">
+            <span
+              className={cn(
+                "inline-flex max-w-full truncate rounded-md border px-1.5 py-0.5 text-[10px] font-medium tracking-wide",
+                reason === "overdue" || overdue
+                  ? "border-destructive/25 bg-destructive/10 text-destructive/85"
+                  : reasonTone(reason),
+              )}
+            >
+              {smartReasonLabel(reason)}
+            </span>
+            {task.context ? (
+              <span className="truncate text-[11px] text-muted-foreground">
+                {task.context}
+              </span>
+            ) : null}
+          </div>
         </div>
 
         {!task.completed ? (
