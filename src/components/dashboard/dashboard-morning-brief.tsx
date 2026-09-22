@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ArrowRight, Moon, Sparkles, Target, Timer } from "lucide-react";
+import { ArrowRight, BookOpen, Moon, Sparkles, Target, Timer } from "lucide-react";
 
 import {
   dashboardPhaseFromHour,
@@ -20,6 +20,7 @@ type DashboardMorningBriefProps = {
   focusGoalMinutes: number;
   hasTodayReview: boolean;
   intent: string | null;
+  readingBook?: { id: string; title: string; progress: number | null } | null;
 };
 
 export function DashboardMorningBrief({
@@ -30,6 +31,7 @@ export function DashboardMorningBrief({
   focusGoalMinutes,
   hasTodayReview,
   intent,
+  readingBook = null,
 }: DashboardMorningBriefProps) {
   const [phase, setPhase] = useState<DashboardPhase>("afternoon");
   const [weekend, setWeekend] = useState(false);
@@ -155,6 +157,18 @@ export function DashboardMorningBrief({
             muted={focusMinutes <= 0 && !focusMet}
             href="/focus"
           />
+          {readingBook ? (
+            <BriefStat
+              icon={BookOpen}
+              label="Reading"
+              value={
+                readingBook.progress != null
+                  ? `${readingBook.title} · ${readingBook.progress}%`
+                  : readingBook.title
+              }
+              href={`/books#book-${readingBook.id}`}
+            />
+          ) : null}
           {!showEveningClose ? (
             <Link
               href="/review"

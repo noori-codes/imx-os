@@ -54,7 +54,9 @@ export function EventForm({
   const [startTime, setStartTime] = useState(event?.start_time?.slice(0, 5) ?? "");
   const [endTime, setEndTime] = useState(event?.end_time?.slice(0, 5) ?? "");
   const [description, setDescription] = useState(event?.description ?? "");
-  const isFocusBlock = parseFocusBlock(description).isFocusBlock;
+  const focusBlock = parseFocusBlock(description);
+  const isFocusBlock = focusBlock.isFocusBlock;
+  const focusDone = focusBlock.done;
 
   useEffect(() => {
     setEventDate(event?.event_date ?? date);
@@ -362,8 +364,17 @@ export function EventForm({
         />
         {isFocusBlock ? (
           <p className="text-[11px] text-muted-foreground">
-            Keep the <code className="text-[10px]">imx:focus</code> line so the
-            block opens Focus.
+            {focusDone ? (
+              <>
+                Sealed after Focus — remove{" "}
+                <code className="text-[10px]">imx:focus:done</code> to reopen.
+              </>
+            ) : (
+              <>
+                Keep the <code className="text-[10px]">imx:focus</code> line so the
+                block opens Focus.
+              </>
+            )}
           </p>
         ) : null}
       </div>

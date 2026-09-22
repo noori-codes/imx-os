@@ -1,6 +1,7 @@
 /** Encode Focus time-boxes in calendar event descriptions without a DB migration. */
 
 export const FOCUS_BLOCK_MARKER = "imx:focus";
+export const FOCUS_BLOCK_DONE_MARKER = "imx:focus:done";
 
 export function encodeFocusBlock(taskId?: string | null): string {
   const id = taskId?.trim();
@@ -10,24 +11,38 @@ export function encodeFocusBlock(taskId?: string | null): string {
 export function parseFocusBlock(description: string | null | undefined): {
   isFocusBlock: boolean;
   taskId: string | null;
+  done: boolean;
 } {
-  if (!description) return { isFocusBlock: false, taskId: null };
-  const line = description
-    .split("\n")
-    .map((part) => part.trim())
-    .find((part) => part.startsWith(FOCUS_BLOCK_MARKER));
-  if (!line) return { isFocusBlock: false, taskId: null };
+  if (!description) return { isFocusBlock: false, taskId: null, done: false };
+  const lines = description.split("\n").map((part) => part.trim());
+  const done = lines.some((line) => line === FOCUS_BLOCK_DONE_MARKER);
+  const line = lines.find(
+    (part) =>
+      part.startsWith(FOCUS_BLOCK_MARKER) &&
+      part !== FOCUS_BLOCK_DONE_MARKER,
+  );
+  if (!line) return { isFocusBlock: false, taskId: null, done: false };
   const rest = line.slice(FOCUS_BLOCK_MARKER.length);
   if (rest.startsWith(":")) {
     const taskId = rest.slice(1).trim();
-    return { isFocusBlock: true, taskId: taskId || null };
+    return { isFocusBlock: true, taskId: taskId || null, done };
   }
-  return { isFocusBlock: true, taskId: null };
+  return { isFocusBlock: true, taskId: null, done };
+}
+
+export function markFocusBlockDone(description: string | null | undefined): string {
+  const base = (description ?? "").trimEnd();
+  if (parseFocusBlock(base).done) return base || FOCUS_BLOCK_DONE_MARKER;
+  if (!base) return `${FOCUS_BLOCK_MARKER}\n${FOCUS_BLOCK_DONE_MARKER}`;
+  if (!parseFocusBlock(base).isFocusBlock) {
+    return `${base}\n${FOCUS_BLOCK_MARKER}\n${FOCUS_BLOCK_DONE_MARKER}`;
+  }
+  return `${base}\n${FOCUS_BLOCK_DONE_MARKER}`;
 }
 
 export function focusHrefFromBlock(description: string | null | undefined): string | null {
   const parsed = parseFocusBlock(description);
-  if (!parsed.isFocusBlock) return null;
+  if (!parsed.isFocusBlock || parsed.done) return null;
   return parsed.taskId ? `/focus?task=${encodeURIComponent(parsed.taskId)}` : "/focus";
 }
 

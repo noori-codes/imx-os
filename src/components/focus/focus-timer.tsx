@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { CircleCheck, Pause, Play, RotateCcw, SkipForward, Square } from "lucide-react";
 
 import { logFocusSession, updateFocusSession } from "@/actions/focus";
+import { completeTodayFocusBlocks } from "@/actions/calendar";
 import { toggleTaskComplete } from "@/actions/tasks";
 import { FocusClockFace } from "@/components/focus/focus-clock-face";
 import { FocusSettings } from "@/components/focus/focus-settings";
@@ -306,6 +307,9 @@ export function FocusTimer({
           note,
           task_id: taskId,
         });
+        if (currentMode === "focus") {
+          await completeTodayFocusBlocks({ taskId });
+        }
         router.refresh();
       });
 
@@ -476,6 +480,7 @@ export function FocusTimer({
           task_id: taskId,
         });
       }
+      await completeTodayFocusBlocks({ taskId });
       router.refresh();
     });
 

@@ -78,6 +78,8 @@ export type DashboardData = {
     has_today: boolean;
     intent: string | null;
   };
+  /** Currently reading book for Morning Brief, if any. */
+  reading_book: { id: string; title: string; progress: number | null } | null;
 };
 
 export function activityLevel(count: number): 0 | 1 | 2 | 3 | 4 {

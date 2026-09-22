@@ -236,6 +236,7 @@ export function DashboardStage({
           focusGoalMinutes={focusGoalMinutes}
           hasTodayReview={data.review.has_today}
           intent={data.review.intent}
+          readingBook={data.reading_book}
         />
       </div>
 

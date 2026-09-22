@@ -12,6 +12,7 @@ import {
 import {
   Calendar,
   CheckSquare,
+  BookMarked,
   ListTodo,
   Loader2,
   Moon,
@@ -71,6 +72,12 @@ const KINDS: {
     label: "Event",
     hint: "All-day today",
     icon: Calendar,
+  },
+  {
+    id: "book",
+    label: "Book",
+    hint: "Queued on the shelf",
+    icon: BookMarked,
   },
 ];
 
@@ -256,9 +263,11 @@ export function QuickCapture({
                     ? "Morning stretch"
                     : kind === "event"
                       ? "Coffee with Sam"
-                      : kind === "journal"
-                        ? "Today felt…"
-                        : "A thought worth keeping…"
+                      : kind === "book"
+                        ? "Atomic Habits"
+                        : kind === "journal"
+                          ? "Today felt…"
+                          : "A thought worth keeping…"
               }
               className="mt-3 w-full resize-none rounded-2xl border border-surface-border bg-surface px-3.5 py-3 text-sm leading-relaxed text-foreground outline-none placeholder:text-muted-foreground/70 focus-visible:ring-2 focus-visible:ring-ring"
               aria-labelledby={titleId}
