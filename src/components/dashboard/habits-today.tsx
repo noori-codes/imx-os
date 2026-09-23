@@ -2,10 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { CheckSquare } from "lucide-react";
 
 import { ProgressRing } from "@/components/dashboard/progress-ring";
-import { EmptyState } from "@/components/shared/empty-state";
 import { cn } from "@/lib/utils";
 import type { DashboardHabit } from "@/types/dashboard";
 
@@ -92,24 +90,19 @@ export function HabitsToday({ habits, onToggle }: HabitsTodayProps) {
       </div>
 
       {total === 0 ? (
-        <div className="relative z-[1] flex flex-1 flex-col justify-center px-3 py-4">
-          <EmptyState
-            icon={CheckSquare}
-            title="No habits yet"
-            description="Add a daily ritual and check it in from here."
-            variant="plain"
-            className="py-6"
+        <div className="relative z-[1] flex min-h-0 flex-1 flex-col gap-3 px-5 py-4">
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            Add a daily ritual and check it in from here.
+          </p>
+          <Link
+            href="/habits?compose=1"
+            className="mt-auto inline-flex h-8 w-fit items-center rounded-lg bg-foreground px-3 text-xs font-medium text-background transition-opacity hover:opacity-90"
           >
-            <Link
-              href="/habits?compose=1"
-              className="mt-4 inline-flex h-8 items-center rounded-lg bg-foreground px-3 text-xs font-medium text-background transition-opacity hover:opacity-90"
-            >
-              Add a habit
-            </Link>
-          </EmptyState>
+            Add a habit
+          </Link>
         </div>
       ) : (
-        <div className="relative z-[1] flex flex-1 flex-col gap-4 px-5 py-4">
+        <div className="relative z-[1] flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 py-4">
           <ul className="dash-stagger flex flex-wrap gap-3">
             {habits.slice(0, 8).map((habit, index) => (
               <li key={habit.id} style={{ ["--i" as string]: index }}>

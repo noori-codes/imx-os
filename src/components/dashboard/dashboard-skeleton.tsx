@@ -7,7 +7,7 @@ function Bone({ className }: { className?: string }) {
 
 function PanelHeader({ withRing = false }: { withRing?: boolean }) {
   return (
-    <div className="flex items-center justify-between gap-3 border-b border-border/40 px-5 py-4">
+    <div className="flex items-center justify-between gap-3 border-b border-border/25 px-5 py-3.5">
       <div className="space-y-2">
         <Bone className="h-2.5 w-16" />
         <Bone className="h-3 w-20" />
@@ -52,25 +52,26 @@ function DashboardSkeletonBody() {
       </section>
 
       <div className="dash-bento">
-        <div className="dash-bento-today min-h-88 lg:min-h-112">
+        <div className="dash-bento-today">
           <section className="dash-panel flex h-full flex-col">
             <PanelHeader />
-            <div className="space-y-1 px-3 py-3">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-3 px-2 py-2.5">
-                  <Bone className="size-5 shrink-0 rounded-full" />
-                  <div className="min-w-0 flex-1 space-y-1.5">
-                    <Bone className="h-3 w-[70%]" />
-                    <Bone className="h-2 w-16 opacity-50" />
-                  </div>
-                </div>
-              ))}
+            <div className="flex flex-1 flex-col justify-between gap-6 px-5 py-5">
+              <div className="space-y-2">
+                <Bone className="h-2.5 w-20" />
+                <Bone className="h-4 w-64 max-w-full" />
+                <Bone className="h-3 w-48 max-w-full opacity-55" />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Bone className="h-9 w-24 rounded-xl" />
+                <Bone className="h-9 w-24 rounded-xl" />
+                <Bone className="h-9 w-28 rounded-xl" />
+              </div>
             </div>
           </section>
         </div>
 
-        <div className="dash-bento-side flex flex-col gap-3">
-          <section className="dash-panel min-h-44">
+        <div className="dash-bento-side">
+          <section className="dash-panel flex h-full flex-col">
             <PanelHeader withRing />
             <div className="flex flex-wrap gap-3 px-5 py-4">
               {Array.from({ length: 4 }).map((_, i) => (
@@ -81,22 +82,23 @@ function DashboardSkeletonBody() {
               ))}
             </div>
           </section>
-          <section className="dash-panel min-h-48">
+          <section className="dash-panel flex h-full flex-col">
             <PanelHeader />
-            <div className="flex items-center gap-4 px-5 py-4">
-              <Bone className="size-16 shrink-0 rounded-full" />
-              <div className="min-w-0 flex-1 space-y-2">
-                <Bone className="h-3 w-[70%]" />
-                <Bone className="h-2.5 w-24 opacity-55" />
+            <div className="flex flex-1 flex-col justify-between gap-4 px-5 py-4">
+              <div className="grid grid-flow-col grid-rows-7 gap-[3px] self-start">
+                {Array.from({ length: 56 }).map((_, i) => (
+                  <Bone key={i} className="size-2 rounded-[2px]" />
+                ))}
               </div>
+              <Bone className="h-2.5 w-28" />
             </div>
           </section>
         </div>
 
-        <div className="dash-bento-week">
+        <div className="dash-bento-rhythm">
           <section className="dash-panel">
             <PanelHeader />
-            <div className="grid h-36 grid-cols-7 items-end gap-2 px-5 py-5 sm:gap-3">
+            <div className="grid h-32 grid-cols-7 items-end gap-2 px-5 py-4 sm:h-36 sm:gap-3">
               {[
                 "h-8",
                 "h-14",
@@ -116,16 +118,16 @@ function DashboardSkeletonBody() {
               ))}
             </div>
           </section>
-        </div>
-      </div>
-
-      <div className="dash-insight-strip border-t border-border/30 pt-6">
-        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-2">
-            <Bone className="h-2.5 w-16" />
-            <Bone className="h-3 w-56 max-w-full" />
-          </div>
-          <Bone className="h-3 w-20" />
+          <section className="dash-panel flex h-full flex-col">
+            <PanelHeader />
+            <div className="flex items-center gap-4 px-5 py-4">
+              <Bone className="size-[4.5rem] shrink-0 rounded-full" />
+              <div className="min-w-0 flex-1 space-y-2">
+                <Bone className="h-3 w-[70%]" />
+                <Bone className="h-2.5 w-24 opacity-55" />
+              </div>
+            </div>
+          </section>
         </div>
       </div>
     </div>

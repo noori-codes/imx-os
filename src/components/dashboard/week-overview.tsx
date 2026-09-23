@@ -37,15 +37,15 @@ export function WeekOverview({ week }: WeekOverviewProps) {
   }, [todayCount]);
 
   return (
-    <section className="dash-panel relative overflow-hidden">
+    <section className="dash-panel relative flex h-full min-h-0 flex-col overflow-hidden">
       <div className="dash-panel-glow" aria-hidden="true" />
-      <div className="relative z-[1] flex items-center justify-between gap-3 border-b border-border/40 px-5 py-4">
+      <div className="relative z-[1] flex items-center justify-between gap-3 border-b border-border/25 px-5 py-3.5">
         <div>
           <p className="dash-panel-eyebrow">This week</p>
-          <h3 className="mt-0.5 text-sm font-semibold text-foreground">
+          <h3 className="mt-0.5 text-sm font-semibold tracking-tight text-foreground">
             Week load
           </h3>
-          <p className="mt-0.5 text-xs text-muted-foreground">
+          <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
             {empty ? "Nothing scheduled" : `${total} due this week`}
           </p>
         </div>
@@ -57,8 +57,8 @@ export function WeekOverview({ week }: WeekOverviewProps) {
         </Link>
       </div>
 
-      <div className="relative z-[1] px-5 py-5">
-        <div className="dash-stagger grid h-36 grid-cols-7 items-end gap-2 sm:gap-3">
+      <div className="relative z-[1] flex min-h-0 flex-1 flex-col gap-4 px-5 py-4">
+        <div className="dash-stagger grid h-32 flex-1 grid-cols-7 items-end gap-2 sm:h-36 sm:gap-3">
           {week.map((day, index) => {
             const heightPct = empty
               ? 8
@@ -121,7 +121,7 @@ export function WeekOverview({ week }: WeekOverviewProps) {
         </div>
 
         {empty ? (
-          <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border/40 pt-4">
+          <div className="flex flex-wrap items-center gap-2 border-t border-border/25 pt-4">
             <Link
               href="/tasks?compose=1"
               className="inline-flex h-8 items-center rounded-lg bg-foreground px-3 text-xs font-medium text-background transition-opacity hover:opacity-90"

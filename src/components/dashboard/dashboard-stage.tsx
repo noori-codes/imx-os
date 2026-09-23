@@ -4,12 +4,13 @@ import { useOptimistic, useTransition } from "react";
 
 import { toggleHabitToday } from "@/actions/habits";
 import { toggleTaskComplete } from "@/actions/tasks";
+import { DashboardActivityHeat } from "@/components/dashboard/dashboard-activity-heat";
 import { DashboardAtmosphere } from "@/components/dashboard/dashboard-atmosphere";
 import { DashboardContinueChip } from "@/components/dashboard/dashboard-continue-chip";
+import { DashboardFeaturedGoal } from "@/components/dashboard/dashboard-featured-goal";
+import { DashboardFocusPulse } from "@/components/dashboard/dashboard-focus-pulse";
 import { DashboardHero } from "@/components/dashboard/dashboard-hero";
 import { DashboardInsightStrip } from "@/components/dashboard/dashboard-insight-strip";
-import { DashboardMorningBrief } from "@/components/dashboard/dashboard-morning-brief";
-import { GoalProgressList } from "@/components/dashboard/goal-progress-list";
 import { HabitsToday } from "@/components/dashboard/habits-today";
 import { TodayFocus } from "@/components/dashboard/today-focus";
 import { WeekOverview } from "@/components/dashboard/week-overview";
@@ -157,6 +158,7 @@ export function DashboardStage({
   const focusMinutes =
     data.focus_today.focus_minutes || data.stats.focus_minutes_today;
   const focusSessions = data.focus_today.sessions;
+  const hasGoals = data.goals.length > 0;
 
   function onTaskToggle(taskId: string, completed: boolean) {
     const after = applyTaskToggle(optimisticTasks, { id: taskId, completed });
@@ -226,42 +228,39 @@ export function DashboardStage({
         />
       </div>
 
-      <div className="dash-reveal dash-reveal-delay-1 space-y-3">
+      <div className="dash-reveal dash-reveal-delay-1">
         <DashboardContinueChip />
-        <DashboardMorningBrief
-          tasks={optimisticTasks}
-          habitsDone={habitsDone}
-          habitsTotal={optimisticHabits.length}
-          focusMinutes={focusMinutes}
-          focusGoalMinutes={focusGoalMinutes}
-          hasTodayReview={data.review.has_today}
-          intent={data.review.intent}
-          readingBook={data.reading_book}
-        />
       </div>
 
       <div className="dash-bento dash-reveal dash-reveal-delay-1">
-        <div className="dash-bento-today min-h-88 lg:min-h-112">
+        <div className="dash-bento-today">
           <TodayFocus
             tasks={optimisticTasks}
             overdueTasks={data.overdue_tasks}
             onToggle={onTaskToggle}
             onSchedule={onTaskSchedule}
+            focusMinutes={focusMinutes}
+            focusGoalMinutes={focusGoalMinutes}
           />
         </div>
-        <div className="dash-bento-side flex min-h-0 flex-col gap-3">
-          <div className="min-h-44 flex-1">
-            <HabitsToday
-              habits={optimisticHabits}
-              onToggle={onHabitToggle}
-            />
-          </div>
-          <div className="min-h-48 flex-1">
-            <GoalProgressList goals={data.goals} />
-          </div>
+        <div className="dash-bento-side">
+          <HabitsToday
+            habits={optimisticHabits}
+            onToggle={onHabitToggle}
+          />
+          <DashboardActivityHeat activity={data.activity} />
         </div>
-        <div className="dash-bento-week">
+        <div className="dash-bento-rhythm">
           <WeekOverview week={optimisticWeek} />
+          {hasGoals ? (
+            <DashboardFeaturedGoal goals={data.goals} />
+          ) : (
+            <DashboardFocusPulse
+              focusMinutes={focusMinutes}
+              focusGoalMinutes={focusGoalMinutes}
+              sessions={focusSessions}
+            />
+          )}
         </div>
       </div>
 

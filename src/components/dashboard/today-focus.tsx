@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { CheckCircle2, Circle, ListTodo, Timer } from "lucide-react";
+import { CheckCircle2, Circle, Timer } from "lucide-react";
 
 import { updateTask } from "@/actions/tasks";
-import { EmptyState } from "@/components/shared/empty-state";
+import { ProgressRing } from "@/components/dashboard/progress-ring";
 import {
   addDays,
   isOverdue,
@@ -22,13 +22,17 @@ import {
 } from "@/lib/smart-today";
 import { cn } from "@/lib/utils";
 import type { TaskWithContext } from "@/types/dashboard";
+import { formatFocusMinutes } from "@/types/focus";
 
 type TodayFocusProps = {
   tasks: TaskWithContext[];
   overdueTasks?: TaskWithContext[];
   onToggle: (taskId: string, completed: boolean) => void;
   onSchedule?: (taskId: string, dueDate: string | null) => void;
+  focusMinutes?: number;
+  focusGoalMinutes?: number;
 };
+
 
 function reasonTone(reason: SmartReason) {
   if (reason === "focus") {
@@ -199,6 +203,8 @@ export function TodayFocus({
   overdueTasks = [],
   onToggle,
   onSchedule,
+  focusMinutes = 0,
+  focusGoalMinutes = 0,
 }: TodayFocusProps) {
   const [continueHref, setContinueHref] = useState<string | null>(null);
   const smart = useMemo(
@@ -275,29 +281,75 @@ export function TodayFocus({
       </div>
 
       {smart.length === 0 ? (
-        <div className="relative z-1 flex flex-1 flex-col justify-center px-3 py-4">
-          <EmptyState
-            icon={ListTodo}
-            title="Nothing due today"
-            description="Capture something for the day — or leave the deck clear."
-            variant="plain"
-            className="py-6"
-          >
-            <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-              <Link
-                href="/tasks?compose=1"
-                className="inline-flex h-8 items-center rounded-lg bg-foreground px-3 text-xs font-medium text-background transition-opacity hover:opacity-90"
-              >
-                Add a task
-              </Link>
-              <Link
-                href="/calendar?compose=1"
-                className="inline-flex h-8 items-center rounded-lg border border-surface-border bg-surface px-3 text-xs font-medium text-foreground transition-colors hover:border-border"
-              >
-                Add event
-              </Link>
+        <div className="relative z-1 flex min-h-0 flex-1 flex-col gap-6 px-5 py-5 sm:py-6">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
+            <div className="min-w-0 max-w-md">
+              <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                Open deck
+              </p>
+              <p className="mt-2 text-base font-medium tracking-tight text-foreground">
+                Nothing due — start the day on purpose.
+              </p>
+              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                Capture a task, cue a habit, or open Focus. The room stays quiet
+                until you light it.
+              </p>
             </div>
-          </EmptyState>
+            {focusGoalMinutes > 0 ? (
+              <div className="flex shrink-0 items-center gap-3 self-start sm:self-center">
+                <ProgressRing
+                  value={Math.min(
+                    100,
+                    Math.round((focusMinutes / focusGoalMinutes) * 100),
+                  )}
+                  size={64}
+                  stroke={4}
+                  featured
+                  sealed={focusMinutes >= focusGoalMinutes}
+                >
+                  <span className="text-[10px] font-semibold tabular-nums text-muted-foreground">
+                    {focusMinutes >= focusGoalMinutes
+                      ? "✓"
+                      : `${Math.min(100, Math.round((focusMinutes / focusGoalMinutes) * 100))}%`}
+                  </span>
+                </ProgressRing>
+                <div className="min-w-0">
+                  <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                    Focus goal
+                  </p>
+                  <p className="mt-0.5 text-sm tabular-nums text-foreground">
+                    {formatFocusMinutes(focusMinutes)}
+                    <span className="text-muted-foreground">
+                      {" "}
+                      / {formatFocusMinutes(focusGoalMinutes)}
+                    </span>
+                  </p>
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="mt-auto flex flex-wrap items-center gap-2">
+            <Link
+              href="/tasks?compose=1"
+              className="inline-flex h-9 items-center rounded-xl bg-foreground px-3.5 text-xs font-medium text-background transition-opacity hover:opacity-90"
+            >
+              Add a task
+            </Link>
+            <Link
+              href="/habits?compose=1"
+              className="inline-flex h-9 items-center rounded-xl border border-surface-border bg-surface px-3.5 text-xs font-medium text-foreground transition-colors hover:border-border"
+            >
+              Cue a habit
+            </Link>
+            <Link
+              href="/focus"
+              className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-surface-border bg-surface px-3.5 text-xs font-medium text-foreground transition-colors hover:border-border"
+            >
+              <Timer className="size-3.5 opacity-70" aria-hidden />
+              Open Focus
+            </Link>
+          </div>
         </div>
       ) : (
         <ul className="dash-stagger relative z-1 min-h-0 flex-1 space-y-0.5 overflow-y-auto px-3 py-3">
