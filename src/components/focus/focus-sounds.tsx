@@ -105,20 +105,20 @@ export function FocusSounds({
 
   if (embedded) {
     return (
-      <div className="space-y-3">
-        <div className="flex items-center justify-between gap-3">
-          <div>
+      <div className="space-y-4">
+        <div className="flex items-end justify-between gap-3">
+          <div className="min-w-0">
             <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-              Scene
+              Atmosphere
             </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {playing ? active.label : "Choose a room for the session"}
+            <p className="mt-1 truncate text-xs text-muted-foreground">
+              {playing ? active.label : "Choose a room"}
             </p>
           </div>
           <VolumeControls volume={volume} setVolume={setVolume} />
         </div>
         <div
-          className="grid grid-cols-4 gap-2 sm:gap-3"
+          className="grid grid-cols-4 gap-2"
           role="listbox"
           aria-label="Ambient scenes"
         >
@@ -133,7 +133,7 @@ export function FocusSounds({
                 onClick={() => void toggle(track.id)}
                 className="group/orb flex flex-col items-center gap-2 text-center"
               >
-                <span className="relative flex size-11 items-center justify-center sm:size-12">
+                <span className="relative flex size-11 items-center justify-center">
                   {isLive ? (
                     <span
                       className="absolute inset-0 animate-ping rounded-full bg-foreground/10"
@@ -142,7 +142,7 @@ export function FocusSounds({
                   ) : null}
                   <span
                     className={cn(
-                      "relative size-9 rounded-full bg-linear-to-br shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] transition-all duration-300 sm:size-10",
+                      "relative size-9 rounded-full bg-linear-to-br shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] transition-all duration-300",
                       track.tone,
                       isLive
                         ? "scale-110 ring-2 ring-foreground/35"
@@ -152,7 +152,7 @@ export function FocusSounds({
                 </span>
                 <span
                   className={cn(
-                    "text-[11px] font-medium tracking-wide",
+                    "max-w-full truncate text-[10px] font-medium tracking-wide",
                     isLive ? "text-foreground" : "text-muted-foreground",
                   )}
                 >

@@ -595,8 +595,14 @@ html[data-focus-session="true"] {
     height: min(52vw, 14.5rem) !important;
   }
 
-  .focus-session-lock .focus-run-dock {
-    gap: 0.75rem;
+  .focus-session-lock .focus-run-timer {
+    gap: 1.25rem;
+  }
+
+  .focus-session-lock .focus-run-side-card {
+    gap: 1rem;
+    padding-block: 1rem;
+    min-height: 0;
   }
 }
 
@@ -759,14 +765,37 @@ html[data-focus-session] body {
   transition: opacity 400ms ease;
 }
 
-.focus-stage[data-running="true"] .focus-run-dock {
-  opacity: 0.72;
-  transition: opacity 400ms ease;
+.focus-run-side {
+  min-width: 0;
 }
 
-.focus-stage[data-running="true"]:hover .focus-run-dock,
-.focus-stage[data-running="true"]:focus-within .focus-run-dock {
+.focus-run-side-card {
+  box-shadow:
+    0 1px 0 color-mix(in oklab, var(--foreground) 4%, transparent),
+    0 18px 40px -28px color-mix(in oklab, var(--foreground) 18%, transparent);
+}
+
+.focus-stage[data-running="true"] .focus-run-side-card {
+  opacity: 0.88;
+  transition: opacity 400ms ease, border-color 400ms ease, background 400ms ease;
+}
+
+.focus-stage[data-running="true"]:hover .focus-run-side-card,
+.focus-stage[data-running="true"]:focus-within .focus-run-side-card {
   opacity: 1;
+}
+
+.dark .focus-run-side-card {
+  background: color-mix(in oklab, var(--background) 72%, transparent);
+  border-color: color-mix(in oklab, var(--border) 70%, transparent);
+}
+
+@media (min-width: 1024px) {
+  .focus-run-side-card {
+    /* Optical align with clock jewel center, not raw column start */
+    min-height: 21rem;
+    justify-content: center;
+  }
 }
 
 @keyframes focus-glow-breathe {

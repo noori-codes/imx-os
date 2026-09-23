@@ -818,7 +818,7 @@ export function FocusTimer({
       className={cn(
         "focus-stage group relative flex w-full flex-col overflow-hidden",
         isRunning || canContinue
-          ? "h-full min-h-0 flex-1 items-center justify-center px-5 py-6 sm:px-8 sm:py-8"
+          ? "h-full min-h-0 flex-1 items-stretch justify-center px-5 py-6 sm:px-8 sm:py-8 lg:px-10 lg:py-10"
           : "px-0 py-0",
       )}
       id="focus-timer"
@@ -839,110 +839,140 @@ export function FocusTimer({
       <div className="focus-stage-glow" aria-hidden />
 
       {isRunning || canContinue ? (
-        <div className="focus-run relative z-1 mx-auto flex w-full max-w-lg flex-col items-center justify-center gap-8 text-center sm:gap-10">
-          <div className="flex items-center gap-2.5">
-            {isRunning ? <span className="focus-live-dot" aria-hidden /> : null}
-            <p className="text-[10px] font-medium uppercase tracking-[0.32em] text-muted-foreground">
-              {isRunning ? runningLabel : "Paused"}
-            </p>
-          </div>
-
-          <div className="focus-clock-jewel relative flex size-[min(68vw,17rem)] items-center justify-center sm:size-[19rem] lg:size-[21rem]">
-            <FocusClockFace
-              isRunning={isRunning}
-              isStopwatch={isStopwatch}
-              canContinue={canContinue}
-              mode={mode}
-              durationSeconds={durationSeconds}
-              subject={subject}
-              sessionLine={sessionLine}
-              pickupHint={pickupHint}
-              endedHint={endedHint}
-              runningHint={runningHint}
-              upcomingLabel={FOCUS_PRESETS[upcoming].label}
-              ringRadius={ringRadius}
-              ringCircumference={ringCircumference}
-              compactHints
-            />
-          </div>
-
-          {runningDetail ? (
-            <p className="max-w-[22rem] truncate text-[13px] tracking-[0.04em] text-foreground/75">
-              {runningDetail}
-            </p>
-          ) : (
-            <p className="text-[13px] tracking-[0.04em] text-muted-foreground">
-              In session
-            </p>
-          )}
-
-          {!isStopwatch ? (
-            <div
-              className="flex items-center justify-center gap-2.5"
-              aria-label={`${dots} of ${FOCUS_POMODOROS_PER_LONG_BREAK} toward a long break`}
-            >
-              {Array.from({ length: FOCUS_POMODOROS_PER_LONG_BREAK }).map(
-                (_, i) => (
-                  <span
-                    key={i}
-                    className={cn(
-                      "size-1.5 rounded-full transition-colors",
-                      i < dots
-                        ? "bg-(--focus-accent)"
-                        : "bg-muted-foreground/25",
-                    )}
-                  />
-                ),
-              )}
-            </div>
-          ) : null}
-
-          <div className="focus-run-controls flex items-center justify-center gap-4 sm:gap-5">
-            <button
-              type="button"
-              onClick={handleDiscardSession}
-              className="flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
-              aria-label="Discard session"
-              title="Discard without saving"
-            >
-              <RotateCcw className="size-4" />
-            </button>
-            <button
-              type="button"
-              onClick={handleToggle}
-              className="focus-run-pause flex size-[4.5rem] items-center justify-center rounded-full text-background transition-transform hover:scale-[1.03] active:scale-95"
-              aria-label={isRunning ? "Pause timer" : "Resume timer"}
-            >
+        <div className="focus-run relative z-1 mx-auto grid w-full max-w-5xl grid-cols-1 items-center gap-8 sm:gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(17.5rem,20rem)] lg:gap-x-14 xl:gap-x-16">
+          <div className="focus-run-timer flex w-full flex-col items-center justify-center gap-7 text-center sm:gap-8 lg:gap-9">
+            <div className="flex items-center gap-2.5">
               {isRunning ? (
-                <Pause className="size-6 fill-current" />
-              ) : (
-                <Play className="size-6 fill-current" />
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={handleStopAndSave}
-              disabled={isStopwatch ? !canSealStopwatch : false}
-              className={cn(
-                "flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground",
-                isStopwatch &&
-                  !canSealStopwatch &&
-                  "pointer-events-none opacity-30",
-              )}
-              aria-label="Stop and save"
-              title="Stop and save"
-            >
-              {isStopwatch ? (
-                <Square className="size-4 fill-current" />
-              ) : (
-                <CircleCheck className="size-4" />
-              )}
-            </button>
+                <span className="focus-live-dot" aria-hidden />
+              ) : null}
+              <p className="text-[10px] font-medium uppercase tracking-[0.32em] text-muted-foreground">
+                {isRunning ? runningLabel : "Paused"}
+              </p>
+            </div>
+
+            <div className="focus-clock-jewel relative flex size-[min(68vw,17rem)] items-center justify-center sm:size-[19rem] lg:size-[21rem]">
+              <FocusClockFace
+                isRunning={isRunning}
+                isStopwatch={isStopwatch}
+                canContinue={canContinue}
+                mode={mode}
+                durationSeconds={durationSeconds}
+                subject={subject}
+                sessionLine={sessionLine}
+                pickupHint={pickupHint}
+                endedHint={endedHint}
+                runningHint={runningHint}
+                upcomingLabel={FOCUS_PRESETS[upcoming].label}
+                ringRadius={ringRadius}
+                ringCircumference={ringCircumference}
+                compactHints
+              />
+            </div>
+
+            {runningDetail ? (
+              <p className="max-w-[22rem] truncate text-[13px] tracking-[0.04em] text-foreground/75">
+                {runningDetail}
+              </p>
+            ) : (
+              <p className="text-[13px] tracking-[0.04em] text-muted-foreground">
+                In session
+              </p>
+            )}
+
+            {!isStopwatch ? (
+              <div
+                className="flex items-center justify-center gap-2.5"
+                aria-label={`${dots} of ${FOCUS_POMODOROS_PER_LONG_BREAK} toward a long break`}
+              >
+                {Array.from({ length: FOCUS_POMODOROS_PER_LONG_BREAK }).map(
+                  (_, i) => (
+                    <span
+                      key={i}
+                      className={cn(
+                        "size-1.5 rounded-full transition-colors",
+                        i < dots
+                          ? "bg-(--focus-accent)"
+                          : "bg-muted-foreground/25",
+                      )}
+                    />
+                  ),
+                )}
+              </div>
+            ) : null}
+
+            <div className="focus-run-controls flex items-center justify-center gap-4 sm:gap-5">
+              <button
+                type="button"
+                onClick={handleDiscardSession}
+                className="flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
+                aria-label="Discard session"
+                title="Discard without saving"
+              >
+                <RotateCcw className="size-4" />
+              </button>
+              <button
+                type="button"
+                onClick={handleToggle}
+                className="focus-run-pause flex size-[4.5rem] items-center justify-center rounded-full text-background transition-transform hover:scale-[1.03] active:scale-95"
+                aria-label={isRunning ? "Pause timer" : "Resume timer"}
+              >
+                {isRunning ? (
+                  <Pause className="size-6 fill-current" />
+                ) : (
+                  <Play className="size-6 fill-current" />
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={handleStopAndSave}
+                disabled={isStopwatch ? !canSealStopwatch : false}
+                className={cn(
+                  "flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground",
+                  isStopwatch &&
+                    !canSealStopwatch &&
+                    "pointer-events-none opacity-30",
+                )}
+                aria-label="Stop and save"
+                title="Stop and save"
+              >
+                {isStopwatch ? (
+                  <Square className="size-4 fill-current" />
+                ) : (
+                  <CircleCheck className="size-4" />
+                )}
+              </button>
+            </div>
           </div>
 
-          <div className="focus-run-dock flex w-full max-w-sm flex-col items-center gap-3 opacity-70 transition-opacity hover:opacity-100 focus-within:opacity-100">
-            <FocusSounds compact />
-          </div>
+          <aside className="focus-run-side mx-auto w-full max-w-sm lg:mx-0 lg:max-w-none lg:justify-self-stretch">
+            <div className="focus-run-side-card flex flex-col gap-6 rounded-[1.35rem] border border-border/40 bg-background/45 px-5 py-5 backdrop-blur-sm sm:px-6 sm:py-6">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                    Room
+                  </p>
+                  <p className="mt-1 truncate text-sm font-medium text-foreground">
+                    {isStopwatch
+                      ? "Count up"
+                      : [
+                          FOCUS_PRESETS[mode].label,
+                          activeProfile?.label ?? "Custom",
+                        ].join(" · ")}
+                  </p>
+                </div>
+                <FocusSettings
+                  dailyGoalMinutes={dailyGoalMinutes}
+                  onClockChange={handleClockChange}
+                  iconOnly
+                  className="shrink-0"
+                />
+              </div>
+
+              <div className="h-px w-full bg-border/40" aria-hidden />
+
+              <FocusSounds embedded />
+            </div>
+          </aside>
         </div>
       ) : (
         <div className="focus-launch relative z-1 w-full overflow-hidden rounded-[1.75rem] imx-surface">
