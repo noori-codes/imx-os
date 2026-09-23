@@ -156,6 +156,14 @@ export const FOCUS_PROFILES = [
 
 export const FOCUS_PROFILE_KEY = "imx-focus-profile";
 export const FOCUS_PROFILE_DEFAULT: FocusProfileId = "classic";
+/** Persisted custom/session lengths (minutes) so 2h/3h etc. survive reloads. */
+export const FOCUS_DURATIONS_KEY = "imx-focus-durations";
+
+export type FocusStoredDurations = {
+  focus: number;
+  short_break: number;
+  long_break: number;
+};
 
 export function getFocusProfile(id: FocusProfileId) {
   return FOCUS_PROFILES.find((profile) => profile.id === id) ?? FOCUS_PROFILES[0];
@@ -173,6 +181,44 @@ export function matchFocusProfile(durations: {
       profile.long_break === durations.long_break,
   );
   return match?.id ?? null;
+}
+
+export function readStoredFocusDurations(): FocusStoredDurations | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(FOCUS_DURATIONS_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<FocusStoredDurations>;
+    const focus = Number(parsed.focus);
+    const short_break = Number(parsed.short_break);
+    const long_break = Number(parsed.long_break);
+    if (
+      !Number.isFinite(focus) ||
+      !Number.isFinite(short_break) ||
+      !Number.isFinite(long_break)
+    ) {
+      return null;
+    }
+    return {
+      focus: Math.max(1, Math.min(12 * 60, Math.round(focus))),
+      short_break: Math.max(1, Math.min(60, Math.round(short_break))),
+      long_break: Math.max(1, Math.min(60, Math.round(long_break))),
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function writeStoredFocusDurations(durations: FocusStoredDurations) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(
+    FOCUS_DURATIONS_KEY,
+    JSON.stringify({
+      focus: Math.round(durations.focus),
+      short_break: Math.round(durations.short_break),
+      long_break: Math.round(durations.long_break),
+    }),
+  );
 }
 
 export const FOCUS_PRESETS: Record<

@@ -22,6 +22,8 @@ import {
   FOCUS_PROFILE_KEY,
   getFocusProfile,
   matchFocusProfile,
+  readStoredFocusDurations,
+  writeStoredFocusDurations,
 } from "@/types/focus";
 
 const AUTO_START_KEY = "imx-focus-auto-start";
@@ -156,6 +158,18 @@ function syncProfileId(state: {
   lastLongBreakSeconds: number;
 }) {
   return matchFocusProfile({
+    focus: Math.round(state.lastFocusSeconds / 60),
+    short_break: Math.round(state.lastShortBreakSeconds / 60),
+    long_break: Math.round(state.lastLongBreakSeconds / 60),
+  });
+}
+
+function persistDurations(state: {
+  lastFocusSeconds: number;
+  lastShortBreakSeconds: number;
+  lastLongBreakSeconds: number;
+}) {
+  writeStoredFocusDurations({
     focus: Math.round(state.lastFocusSeconds / 60),
     short_break: Math.round(state.lastShortBreakSeconds / 60),
     long_break: Math.round(state.lastLongBreakSeconds / 60),
@@ -348,6 +362,7 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
     };
     const profileId = syncProfileId(next);
     if (typeof window !== "undefined") {
+      persistDurations(next);
       if (profileId) {
         window.localStorage.setItem(FOCUS_PROFILE_KEY, profileId);
       } else {
@@ -386,6 +401,11 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
     });
     if (typeof window !== "undefined") {
       window.localStorage.setItem(FOCUS_PROFILE_KEY, profileId);
+      persistDurations({
+        lastFocusSeconds,
+        lastShortBreakSeconds,
+        lastLongBreakSeconds,
+      });
     }
     set({
       profileId,
@@ -414,12 +434,49 @@ export const useFocusTimer = create<FocusTimerState>((set, get) => ({
       storedClock === "up" || storedClock === "down"
         ? storedClock
         : FOCUS_CLOCK_DEFAULT;
-    const stored = window.localStorage.getItem(FOCUS_PROFILE_KEY);
-    const profileId =
-      stored === "classic" || stored === "deep" || stored === "quick"
-        ? stored
-        : FOCUS_PROFILE_DEFAULT;
-    get().applyProfile(profileId);
+
+    const storedDurations = readStoredFocusDurations();
+    if (storedDurations) {
+      const lastFocusSeconds = storedDurations.focus * 60;
+      const lastShortBreakSeconds = storedDurations.short_break * 60;
+      const lastLongBreakSeconds = storedDurations.long_break * 60;
+      const profileId = matchFocusProfile(storedDurations);
+      const current = get();
+      const durationSeconds = durationForMode(current.mode, {
+        lastFocusSeconds,
+        lastShortBreakSeconds,
+        lastLongBreakSeconds,
+      });
+      if (profileId) {
+        window.localStorage.setItem(FOCUS_PROFILE_KEY, profileId);
+      } else {
+        window.localStorage.removeItem(FOCUS_PROFILE_KEY);
+      }
+      set({
+        profileId,
+        lastFocusSeconds,
+        lastShortBreakSeconds,
+        lastLongBreakSeconds,
+        durationSeconds,
+        remainingSeconds: durationSeconds,
+        elapsedSeconds: 0,
+        progressBaseSeconds: 0,
+        continuedSessionId: null,
+        continuedMergeIds: [],
+        startedAt: null,
+        sessionStartedAt: null,
+        endsAt: null,
+        isRunning: false,
+      });
+    } else {
+      const stored = window.localStorage.getItem(FOCUS_PROFILE_KEY);
+      const profileId =
+        stored === "classic" || stored === "deep" || stored === "quick"
+          ? stored
+          : FOCUS_PROFILE_DEFAULT;
+      get().applyProfile(profileId);
+    }
+
     if (clock !== get().clock) {
       get().setClock(clock);
     }

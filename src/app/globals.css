@@ -842,7 +842,6 @@ html[data-focus-session] body {
 }
 
 @media (min-width: 1024px) {
-  /* Clock jewel + Room card share row 2 → identical vertical center */
   .focus-run-side-card {
     min-height: 21rem;
     justify-content: space-between;

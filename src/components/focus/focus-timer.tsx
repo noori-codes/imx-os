@@ -839,17 +839,17 @@ export function FocusTimer({
       <div className="focus-stage-glow" aria-hidden />
 
       {isRunning || canContinue ? (
-        <div className="focus-run relative z-1 mx-auto grid w-full max-w-5xl grid-cols-1 gap-8 sm:gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(17.5rem,20rem)] lg:grid-rows-[auto_auto_auto] lg:items-center lg:gap-x-14 lg:gap-y-0 xl:gap-x-16">
-          <div className="focus-run-status flex items-center justify-center gap-2.5 lg:col-start-1 lg:row-start-1 lg:justify-self-center lg:pb-6">
-            {isRunning ? (
-              <span className="focus-live-dot" aria-hidden />
-            ) : null}
-            <p className="text-[10px] font-medium uppercase tracking-[0.32em] text-muted-foreground">
-              {isRunning ? runningLabel : "Paused"}
-            </p>
-          </div>
+        <div className="focus-run relative z-1 mx-auto grid w-full max-w-5xl grid-cols-1 items-center gap-8 sm:gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(17.5rem,20rem)] lg:gap-x-14 xl:gap-x-16">
+          <div className="focus-run-timer flex w-full flex-col items-center justify-center gap-5 text-center sm:gap-6">
+            <div className="flex items-center gap-2.5">
+              {isRunning ? (
+                <span className="focus-live-dot" aria-hidden />
+              ) : null}
+              <p className="text-[10px] font-medium uppercase tracking-[0.32em] text-muted-foreground">
+                {isRunning ? runningLabel : "Paused"}
+              </p>
+            </div>
 
-          <div className="focus-run-timer-core relative flex items-center justify-center lg:col-start-1 lg:row-start-2">
             <div className="focus-clock-jewel relative flex size-[min(68vw,17rem)] items-center justify-center sm:size-[19rem] lg:size-[21rem]">
               <FocusClockFace
                 isRunning={isRunning}
@@ -868,43 +868,43 @@ export function FocusTimer({
                 compactHints
               />
             </div>
+
+            <div className="flex flex-col items-center gap-3">
+              {runningDetail ? (
+                <p className="max-w-[22rem] truncate text-[13px] tracking-[0.04em] text-foreground/75">
+                  {runningDetail}
+                </p>
+              ) : (
+                <p className="text-[13px] tracking-[0.04em] text-muted-foreground">
+                  In session
+                </p>
+              )}
+
+              {!isStopwatch ? (
+                <div
+                  className="flex items-center justify-center gap-2.5"
+                  aria-label={`${dots} of ${FOCUS_POMODOROS_PER_LONG_BREAK} toward a long break`}
+                >
+                  {Array.from({ length: FOCUS_POMODOROS_PER_LONG_BREAK }).map(
+                    (_, i) => (
+                      <span
+                        key={i}
+                        className={cn(
+                          "size-1.5 rounded-full transition-colors",
+                          i < dots
+                            ? "bg-(--focus-accent)"
+                            : "bg-muted-foreground/25",
+                        )}
+                      />
+                    ),
+                  )}
+                </div>
+              ) : null}
+            </div>
           </div>
 
-          <div className="focus-run-meta mt-5 flex flex-col items-center gap-3 sm:mt-6 lg:col-start-1 lg:row-start-3 lg:mt-0 lg:pt-6">
-            {runningDetail ? (
-              <p className="max-w-[22rem] truncate text-[13px] tracking-[0.04em] text-foreground/75">
-                {runningDetail}
-              </p>
-            ) : (
-              <p className="text-[13px] tracking-[0.04em] text-muted-foreground">
-                In session
-              </p>
-            )}
-
-            {!isStopwatch ? (
-              <div
-                className="flex items-center justify-center gap-2.5"
-                aria-label={`${dots} of ${FOCUS_POMODOROS_PER_LONG_BREAK} toward a long break`}
-              >
-                {Array.from({ length: FOCUS_POMODOROS_PER_LONG_BREAK }).map(
-                  (_, i) => (
-                    <span
-                      key={i}
-                      className={cn(
-                        "size-1.5 rounded-full transition-colors",
-                        i < dots
-                          ? "bg-(--focus-accent)"
-                          : "bg-muted-foreground/25",
-                      )}
-                    />
-                  ),
-                )}
-              </div>
-            ) : null}
-          </div>
-
-          <aside className="focus-run-side mx-auto flex w-full max-w-sm items-center lg:col-start-2 lg:row-start-2 lg:mx-0 lg:max-w-none lg:self-stretch">
-            <div className="focus-run-side-card flex h-full w-full flex-col gap-5 rounded-[1.35rem] border border-border/40 bg-background/45 px-5 py-5 backdrop-blur-sm sm:gap-6 sm:px-6 sm:py-6">
+          <aside className="focus-run-side mx-auto flex w-full max-w-sm items-center lg:mx-0 lg:max-w-none lg:self-center">
+            <div className="focus-run-side-card flex w-full flex-col gap-5 rounded-[1.35rem] border border-border/40 bg-background/45 px-5 py-5 backdrop-blur-sm sm:gap-6 sm:px-6 sm:py-6">
               <div className="focus-run-controls flex items-center justify-center gap-4 sm:gap-5">
                 <button
                   type="button"
@@ -1093,6 +1093,63 @@ export function FocusTimer({
                 />
               </div>
 
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleReset}
+                  className="flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  aria-label={
+                    canSealStopwatch ? "Discard session" : "Reset timer"
+                  }
+                >
+                  <RotateCcw className="size-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleToggle}
+                  className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-foreground px-5 text-sm font-medium text-background transition-transform hover:scale-[1.01] active:scale-[0.99]"
+                  aria-label={
+                    canContinue
+                      ? "Continue session"
+                      : isStopwatch
+                        ? "Start focus"
+                        : "Begin session"
+                  }
+                >
+                  <Play className="size-4 fill-current" />
+                  {canContinue
+                    ? "Continue"
+                    : isStopwatch
+                      ? "Start"
+                      : mode === "focus"
+                        ? "Begin"
+                        : "Start break"}
+                </button>
+                {!isStopwatch ? (
+                  <button
+                    type="button"
+                    onClick={handleSkip}
+                    className="flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    aria-label="Skip to next phase"
+                  >
+                    <SkipForward className="size-4" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleSealStopwatch}
+                    disabled={!canSealStopwatch}
+                    className={cn(
+                      "flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+                      !canSealStopwatch && "pointer-events-none opacity-30",
+                    )}
+                    aria-label="Seal session"
+                  >
+                    <CircleCheck className="size-4" />
+                  </button>
+                )}
+              </div>
+
               {!isStopwatch ? (
                 <div className="grid grid-cols-3 gap-1.5">
                   {FOCUS_PROFILES.map((profile) => {
@@ -1172,63 +1229,6 @@ export function FocusTimer({
               ) : null}
 
               <FocusSounds compact />
-
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={handleReset}
-                  className="flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                  aria-label={
-                    canSealStopwatch ? "Discard session" : "Reset timer"
-                  }
-                >
-                  <RotateCcw className="size-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={handleToggle}
-                  className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-foreground px-5 text-sm font-medium text-background transition-transform hover:scale-[1.01] active:scale-[0.99]"
-                  aria-label={
-                    canContinue
-                      ? "Continue session"
-                      : isStopwatch
-                        ? "Start focus"
-                        : "Begin session"
-                  }
-                >
-                  <Play className="size-4 fill-current" />
-                  {canContinue
-                    ? "Continue"
-                    : isStopwatch
-                      ? "Start"
-                      : mode === "focus"
-                        ? "Begin"
-                        : "Start break"}
-                </button>
-                {!isStopwatch ? (
-                  <button
-                    type="button"
-                    onClick={handleSkip}
-                    className="flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                    aria-label="Skip to next phase"
-                  >
-                    <SkipForward className="size-4" />
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleSealStopwatch}
-                    disabled={!canSealStopwatch}
-                    className={cn(
-                      "flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
-                      !canSealStopwatch && "pointer-events-none opacity-30",
-                    )}
-                    aria-label="Seal session"
-                  >
-                    <CircleCheck className="size-4" />
-                  </button>
-                )}
-              </div>
             </div>
           </div>
         </div>
