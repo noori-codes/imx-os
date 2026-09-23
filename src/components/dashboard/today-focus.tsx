@@ -266,7 +266,7 @@ export function TodayFocus({
           </h3>
           <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
             {smart.length === 0
-              ? "Nothing due"
+              ? "Clear"
               : clear
                 ? "All clear"
                 : `${openCount} prioritized`}
@@ -281,55 +281,41 @@ export function TodayFocus({
       </div>
 
       {smart.length === 0 ? (
-        <div className="relative z-1 flex min-h-0 flex-1 flex-col gap-6 px-5 py-5 sm:py-6">
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
-            <div className="min-w-0 max-w-md">
-              <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-                Open deck
-              </p>
-              <p className="mt-2 text-base font-medium tracking-tight text-foreground">
-                Nothing due — start the day on purpose.
-              </p>
-              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                Capture a task, cue a habit, or open Focus. The room stays quiet
-                until you light it.
+        <div className="relative z-1 flex min-h-0 flex-1 flex-col items-center justify-center gap-8 px-5 py-8 text-center">
+          {focusGoalMinutes > 0 ? (
+            <div className="flex flex-col items-center gap-3">
+              <ProgressRing
+                value={Math.min(
+                  100,
+                  Math.round((focusMinutes / focusGoalMinutes) * 100),
+                )}
+                size={88}
+                stroke={5}
+                featured
+                sealed={focusMinutes >= focusGoalMinutes}
+              >
+                <span className="text-xs font-semibold tabular-nums text-foreground">
+                  {focusMinutes >= focusGoalMinutes
+                    ? "✓"
+                    : `${Math.min(
+                        100,
+                        Math.round((focusMinutes / focusGoalMinutes) * 100),
+                      )}%`}
+                </span>
+              </ProgressRing>
+              <p className="text-sm tabular-nums text-muted-foreground">
+                <span className="text-foreground">
+                  {formatFocusMinutes(focusMinutes)}
+                </span>
+                {" / "}
+                {formatFocusMinutes(focusGoalMinutes)}
               </p>
             </div>
-            {focusGoalMinutes > 0 ? (
-              <div className="flex shrink-0 items-center gap-3 self-start sm:self-center">
-                <ProgressRing
-                  value={Math.min(
-                    100,
-                    Math.round((focusMinutes / focusGoalMinutes) * 100),
-                  )}
-                  size={64}
-                  stroke={4}
-                  featured
-                  sealed={focusMinutes >= focusGoalMinutes}
-                >
-                  <span className="text-[10px] font-semibold tabular-nums text-muted-foreground">
-                    {focusMinutes >= focusGoalMinutes
-                      ? "✓"
-                      : `${Math.min(100, Math.round((focusMinutes / focusGoalMinutes) * 100))}%`}
-                  </span>
-                </ProgressRing>
-                <div className="min-w-0">
-                  <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                    Focus goal
-                  </p>
-                  <p className="mt-0.5 text-sm tabular-nums text-foreground">
-                    {formatFocusMinutes(focusMinutes)}
-                    <span className="text-muted-foreground">
-                      {" "}
-                      / {formatFocusMinutes(focusGoalMinutes)}
-                    </span>
-                  </p>
-                </div>
-              </div>
-            ) : null}
-          </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">Deck is clear</p>
+          )}
 
-          <div className="mt-auto flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center justify-center gap-2">
             <Link
               href="/tasks?compose=1"
               className="inline-flex h-9 items-center rounded-xl bg-foreground px-3.5 text-xs font-medium text-background transition-opacity hover:opacity-90"
@@ -337,17 +323,11 @@ export function TodayFocus({
               Add a task
             </Link>
             <Link
-              href="/habits?compose=1"
-              className="inline-flex h-9 items-center rounded-xl border border-surface-border bg-surface px-3.5 text-xs font-medium text-foreground transition-colors hover:border-border"
-            >
-              Cue a habit
-            </Link>
-            <Link
               href="/focus"
               className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-surface-border bg-surface px-3.5 text-xs font-medium text-foreground transition-colors hover:border-border"
             >
               <Timer className="size-3.5 opacity-70" aria-hidden />
-              Open Focus
+              Focus
             </Link>
           </div>
         </div>
