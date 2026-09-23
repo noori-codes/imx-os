@@ -538,9 +538,14 @@ export function FocusTimer({
   }
 
   function handleDiscardSession() {
+    if (!isStopwatch && isRunning) pause();
     const actual = isStopwatch
       ? useFocusTimer.getState().displaySeconds()
-      : Math.max(0, durationSeconds - remainingSeconds);
+      : Math.max(
+          0,
+          useFocusTimer.getState().durationSeconds -
+            useFocusTimer.getState().remainingSeconds,
+        );
     if (actual >= 5) {
       void (async () => {
         const ok = await confirm({
@@ -570,13 +575,14 @@ export function FocusTimer({
         reset();
       }
     } else if (canContinueFocusSession(useFocusTimer.getState())) {
-      const actual = durationSeconds - remainingSeconds;
+      const state = useFocusTimer.getState();
+      const actual = Math.max(0, state.durationSeconds - state.remainingSeconds);
       if (actual >= 5 && mode === "focus") {
         const startedAt = new Date(Date.now() - actual * 1000).toISOString();
         commitFocusSessionOptimistic(
           buildOptimisticFocusSession({
             mode: "focus",
-            planned_seconds: durationSeconds,
+            planned_seconds: state.durationSeconds,
             actual_seconds: actual,
             completed: false,
             note: intention,
@@ -587,7 +593,7 @@ export function FocusTimer({
         );
         void logFocusSession({
           mode: "focus",
-          planned_seconds: durationSeconds,
+          planned_seconds: state.durationSeconds,
           actual_seconds: actual,
           completed: false,
           note: intention,
@@ -607,6 +613,9 @@ export function FocusTimer({
       sealStopwatch(useFocusTimer.getState().displaySeconds());
       return;
     }
+    // Countdown keeps remaining in endsAt while running — pause to sync
+    // before reading, otherwise Stop & save sees full duration and drops.
+    if (isRunning) pause();
     handleReset();
   }
 
@@ -636,14 +645,18 @@ export function FocusTimer({
       return;
     }
 
-    if (remainingSeconds >= durationSeconds || remainingSeconds === 0) {
+    // Prefer live remaining (endsAt) so mid-run reset/seal still saves.
+    if (isRunning) pause();
+    const remaining = useFocusTimer.getState().remainingSeconds;
+    const planned = useFocusTimer.getState().durationSeconds;
+
+    if (remaining >= planned || remaining === 0) {
       reset();
       return;
     }
 
-    const actual = durationSeconds - remainingSeconds;
+    const actual = planned - remaining;
     const currentMode = mode;
-    const planned = durationSeconds;
     const note = currentMode === "focus" ? intention : "";
     const taskId = currentMode === "focus" ? linkedTaskId : null;
 
@@ -684,9 +697,11 @@ export function FocusTimer({
   function handleSkip() {
     if (isStopwatch) return;
 
-    const actual = durationSeconds - remainingSeconds;
-    const currentMode = mode;
-    const planned = durationSeconds;
+    if (isRunning) pause();
+    const state = useFocusTimer.getState();
+    const actual = Math.max(0, state.durationSeconds - state.remainingSeconds);
+    const currentMode = state.mode;
+    const planned = state.durationSeconds;
     const note = currentMode === "focus" ? intention : "";
     const taskId = currentMode === "focus" ? linkedTaskId : null;
 
