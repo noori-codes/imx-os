@@ -36,15 +36,15 @@ export function NavLink({ href, isActive, onNavigate, children }: NavLinkProps) 
       className={cn(
         "group/nav relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
         isActive
-          ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
-          : "font-normal text-sidebar-foreground/55 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground",
+          ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground shadow-[inset_0_1px_0_color-mix(in_oklab,var(--sidebar-foreground)_6%,transparent)]"
+          : "font-normal text-sidebar-foreground/50 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
       )}
     >
       <span
         aria-hidden
         className={cn(
-          "absolute left-0 top-1/2 h-4 w-[2px] -translate-y-1/2 rounded-full bg-sidebar-foreground transition-opacity duration-150",
-          isActive ? "opacity-100" : "opacity-0 group-hover/nav:opacity-30",
+          "absolute left-0 top-1/2 h-3.5 w-[2px] -translate-y-1/2 rounded-full bg-sidebar-foreground transition-opacity duration-150",
+          isActive ? "opacity-90" : "opacity-0 group-hover/nav:opacity-25",
         )}
       />
       {children}

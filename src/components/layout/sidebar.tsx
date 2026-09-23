@@ -23,15 +23,15 @@ export function Sidebar({ onNavigate }: SidebarProps) {
   const SettingsIcon = NAV_SETTINGS.icon;
 
   return (
-    <aside className="flex h-full w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground md:sticky md:top-0 md:h-svh">
-      <div className="flex h-14 shrink-0 items-center border-b border-sidebar-border px-4">
+    <aside className="imx-sidebar flex h-full w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground md:sticky md:top-0 md:h-svh">
+      <div className="relative flex h-14 shrink-0 items-center border-b border-sidebar-border px-4">
         <Link
           href="/dashboard"
           onClick={onNavigate}
           prefetch
           className="group/brand flex min-w-0 items-center gap-2.5 rounded-lg outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-sidebar-ring"
         >
-          <span className="relative size-8 shrink-0 overflow-hidden rounded-lg border border-sidebar-border bg-foreground/5">
+          <span className="relative size-8 shrink-0 overflow-hidden rounded-lg border border-sidebar-border bg-sidebar-accent">
             <Image
               src="/imx-logo-64.png"
               alt="IMX"
@@ -45,7 +45,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
             <span className="block text-sm font-semibold tracking-tight text-sidebar-foreground">
               IMX OS
             </span>
-            <span className="block text-[9px] font-medium uppercase tracking-[0.16em] text-sidebar-foreground/45">
+            <span className="block text-[9px] font-medium uppercase tracking-[0.16em] text-sidebar-foreground/40">
               Personal OS
             </span>
           </span>
@@ -56,7 +56,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
         <nav className="flex flex-col gap-5">
           {NAV_GROUPS.map((group) => (
             <div key={group.label}>
-              <p className="mb-1.5 px-3 text-[10px] font-medium uppercase tracking-[0.18em] text-sidebar-foreground/40">
+              <p className="mb-1.5 px-3 text-[10px] font-medium uppercase tracking-[0.18em] text-sidebar-foreground/35">
                 {group.label}
               </p>
               <div className="flex flex-col gap-0.5">
@@ -69,7 +69,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
                       isActive={isActivePath(pathname, item.href)}
                       onNavigate={onNavigate}
                     >
-                      <Icon className="size-4 shrink-0 opacity-80" />
+                      <Icon className="size-4 shrink-0 opacity-75" />
                       <span>{item.title}</span>
                     </NavLink>
                   );
@@ -86,10 +86,10 @@ export function Sidebar({ onNavigate }: SidebarProps) {
           isActive={settingsActive}
           onNavigate={onNavigate}
         >
-          <SettingsIcon className="size-4 shrink-0 opacity-80" />
+          <SettingsIcon className="size-4 shrink-0 opacity-75" />
           <span>{NAV_SETTINGS.title}</span>
         </NavLink>
-        <SignOutButton className="h-9 w-full justify-start gap-3 rounded-lg px-3 text-sm font-normal text-sidebar-foreground/55 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground" />
+        <SignOutButton className="h-9 w-full justify-start gap-3 rounded-lg px-3 text-sm font-normal text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground" />
       </div>
     </aside>
   );
