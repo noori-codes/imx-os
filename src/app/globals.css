@@ -62,6 +62,12 @@
   --mobile-chrome-bottom: calc(
     var(--mobile-tab-h) + var(--mobile-continue-h)
   );
+
+  /* Quiet scrollbars — thin ink wash, no OS chrome */
+  --scrollbar-size: 10px;
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: color-mix(in oklab, var(--foreground) 16%, transparent);
+  --scrollbar-thumb-hover: color-mix(in oklab, var(--foreground) 28%, transparent);
 }
 
 @media (max-width: 767px) {
@@ -154,6 +160,9 @@ html[data-focus-session="true"] {
   --glow-stage-soft: color-mix(in oklab, oklch(0.55 0.05 250) 7%, transparent);
   --glow-stage-opacity: 0.32;
   --glow-stage-soft-opacity: 0.2;
+
+  --scrollbar-thumb: color-mix(in oklab, var(--foreground) 22%, transparent);
+  --scrollbar-thumb-hover: color-mix(in oklab, var(--foreground) 38%, transparent);
 }
 
 @theme inline {
@@ -333,6 +342,36 @@ html[data-focus-session="true"] {
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* App scrollbars — thin, ink-matched, no OS chrome */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+*::-webkit-scrollbar {
+  width: var(--scrollbar-size);
+  height: var(--scrollbar-size);
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border-radius: 9999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 /* TipTap editor */
