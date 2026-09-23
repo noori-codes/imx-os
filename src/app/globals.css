@@ -646,13 +646,8 @@ html[data-focus-session="true"] {
   }
 
   .focus-session-lock .focus-clock-jewel {
-    margin-top: 0.75rem !important;
     width: min(52vw, 14.5rem) !important;
     height: min(52vw, 14.5rem) !important;
-  }
-
-  .focus-session-lock .focus-run-timer {
-    gap: 1.25rem;
   }
 
   .focus-session-lock .focus-run-side-card {
@@ -847,10 +842,14 @@ html[data-focus-session] body {
 }
 
 @media (min-width: 1024px) {
+  /* Clock jewel + Room card share row 2 → identical vertical center */
   .focus-run-side-card {
-    /* Optical align with clock jewel center, not raw column start */
     min-height: 21rem;
-    justify-content: center;
+    justify-content: space-between;
+  }
+
+  .focus-run-controls {
+    min-height: 4.5rem;
   }
 }
 

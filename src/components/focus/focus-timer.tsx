@@ -818,7 +818,7 @@ export function FocusTimer({
       className={cn(
         "focus-stage group relative flex w-full flex-col overflow-hidden",
         isRunning || canContinue
-          ? "h-full min-h-0 flex-1 items-stretch justify-center px-5 py-6 sm:px-8 sm:py-8 lg:px-10 lg:py-10"
+          ? "h-full min-h-0 flex-1 items-center justify-center px-5 py-6 sm:px-8 sm:py-8 lg:px-10 lg:py-10"
           : "px-0 py-0",
       )}
       id="focus-timer"
@@ -839,17 +839,17 @@ export function FocusTimer({
       <div className="focus-stage-glow" aria-hidden />
 
       {isRunning || canContinue ? (
-        <div className="focus-run relative z-1 mx-auto grid w-full max-w-5xl grid-cols-1 items-center gap-8 sm:gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(17.5rem,20rem)] lg:gap-x-14 xl:gap-x-16">
-          <div className="focus-run-timer flex w-full flex-col items-center justify-center gap-7 text-center sm:gap-8 lg:gap-9">
-            <div className="flex items-center gap-2.5">
-              {isRunning ? (
-                <span className="focus-live-dot" aria-hidden />
-              ) : null}
-              <p className="text-[10px] font-medium uppercase tracking-[0.32em] text-muted-foreground">
-                {isRunning ? runningLabel : "Paused"}
-              </p>
-            </div>
+        <div className="focus-run relative z-1 mx-auto grid w-full max-w-5xl grid-cols-1 gap-8 sm:gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(17.5rem,20rem)] lg:grid-rows-[auto_auto_auto] lg:items-center lg:gap-x-14 lg:gap-y-0 xl:gap-x-16">
+          <div className="focus-run-status flex items-center justify-center gap-2.5 lg:col-start-1 lg:row-start-1 lg:justify-self-center lg:pb-6">
+            {isRunning ? (
+              <span className="focus-live-dot" aria-hidden />
+            ) : null}
+            <p className="text-[10px] font-medium uppercase tracking-[0.32em] text-muted-foreground">
+              {isRunning ? runningLabel : "Paused"}
+            </p>
+          </div>
 
+          <div className="focus-run-timer-core relative flex items-center justify-center lg:col-start-1 lg:row-start-2">
             <div className="focus-clock-jewel relative flex size-[min(68vw,17rem)] items-center justify-center sm:size-[19rem] lg:size-[21rem]">
               <FocusClockFace
                 isRunning={isRunning}
@@ -868,7 +868,9 @@ export function FocusTimer({
                 compactHints
               />
             </div>
+          </div>
 
+          <div className="focus-run-meta mt-5 flex flex-col items-center gap-3 sm:mt-6 lg:col-start-1 lg:row-start-3 lg:mt-0 lg:pt-6">
             {runningDetail ? (
               <p className="max-w-[22rem] truncate text-[13px] tracking-[0.04em] text-foreground/75">
                 {runningDetail}
@@ -899,53 +901,55 @@ export function FocusTimer({
                 )}
               </div>
             ) : null}
-
-            <div className="focus-run-controls flex items-center justify-center gap-4 sm:gap-5">
-              <button
-                type="button"
-                onClick={handleDiscardSession}
-                className="flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
-                aria-label="Discard session"
-                title="Discard without saving"
-              >
-                <RotateCcw className="size-4" />
-              </button>
-              <button
-                type="button"
-                onClick={handleToggle}
-                className="focus-run-pause flex size-[4.5rem] items-center justify-center rounded-full text-background transition-transform hover:scale-[1.03] active:scale-95"
-                aria-label={isRunning ? "Pause timer" : "Resume timer"}
-              >
-                {isRunning ? (
-                  <Pause className="size-6 fill-current" />
-                ) : (
-                  <Play className="size-6 fill-current" />
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={handleStopAndSave}
-                disabled={isStopwatch ? !canSealStopwatch : false}
-                className={cn(
-                  "flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground",
-                  isStopwatch &&
-                    !canSealStopwatch &&
-                    "pointer-events-none opacity-30",
-                )}
-                aria-label="Stop and save"
-                title="Stop and save"
-              >
-                {isStopwatch ? (
-                  <Square className="size-4 fill-current" />
-                ) : (
-                  <CircleCheck className="size-4" />
-                )}
-              </button>
-            </div>
           </div>
 
-          <aside className="focus-run-side mx-auto w-full max-w-sm lg:mx-0 lg:max-w-none lg:justify-self-stretch">
-            <div className="focus-run-side-card flex flex-col gap-6 rounded-[1.35rem] border border-border/40 bg-background/45 px-5 py-5 backdrop-blur-sm sm:px-6 sm:py-6">
+          <aside className="focus-run-side mx-auto flex w-full max-w-sm items-center lg:col-start-2 lg:row-start-2 lg:mx-0 lg:max-w-none lg:self-stretch">
+            <div className="focus-run-side-card flex h-full w-full flex-col gap-5 rounded-[1.35rem] border border-border/40 bg-background/45 px-5 py-5 backdrop-blur-sm sm:gap-6 sm:px-6 sm:py-6">
+              <div className="focus-run-controls flex items-center justify-center gap-4 sm:gap-5">
+                <button
+                  type="button"
+                  onClick={handleDiscardSession}
+                  className="flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
+                  aria-label="Discard session"
+                  title="Discard without saving"
+                >
+                  <RotateCcw className="size-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleToggle}
+                  className="focus-run-pause flex size-[4.5rem] items-center justify-center rounded-full text-background transition-transform hover:scale-[1.03] active:scale-95"
+                  aria-label={isRunning ? "Pause timer" : "Resume timer"}
+                >
+                  {isRunning ? (
+                    <Pause className="size-6 fill-current" />
+                  ) : (
+                    <Play className="size-6 fill-current" />
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleStopAndSave}
+                  disabled={isStopwatch ? !canSealStopwatch : false}
+                  className={cn(
+                    "flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground",
+                    isStopwatch &&
+                      !canSealStopwatch &&
+                      "pointer-events-none opacity-30",
+                  )}
+                  aria-label="Stop and save"
+                  title="Stop and save"
+                >
+                  {isStopwatch ? (
+                    <Square className="size-4 fill-current" />
+                  ) : (
+                    <CircleCheck className="size-4" />
+                  )}
+                </button>
+              </div>
+
+              <div className="h-px w-full bg-border/40" aria-hidden />
+
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
