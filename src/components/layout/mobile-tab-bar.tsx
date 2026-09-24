@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Ellipsis } from "lucide-react";
+import { Ellipsis, LogOut } from "lucide-react";
 
+import { signOut } from "@/actions/auth";
 import {
   Sheet,
   SheetContent,
@@ -186,6 +187,25 @@ export function MobileTabBar() {
               );
             })}
           </nav>
+          <div className="border-t border-border/40 px-2 pt-2">
+            <p className="px-3 pb-1 text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground/60">
+              Account
+            </p>
+            <p className="px-3 pb-2 text-xs text-muted-foreground">
+              Theme · top-bar avatar
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setMoreOpen(false);
+                void signOut();
+              }}
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm text-destructive transition-colors hover:bg-destructive/10"
+            >
+              <LogOut className="size-4 shrink-0" />
+              Sign out
+            </button>
+          </div>
         </SheetContent>
       </Sheet>
     </>

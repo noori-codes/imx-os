@@ -4,9 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { SignOutButton } from "@/components/auth/sign-out-button";
+import { AccountMenu } from "@/components/layout/account-menu";
 import { NavLink } from "@/components/layout/nav-link";
-import { NAV_GROUPS, NAV_SETTINGS } from "@/lib/constants";
+import { NAV_GROUPS } from "@/lib/constants";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 type SidebarProps = {
@@ -19,8 +19,6 @@ function isActivePath(pathname: string, href: string) {
 
 export function Sidebar({ onNavigate }: SidebarProps) {
   const pathname = usePathname();
-  const settingsActive = isActivePath(pathname, NAV_SETTINGS.href);
-  const SettingsIcon = NAV_SETTINGS.icon;
 
   return (
     <aside className="imx-sidebar flex h-full w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground md:sticky md:top-0 md:h-svh">
@@ -80,16 +78,8 @@ export function Sidebar({ onNavigate }: SidebarProps) {
         </nav>
       </ScrollArea>
 
-      <div className="shrink-0 space-y-0.5 border-t border-sidebar-border p-3 pb-4">
-        <NavLink
-          href={NAV_SETTINGS.href}
-          isActive={settingsActive}
-          onNavigate={onNavigate}
-        >
-          <SettingsIcon className="size-4 shrink-0 opacity-75" />
-          <span>{NAV_SETTINGS.title}</span>
-        </NavLink>
-        <SignOutButton className="h-9 w-full justify-start gap-3 rounded-lg px-3 text-sm font-normal text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground" />
+      <div className="shrink-0 border-t border-sidebar-border p-2.5 pb-3">
+        <AccountMenu variant="sidebar" align="start" side="top" />
       </div>
     </aside>
   );
