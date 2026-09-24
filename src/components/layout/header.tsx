@@ -3,7 +3,6 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { QuickCaptureTrigger } from "@/components/capture/quick-capture-trigger";
 import { HeaderAccount } from "@/components/layout/header-account";
 import { DeferredSearchDialog } from "@/components/search/deferred-search-dialog";
@@ -67,7 +66,6 @@ export function Header({ title, description, chrome = false }: HeaderProps) {
       <div className="flex shrink-0 items-center gap-1.5">
         <QuickCaptureTrigger />
         <DeferredSearchDialog />
-        <ThemeToggle />
         <HeaderAccount />
       </div>
     </header>
