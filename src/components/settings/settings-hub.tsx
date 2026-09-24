@@ -7,9 +7,9 @@ import { useTheme } from "next-themes";
 import {
   Bell,
   BellOff,
+  Camera,
   Copy,
   Download,
-  ImagePlus,
   KeyRound,
   Keyboard,
   Moon,
@@ -526,6 +526,225 @@ export function SettingsHub({
       />
 
       <Section
+        id="settings-account"
+        title="Profile"
+        description="How you show up across IMX OS."
+      >
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:gap-8">
+          <div className="flex flex-col items-center gap-3 sm:items-start">
+            <button
+              type="button"
+              disabled={avatarPending}
+              onClick={() => avatarInputRef.current?.click()}
+              className={cn(
+                "group relative size-32 shrink-0 overflow-hidden rounded-full outline-none transition-transform",
+                "ring-1 ring-border/60 hover:ring-border focus-visible:ring-2 focus-visible:ring-ring",
+                "disabled:pointer-events-none disabled:opacity-60",
+              )}
+              aria-label={
+                hasCustomAvatar ? "Change profile photo" : "Upload profile photo"
+              }
+            >
+              {avatarPreview ? (
+                // eslint-disable-next-line @next/next/no-img-element -- local blob preview
+                <img
+                  src={avatarPreview}
+                  alt=""
+                  width={128}
+                  height={128}
+                  className="size-full object-cover"
+                />
+              ) : (
+                <UserAvatar
+                  size={128}
+                  className="size-full border-0 text-2xl tracking-wide"
+                />
+              )}
+              <span
+                className="absolute inset-0 bg-foreground/0 transition-colors group-hover:bg-foreground/35 group-focus-visible:bg-foreground/35"
+                aria-hidden
+              />
+              <span
+                className={cn(
+                  "absolute inset-x-0 bottom-0 flex items-center justify-center gap-1.5 py-2",
+                  "bg-foreground/70 text-[11px] font-medium tracking-wide text-background",
+                  "opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-visible:opacity-100",
+                )}
+              >
+                <Camera className="size-3.5" />
+                {hasCustomAvatar ? "Change" : "Upload"}
+              </span>
+              {avatarPending ? (
+                <span className="absolute inset-0 bg-background/50" aria-hidden />
+              ) : null}
+            </button>
+            {hasCustomAvatar ? (
+              <button
+                type="button"
+                disabled={avatarPending}
+                onClick={() => void handleAvatarRemove()}
+                className="inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
+              >
+                <Trash2 className="size-3" />
+                Remove photo
+              </button>
+            ) : (
+              <p className="max-w-[11rem] text-center text-[11px] leading-relaxed text-muted-foreground sm:text-left">
+                JPG, PNG, WebP, or GIF · up to 2 MB
+              </p>
+            )}
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              className="sr-only"
+              onChange={(e) => {
+                void handleAvatarPick(e.target.files?.[0]);
+              }}
+            />
+          </div>
+
+          <div className="min-w-0 flex-1 space-y-4">
+            <div>
+              <label
+                htmlFor="settings-display-name"
+                className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground"
+              >
+                Display name
+              </label>
+              <div className="mt-1.5 flex items-center gap-2">
+                <Input
+                  id="settings-display-name"
+                  value={nameDraft}
+                  maxLength={DISPLAY_NAME_MAX}
+                  autoComplete="nickname"
+                  placeholder="How you want to be greeted"
+                  onChange={(e) => setNameDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      void saveName();
+                    }
+                  }}
+                  className="h-10"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-10 shrink-0"
+                  disabled={
+                    namePending ||
+                    nameDraft.trim().replace(/\s+/g, " ") === nameSaved
+                  }
+                  onClick={() => void saveName()}
+                >
+                  Save
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                  Email
+                </p>
+                <div className="mt-1.5 flex items-center gap-2">
+                  <p className="min-w-0 truncate text-sm text-foreground">
+                    {email}
+                  </p>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-8 shrink-0 text-muted-foreground"
+                    aria-label="Copy email"
+                    onClick={() => {
+                      void (async () => {
+                        try {
+                          await navigator.clipboard.writeText(email);
+                          imxToast("Email copied", { tone: "success" });
+                        } catch {
+                          imxToast("Couldn’t copy email", { tone: "error" });
+                        }
+                      })();
+                    }}
+                  >
+                    <Copy className="size-3.5" />
+                  </Button>
+                </div>
+              </div>
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                  Member since
+                </p>
+                <p className="mt-1.5 text-sm text-foreground">{memberSince}</p>
+              </div>
+            </div>
+
+            <div className="pt-1">
+              <Button type="button" variant="outline" size="sm" asChild>
+                <Link href="/update-password">
+                  <KeyRound className="size-3.5" />
+                  Change password
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6 space-y-3 border-t border-border/40 pt-5">
+          <p className="text-sm font-medium text-foreground">Data backup</p>
+          <p className="text-xs text-muted-foreground">
+            Download a JSON snapshot of your goals, tasks, habits, notes, focus
+            history, and more — or merge a backup back in.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={transferPending}
+              onClick={() => void handleExport()}
+            >
+              <Download className="size-3.5" />
+              Export JSON
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={transferPending}
+              onClick={() => fileRef.current?.click()}
+            >
+              <Upload className="size-3.5" />
+              Import JSON
+            </Button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              onChange={(event) => {
+                void handleImportFile(event.target.files?.[0] ?? null);
+              }}
+            />
+          </div>
+          {transferMsg ? (
+            <p className="text-sm text-muted-foreground">{transferMsg}</p>
+          ) : null}
+          {transferError ? (
+            <p className="text-sm text-destructive">{transferError}</p>
+          ) : null}
+        </div>
+
+        <div className="mt-5 flex items-center justify-between gap-3 border-t border-border/40 pt-4">
+          <p className="text-sm text-muted-foreground">End this device session</p>
+          <SignOutButton variant="outline" />
+        </div>
+      </Section>
+
+      <Section
         id="settings-appearance"
         title="Appearance"
         description="How imx-os looks — synced to your account."
@@ -854,212 +1073,6 @@ export function SettingsHub({
             </li>
           ))}
         </ul>
-      </Section>
-
-      <Section
-        id="settings-account"
-        title="Account"
-        description="Identity, backup, and session on this device."
-      >
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-5">
-          <div className="flex items-center gap-4 sm:flex-col sm:items-start sm:gap-3">
-            <span className="relative inline-flex">
-              {avatarPreview ? (
-                // eslint-disable-next-line @next/next/no-img-element -- local blob preview
-                <img
-                  src={avatarPreview}
-                  alt=""
-                  width={72}
-                  height={72}
-                  className="size-[4.5rem] rounded-full border border-border/50 object-cover"
-                />
-              ) : (
-                <UserAvatar size={72} className="text-sm" />
-              )}
-              {avatarPending ? (
-                <span className="absolute inset-0 rounded-full bg-background/55" />
-              ) : null}
-            </span>
-            <div className="min-w-0 space-y-2">
-              <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                Photo
-              </p>
-              <div className="flex flex-wrap items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={avatarPending}
-                  onClick={() => avatarInputRef.current?.click()}
-                >
-                  <ImagePlus className="size-3.5" />
-                  {hasCustomAvatar ? "Change" : "Upload"}
-                </Button>
-                {hasCustomAvatar ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    disabled={avatarPending}
-                    className="text-muted-foreground"
-                    onClick={() => void handleAvatarRemove()}
-                  >
-                    <Trash2 className="size-3.5" />
-                    Remove
-                  </Button>
-                ) : null}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                JPG, PNG, WebP, or GIF · max 2 MB
-              </p>
-              <input
-                ref={avatarInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif"
-                className="sr-only"
-                onChange={(e) => {
-                  void handleAvatarPick(e.target.files?.[0]);
-                }}
-              />
-            </div>
-          </div>
-
-          <div className="grid min-w-0 flex-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label
-              htmlFor="settings-display-name"
-              className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground"
-            >
-              Name
-            </label>
-            <div className="mt-1.5 flex items-center gap-2">
-              <Input
-                id="settings-display-name"
-                value={nameDraft}
-                maxLength={DISPLAY_NAME_MAX}
-                autoComplete="nickname"
-                placeholder="How you want to be greeted"
-                onChange={(e) => setNameDraft(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    void saveName();
-                  }
-                }}
-                className="h-9"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="shrink-0"
-                disabled={
-                  namePending ||
-                  nameDraft.trim().replace(/\s+/g, " ") === nameSaved
-                }
-                onClick={() => void saveName()}
-              >
-                Save
-              </Button>
-            </div>
-            <p className="mt-1.5 text-xs text-muted-foreground">
-              Used in the dashboard greeting.
-            </p>
-          </div>
-          <div>
-            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-              Email
-            </p>
-            <div className="mt-1.5 flex items-center gap-2">
-              <p className="min-w-0 truncate text-sm text-foreground">{email}</p>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="size-8 shrink-0 text-muted-foreground"
-                aria-label="Copy email"
-                onClick={() => {
-                  void (async () => {
-                    try {
-                      await navigator.clipboard.writeText(email);
-                      imxToast("Email copied", { tone: "success" });
-                    } catch {
-                      imxToast("Couldn’t copy email", { tone: "error" });
-                    }
-                  })();
-                }}
-              >
-                <Copy className="size-3.5" />
-              </Button>
-            </div>
-          </div>
-          <div>
-            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-              Member since
-            </p>
-            <p className="mt-1.5 text-sm text-foreground">{memberSince}</p>
-          </div>
-          </div>
-        </div>
-
-        <div className="mt-4">
-          <Button type="button" variant="outline" size="sm" asChild>
-            <Link href="/update-password">
-              <KeyRound className="size-3.5" />
-              Change password
-            </Link>
-          </Button>
-        </div>
-
-        <div className="mt-5 space-y-3 border-t border-border/40 pt-4">
-          <p className="text-sm font-medium text-foreground">Data backup</p>
-          <p className="text-xs text-muted-foreground">
-            Download a JSON snapshot of your goals, tasks, habits, notes, focus
-            history, and more — or merge a backup back in.
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={transferPending}
-              onClick={() => void handleExport()}
-            >
-              <Download className="size-3.5" />
-              Export JSON
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={transferPending}
-              onClick={() => fileRef.current?.click()}
-            >
-              <Upload className="size-3.5" />
-              Import JSON
-            </Button>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="application/json,.json"
-              className="hidden"
-              onChange={(event) => {
-                void handleImportFile(event.target.files?.[0] ?? null);
-              }}
-            />
-          </div>
-          {transferMsg ? (
-            <p className="text-sm text-muted-foreground">{transferMsg}</p>
-          ) : null}
-          {transferError ? (
-            <p className="text-sm text-destructive">{transferError}</p>
-          ) : null}
-        </div>
-
-        <div className="mt-5 flex items-center justify-between gap-3 border-t border-border/40 pt-4">
-          <p className="text-sm text-muted-foreground">End this device session</p>
-          <SignOutButton variant="outline" />
-        </div>
       </Section>
 
       {prefError ? (

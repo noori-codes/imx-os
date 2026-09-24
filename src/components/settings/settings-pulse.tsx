@@ -15,10 +15,10 @@ type SettingsPulseProps = {
 };
 
 const JUMPS = [
+  { href: "#settings-account", label: "Profile" },
   { href: "#settings-appearance", label: "Look" },
   { href: "#settings-focus", label: "Focus" },
   { href: "#settings-alerts", label: "Alerts" },
-  { href: "#settings-account", label: "Account" },
 ] as const;
 
 function pulseCopy({
