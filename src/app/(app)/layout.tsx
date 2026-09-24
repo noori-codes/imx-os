@@ -11,6 +11,7 @@ import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
 import { NavigationProgress } from "@/components/layout/navigation-progress";
 import { Sidebar } from "@/components/layout/sidebar";
 import { SkipToContent } from "@/components/layout/skip-to-content";
+import { TimezoneSync } from "@/components/layout/timezone-sync";
 import { UserProvider } from "@/components/providers/user-provider";
 import { getCurrentUser } from "@/lib/auth";
 import {
@@ -33,6 +34,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
       initials={resolveInitials(user)}
       avatarUrl={resolveAvatarUrl(user)}
     >
+      <TimezoneSync />
       <SkipToContent />
       <FocusAudioHost />
       <IdleRoutePrefetch />

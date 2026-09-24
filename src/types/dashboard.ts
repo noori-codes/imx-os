@@ -1,4 +1,5 @@
 import {
+  addDaysToDateString,
   computeStreaks,
   formatShortDate,
   formatShortWeekday,
@@ -93,19 +94,22 @@ export function activityLevel(count: number): 0 | 1 | 2 | 3 | 4 {
 export function buildActivitySummary(
   countsByDate: Map<string, number>,
   rangeDays: number,
+  todayStr?: string,
 ): ActivitySummary {
-  const days = getPastDays(rangeDays).map((day) => {
-    const date = toDateString(day);
-    const count = countsByDate.get(date) ?? 0;
-    return {
-      date,
-      count,
-      level: activityLevel(count),
-    };
-  });
+  const days = todayStr
+    ? Array.from({ length: rangeDays }, (_, i) => {
+        const date = addDaysToDateString(todayStr, -(rangeDays - 1 - i));
+        const count = countsByDate.get(date) ?? 0;
+        return { date, count, level: activityLevel(count) };
+      })
+    : getPastDays(rangeDays).map((day) => {
+        const date = toDateString(day);
+        const count = countsByDate.get(date) ?? 0;
+        return { date, count, level: activityLevel(count) };
+      });
 
   const activeDates = days.filter((d) => d.count > 0).map((d) => d.date);
-  const { current_streak } = computeStreaks(activeDates);
+  const { current_streak } = computeStreaks(activeDates, todayStr);
 
   return {
     days,

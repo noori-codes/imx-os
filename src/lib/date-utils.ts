@@ -121,6 +121,20 @@ export function addDays(date: Date, amount: number) {
   return startOfDay(next);
 }
 
+/** Shift a YYYY-MM-DD calendar day by `amount` days (timezone-safe). */
+export function addDaysToDateString(dateStr: string, amount: number) {
+  const d = new Date(`${dateStr}T12:00:00.000Z`);
+  d.setUTCDate(d.getUTCDate() + amount);
+  return d.toISOString().slice(0, 10);
+}
+
+/** Sunday-start week containing `dateStr` (YYYY-MM-DD). */
+export function startOfWeekDateString(dateStr: string) {
+  const d = new Date(`${dateStr}T12:00:00.000Z`);
+  d.setUTCDate(d.getUTCDate() - d.getUTCDay());
+  return d.toISOString().slice(0, 10);
+}
+
 export function addMonths(date: Date, amount: number) {
   const next = new Date(date);
   next.setMonth(next.getMonth() + amount);

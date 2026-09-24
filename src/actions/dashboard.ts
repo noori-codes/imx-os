@@ -5,17 +5,20 @@ import { cache } from "react";
 import { getCurrentUser } from "@/lib/auth";
 import { CACHE_TTL, cacheTags, cachedQuery } from "@/lib/cache";
 import {
+  addDaysToDateString,
   computeStreaks,
-  formatShortDate,
-  formatShortWeekday,
-  getWeekDays,
-  startOfDay,
-  startOfWeek,
+  startOfWeekDateString,
   toDateString,
 } from "@/lib/date-utils";
 import { createAdminClient, hasAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { scheduleRecurringTaskSync } from "@/actions/tasks";
+import {
+  getRequestTimeZone,
+  getTodayString,
+  toDateStringInZone,
+  zonedDayBounds,
+} from "@/lib/timezone";
 import {
   buildActivitySummary,
   buildGoalProgressList,
@@ -57,18 +60,21 @@ const emptyDashboard: DashboardData = {
 async function loadActivity(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string | null,
+  todayStr: string,
+  timeZone: string | null,
 ): Promise<ActivitySummary> {
-  const end = new Date();
-  const start = new Date();
-  start.setDate(end.getDate() - (ACTIVITY_RANGE_DAYS - 1));
-  start.setHours(0, 0, 0, 0);
+  const rangeStartStr = addDaysToDateString(todayStr, -(ACTIVITY_RANGE_DAYS - 1));
+  const rangeEndExclusiveStr = addDaysToDateString(todayStr, 1);
 
-  const rangeStart = toDateString(start);
-  const rangeStartIso = start.toISOString();
-  const rangeEndExclusive = new Date(end);
-  rangeEndExclusive.setDate(rangeEndExclusive.getDate() + 1);
-  rangeEndExclusive.setHours(0, 0, 0, 0);
-  const rangeEndIso = rangeEndExclusive.toISOString();
+  let rangeStartIso: string;
+  let rangeEndIso: string;
+  if (timeZone) {
+    rangeStartIso = zonedDayBounds(rangeStartStr, timeZone).start.toISOString();
+    rangeEndIso = zonedDayBounds(todayStr, timeZone).end.toISOString();
+  } else {
+    rangeStartIso = `${rangeStartStr}T00:00:00.000Z`;
+    rangeEndIso = `${rangeEndExclusiveStr}T00:00:00.000Z`;
+  }
 
   let tasksQuery = supabase
     .from("tasks")
@@ -80,8 +86,8 @@ async function loadActivity(
   let habitLogsQuery = supabase
     .from("habit_logs")
     .select("logged_on")
-    .gte("logged_on", rangeStart)
-    .lte("logged_on", toDateString(end));
+    .gte("logged_on", rangeStartStr)
+    .lte("logged_on", todayStr);
 
   let focusQuery = supabase
     .from("focus_sessions")
@@ -103,9 +109,13 @@ async function loadActivity(
   ]);
 
   const counts = new Map<string, number>();
+  const bucket = (iso: string) =>
+    timeZone
+      ? toDateStringInZone(new Date(iso), timeZone)
+      : toDateString(new Date(iso));
 
   for (const task of tasksResult.data ?? []) {
-    const date = toDateString(new Date(task.updated_at));
+    const date = bucket(task.updated_at);
     counts.set(date, (counts.get(date) ?? 0) + 1);
   }
 
@@ -114,24 +124,26 @@ async function loadActivity(
   }
 
   for (const session of focusResult.data ?? []) {
-    const date = toDateString(new Date(session.started_at));
+    const date = bucket(session.started_at);
     counts.set(date, (counts.get(date) ?? 0) + 1);
   }
 
-  return buildActivitySummary(counts, ACTIVITY_RANGE_DAYS);
+  return buildActivitySummary(counts, ACTIVITY_RANGE_DAYS, todayStr);
 }
 
 async function loadDashboardExtras(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string | null,
+  todayStr: string,
+  timeZone: string | null,
 ) {
-  const today = toDateString(new Date());
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayStr = toDateString(yesterday);
-
-  const focusStart = new Date();
-  focusStart.setHours(0, 0, 0, 0);
+  const yesterdayStr = addDaysToDateString(todayStr, -1);
+  const focusBounds = timeZone
+    ? zonedDayBounds(todayStr, timeZone)
+    : {
+        start: new Date(`${todayStr}T00:00:00.000Z`),
+        end: new Date(`${addDaysToDateString(todayStr, 1)}T00:00:00.000Z`),
+      };
 
   let habitsQuery = supabase
     .from("habits")
@@ -143,12 +155,13 @@ async function loadDashboardExtras(
     .from("focus_sessions")
     .select("actual_seconds")
     .eq("mode", "focus")
-    .gte("started_at", focusStart.toISOString());
+    .gte("started_at", focusBounds.start.toISOString())
+    .lt("started_at", focusBounds.end.toISOString());
 
   let todayReviewQuery = supabase
     .from("daily_reviews")
     .select("id")
-    .eq("review_date", today);
+    .eq("review_date", todayStr);
 
   let intentReviewQuery = supabase
     .from("daily_reviews")
@@ -185,7 +198,7 @@ async function loadDashboardExtras(
   let habitLogsQuery = supabase
     .from("habit_logs")
     .select("habit_id, logged_on")
-    .gte("logged_on", toDateString(new Date(Date.now() - 90 * 86400000)));
+    .gte("logged_on", addDaysToDateString(todayStr, -90));
 
   if (userId) {
     habitLogsQuery = habitLogsQuery.eq("user_id", userId);
@@ -208,12 +221,12 @@ async function loadDashboardExtras(
 
   const habits_today: DashboardHabit[] = habits.map((habit) => {
     const dates = logsByHabit.get(habit.id) ?? [];
-    const { current_streak, longest_streak } = computeStreaks(dates, today);
+    const { current_streak, longest_streak } = computeStreaks(dates, todayStr);
     return {
       id: habit.id,
       title: habit.title,
       color: habit.color,
-      completed_today: dates.includes(today),
+      completed_today: dates.includes(todayStr),
       current_streak,
       longest_streak,
     };
@@ -286,11 +299,15 @@ async function loadDashboardData(
   // Cookie-bound client for after() sync (cookies aren't available inside after).
   scheduleRecurringTaskSync(await createClient());
 
-  const todayStr = toDateString(startOfDay(new Date()));
-  const weekStart = startOfWeek(new Date());
-  const weekDays = getWeekDays(weekStart);
-  const weekStartStr = toDateString(weekDays[0]!);
-  const weekEndStr = toDateString(weekDays[6]!);
+  const [todayStr, timeZone] = await Promise.all([
+    getTodayString(),
+    getRequestTimeZone(),
+  ]);
+  const weekStartStr = startOfWeekDateString(todayStr);
+  const weekDateStrs = Array.from({ length: 7 }, (_, i) =>
+    addDaysToDateString(weekStartStr, i),
+  );
+  const weekEndStr = weekDateStrs[6]!;
 
   let goalsQuery = supabase
     .from("goals")
@@ -403,8 +420,8 @@ async function loadDashboardData(
     overdueListQ,
     nextTasksQ,
     weekOpenQ,
-    loadActivity(supabase, scopedUserId),
-    loadDashboardExtras(supabase, scopedUserId),
+    loadActivity(supabase, scopedUserId, todayStr, timeZone),
+    loadDashboardExtras(supabase, scopedUserId, todayStr, timeZone),
   ]);
 
   if (goalsResult.error) {
@@ -432,12 +449,19 @@ async function loadDashboardData(
     weekCounts.set(row.due_date, (weekCounts.get(row.due_date) ?? 0) + 1);
   }
 
-  const week = weekDays.map((day) => {
-    const dateStr = toDateString(day);
+  const week = weekDateStrs.map((dateStr) => {
+    const noon = new Date(`${dateStr}T12:00:00.000Z`);
     return {
       date: dateStr,
-      label: formatShortDate(day),
-      day_label: formatShortWeekday(day),
+      label: noon.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        timeZone: "UTC",
+      }),
+      day_label: noon.toLocaleDateString("en-US", {
+        weekday: "short",
+        timeZone: "UTC",
+      }),
       task_count: weekCounts.get(dateStr) ?? 0,
       is_today: dateStr === todayStr,
     };
@@ -485,9 +509,11 @@ export const getDashboardData = cache(async (): Promise<DashboardData> => {
     return emptyDashboard;
   }
 
+  const todayStr = await getTodayString();
+
   if (hasAdminClient()) {
     return cachedQuery(
-      ["dashboard", user.id, "v11"],
+      ["dashboard", user.id, "v12", todayStr],
       [cacheTags.dashboard(user.id)],
       CACHE_TTL.dashboard,
       async () => loadDashboardData(user.id),
