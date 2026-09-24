@@ -32,6 +32,7 @@ import { SignOutButton } from "@/components/auth/sign-out-button";
 import { UserAvatar } from "@/components/layout/user-avatar";
 import { useUser } from "@/components/providers/user-provider";
 import { FocusSounds } from "@/components/focus/focus-sounds";
+import { AvatarCropDialog } from "@/components/settings/avatar-crop-dialog";
 import { SettingsPulse } from "@/components/settings/settings-pulse";
 import { Button } from "@/components/ui/button";
 import { confirm } from "@/components/ui/confirm-dialog";
@@ -218,7 +219,9 @@ export function SettingsHub({
   const [namePending, setNamePending] = useState(false);
   const [hasCustomAvatar, setHasCustomAvatar] = useState(initialHasCustomAvatar);
   const [avatarPending, setAvatarPending] = useState(false);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [cropFile, setCropFile] = useState<File | null>(null);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [cropOpen, setCropOpen] = useState(false);
   const [goal, setGoal] = useState(settings.daily_focus_goal_minutes);
   const [goalCustom, setGoalCustom] = useState(
     String(settings.daily_focus_goal_minutes),
@@ -333,10 +336,22 @@ export function SettingsHub({
   }, [initialHasCustomAvatar]);
 
   useEffect(() => {
+    if (!cropFile) {
+      setCropSrc(null);
+      return;
+    }
+    const url = URL.createObjectURL(cropFile);
+    setCropSrc(url);
     return () => {
-      if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+      URL.revokeObjectURL(url);
     };
-  }, [avatarPreview]);
+  }, [cropFile]);
+
+  function closeCropEditor() {
+    setCropOpen(false);
+    setCropFile(null);
+    if (avatarInputRef.current) avatarInputRef.current.value = "";
+  }
 
   async function saveName() {
     const next = nameDraft.trim().replace(/\s+/g, " ");
@@ -363,11 +378,26 @@ export function SettingsHub({
     }
   }
 
-  async function handleAvatarPick(file: File | undefined) {
+  function handleAvatarPick(file: File | undefined) {
     if (!file) return;
-    if (avatarPreview) URL.revokeObjectURL(avatarPreview);
-    const local = URL.createObjectURL(file);
-    setAvatarPreview(local);
+    const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    if (!allowed.includes(file.type)) {
+      imxToast("Use JPG, PNG, WebP, or GIF.", { tone: "error" });
+      if (avatarInputRef.current) avatarInputRef.current.value = "";
+      return;
+    }
+    // Source can be larger; we export a compressed JPEG under the upload limit.
+    if (file.size > 12 * 1024 * 1024) {
+      imxToast("Keep the source photo under 12 MB.", { tone: "error" });
+      if (avatarInputRef.current) avatarInputRef.current.value = "";
+      return;
+    }
+    setCropFile(file);
+    setCropOpen(true);
+    if (avatarInputRef.current) avatarInputRef.current.value = "";
+  }
+
+  async function handleCropSave(file: File) {
     setAvatarPending(true);
     try {
       const body = new FormData();
@@ -375,19 +405,15 @@ export function SettingsHub({
       const result = await uploadAvatar(body);
       if (result.error) {
         imxToast(result.error, { tone: "error" });
-        setAvatarPreview(null);
-        URL.revokeObjectURL(local);
         return;
       }
       setHasCustomAvatar(true);
       if (result.url) setAvatarUrl(result.url);
-      URL.revokeObjectURL(local);
-      setAvatarPreview(null);
+      closeCropEditor();
       imxToast("Photo updated", { tone: "success" });
       router.refresh();
     } finally {
       setAvatarPending(false);
-      if (avatarInputRef.current) avatarInputRef.current.value = "";
     }
   }
 
@@ -405,10 +431,6 @@ export function SettingsHub({
       if (result.error) {
         imxToast(result.error, { tone: "error" });
         return;
-      }
-      if (avatarPreview) {
-        URL.revokeObjectURL(avatarPreview);
-        setAvatarPreview(null);
       }
       setHasCustomAvatar(false);
       imxToast("Photo removed", { tone: "success" });
@@ -545,21 +567,10 @@ export function SettingsHub({
                 hasCustomAvatar ? "Change profile photo" : "Upload profile photo"
               }
             >
-              {avatarPreview ? (
-                // eslint-disable-next-line @next/next/no-img-element -- local blob preview
-                <img
-                  src={avatarPreview}
-                  alt=""
-                  width={128}
-                  height={128}
-                  className="size-full object-cover"
-                />
-              ) : (
-                <UserAvatar
-                  size={128}
-                  className="size-full border-0 text-2xl tracking-wide"
-                />
-              )}
+              <UserAvatar
+                size={128}
+                className="size-full border-0 text-2xl tracking-wide"
+              />
               <span
                 className="absolute inset-0 bg-foreground/0 transition-colors group-hover:bg-foreground/35 group-focus-visible:bg-foreground/35"
                 aria-hidden
@@ -590,7 +601,7 @@ export function SettingsHub({
               </button>
             ) : (
               <p className="max-w-[11rem] text-center text-[11px] leading-relaxed text-muted-foreground sm:text-left">
-                JPG, PNG, WebP, or GIF · up to 2 MB
+                Drag to crop · JPG, PNG, WebP, or GIF
               </p>
             )}
             <input
@@ -1083,6 +1094,17 @@ export function SettingsHub({
         imx-os · theme, focus defaults, and task view sync to your account ·
         volume and browser alerts stay on this device
       </p>
+
+      <AvatarCropDialog
+        imageSrc={cropSrc}
+        open={cropOpen}
+        pending={avatarPending}
+        onOpenChange={(next) => {
+          if (!next) closeCropEditor();
+          else setCropOpen(true);
+        }}
+        onSave={handleCropSave}
+      />
     </div>
   );
 }
