@@ -8,7 +8,7 @@ import { SettingsHub } from "@/components/settings/settings-hub";
 import { SettingsSkeleton } from "@/components/settings/settings-skeleton";
 import { SettingsStage } from "@/components/settings/settings-stage";
 import { AppPageFrame } from "@/components/shared/app-page-frame";
-import { resolveDisplayName } from "@/lib/display-name";
+import { resolveDisplayName, hasCustomAvatar } from "@/lib/display-name";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -50,6 +50,7 @@ async function SettingsBody() {
           <SettingsHub
             email={user.email ?? "Signed in"}
             displayName={resolveDisplayName(user)}
+            hasCustomAvatar={hasCustomAvatar(user)}
             memberSince={memberSince}
             memberShort={memberShort}
             settings={settings}

@@ -20,12 +20,13 @@ export function resolveGreetingName(user: {
   return resolveDisplayName(user).split(/\s+/)[0] || "there";
 }
 
-/** OAuth / provider avatar URL when present. */
+/** Custom upload, else OAuth / provider avatar URL. */
 export function resolveAvatarUrl(user: {
   user_metadata?: Record<string, unknown> | null;
 }): string | null {
   const meta = user.user_metadata ?? {};
   const url =
+    (typeof meta.custom_avatar_url === "string" && meta.custom_avatar_url) ||
     (typeof meta.avatar_url === "string" && meta.avatar_url) ||
     (typeof meta.picture === "string" && meta.picture) ||
     null;
@@ -33,6 +34,13 @@ export function resolveAvatarUrl(user: {
   if (!trimmed) return null;
   if (!/^https?:\/\//i.test(trimmed)) return null;
   return trimmed;
+}
+
+export function hasCustomAvatar(user: {
+  user_metadata?: Record<string, unknown> | null;
+}): boolean {
+  const raw = user.user_metadata?.custom_avatar_url;
+  return typeof raw === "string" && raw.trim().length > 0;
 }
 
 /** One or two letters for the avatar fallback. */

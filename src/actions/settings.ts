@@ -184,3 +184,131 @@ export async function updateDisplayName(
   revalidatePath("/settings");
   return { name };
 }
+
+const AVATAR_BUCKET = "avatars";
+const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
+const AVATAR_MIME: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/gif": "gif",
+};
+
+async function listUserAvatarPaths(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+) {
+  const { data, error } = await supabase.storage
+    .from(AVATAR_BUCKET)
+    .list(userId, { limit: 20 });
+  if (error || !data) return [] as string[];
+  return data
+    .filter((item) => item.name && !item.name.endsWith("/"))
+    .map((item) => `${userId}/${item.name}`);
+}
+
+/** Upload a custom profile photo to Storage and pin it on user metadata. */
+export async function uploadAvatar(
+  formData: FormData,
+): Promise<{ error?: string; url?: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "You must be signed in." };
+  }
+
+  const file = formData.get("avatar");
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: "Choose an image to upload." };
+  }
+  if (file.size > AVATAR_MAX_BYTES) {
+    return { error: "Keep the photo under 2 MB." };
+  }
+
+  const ext = AVATAR_MIME[file.type];
+  if (!ext) {
+    return { error: "Use JPG, PNG, WebP, or GIF." };
+  }
+
+  const path = `${user.id}/avatar.${ext}`;
+  const existing = await listUserAvatarPaths(supabase, user.id);
+  const stale = existing.filter((item) => item !== path);
+  if (stale.length > 0) {
+    await supabase.storage.from(AVATAR_BUCKET).remove(stale);
+  }
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const { error: uploadError } = await supabase.storage
+    .from(AVATAR_BUCKET)
+    .upload(path, buffer, {
+      contentType: file.type,
+      upsert: true,
+      cacheControl: "3600",
+    });
+
+  if (uploadError) {
+    console.error("[settings] uploadAvatar:", uploadError.message);
+    return {
+      error:
+        uploadError.message.includes("Bucket not found")
+          ? "Avatar storage isn’t set up yet. Run the latest Supabase migration."
+          : uploadError.message,
+    };
+  }
+
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from(AVATAR_BUCKET).getPublicUrl(path);
+  const url = `${publicUrl}?v=${Date.now()}`;
+
+  const { error: metaError } = await supabase.auth.updateUser({
+    data: { custom_avatar_url: url },
+  });
+
+  if (metaError) {
+    console.error("[settings] uploadAvatar meta:", metaError.message);
+    return { error: metaError.message };
+  }
+
+  revalidatePath("/", "layout");
+  revalidatePath("/settings");
+  return { url };
+}
+
+/** Remove custom photo and fall back to provider avatar / initials. */
+export async function removeAvatar(): Promise<{ error?: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "You must be signed in." };
+  }
+
+  const paths = await listUserAvatarPaths(supabase, user.id);
+  if (paths.length > 0) {
+    const { error: removeError } = await supabase.storage
+      .from(AVATAR_BUCKET)
+      .remove(paths);
+    if (removeError) {
+      console.error("[settings] removeAvatar storage:", removeError.message);
+    }
+  }
+
+  const { error } = await supabase.auth.updateUser({
+    data: { custom_avatar_url: "" },
+  });
+
+  if (error) {
+    console.error("[settings] removeAvatar meta:", error.message);
+    return { error: error.message };
+  }
+
+  revalidatePath("/", "layout");
+  revalidatePath("/settings");
+  return {};
+}

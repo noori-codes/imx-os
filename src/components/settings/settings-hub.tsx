@@ -9,18 +9,28 @@ import {
   BellOff,
   Copy,
   Download,
+  ImagePlus,
   KeyRound,
   Keyboard,
   Moon,
   Monitor,
   Sun,
+  Trash2,
   Upload,
   Volume2,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 import { exportUserData, importUserData } from "@/actions/data-transfer";
-import { updateDisplayName, updateUserSettings } from "@/actions/settings";
+import {
+  removeAvatar,
+  updateDisplayName,
+  updateUserSettings,
+  uploadAvatar,
+} from "@/actions/settings";
 import { SignOutButton } from "@/components/auth/sign-out-button";
+import { UserAvatar } from "@/components/layout/user-avatar";
+import { useUser } from "@/components/providers/user-provider";
 import { FocusSounds } from "@/components/focus/focus-sounds";
 import { SettingsPulse } from "@/components/settings/settings-pulse";
 import { Button } from "@/components/ui/button";
@@ -67,6 +77,7 @@ import { TASK_VIEWS, type TaskView } from "@/types/task";
 type SettingsHubProps = {
   email: string;
   displayName: string;
+  hasCustomAvatar: boolean;
   memberSince: string;
   memberShort: string;
   settings: UserSettings;
@@ -186,21 +197,28 @@ function ToggleRow({
 export function SettingsHub({
   email,
   displayName,
+  hasCustomAvatar: initialHasCustomAvatar,
   memberSince,
   memberShort,
   settings,
 }: SettingsHubProps) {
+  const router = useRouter();
+  const { setAvatarUrl, setName } = useUser();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [, startTransition] = useTransition();
   const setAutoStartNext = useFocusTimer((s) => s.setAutoStartNext);
   const setClock = useFocusTimer((s) => s.setClock);
   const applyProfile = useFocusTimer((s) => s.applyProfile);
   const fileRef = useRef<HTMLInputElement>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const [mounted, setMounted] = useState(false);
   const [nameDraft, setNameDraft] = useState(displayName);
   const [nameSaved, setNameSaved] = useState(displayName);
   const [namePending, setNamePending] = useState(false);
+  const [hasCustomAvatar, setHasCustomAvatar] = useState(initialHasCustomAvatar);
+  const [avatarPending, setAvatarPending] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [goal, setGoal] = useState(settings.daily_focus_goal_minutes);
   const [goalCustom, setGoalCustom] = useState(
     String(settings.daily_focus_goal_minutes),
@@ -310,6 +328,16 @@ export function SettingsHub({
     });
   }
 
+  useEffect(() => {
+    setHasCustomAvatar(initialHasCustomAvatar);
+  }, [initialHasCustomAvatar]);
+
+  useEffect(() => {
+    return () => {
+      if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    };
+  }, [avatarPreview]);
+
   async function saveName() {
     const next = nameDraft.trim().replace(/\s+/g, " ");
     if (!next) {
@@ -327,9 +355,66 @@ export function SettingsHub({
       const saved = result.name ?? next;
       setNameDraft(saved);
       setNameSaved(saved);
+      setName(saved);
       imxToast("Name updated", { tone: "success" });
+      router.refresh();
     } finally {
       setNamePending(false);
+    }
+  }
+
+  async function handleAvatarPick(file: File | undefined) {
+    if (!file) return;
+    if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    const local = URL.createObjectURL(file);
+    setAvatarPreview(local);
+    setAvatarPending(true);
+    try {
+      const body = new FormData();
+      body.set("avatar", file);
+      const result = await uploadAvatar(body);
+      if (result.error) {
+        imxToast(result.error, { tone: "error" });
+        setAvatarPreview(null);
+        URL.revokeObjectURL(local);
+        return;
+      }
+      setHasCustomAvatar(true);
+      if (result.url) setAvatarUrl(result.url);
+      URL.revokeObjectURL(local);
+      setAvatarPreview(null);
+      imxToast("Photo updated", { tone: "success" });
+      router.refresh();
+    } finally {
+      setAvatarPending(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = "";
+    }
+  }
+
+  async function handleAvatarRemove() {
+    const ok = await confirm({
+      title: "Remove photo?",
+      description: "Your avatar will fall back to your sign-in photo or initials.",
+      confirmLabel: "Remove",
+      destructive: true,
+    });
+    if (!ok) return;
+    setAvatarPending(true);
+    try {
+      const result = await removeAvatar();
+      if (result.error) {
+        imxToast(result.error, { tone: "error" });
+        return;
+      }
+      if (avatarPreview) {
+        URL.revokeObjectURL(avatarPreview);
+        setAvatarPreview(null);
+      }
+      setHasCustomAvatar(false);
+      imxToast("Photo removed", { tone: "success" });
+      router.refresh();
+    } finally {
+      setAvatarPending(false);
     }
   }
 
@@ -776,7 +861,70 @@ export function SettingsHub({
         title="Account"
         description="Identity, backup, and session on this device."
       >
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-5">
+          <div className="flex items-center gap-4 sm:flex-col sm:items-start sm:gap-3">
+            <span className="relative inline-flex">
+              {avatarPreview ? (
+                // eslint-disable-next-line @next/next/no-img-element -- local blob preview
+                <img
+                  src={avatarPreview}
+                  alt=""
+                  width={72}
+                  height={72}
+                  className="size-[4.5rem] rounded-full border border-border/50 object-cover"
+                />
+              ) : (
+                <UserAvatar size={72} className="text-sm" />
+              )}
+              {avatarPending ? (
+                <span className="absolute inset-0 rounded-full bg-background/55" />
+              ) : null}
+            </span>
+            <div className="min-w-0 space-y-2">
+              <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                Photo
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={avatarPending}
+                  onClick={() => avatarInputRef.current?.click()}
+                >
+                  <ImagePlus className="size-3.5" />
+                  {hasCustomAvatar ? "Change" : "Upload"}
+                </Button>
+                {hasCustomAvatar ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={avatarPending}
+                    className="text-muted-foreground"
+                    onClick={() => void handleAvatarRemove()}
+                  >
+                    <Trash2 className="size-3.5" />
+                    Remove
+                  </Button>
+                ) : null}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                JPG, PNG, WebP, or GIF · max 2 MB
+              </p>
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="sr-only"
+                onChange={(e) => {
+                  void handleAvatarPick(e.target.files?.[0]);
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="grid min-w-0 flex-1 gap-4 sm:grid-cols-2">
           <div>
             <label
               htmlFor="settings-display-name"
@@ -850,6 +998,7 @@ export function SettingsHub({
               Member since
             </p>
             <p className="mt-1.5 text-sm text-foreground">{memberSince}</p>
+          </div>
           </div>
         </div>
 
