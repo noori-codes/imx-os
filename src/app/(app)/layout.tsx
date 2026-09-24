@@ -13,6 +13,11 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { SkipToContent } from "@/components/layout/skip-to-content";
 import { UserProvider } from "@/components/providers/user-provider";
 import { getCurrentUser } from "@/lib/auth";
+import {
+  resolveAvatarUrl,
+  resolveDisplayName,
+  resolveInitials,
+} from "@/lib/display-name";
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
   const user = await getCurrentUser();
@@ -22,7 +27,12 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   }
 
   return (
-    <UserProvider email={user.email ?? null}>
+    <UserProvider
+      email={user.email ?? null}
+      name={resolveDisplayName(user)}
+      initials={resolveInitials(user)}
+      avatarUrl={resolveAvatarUrl(user)}
+    >
       <SkipToContent />
       <FocusAudioHost />
       <IdleRoutePrefetch />

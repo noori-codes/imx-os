@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { QuickCaptureTrigger } from "@/components/capture/quick-capture-trigger";
+import { HeaderAccount } from "@/components/layout/header-account";
 import { DeferredSearchDialog } from "@/components/search/deferred-search-dialog";
 import { cn } from "@/lib/utils";
 
@@ -67,6 +68,7 @@ export function Header({ title, description, chrome = false }: HeaderProps) {
         <QuickCaptureTrigger />
         <DeferredSearchDialog />
         <ThemeToggle />
+        <HeaderAccount />
       </div>
     </header>
   );
