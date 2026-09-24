@@ -386,18 +386,15 @@ export function BooksShelf({ books, compose = false }: BooksShelfProps) {
         <>
           {/* Desktop table */}
           <div className="hidden overflow-hidden rounded-2xl imx-surface imx-surface-rim md:block">
-            <table className="w-full text-left text-sm">
+            <table className="w-full table-fixed text-left text-sm">
               <thead className="border-b border-border/40 text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Title</th>
-                  <th className="px-4 py-3 font-medium">Author</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 font-medium">Progress</th>
-                  <th className="px-4 py-3 font-medium">Rating</th>
-                  <th className="px-4 py-3 font-medium">Dates</th>
-                  <th className="px-4 py-3 font-medium">
-                    <span className="sr-only">Actions</span>
-                  </th>
+                  <th className="w-[28%] px-4 py-3 font-medium">Title</th>
+                  <th className="w-[16%] px-4 py-3 font-medium">Author</th>
+                  <th className="w-[14%] px-4 py-3 font-medium">Status</th>
+                  <th className="w-[16%] px-4 py-3 font-medium">Progress</th>
+                  <th className="w-[12%] px-4 py-3 font-medium">Rating</th>
+                  <th className="w-[14%] px-4 py-3 font-medium">Dates</th>
                 </tr>
               </thead>
               <tbody>
@@ -405,15 +402,35 @@ export function BooksShelf({ books, compose = false }: BooksShelfProps) {
                   <tr
                     id={`book-${book.id}`}
                     key={book.id}
-                    className="scroll-mt-24 border-b border-border/30 last:border-b-0"
+                    className="group/book scroll-mt-24 border-b border-border/30 last:border-b-0"
                   >
-                    <td className="max-w-[14rem] px-4 py-3">
-                      <p className="truncate font-medium text-foreground">
-                        {book.title}
-                      </p>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1.5">
+                        <p className="min-w-0 flex-1 truncate font-medium text-foreground">
+                          {book.title}
+                        </p>
+                        <div className="flex shrink-0 items-center">
+                          <button
+                            type="button"
+                            onClick={() => setEditing(book)}
+                            className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                            aria-label={`Edit ${book.title}`}
+                          >
+                            <Pencil className="size-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onDelete(book)}
+                            className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-destructive"
+                            aria-label={`Delete ${book.title}`}
+                          >
+                            <Trash2 className="size-3.5" />
+                          </button>
+                        </div>
+                      </div>
                     </td>
-                    <td className="max-w-[10rem] px-4 py-3 text-muted-foreground">
-                      <span className="truncate block">
+                    <td className="px-4 py-3 text-muted-foreground">
+                      <span className="block truncate">
                         {book.author || "—"}
                       </span>
                     </td>
@@ -422,7 +439,7 @@ export function BooksShelf({ books, compose = false }: BooksShelfProps) {
                         size="sm"
                         value={book.status}
                         aria-label={`Status for ${book.title}`}
-                        className="max-w-38 bg-transparent"
+                        className="max-w-full bg-transparent"
                         options={BOOK_STATUSES.map((item) => ({
                           value: item.value,
                           label: item.label,
@@ -433,7 +450,7 @@ export function BooksShelf({ books, compose = false }: BooksShelfProps) {
                       />
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
+                      <div className="flex min-w-0 items-center gap-2">
                         <ProgressCell book={book} />
                         {book.status === "reading" ||
                         book.status === "want_to_read" ? (
@@ -451,7 +468,7 @@ export function BooksShelf({ books, compose = false }: BooksShelfProps) {
                                 (event.target as HTMLInputElement).blur();
                               }
                             }}
-                            className="h-8 w-16 rounded-md border border-border/50 bg-transparent px-2 text-xs tabular-nums outline-none"
+                            className="h-8 w-14 shrink-0 rounded-md border border-border/50 bg-transparent px-2 text-xs tabular-nums outline-none"
                             aria-label={`Current page for ${book.title}`}
                           />
                         ) : null}
@@ -466,26 +483,6 @@ export function BooksShelf({ books, compose = false }: BooksShelfProps) {
                     </td>
                     <td className="px-4 py-3">
                       <DatesCell book={book} />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          type="button"
-                          onClick={() => setEditing(book)}
-                          className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                          aria-label={`Edit ${book.title}`}
-                        >
-                          <Pencil className="size-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onDelete(book)}
-                          className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-destructive"
-                          aria-label={`Delete ${book.title}`}
-                        >
-                          <Trash2 className="size-3.5" />
-                        </button>
-                      </div>
                     </td>
                   </tr>
                 ))}
