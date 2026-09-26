@@ -42,26 +42,33 @@ function BooksSkeletonBody() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-2xl imx-surface">
-        <div className="grid grid-cols-6 gap-3 border-b border-border/40 px-4 py-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Bone key={i} className="h-2.5 w-14" />
-          ))}
-        </div>
+      <ul className="grid gap-3">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div
+          <li
             key={i}
-            className="grid grid-cols-6 gap-3 border-b border-border/30 px-4 py-3 last:border-b-0"
+            className="books-card relative overflow-hidden rounded-2xl imx-surface imx-surface-rim p-4"
+            style={{ ["--i" as string]: i }}
           >
-            <Bone className="h-3 w-[80%]" />
-            <Bone className="h-3 w-[60%]" />
-            <Bone className="h-3 w-16" />
-            <Bone className="h-3 w-20" />
-            <Bone className="h-3 w-12" />
-            <Bone className="h-3 w-10" />
-          </div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0 flex-1 space-y-2">
+                <Bone className="h-4 w-[55%]" />
+                <Bone className="h-3 w-[35%] opacity-60" />
+                <Bone className="h-2.5 w-[45%] opacity-40" />
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <Bone className="h-8 w-28 rounded-lg" />
+                  <Bone className="h-1.5 w-28 rounded-full" />
+                  <Bone className="h-8 w-14 rounded-lg" />
+                  <Bone className="h-3 w-20" />
+                </div>
+              </div>
+              <div className="hidden gap-1 sm:flex">
+                <Bone className="size-8 rounded-lg" />
+                <Bone className="size-8 rounded-lg" />
+              </div>
+            </div>
+          </li>
         ))}
-      </div>
+      </ul>
     </>
   );
 }

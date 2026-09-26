@@ -41,83 +41,67 @@ function formatShortDate(iso: string) {
   });
 }
 
-function DatesCell({ book }: { book: Book }) {
+function bookMetaLine(book: Book) {
   const days = bookReadingDays(book);
   const daysLabel = formatBookReadingDays(days);
 
   if (!book.started_at && !book.finished_at) {
-    return <span className="text-xs text-muted-foreground">—</span>;
+    return null;
   }
 
-  return (
-    <div className="min-w-30">
-      <p className="text-xs tabular-nums text-muted-foreground">
-        {book.started_at ? formatShortDate(book.started_at) : "—"}
-        {book.finished_at ? (
-          <>
-            {" → "}
-            {formatShortDate(book.finished_at)}
-          </>
-        ) : book.status === "reading" && book.started_at ? (
-          <span className="text-muted-foreground/70"> → now</span>
-        ) : null}
-      </p>
-      {daysLabel ? (
-        <p
-          className={cn(
-            "mt-0.5 text-xs font-medium tabular-nums",
-            book.status === "finished"
-              ? "text-foreground"
-              : "text-muted-foreground",
-          )}
-        >
-          {book.status === "finished"
-            ? `Finished in ${daysLabel}`
-            : book.status === "reading"
-              ? `${daysLabel} so far`
-              : daysLabel}
-        </p>
-      ) : null}
-    </div>
-  );
+  const range = [
+    book.started_at ? formatShortDate(book.started_at) : null,
+    book.finished_at
+      ? formatShortDate(book.finished_at)
+      : book.status === "reading" && book.started_at
+        ? "now"
+        : null,
+  ]
+    .filter(Boolean)
+    .join(" → ");
+
+  if (daysLabel && book.status === "finished") {
+    return `${range} · finished in ${daysLabel}`;
+  }
+  if (daysLabel && book.status === "reading") {
+    return `${range} · ${daysLabel} so far`;
+  }
+  if (daysLabel) {
+    return `${range} · ${daysLabel}`;
+  }
+  return range || null;
 }
 
-function StatusBadge({ status }: { status: BookStatus }) {
-  return (
-    <span
-      className={cn(
-        "inline-flex rounded-md border px-2 py-0.5 text-[11px] font-medium",
-        status === "reading" &&
-          "border-foreground/15 bg-foreground/8 text-foreground",
-        status === "finished" &&
-          "border-border/50 bg-muted text-muted-foreground",
-        status === "want_to_read" &&
-          "border-border/40 bg-muted/60 text-muted-foreground",
-        status === "abandoned" &&
-          "border-destructive/20 bg-destructive/10 text-destructive",
-      )}
-    >
-      {bookStatusLabel(status)}
-    </span>
-  );
-}
-
-function ProgressCell({ book }: { book: Book }) {
+function ProgressBar({ book }: { book: Book }) {
   const pct = bookProgressPercent(book);
   const label =
     book.total_pages != null
       ? `${book.current_page} / ${book.total_pages}`
       : book.current_page > 0
         ? `p. ${book.current_page}`
-        : "—";
+        : null;
+
+  if (pct == null && !label) return null;
 
   return (
-    <div className="min-w-[7rem]">
-      <p className="text-xs tabular-nums text-muted-foreground">{label}</p>
+    <div className="min-w-0 flex-1 sm:max-w-[11rem]">
+      {label ? (
+        <p className="text-[11px] tabular-nums text-muted-foreground">{label}</p>
+      ) : null}
       {pct != null ? (
-        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
+        <div
+          className={cn(
+            "mt-1 h-1.5 overflow-hidden rounded-full bg-muted",
+            book.status === "reading" && "bg-muted/80",
+          )}
+        >
           <div
-            className="h-full rounded-full bg-foreground/70 transition-[width] duration-300"
+            className={cn(
+              "h-full rounded-full transition-[width] duration-300",
+              book.status === "reading"
+                ? "bg-foreground/80"
+                : "bg-foreground/55",
+            )}
             style={{ width: `${pct}%` }}
           />
         </div>
@@ -170,6 +154,153 @@ function RatingStars({
   );
 }
 
+function BookRow({
+  book,
+  index,
+  onStatusChange,
+  onProgressSubmit,
+  onRate,
+  onEdit,
+  onDelete,
+}: {
+  book: Book;
+  index: number;
+  onStatusChange: (bookId: string, status: BookStatus) => void;
+  onProgressSubmit: (bookId: string, value: string) => void;
+  onRate: (bookId: string, next: number | null) => void;
+  onEdit: (book: Book) => void;
+  onDelete: (book: Book) => void;
+}) {
+  const meta = bookMetaLine(book);
+  const showPageInput =
+    book.status === "reading" || book.status === "want_to_read";
+
+  return (
+    <li
+      id={`book-${book.id}`}
+      className={cn(
+        "books-card group/book relative scroll-mt-24 overflow-hidden rounded-2xl imx-surface imx-surface-rim",
+        book.status === "finished" && "books-card-finished",
+        book.status === "abandoned" && "books-card-abandoned",
+      )}
+      style={{ ["--i" as string]: index }}
+    >
+      <span
+        className={cn(
+          "books-card-spine absolute inset-y-3 left-0 w-0.5 rounded-full",
+          book.status === "reading" && "books-card-spine-reading",
+          book.status === "finished" && "books-card-spine-finished",
+          book.status === "want_to_read" && "books-card-spine-queue",
+          book.status === "abandoned" && "books-card-spine-abandoned",
+        )}
+        aria-hidden
+      />
+
+      <div className="flex flex-col gap-3 p-4 pl-4 sm:flex-row sm:items-start sm:gap-4 sm:pl-5">
+        <div className="min-w-0 flex-1 space-y-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="truncate font-semibold tracking-tight text-foreground">
+                {book.title}
+              </p>
+              <p className="mt-0.5 truncate text-sm text-muted-foreground">
+                {book.author || "Unknown author"}
+              </p>
+              {meta ? (
+                <p className="mt-1.5 text-[11px] leading-relaxed tabular-nums text-muted-foreground">
+                  {meta}
+                </p>
+              ) : null}
+            </div>
+
+            <div className="flex shrink-0 items-center gap-0.5 sm:hidden">
+              <button
+                type="button"
+                onClick={() => onEdit(book)}
+                className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                aria-label={`Edit ${book.title}`}
+              >
+                <Pencil className="size-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => onDelete(book)}
+                className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-destructive"
+                aria-label={`Delete ${book.title}`}
+              >
+                <Trash2 className="size-3.5" />
+              </button>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5">
+            <BrandSelect
+              size="sm"
+              value={book.status}
+              aria-label={`Status for ${book.title}`}
+              className="w-[9.5rem] shrink-0 bg-transparent"
+              options={BOOK_STATUSES.map((item) => ({
+                value: item.value,
+                label: item.label,
+              }))}
+              onValueChange={(next) =>
+                onStatusChange(book.id, next as BookStatus)
+              }
+            />
+
+            <ProgressBar book={book} />
+
+            {showPageInput ? (
+              <input
+                type="number"
+                min={0}
+                max={book.total_pages ?? undefined}
+                defaultValue={book.current_page}
+                key={`${book.id}-${book.current_page}`}
+                onBlur={(event) =>
+                  onProgressSubmit(book.id, event.target.value)
+                }
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    (event.target as HTMLInputElement).blur();
+                  }
+                }}
+                className="h-8 w-14 shrink-0 rounded-lg border border-border/50 bg-transparent px-2 text-xs tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label={`Current page for ${book.title}`}
+              />
+            ) : null}
+
+            <RatingStars
+              rating={book.rating}
+              bookTitle={book.title}
+              onRate={(next) => onRate(book.id, next)}
+            />
+          </div>
+        </div>
+
+        <div className="hidden shrink-0 items-center gap-0.5 sm:flex">
+          <button
+            type="button"
+            onClick={() => onEdit(book)}
+            className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            aria-label={`Edit ${book.title}`}
+          >
+            <Pencil className="size-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => onDelete(book)}
+            className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-destructive"
+            aria-label={`Delete ${book.title}`}
+          >
+            <Trash2 className="size-3.5" />
+          </button>
+        </div>
+      </div>
+    </li>
+  );
+}
+
 export function BooksShelf({ books, compose = false }: BooksShelfProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -205,22 +336,8 @@ export function BooksShelf({ books, compose = false }: BooksShelfProps) {
     const id = window.location.hash.replace(/^#/, "");
     if (!id.startsWith("book-")) return;
     window.requestAnimationFrame(() => {
-      const nodes = document.querySelectorAll(`[id="${CSS.escape(id)}"]`);
-      for (const el of nodes) {
-        let hidden = false;
-        let cur: Element | null = el;
-        while (cur) {
-          const style = window.getComputedStyle(cur);
-          if (style.display === "none" || style.visibility === "hidden") {
-            hidden = true;
-            break;
-          }
-          cur = cur.parentElement;
-        }
-        if (hidden) continue;
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-        break;
-      }
+      const el = document.getElementById(id);
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
     });
   }, [filtered.length]);
 
@@ -235,7 +352,9 @@ export function BooksShelf({ books, compose = false }: BooksShelfProps) {
         });
       } else {
         imxToast("Status updated", {
-          description: book ? `${book.title} · ${bookStatusLabel(status)}` : undefined,
+          description: book
+            ? `${book.title} · ${bookStatusLabel(status)}`
+            : undefined,
         });
       }
     });
@@ -383,200 +502,20 @@ export function BooksShelf({ books, compose = false }: BooksShelfProps) {
           </button>
         </EmptyState>
       ) : (
-        <>
-          {/* Desktop table */}
-          <div className="hidden overflow-hidden rounded-2xl imx-surface imx-surface-rim md:block">
-            <table className="w-full table-fixed text-left text-sm">
-              <thead className="border-b border-border/40 text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                <tr>
-                  <th className="w-[28%] px-4 py-3 font-medium">Title</th>
-                  <th className="w-[16%] px-4 py-3 font-medium">Author</th>
-                  <th className="w-[14%] px-4 py-3 font-medium">Status</th>
-                  <th className="w-[16%] px-4 py-3 font-medium">Progress</th>
-                  <th className="w-[12%] px-4 py-3 font-medium">Rating</th>
-                  <th className="w-[14%] px-4 py-3 font-medium">Dates</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((book) => (
-                  <tr
-                    id={`book-${book.id}`}
-                    key={book.id}
-                    className="group/book scroll-mt-24 border-b border-border/30 last:border-b-0"
-                  >
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5">
-                        <p className="min-w-0 flex-1 truncate font-medium text-foreground">
-                          {book.title}
-                        </p>
-                        <div className="flex shrink-0 items-center">
-                          <button
-                            type="button"
-                            onClick={() => setEditing(book)}
-                            className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                            aria-label={`Edit ${book.title}`}
-                          >
-                            <Pencil className="size-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => onDelete(book)}
-                            className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-destructive"
-                            aria-label={`Delete ${book.title}`}
-                          >
-                            <Trash2 className="size-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      <span className="block truncate">
-                        {book.author || "—"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <BrandSelect
-                        size="sm"
-                        value={book.status}
-                        aria-label={`Status for ${book.title}`}
-                        className="max-w-full bg-transparent"
-                        options={BOOK_STATUSES.map((item) => ({
-                          value: item.value,
-                          label: item.label,
-                        }))}
-                        onValueChange={(next) =>
-                          onStatusChange(book.id, next as BookStatus)
-                        }
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex min-w-0 items-center gap-2">
-                        <ProgressCell book={book} />
-                        {book.status === "reading" ||
-                        book.status === "want_to_read" ? (
-                          <input
-                            type="number"
-                            min={0}
-                            max={book.total_pages ?? undefined}
-                            defaultValue={book.current_page}
-                            key={`${book.id}-${book.current_page}`}
-                            onBlur={(event) =>
-                              onProgressSubmit(book.id, event.target.value)
-                            }
-                            onKeyDown={(event) => {
-                              if (event.key === "Enter") {
-                                (event.target as HTMLInputElement).blur();
-                              }
-                            }}
-                            className="h-8 w-14 shrink-0 rounded-md border border-border/50 bg-transparent px-2 text-xs tabular-nums outline-none"
-                            aria-label={`Current page for ${book.title}`}
-                          />
-                        ) : null}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <RatingStars
-                        rating={book.rating}
-                        bookTitle={book.title}
-                        onRate={(next) => onRate(book.id, next)}
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <DatesCell book={book} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Mobile cards */}
-          <ul className="grid gap-3 md:hidden">
-            {filtered.map((book) => (
-              <li
-                id={`book-${book.id}`}
-                key={book.id}
-                className="scroll-mt-24 rounded-2xl imx-surface imx-surface-rim p-4"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate font-semibold text-foreground">
-                      {book.title}
-                    </p>
-                    <p className="mt-0.5 truncate text-sm text-muted-foreground">
-                      {book.author || "Unknown author"}
-                    </p>
-                  </div>
-                  <StatusBadge status={book.status} />
-                </div>
-
-                <div className="mt-3">
-                  <ProgressCell book={book} />
-                </div>
-
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <BrandSelect
-                    size="sm"
-                    value={book.status}
-                    aria-label={`Status for ${book.title}`}
-                    className="min-w-0 flex-1 bg-transparent"
-                    options={BOOK_STATUSES.map((item) => ({
-                      value: item.value,
-                      label: item.label,
-                    }))}
-                    onValueChange={(next) =>
-                      onStatusChange(book.id, next as BookStatus)
-                    }
-                  />
-                  {(book.status === "reading" ||
-                    book.status === "want_to_read") && (
-                    <input
-                      type="number"
-                      min={0}
-                      max={book.total_pages ?? undefined}
-                      defaultValue={book.current_page}
-                      key={`${book.id}-m-${book.current_page}`}
-                      onBlur={(event) =>
-                        onProgressSubmit(book.id, event.target.value)
-                      }
-                      className="h-8 w-16 rounded-lg border border-border/50 bg-transparent px-2 text-xs tabular-nums outline-none"
-                      aria-label={`Current page for ${book.title}`}
-                    />
-                  )}
-                  <RatingStars
-                    rating={book.rating}
-                    bookTitle={book.title}
-                    onRate={(next) => onRate(book.id, next)}
-                  />
-                </div>
-
-                <div className="mt-3 flex items-center justify-between border-t border-border/40 pt-3">
-                  <div className="min-w-0 pr-2">
-                    <DatesCell book={book} />
-                  </div>
-                  <div className="flex gap-1">
-                    <button
-                      type="button"
-                      onClick={() => setEditing(book)}
-                      className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
-                      aria-label={`Edit ${book.title}`}
-                    >
-                      <Pencil className="size-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onDelete(book)}
-                      className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-destructive"
-                      aria-label={`Delete ${book.title}`}
-                    >
-                      <Trash2 className="size-3.5" />
-                    </button>
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </>
+        <ul className="grid gap-3">
+          {filtered.map((book, index) => (
+            <BookRow
+              key={book.id}
+              book={book}
+              index={index}
+              onStatusChange={onStatusChange}
+              onProgressSubmit={onProgressSubmit}
+              onRate={onRate}
+              onEdit={setEditing}
+              onDelete={(item) => void onDelete(item)}
+            />
+          ))}
+        </ul>
       )}
 
       {editing ? (
