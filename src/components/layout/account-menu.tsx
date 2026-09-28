@@ -24,15 +24,12 @@ import type { AppThemePref } from "@/types/settings";
 
 type AccountMenuProps = {
   className?: string;
-  /** Header: compact circle. Sidebar: avatar + name row. */
-  variant?: "header" | "sidebar";
   align?: "start" | "end" | "center";
   side?: "top" | "right" | "bottom" | "left";
 };
 
 export function AccountMenu({
   className,
-  variant = "header",
   align = "end",
   side = "bottom",
 }: AccountMenuProps) {
@@ -47,40 +44,17 @@ export function AccountMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        {variant === "sidebar" ? (
-          <button
-            type="button"
-            className={cn(
-              "flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left outline-none transition-colors",
-              "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground",
-              "focus-visible:ring-2 focus-visible:ring-sidebar-ring data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-foreground",
-              className,
-            )}
-            aria-label={`Account · ${name}`}
-          >
-            <UserAvatar size={32} className="border-sidebar-border" />
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-medium">{name}</span>
-              {email ? (
-                <span className="block truncate text-[11px] text-sidebar-foreground/45">
-                  {email}
-                </span>
-              ) : null}
-            </span>
-          </button>
-        ) : (
-          <button
-            type="button"
-            className={cn(
-              "flex size-9 shrink-0 items-center justify-center rounded-full outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring data-[state=open]:ring-2 data-[state=open]:ring-ring/60",
-              className,
-            )}
-            aria-label={`Account · ${name}`}
-            title={name}
-          >
-            <UserAvatar size={32} />
-          </button>
-        )}
+        <button
+          type="button"
+          className={cn(
+            "flex size-9 shrink-0 items-center justify-center rounded-full outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring data-[state=open]:ring-2 data-[state=open]:ring-ring/60",
+            className,
+          )}
+          aria-label={`Account · ${name}`}
+          title={name}
+        >
+          <UserAvatar size={32} />
+        </button>
       </DropdownMenuTrigger>
 
       <DropdownMenuContent

@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { AccountMenu } from "@/components/layout/account-menu";
 import { NavLink } from "@/components/layout/nav-link";
 import { NAV_GROUPS } from "@/lib/constants";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -77,10 +76,6 @@ export function Sidebar({ onNavigate }: SidebarProps) {
           ))}
         </nav>
       </ScrollArea>
-
-      <div className="shrink-0 border-t border-sidebar-border p-2.5 pb-3">
-        <AccountMenu variant="sidebar" align="start" side="top" />
-      </div>
     </aside>
   );
 }

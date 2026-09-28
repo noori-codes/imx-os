@@ -9,5 +9,5 @@ type HeaderAccountProps = {
 
 /** Header account control — avatar opens Settings / Theme / Sign out. */
 export function HeaderAccount({ className }: HeaderAccountProps) {
-  return <AccountMenu variant="header" className={cn(className)} />;
+  return <AccountMenu className={cn(className)} />;
 }
