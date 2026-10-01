@@ -675,11 +675,21 @@ export function FocusTimer({
         }),
       );
       const addedMinutes = Math.max(1, Math.round(actual / 60));
-      todayMinutesRef.current += addedMinutes;
+      const todayMinutes = todayMinutesRef.current + addedMinutes;
+      todayMinutesRef.current = todayMinutes;
+      showFocusSealToast({
+        kind: "focus",
+        title: "Stopped early",
+        seconds: actual,
+        todayMinutes,
+      });
     }
 
-    startTransition(async () => {
-      if (actual >= 5) {
+    // Reset immediately — don't wait on network / refresh.
+    reset();
+
+    if (actual >= 5) {
+      startTransition(async () => {
         await logFocusSession({
           mode: currentMode,
           planned_seconds: planned,
@@ -689,9 +699,8 @@ export function FocusTimer({
           task_id: taskId,
         });
         router.refresh();
-      }
-      reset();
-    });
+      });
+    }
   }
 
   function handleSkip() {

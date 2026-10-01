@@ -336,7 +336,7 @@ export function FocusSessionList({ sessions }: FocusSessionListProps) {
                             just now
                           </span>
                         ) : null}
-                        {!latest.completed && !isThread && !isPending ? (
+                        {!latest.completed && !isThread ? (
                           <span className="ml-2 text-xs font-normal text-muted-foreground">
                             stopped early
                           </span>
