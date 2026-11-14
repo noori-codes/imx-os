@@ -13,6 +13,8 @@ import type {
 } from "@/types/calendar";
 import type { CalendarDay } from "@/lib/date-utils";
 
+/** Mobile density polish — pairs with `app/(app)/calendar/page.tsx` day dock heights. */
+
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 type CalendarGridProps = {
@@ -164,7 +166,9 @@ export function CalendarGrid({
               style={{ ["--i" as string]: index }}
               className={cn(
                 "cal-cell group relative flex flex-col border-r border-b border-border/35 p-1.5 transition-colors last:border-r-0",
-                isWeek ? "min-h-52 sm:min-h-60" : "min-h-[4.75rem] sm:min-h-24",
+                isWeek
+                  ? "min-h-36 sm:min-h-52 md:min-h-60"
+                  : "min-h-[4.75rem] sm:min-h-24",
                 !day.inCurrentMonth && "bg-muted/15 text-muted-foreground",
                 selected && "cal-cell-selected z-1",
                 !selected && day.isToday && "bg-muted/40",
@@ -196,7 +200,10 @@ export function CalendarGrid({
                   {day.day}
                 </span>
                 {!isWeek && load > 0 ? (
-                  <span className="pr-0.5 pt-0.5 text-[10px] tabular-nums text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 group-[[data-selected=true]]:opacity-100">
+                  <span
+                    aria-hidden={!selected}
+                    className="pr-0.5 pt-0.5 text-[10px] tabular-nums text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 group-[[data-selected=true]]:opacity-100"
+                  >
                     {load}
                   </span>
                 ) : null}

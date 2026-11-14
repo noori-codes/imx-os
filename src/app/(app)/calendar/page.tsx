@@ -117,7 +117,7 @@ async function CalendarBody({
 
           <div
             id="cal-day-dock"
-            className="cal-reveal cal-reveal-delay-2 min-h-[28rem] scroll-mt-20 xl:sticky xl:top-4 xl:min-h-[min(70vh,40rem)]"
+            className="cal-reveal cal-reveal-delay-2 min-h-0 scroll-mt-20 sm:min-h-[22rem] xl:sticky xl:top-4 xl:min-h-[min(70vh,40rem)]"
           >
             <CalendarDayPanel
               date={selectedDate}
