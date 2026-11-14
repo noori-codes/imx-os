@@ -57,6 +57,7 @@ function mapTask(row: TaskRow): TaskWithContext {
     completed: row.completed,
     due_date: row.due_date,
     recurrence: row.recurrence ?? null,
+    priority: row.priority ?? null,
     created_at: row.created_at,
     updated_at: row.updated_at,
     context,
@@ -495,6 +496,13 @@ export async function updateTask(
   },
 ): Promise<TaskActionState> {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You must be signed in." };
+  }
+
   const title = input.title.trim();
 
   if (!title) {
@@ -527,10 +535,18 @@ export async function updateTask(
     patch.project_id = input.project_id;
   }
 
-  const { error } = await supabase.from("tasks").update(patch).eq("id", taskId);
+  const { data, error } = await supabase
+    .from("tasks")
+    .update(patch)
+    .eq("id", taskId)
+    .eq("user_id", user.id)
+    .select("id");
 
   if (error) {
-    return { error: error.message };
+    return { error: "Couldn’t save. Try again." };
+  }
+  if (!data?.length) {
+    return { error: "Not found." };
   }
 
   await revalidateTaskViews();
@@ -583,15 +599,26 @@ export async function toggleTaskComplete(
   completed: boolean,
 ): Promise<{ error?: string }> {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You must be signed in." };
+  }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("tasks")
     .update({ completed })
-    .eq("id", taskId);
+    .eq("id", taskId)
+    .eq("user_id", user.id)
+    .select("id");
 
   if (error) {
     console.error("[tasks] toggleTaskComplete:", error.message);
-    return { error: error.message };
+    return { error: "Couldn’t save. Try again." };
+  }
+  if (!data?.length) {
+    return { error: "Not found." };
   }
 
   await revalidateTaskViews();
@@ -600,13 +627,23 @@ export async function toggleTaskComplete(
 
 export async function deleteTask(taskId: string) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
 
-  const { error } = await supabase.from("tasks").delete().eq("id", taskId);
+  const { data, error } = await supabase
+    .from("tasks")
+    .delete()
+    .eq("id", taskId)
+    .eq("user_id", user.id)
+    .select("id");
 
   if (error) {
     console.error("[tasks] deleteTask:", error.message);
     return;
   }
+  if (!data?.length) return;
 
   await revalidateTaskViews();
 }

@@ -98,13 +98,15 @@ function Section({
   return (
     <section
       id={id}
-      className="settings-panel scroll-mt-20 rounded-[1.35rem] imx-surface imx-surface-rim p-4 sm:p-5"
+      className="settings-panel scroll-mt-20 rounded-2xl imx-surface imx-surface-rim p-4 sm:p-5"
     >
       <header className="mb-4">
         <h3 className="text-sm font-semibold tracking-tight text-foreground">
           {title}
         </h3>
-        <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+          {description}
+        </p>
       </header>
       {children}
     </section>
@@ -934,6 +936,21 @@ export function SettingsHub({
               persist({ celebrate_enabled: next });
             }}
           />
+
+          <div className="flex items-start justify-between gap-4 border-t border-border/40 pt-5">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-foreground">
+                Streak freezes
+              </p>
+              <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+                Soft skips for activity streaks. Refills weekly · use from the
+                dashboard when a day goes quiet.
+              </p>
+            </div>
+            <p className="shrink-0 text-sm font-semibold tabular-nums text-foreground">
+              {settings.streak_freezes_remaining}/3
+            </p>
+          </div>
 
           <div className="space-y-2 border-t border-border/40 pt-5">
             <div className="flex items-baseline justify-between gap-3">

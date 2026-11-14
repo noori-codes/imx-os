@@ -50,6 +50,12 @@ function mapRow(row: Record<string, unknown> | null): UserSettings {
     return { ...DEFAULT_USER_SETTINGS, saved: false };
   }
 
+  const freezes = Number(row.streak_freezes_remaining);
+  const timezone =
+    typeof row.timezone === "string" && row.timezone.length > 0
+      ? row.timezone
+      : null;
+
   return {
     daily_focus_goal_minutes: clampDailyFocusGoal(
       Number(row.daily_focus_goal_minutes) ||
@@ -68,6 +74,10 @@ function mapRow(row: Record<string, unknown> | null): UserSettings {
       row.celebrate_enabled == null
         ? DEFAULT_USER_SETTINGS.celebrate_enabled
         : Boolean(row.celebrate_enabled),
+    streak_freezes_remaining: Number.isFinite(freezes)
+      ? Math.max(0, Math.min(3, Math.round(freezes)))
+      : DEFAULT_USER_SETTINGS.streak_freezes_remaining,
+    timezone,
     saved: true,
   };
 }
@@ -85,10 +95,26 @@ export async function getUserSettings(): Promise<UserSettings> {
   const { data, error } = await supabase
     .from("user_settings")
     .select(
-      "daily_focus_goal_minutes, theme, default_task_view, focus_profile, focus_clock, auto_start_next, chime_enabled, celebrate_enabled",
+      "daily_focus_goal_minutes, theme, default_task_view, focus_profile, focus_clock, auto_start_next, chime_enabled, celebrate_enabled, streak_freezes_remaining, timezone",
     )
     .eq("user_id", user.id)
     .maybeSingle();
+
+  // Migration 022 may not be applied — fall back to legacy columns.
+  if (error && /streak_freezes|timezone/i.test(error.message)) {
+    const legacy = await supabase
+      .from("user_settings")
+      .select(
+        "daily_focus_goal_minutes, theme, default_task_view, focus_profile, focus_clock, auto_start_next, chime_enabled, celebrate_enabled",
+      )
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (legacy.error) {
+      console.error("[settings] getUserSettings:", legacy.error.message);
+      return { ...DEFAULT_USER_SETTINGS, saved: false };
+    }
+    return mapRow(legacy.data as Record<string, unknown> | null);
+  }
 
   if (error) {
     console.error("[settings] getUserSettings:", error.message);
@@ -124,9 +150,12 @@ export async function updateUserSettings(
     auto_start_next: patch.auto_start_next ?? current.auto_start_next,
     chime_enabled: patch.chime_enabled ?? current.chime_enabled,
     celebrate_enabled: patch.celebrate_enabled ?? current.celebrate_enabled,
+    streak_freezes_remaining:
+      patch.streak_freezes_remaining ?? current.streak_freezes_remaining,
+    timezone: patch.timezone !== undefined ? patch.timezone : current.timezone,
   };
 
-  const { error } = await supabase.from("user_settings").upsert(
+  let { error } = await supabase.from("user_settings").upsert(
     {
       user_id: user.id,
       ...next,
@@ -134,12 +163,27 @@ export async function updateUserSettings(
     { onConflict: "user_id" },
   );
 
+  // Migration 022 not applied — retry without new columns.
+  if (error && /streak_freezes|timezone/i.test(error.message)) {
+    const {
+      streak_freezes_remaining: _f,
+      timezone: _t,
+      ...legacy
+    } = next;
+    const retry = await supabase.from("user_settings").upsert(
+      { user_id: user.id, ...legacy },
+      { onConflict: "user_id" },
+    );
+    error = retry.error;
+  }
+
   if (error) {
     console.error("[settings] updateUserSettings:", error.message);
     return { error: error.message };
   }
 
   revalidatePath("/settings");
+  revalidatePath("/dashboard");
   revalidatePath("/tasks");
   revalidatePath("/focus");
   revalidatePath("/analytics");

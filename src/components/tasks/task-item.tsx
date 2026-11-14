@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 
 import { deleteTask, toggleTaskComplete, updateTask } from "@/actions/tasks";
+import { softCompletePulse } from "@/lib/completion-payoff";
 import { BrandSelect } from "@/components/ui/brand-select";
 import { Button } from "@/components/ui/button";
 import { confirm } from "@/components/ui/confirm-dialog";
@@ -134,6 +135,7 @@ export function TaskItem({
     const next = !task.completed;
     if (next) {
       setCelebrating(true);
+      softCompletePulse();
       window.setTimeout(() => setCelebrating(false), 480);
       setLiveMessage("Task completed");
     } else {

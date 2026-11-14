@@ -1,4 +1,4 @@
-import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
+import { revalidatePath, updateTag, unstable_cache } from "next/cache";
 
 /** Cache tag helpers — always scoped by user id. */
 export const cacheTags = {
@@ -20,13 +20,14 @@ export const CACHE_TTL = {
 
 /**
  * Invalidate cached reads after a mutation.
- * Paths keep the existing UI refresh; tags bust cross-request caches.
+ * Uses updateTag for read-your-own-writes (Server Actions only).
+ * Paths keep the existing UI refresh.
  */
 export function revalidateUserCaches(userId: string) {
-  revalidateTag(cacheTags.analytics(userId), "max");
-  revalidateTag(cacheTags.dashboard(userId), "max");
-  revalidateTag(cacheTags.notes(userId), "max");
-  revalidateTag(cacheTags.search(userId), "max");
+  updateTag(cacheTags.analytics(userId));
+  updateTag(cacheTags.dashboard(userId));
+  updateTag(cacheTags.notes(userId));
+  updateTag(cacheTags.search(userId));
   revalidatePath("/dashboard");
   revalidatePath("/analytics");
   revalidatePath("/notes");

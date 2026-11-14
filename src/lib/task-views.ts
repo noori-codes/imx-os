@@ -217,8 +217,9 @@ export function viewEmptyCopy(view: TaskView): {
       };
     case "today":
       return {
-        title: "Clear day",
-        description: "Due today — or Everyday for work that returns.",
+        title: "Done for today",
+        description:
+          "Nothing due right now. Capture a next move, or seal the evening with a review.",
       };
     case "week":
       return {

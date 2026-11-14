@@ -5,11 +5,11 @@ import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
 import { revalidateUserCaches } from "@/lib/cache";
 import {
+  addDaysToDateString,
   computeStreaks,
-  getPastDays,
-  toDateString,
 } from "@/lib/date-utils";
 import { createClient } from "@/lib/supabase/server";
+import { getTodayString } from "@/lib/timezone";
 import type { HabitWithStats } from "@/types/habit";
 
 export type HabitActionState = {
@@ -34,8 +34,10 @@ async function loadHabitsWithStats(
   archived: boolean,
 ): Promise<HabitWithStats[]> {
   const supabase = await createClient();
-  const today = toDateString(new Date());
-  const weekDays = getPastDays(7);
+  const today = await getTodayString();
+  const weekDays = Array.from({ length: 7 }, (_, i) =>
+    addDaysToDateString(today, -(6 - i)),
+  );
 
   const { data: habits, error } = await supabase
     .from("habits")
@@ -54,9 +56,7 @@ async function loadHabitsWithStats(
 
   const habitIds = habits.map((h) => h.id);
 
-  const streakLookback = new Date();
-  streakLookback.setDate(streakLookback.getDate() - 90);
-  const lookbackStr = toDateString(streakLookback);
+  const lookbackStr = addDaysToDateString(today, -90);
 
   const { data: logs, error: logsError } = await supabase
     .from("habit_logs")
@@ -81,18 +81,20 @@ async function loadHabitsWithStats(
     const dateSet = new Set(dates);
     const { current_streak, longest_streak } = computeStreaks(dates, today);
 
+    const schedule_days = Array.isArray(habit.schedule_days)
+      ? (habit.schedule_days as number[])
+      : null;
+
     return {
       ...habit,
+      schedule_days,
       completed_today: dateSet.has(today),
       current_streak,
       longest_streak,
-      week: weekDays.map((day) => {
-        const date = toDateString(day);
-        return {
-          date,
-          completed: dateSet.has(date),
-        };
-      }),
+      week: weekDays.map((date) => ({
+        date,
+        completed: dateSet.has(date),
+      })),
     };
   });
 }
@@ -110,7 +112,7 @@ export async function countHabits(archived: boolean): Promise<number> {
   const supabase = await createClient();
   const { count, error } = await supabase
     .from("habits")
-    .select("*", { count: "exact", head: true })
+    .select("id", { count: "exact", head: true })
     .eq("archived", archived);
 
   if (error) {
@@ -171,17 +173,29 @@ export async function updateHabit(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You must be signed in." };
+  }
+
+  const { data, error } = await supabase
     .from("habits")
     .update({
       title,
       description: input.description,
       color: input.color || "#3b82f6",
     })
-    .eq("id", habitId);
+    .eq("id", habitId)
+    .eq("user_id", user.id)
+    .select("id");
 
   if (error) {
-    return { error: error.message };
+    return { error: "Couldn’t save. Try again." };
+  }
+  if (!data?.length) {
+    return { error: "Not found." };
   }
 
   await revalidateHabits();
@@ -190,16 +204,23 @@ export async function updateHabit(
 
 export async function setHabitArchived(habitId: string, archived: boolean) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("habits")
     .update({ archived })
-    .eq("id", habitId);
+    .eq("id", habitId)
+    .eq("user_id", user.id)
+    .select("id");
 
   if (error) {
     console.error("[habits] setHabitArchived:", error.message);
     return;
   }
+  if (!data?.length) return;
 
   await revalidateHabits();
 }
@@ -213,7 +234,7 @@ export async function toggleHabitOnDate(
     return { error: "Invalid date." };
   }
 
-  const today = toDateString(new Date());
+  const today = await getTodayString();
   if (loggedOn > today) {
     return { error: "Can’t log a future day." };
   }
@@ -236,18 +257,19 @@ export async function toggleHabitOnDate(
 
     if (error && error.code !== "23505") {
       console.error("[habits] toggleHabitOnDate insert:", error.message);
-      return { error: error.message };
+      return { error: "Couldn’t save. Try again." };
     }
   } else {
     const { error } = await supabase
       .from("habit_logs")
       .delete()
       .eq("habit_id", habitId)
-      .eq("logged_on", loggedOn);
+      .eq("logged_on", loggedOn)
+      .eq("user_id", user.id);
 
     if (error) {
       console.error("[habits] toggleHabitOnDate delete:", error.message);
-      return { error: error.message };
+      return { error: "Couldn’t save. Try again." };
     }
   }
 
@@ -259,18 +281,28 @@ export async function toggleHabitToday(
   habitId: string,
   completed: boolean,
 ): Promise<{ error?: string }> {
-  return toggleHabitOnDate(habitId, toDateString(new Date()), completed);
+  return toggleHabitOnDate(habitId, await getTodayString(), completed);
 }
 
 export async function deleteHabit(habitId: string) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
 
-  const { error } = await supabase.from("habits").delete().eq("id", habitId);
+  const { data, error } = await supabase
+    .from("habits")
+    .delete()
+    .eq("id", habitId)
+    .eq("user_id", user.id)
+    .select("id");
 
   if (error) {
     console.error("[habits] deleteHabit:", error.message);
     return;
   }
+  if (!data?.length) return;
 
   await revalidateHabits();
 }

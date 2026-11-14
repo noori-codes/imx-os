@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { ChevronDown, ListTodo, Search } from "lucide-react";
 
 import { TaskItem, useTaskOptimistic } from "@/components/tasks/task-item";
@@ -45,6 +46,66 @@ function focusTasksComposer() {
     ?.focus({ preventScroll: true });
 }
 
+function TaskGroupSection({
+  groupId,
+  label,
+  tasks,
+  view,
+  todayFocus,
+  projects,
+  onOptimisticToggle,
+  onOptimisticDelete,
+  onOptimisticUpdate,
+}: {
+  groupId: string;
+  label: string;
+  tasks: TaskWithContext[];
+  view: TaskView;
+  todayFocus?: TaskFocusToday;
+  projects: TaskProjectOption[];
+  onOptimisticToggle: TaskOptimisticApi["onOptimisticToggle"];
+  onOptimisticDelete: TaskOptimisticApi["onOptimisticDelete"];
+  onOptimisticUpdate: TaskOptimisticApi["onOptimisticUpdate"];
+}) {
+  const [listParent] = useAutoAnimate({ duration: 220, easing: "ease-out" });
+
+  return (
+    <section className="tasks-group overflow-hidden rounded-2xl imx-surface imx-surface-rim">
+      <div className="flex items-baseline justify-between gap-3 border-b border-border/40 px-4 py-3">
+        <h2
+          className={
+            groupId === "overdue"
+              ? "text-[11px] font-medium uppercase tracking-[0.14em] text-destructive"
+              : groupId === "done"
+                ? "text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground/80"
+                : "text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground"
+          }
+        >
+          {label}
+        </h2>
+        <span className="text-[11px] tabular-nums text-muted-foreground">
+          {tasks.length}
+        </span>
+      </div>
+      <ul ref={listParent} className="tasks-stagger">
+        {tasks.map((task, index) => (
+          <TaskItem
+            key={task.id}
+            task={task}
+            view={view}
+            index={index}
+            todayFocusSeconds={todayFocus?.[task.id] ?? 0}
+            projects={projects}
+            onOptimisticToggle={onOptimisticToggle}
+            onOptimisticDelete={onOptimisticDelete}
+            onOptimisticUpdate={onOptimisticUpdate}
+          />
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 function ListEmpty({
   view,
   searching,
@@ -61,7 +122,7 @@ function ListEmpty({
   if (searching) {
     return (
       <EmptyState
-        icon={Search}
+        icon={<Search className="size-5" aria-hidden />}
         title="No matches"
         description="Try another search in this view."
       >
@@ -75,7 +136,7 @@ function ListEmpty({
   if (mode === "project") {
     return (
       <EmptyState
-        icon={ListTodo}
+        icon={<ListTodo className="size-5" aria-hidden />}
         title="No tasks yet"
         description="Capture the first move for this project above."
       >
@@ -99,7 +160,7 @@ function ListEmpty({
 
   return (
     <EmptyState
-      icon={ListTodo}
+      icon={<ListTodo className="size-5" aria-hidden />}
       title={empty.title}
       description={
         showElsewhere
@@ -148,6 +209,7 @@ export function TaskList({
     : localOptimistic.optimisticTasks;
 
   const [completedOpen, setCompletedOpen] = useState(false);
+  const [doneParent] = useAutoAnimate({ duration: 220, easing: "ease-out" });
   const active = optimisticTasks.filter((t) => !t.completed);
   const completed = optimisticTasks.filter((t) => {
     if (!t.completed) return false;
@@ -191,42 +253,18 @@ export function TaskList({
       ) : null}
 
       {groups.map((group) => (
-        <section
+        <TaskGroupSection
           key={group.id}
-          className="tasks-group overflow-hidden rounded-2xl imx-surface imx-surface-rim"
-        >
-          <div className="flex items-baseline justify-between gap-3 border-b border-border/40 px-4 py-3">
-            <h2
-              className={
-                group.id === "overdue"
-                  ? "text-[11px] font-medium uppercase tracking-[0.14em] text-destructive"
-                  : group.id === "done"
-                    ? "text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground/80"
-                    : "text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground"
-              }
-            >
-              {group.label}
-            </h2>
-            <span className="text-[11px] tabular-nums text-muted-foreground">
-              {group.tasks.length}
-            </span>
-          </div>
-          <ul className="tasks-stagger">
-            {group.tasks.map((task, index) => (
-              <TaskItem
-                key={task.id}
-                task={task}
-                view={view}
-                index={index}
-                todayFocusSeconds={todayFocus?.[task.id] ?? 0}
-                projects={projects}
-                onOptimisticToggle={onOptimisticToggle}
-                onOptimisticDelete={onOptimisticDelete}
-                onOptimisticUpdate={onOptimisticUpdate}
-              />
-            ))}
-          </ul>
-        </section>
+          groupId={group.id}
+          label={group.label}
+          tasks={group.tasks}
+          view={view}
+          todayFocus={todayFocus}
+          projects={projects}
+          onOptimisticToggle={onOptimisticToggle}
+          onOptimisticDelete={onOptimisticDelete}
+          onOptimisticUpdate={onOptimisticUpdate}
+        />
       ))}
 
       {completed.length > 0 ? (
@@ -245,7 +283,7 @@ export function TaskList({
             Completed · {completed.length}
           </Button>
           {completedOpen ? (
-            <ul className="border-t border-border/40">
+            <ul ref={doneParent} className="border-t border-border/40">
               {completed.map((task, index) => (
                 <TaskItem
                   key={task.id}

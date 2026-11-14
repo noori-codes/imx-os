@@ -68,8 +68,11 @@ export function daysBetween(a: string, b: string) {
   return Math.round(ms / (1000 * 60 * 60 * 24));
 }
 
-/** Streaks from a set of completed date strings (YYYY-MM-DD). */
-export function computeStreaks(completedDates: string[], today = toDateString(new Date())) {
+/** Streaks from a set of completed date strings (YYYY-MM-DD). Calendar-safe (no local TZ drift). */
+export function computeStreaks(
+  completedDates: string[],
+  today = toDateString(new Date()),
+) {
   const set = new Set(completedDates);
   const sorted = [...set].sort();
 
@@ -90,24 +93,20 @@ export function computeStreaks(completedDates: string[], today = toDateString(ne
   let current = 0;
   if (set.has(today)) {
     current = 1;
-    let cursor = parseDateString(today);
-    cursor.setDate(cursor.getDate() - 1);
-    while (set.has(toDateString(cursor))) {
+    let cursor = addDaysToDateString(today, -1);
+    while (set.has(cursor)) {
       current += 1;
-      cursor.setDate(cursor.getDate() - 1);
+      cursor = addDaysToDateString(cursor, -1);
     }
   } else {
     // Streak still alive if yesterday was completed
-    const yesterday = parseDateString(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = toDateString(yesterday);
+    const yesterdayStr = addDaysToDateString(today, -1);
     if (set.has(yesterdayStr)) {
       current = 1;
-      let cursor = yesterday;
-      cursor.setDate(cursor.getDate() - 1);
-      while (set.has(toDateString(cursor))) {
+      let cursor = addDaysToDateString(yesterdayStr, -1);
+      while (set.has(cursor)) {
         current += 1;
-        cursor.setDate(cursor.getDate() - 1);
+        cursor = addDaysToDateString(cursor, -1);
       }
     }
   }

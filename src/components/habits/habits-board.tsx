@@ -3,9 +3,11 @@
 import { useEffect, useOptimistic, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { CheckSquare } from "lucide-react";
 
 import { ProgressRing } from "@/components/dashboard/progress-ring";
+import { SectionReveal } from "@/components/motion/section-reveal";
 import { HabitForm } from "@/components/habits/habit-form";
 import { HabitItem } from "@/components/habits/habit-item";
 import { HabitViewTabs } from "@/components/habits/habit-view-tabs";
@@ -111,17 +113,18 @@ function TodayPulse({
   );
 
   return (
-    <section
-      className={cn(
-        "habits-pulse habits-hero relative overflow-hidden rounded-[1.75rem] imx-surface px-5 py-6 sm:px-7 sm:py-8",
-        clear && "habits-pulse-sealed",
-      )}
-    >
+    <SectionReveal emphasize>
+      <section
+        className={cn(
+          "habits-pulse habits-hero relative overflow-hidden rounded-2xl imx-surface px-5 py-6 sm:px-7 sm:py-8",
+          clear && "habits-pulse-sealed",
+        )}
+      >
       <div className="habits-pulse-vignette" aria-hidden />
       <div className="habits-pulse-glow" aria-hidden />
       <div className="relative z-[1] flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
         <div className="min-w-0 flex-1 text-center sm:text-left">
-          <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+          <p className="imx-pulse-eyebrow">
             Daily pulse
           </p>
           <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
@@ -193,7 +196,8 @@ function TodayPulse({
           </div>
         </ProgressRing>
       </div>
-    </section>
+      </section>
+    </SectionReveal>
   );
 }
 
@@ -208,6 +212,7 @@ export function HabitsBoard({
   const router = useRouter();
   const pathname = usePathname();
   const [focusComposer, setFocusComposer] = useState(compose);
+  const [gridParent] = useAutoAnimate({ duration: 240, easing: "ease-out" });
   const [optimisticHabits, dispatchOptimistic] = useOptimistic(
     habits,
     reduceHabits,
@@ -246,20 +251,22 @@ export function HabitsBoard({
       {view === "active" ? (
         <TodayPulse habits={optimisticHabits} pulseStats={pulseStats} />
       ) : (
-        <section className="habits-pulse relative overflow-hidden rounded-[1.75rem] imx-surface px-5 py-6 sm:px-7 sm:py-8">
-          <div className="habits-pulse-glow" aria-hidden />
-          <div className="relative z-[1]">
-            <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-              Archive
-            </p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
-              Shelved rituals
-            </h2>
-            <p className="mt-2 max-w-md text-sm text-muted-foreground">
-              Restore when you’re ready — streaks stay with the habit.
-            </p>
-          </div>
-        </section>
+        <SectionReveal emphasize>
+          <section className="habits-pulse relative overflow-hidden rounded-2xl imx-surface px-5 py-6 sm:px-7 sm:py-8">
+            <div className="habits-pulse-glow" aria-hidden />
+            <div className="relative z-[1]">
+              <p className="imx-pulse-eyebrow">
+                Archive
+              </p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
+                Shelved rituals
+              </h2>
+              <p className="mt-2 max-w-md text-sm text-muted-foreground">
+                Restore when you’re ready — streaks stay with the habit.
+              </p>
+            </div>
+          </section>
+        </SectionReveal>
       )}
 
       <HabitViewTabs
@@ -294,12 +301,12 @@ export function HabitsBoard({
 
       {ordered.length === 0 ? (
         <EmptyState
-          icon={CheckSquare}
-          title={view === "archived" ? "No archived habits" : "No habits yet"}
+          icon={<CheckSquare className="size-5" aria-hidden />}
+          title={view === "archived" ? "No archived habits" : "Start a small ritual"}
           description={
             view === "archived"
-              ? "Archived habits will show up here."
-              : "Add a daily habit above, then check it off to build a streak."
+              ? "Archived habits wait here until you bring them back."
+              : "One daily habit is enough. Check it off to light a streak — freezes keep misses fair."
           }
           className="py-16"
         >
@@ -324,7 +331,7 @@ export function HabitsBoard({
           )}
         </EmptyState>
       ) : (
-        <ul className="habits-grid grid gap-3 sm:grid-cols-2">
+        <ul ref={gridParent} className="habits-grid grid gap-3 sm:grid-cols-2">
           {ordered.map((habit, index) => (
             <HabitItem
               key={habit.id}
