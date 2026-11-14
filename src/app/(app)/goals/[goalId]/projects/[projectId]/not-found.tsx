@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { FolderKanban } from "lucide-react";
 
 import { GoalsStage } from "@/components/goals/goals-stage";
 import { Header } from "@/components/layout/header";
@@ -14,7 +13,7 @@ export default function ProjectNotFound() {
       <AppPageFrame className="max-w-5xl gap-8 md:py-8">
         <GoalsStage>
           <EmptyState
-            icon={FolderKanban}
+            glyph="folder"
             title="Project not found"
             description="This project may have been deleted or you don’t have access."
             className="py-20"

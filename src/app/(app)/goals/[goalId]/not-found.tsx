@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Target } from "lucide-react";
 
 import { GoalsStage } from "@/components/goals/goals-stage";
 import { Header } from "@/components/layout/header";
@@ -14,7 +13,7 @@ export default function GoalNotFound() {
       <AppPageFrame className="max-w-5xl gap-8 md:py-8">
         <GoalsStage>
           <EmptyState
-            icon={Target}
+            glyph="target"
             title="Goal not found"
             description="This goal may have been deleted or you don’t have access."
             className="py-20"

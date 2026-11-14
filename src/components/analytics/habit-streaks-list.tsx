@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { CheckSquare } from "lucide-react";
 
 import { EmptyState } from "@/components/shared/empty-state";
 import type { HabitStreakSummary } from "@/types/analytics";
@@ -31,9 +30,9 @@ export function HabitStreaksList({ streaks, rangeDays }: HabitStreaksListProps) 
 
       {streaks.length === 0 ? (
         <EmptyState
-          icon={CheckSquare}
+          glyph="check"
           title="No streaks yet"
-          description="Add habits and check them in to build streaks."
+          description="Check in on habits daily. Freezes keep one quiet day from erasing the chain."
           variant="panel"
           className="mt-5 py-10"
         >

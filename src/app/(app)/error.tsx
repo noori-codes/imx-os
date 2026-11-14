@@ -24,7 +24,7 @@ export default function AppError({ error, reset }: AppErrorProps) {
       <Header chrome title="Something went wrong" />
       <AppPageFrame className="max-w-lg gap-8 md:py-12">
         <EmptyState
-          icon={AlertTriangle}
+          icon={<AlertTriangle className="size-5" aria-hidden />}
           title="This page hit a snag"
           description="Try again. If it keeps happening, jump back to the dashboard and continue from there."
           className="py-16"

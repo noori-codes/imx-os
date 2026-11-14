@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Search, Target } from "lucide-react";
+import { Search } from "lucide-react";
 
 import { Header } from "@/components/layout/header";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -12,7 +12,7 @@ export default function AppNotFound() {
       <Header chrome title="Not found" />
       <AppPageFrame className="max-w-lg gap-8 md:py-12">
         <EmptyState
-          icon={Target}
+          glyph="target"
           title="Page not found"
           description="That route doesn’t exist in IMX OS — or you don’t have access."
           className="py-16"
@@ -23,7 +23,7 @@ export default function AppNotFound() {
             </Button>
             <Button asChild variant="outline">
               <Link href="/search">
-                <Search className="size-3.5" />
+                <Search className="size-3.5" aria-hidden />
                 Search
               </Link>
             </Button>
