@@ -5,17 +5,19 @@ import { usePathname, useSearchParams } from "next/navigation";
 
 /**
  * Thin top progress bar during client navigations.
- * Shows immediately so soft-nav never feels frozen.
- * Scrolls main content to top on forward navigations (not back/forward).
+ * Stays visible until the route actually changes (no 8s failsafe that hid
+ * while RSC was still hanging 30–50s on dead Supabase sockets).
  */
 export function NavigationProgress() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const search = searchParams.toString();
   const [visible, setVisible] = useState(false);
+  const [stuck, setStuck] = useState(false);
   const safetyTimerRef = useRef<number | undefined>(undefined);
   const previousPathRef = useRef(`${pathname}?${search}`);
   const skipScrollRef = useRef(false);
+  const navigatingRef = useRef(false);
 
   function clearSafety() {
     window.clearTimeout(safetyTimerRef.current);
@@ -24,17 +26,21 @@ export function NavigationProgress() {
 
   function startProgress() {
     clearSafety();
+    navigatingRef.current = true;
+    setStuck(false);
     setVisible(true);
-    // Failsafe: never leave the bar stuck if the route update is missed.
+    // After 4s, switch to a calmer “still loading” pulse — never hide early.
     safetyTimerRef.current = window.setTimeout(() => {
-      setVisible(false);
-    }, 8000);
+      if (navigatingRef.current) setStuck(true);
+    }, 4000);
   }
 
   // Navigation finished — hide the bar and scroll to top when the path changes.
   useEffect(() => {
     clearSafety();
+    navigatingRef.current = false;
     setVisible(false);
+    setStuck(false);
 
     const nextKey = `${pathname}?${search}`;
     const pathChanged = previousPathRef.current.split("?")[0] !== pathname;
@@ -105,11 +111,18 @@ export function NavigationProgress() {
 
   return (
     <div
-      className="pointer-events-none fixed inset-x-0 top-0 z-50 h-0.5 overflow-hidden bg-primary/15"
+      className="pointer-events-none fixed inset-x-0 top-0 z-50 h-0.5 overflow-hidden bg-foreground/10"
       role="progressbar"
-      aria-label="Loading page"
+      aria-label={stuck ? "Still loading page" : "Loading page"}
+      aria-busy="true"
     >
-      <div className="nav-progress-bar h-full w-1/3 rounded-full bg-primary" />
+      <div
+        className={
+          stuck
+            ? "nav-progress-bar-stuck h-full w-full bg-foreground/55"
+            : "nav-progress-bar h-full w-1/3 rounded-full bg-foreground/80"
+        }
+      />
     </div>
   );
 }

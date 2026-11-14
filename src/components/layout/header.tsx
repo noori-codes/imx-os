@@ -12,16 +12,18 @@ type HeaderProps = {
   title: string;
   description?: string;
   /**
-   * Quiet top bar for pulse/list pages where the hero owns the display title.
-   * Still shows a small page label for orientation (and keeps an accessible h1).
+   * Quiet top bar when the page hero already shows the display title.
    */
   chrome?: boolean;
 };
 
-/** App top bar — page label + search + theme. Mobile nav lives in the tab bar. */
+/**
+ * Standard app top bar (Linear / Notion / Todoist):
+ * page title left · search + capture + account right.
+ */
 export function Header({ title, description, chrome = false }: HeaderProps) {
   return (
-    <header className="sticky top-0 z-10 flex h-14 items-center justify-between gap-3 border-b border-border/40 bg-background/90 px-4 backdrop-blur-md supports-[backdrop-filter]:bg-background/55 md:px-6">
+    <header className="sticky top-0 z-10 flex h-12 items-center justify-between gap-3 border-b border-border/60 bg-background/90 px-4 backdrop-blur-md supports-[backdrop-filter]:bg-background/70 md:px-6">
       <div className="flex min-w-0 items-center gap-2.5">
         <Link
           href="/dashboard"
@@ -44,8 +46,8 @@ export function Header({ title, description, chrome = false }: HeaderProps) {
             className={cn(
               "truncate",
               chrome
-                ? "text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground"
-                : "text-lg font-semibold tracking-tight",
+                ? "text-xs font-medium text-muted-foreground"
+                : "text-base font-semibold tracking-tight",
             )}
           >
             {title}
@@ -54,7 +56,7 @@ export function Header({ title, description, chrome = false }: HeaderProps) {
             <p
               className={cn(
                 "hidden truncate text-muted-foreground sm:block",
-                chrome ? "mt-0.5 text-xs" : "text-sm",
+                chrome ? "mt-0.5 text-[11px]" : "text-sm",
               )}
             >
               {description}
@@ -64,8 +66,8 @@ export function Header({ title, description, chrome = false }: HeaderProps) {
       </div>
 
       <div className="flex shrink-0 items-center gap-1.5">
-        <QuickCaptureTrigger />
         <DeferredSearchDialog />
+        <QuickCaptureTrigger />
         <HeaderAccount />
       </div>
     </header>

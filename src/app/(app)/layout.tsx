@@ -6,6 +6,7 @@ import { DeferredQuickCapture } from "@/components/capture/deferred-quick-captur
 import { FocusAudioHost } from "@/components/focus/focus-audio-host";
 import { CaptureHotkey } from "@/components/layout/capture-hotkey";
 import { ClientShell } from "@/components/layout/client-shell";
+import { FocusChromeSync } from "@/components/layout/focus-chrome-sync";
 import { IdleRoutePrefetch } from "@/components/layout/idle-route-prefetch";
 import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
 import { NavigationProgress } from "@/components/layout/navigation-progress";
@@ -21,6 +22,9 @@ import {
 } from "@/lib/display-name";
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
+  // Cookie JWT only — middleware already gated the session. A network
+  // getUser() here blocked every soft-nav (and loading.tsx) for seconds–minutes
+  // whenever Auth/Supabase stalled.
   const user = await getCurrentUser();
 
   if (!user) {
@@ -35,13 +39,14 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
       avatarUrl={resolveAvatarUrl(user)}
     >
       <TimezoneSync />
+      <FocusChromeSync />
       <SkipToContent />
       <FocusAudioHost />
       <IdleRoutePrefetch />
       <CaptureHotkey />
       <ClientShell>
         <div className="flex min-h-svh">
-          <div className="hidden md:block">
+          <div className="imx-sidebar-slot hidden shrink-0 md:block">
             <Sidebar />
           </div>
           <div className="flex min-h-svh min-w-0 flex-1 flex-col">
