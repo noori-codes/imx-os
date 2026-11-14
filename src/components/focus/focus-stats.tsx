@@ -1074,7 +1074,7 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
                   >
                     <ChevronLeft className="size-4" />
                   </button>
-                  <p className="min-w-0 flex-1 text-center text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground lg:text-left">
+                  <p className="min-w-0 flex-1 text-center imx-pulse-eyebrow lg:text-left">
                     {weekLabel}
                   </p>
                   <button

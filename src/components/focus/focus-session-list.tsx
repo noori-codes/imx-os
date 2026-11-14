@@ -167,13 +167,13 @@ export function FocusSessionList({ sessions }: FocusSessionListProps) {
   if (displaySessions.length === 0) {
     return (
       <section>
-        <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+        <p className="imx-pulse-eyebrow">
           Recent sessions
         </p>
         <EmptyState
-          icon={Clock}
+          icon={<Clock className="size-5" aria-hidden />}
           title="No sessions yet"
-          description="Start the timer. Finished and stopped sessions will land here."
+          description="Open the timer for one quiet block. Finished and stopped sessions land here."
           className="py-10"
         >
           <a
@@ -256,7 +256,7 @@ export function FocusSessionList({ sessions }: FocusSessionListProps) {
     return (
       <div key={group.key}>
         <div className="mb-3 flex items-baseline justify-between gap-3">
-          <h3 className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+          <h3 className="imx-pulse-eyebrow">
             {group.label}
           </h3>
           <span className="text-xs tabular-nums text-muted-foreground">
@@ -469,7 +469,7 @@ export function FocusSessionList({ sessions }: FocusSessionListProps) {
     <section>
       <div className="mb-6 flex items-end justify-between gap-3">
         <div>
-          <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+          <p className="imx-pulse-eyebrow">
             Recent sessions
           </p>
           <p className="mt-1.5 text-sm text-muted-foreground">

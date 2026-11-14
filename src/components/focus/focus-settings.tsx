@@ -160,7 +160,7 @@ export function FocusSettings({
 
         <div className="max-h-[min(calc(86vh-5.5rem),30.5rem)] space-y-8 overflow-y-auto px-5 py-5 pb-7">
           <section className="space-y-3">
-            <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+            <p className="imx-pulse-eyebrow">
               Clock
             </p>
             <div
@@ -208,7 +208,7 @@ export function FocusSettings({
 
           {!isStopwatch ? (
             <section className="space-y-3">
-              <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+              <p className="imx-pulse-eyebrow">
                 Session
               </p>
               <div className="grid grid-cols-3 gap-2">
@@ -357,7 +357,7 @@ export function FocusSettings({
           ) : null}
 
           <section className="space-y-3">
-            <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+            <p className="imx-pulse-eyebrow">
               Daily goal
             </p>
             <div className="flex flex-wrap gap-1.5">
@@ -386,7 +386,7 @@ export function FocusSettings({
           </section>
 
           <section className="space-y-2 border-t border-border/40 pt-5">
-            <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+            <p className="imx-pulse-eyebrow">
               Shortcuts
             </p>
             <p className="text-xs leading-relaxed text-muted-foreground">

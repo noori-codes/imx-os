@@ -928,7 +928,7 @@ export function FocusTimer({
           </div>
 
           <aside className="focus-run-side mx-auto flex w-full max-w-sm items-center lg:mx-0 lg:max-w-none lg:self-center">
-            <div className="focus-run-side-card flex w-full flex-col gap-5 rounded-[1.35rem] border border-border/40 bg-background/45 px-5 py-5 backdrop-blur-sm sm:gap-6 sm:px-6 sm:py-6">
+            <div className="focus-run-side-card flex w-full flex-col gap-5 rounded-2xl border border-border/40 bg-background/45 px-5 py-5 backdrop-blur-sm sm:gap-6 sm:px-6 sm:py-6">
               <div className="focus-run-controls flex items-center justify-center gap-4 sm:gap-5">
                 <button
                   type="button"
@@ -976,7 +976,7 @@ export function FocusTimer({
 
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                  <p className="imx-pulse-eyebrow">
                     Room
                   </p>
                   <p className="mt-1 truncate text-sm font-medium text-foreground">
@@ -1003,14 +1003,14 @@ export function FocusTimer({
           </aside>
         </div>
       ) : (
-        <div className="focus-launch relative z-1 w-full overflow-hidden rounded-[1.75rem] imx-surface">
+        <div className="focus-launch relative z-1 w-full overflow-hidden rounded-2xl imx-surface">
           <div className="focus-launch-vignette" aria-hidden />
           <div className="focus-launch-glow" aria-hidden />
           <div className="relative grid items-center gap-8 p-5 sm:p-7 lg:grid-cols-2 lg:gap-12 lg:p-8">
             {/* Visual column */}
             <div className="flex flex-col items-center gap-5 lg:items-start">
               <div className="w-full text-center lg:text-left">
-                <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                <p className="imx-pulse-eyebrow">
                   {canContinue ? "Paused" : "Focus studio"}
                 </p>
                 <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">

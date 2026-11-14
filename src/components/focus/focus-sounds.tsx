@@ -181,7 +181,7 @@ export function FocusSounds({
 
       <div className="relative flex items-end justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+          <p className="imx-pulse-eyebrow">
             Scene
           </p>
           <p className="mt-1 truncate text-xs text-muted-foreground">

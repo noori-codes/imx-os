@@ -3,6 +3,7 @@
 import { useEffect, type ReactNode } from "react";
 
 import { useFocusContinueBarVisible } from "@/components/focus/focus-continue-bar";
+import { FocusTheater } from "@/components/focus/focus-theater";
 import { AppPageFrame } from "@/components/shared/app-page-frame";
 import {
   focusSceneForTrack,
@@ -35,32 +36,19 @@ export function FocusWorkspace({
 
   useEffect(() => {
     if (!inSession) return;
-
-    const html = document.documentElement;
-    const body = document.body;
-    const prevHtml = html.style.overflow;
-    const prevBody = body.style.overflow;
-
-    html.style.overflow = "hidden";
-    body.style.overflow = "hidden";
-    html.dataset.focusSession = "true";
     window.scrollTo(0, 0);
-
-    return () => {
-      html.style.overflow = prevHtml;
-      body.style.overflow = prevBody;
-      delete html.dataset.focusSession;
-    };
   }, [inSession]);
 
   if (inSession) {
     return (
-      <div
-        className="focus-session-lock flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden"
-        data-focus-scene={scene}
-      >
-        <div className="flex min-h-0 flex-1 flex-col">{timer}</div>
-      </div>
+      <FocusTheater active>
+        <div
+          className="focus-session-lock flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden"
+          data-focus-scene={scene}
+        >
+          <div className="flex min-h-0 flex-1 flex-col">{timer}</div>
+        </div>
+      </FocusTheater>
     );
   }
 

@@ -160,7 +160,7 @@ export function FocusClockFace({
           {formatFocusClock(shownSeconds)}
         </p>
         {compactHints && isRunning ? null : (
-          <p className="mt-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+          <p className="mt-1.5 imx-pulse-eyebrow">
             {isStopwatch
               ? "Count up · Open"
               : `Countdown · ${formatFocusMinutes(Math.round(durationSeconds / 60))} ${FOCUS_PRESETS[mode].label}`}
