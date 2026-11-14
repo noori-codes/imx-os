@@ -42,7 +42,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { openImxCoach } from "@/lib/imx-events";
+import { IMX_OPEN_SEARCH_EVENT, openImxCoach } from "@/lib/imx-events";
 import {
   getHighlightParts,
   pushRecentSearch,
@@ -260,6 +260,18 @@ export function SearchDialog({ defaultOpen = false }: SearchDialogProps) {
   useEffect(() => {
     const isApple = /Mac|iPhone|iPad|iPod/.test(navigator.platform);
     setModKey(isApple ? "⌘" : "Ctrl");
+  }, []);
+
+  useEffect(() => {
+    if (defaultOpen) setOpen(true);
+  }, [defaultOpen]);
+
+  useEffect(() => {
+    function onOpenSearch() {
+      setOpen(true);
+    }
+    window.addEventListener(IMX_OPEN_SEARCH_EVENT, onOpenSearch);
+    return () => window.removeEventListener(IMX_OPEN_SEARCH_EVENT, onOpenSearch);
   }, []);
 
   useEffect(() => {
@@ -522,7 +534,7 @@ export function SearchDialog({ defaultOpen = false }: SearchDialogProps) {
       <Button
         variant="outline"
         size="icon"
-        className="sm:hidden"
+        className="size-8 rounded-md border-border/60 sm:hidden"
         aria-label="Search (⌘K or /)"
         onClick={() => setOpen(true)}
       >
@@ -530,20 +542,15 @@ export function SearchDialog({ defaultOpen = false }: SearchDialogProps) {
       </Button>
       <Button
         variant="outline"
-        className="search-trigger hidden h-9 w-[15.5rem] justify-start gap-2 border-surface-border bg-surface text-muted-foreground sm:inline-flex"
+        className="search-trigger hidden h-8 w-56 justify-start gap-2 rounded-md border-border/60 bg-background text-muted-foreground sm:inline-flex"
         aria-label="Search IMX (⌘K or /)"
         onClick={() => setOpen(true)}
       >
         <Search className="size-3.5 opacity-70" />
-        <span className="flex-1 truncate text-left text-sm">Search IMX…</span>
-        <span className="pointer-events-none flex items-center gap-1">
-          <kbd className="inline-flex h-5 items-center rounded-md border border-border/70 bg-muted/70 px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-            {modKey}K
-          </kbd>
-          <kbd className="inline-flex h-5 items-center rounded-md border border-border/70 bg-muted/70 px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-            /
-          </kbd>
-        </span>
+        <span className="flex-1 truncate text-left text-sm">Search…</span>
+        <kbd className="pointer-events-none inline-flex h-5 items-center rounded border border-border/70 bg-muted/60 px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+          {modKey}K
+        </kbd>
       </Button>
 
       <DialogContent
@@ -699,6 +706,7 @@ export function SearchDialog({ defaultOpen = false }: SearchDialogProps) {
                             </p>
                           </div>
                           <ArrowRight
+                            aria-hidden
                             className={cn(
                               "size-3.5 shrink-0 transition-opacity",
                               active ? "opacity-80" : "opacity-0",
@@ -890,6 +898,7 @@ export function SearchDialog({ defaultOpen = false }: SearchDialogProps) {
                                   ) : null}
                                 </div>
                                 <ArrowRight
+                                  aria-hidden
                                   className={cn(
                                     "size-3.5 shrink-0 transition-opacity",
                                     active ? "opacity-80" : "opacity-0",

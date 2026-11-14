@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { BookOpen, Pencil, Search, Trash2 } from "lucide-react";
 
 import {
@@ -309,6 +310,7 @@ export function BooksShelf({ books, compose = false }: BooksShelfProps) {
   const [editing, setEditing] = useState<Book | null>(null);
   const [creating, setCreating] = useState(compose);
   const [, startTransition] = useTransition();
+  const [listParent] = useAutoAnimate({ duration: 240, easing: "ease-out" });
 
   useEffect(() => {
     if (!compose) return;
@@ -346,6 +348,10 @@ export function BooksShelf({ books, compose = false }: BooksShelfProps) {
     startTransition(async () => {
       await updateBookStatus(bookId, status);
       if (status === "finished") {
+        const { softCompletePulse } = await import("@/lib/completion-payoff");
+        const { fireFocusGoalConfetti } = await import("@/lib/focus-celebrate");
+        softCompletePulse();
+        fireFocusGoalConfetti("light");
         imxToast("Finished", {
           description: book?.title,
           tone: "success",
@@ -425,9 +431,9 @@ export function BooksShelf({ books, compose = false }: BooksShelfProps) {
   if (books.length === 0) {
     return (
       <EmptyState
-        icon={BookOpen}
+        icon={<BookOpen className="size-5" aria-hidden />}
         title="Your shelf is empty"
-        description="Add a book you're reading, finished, or want to start next."
+        description="Add what you’re reading, finished, or want next — progress stays with the book."
         className="py-16"
       >
         <div className="mt-5">
@@ -472,7 +478,11 @@ export function BooksShelf({ books, compose = false }: BooksShelfProps) {
 
         <div className="flex flex-wrap items-center gap-2">
           <label className="relative block min-w-0 flex-1 sm:w-56 sm:flex-none">
-            <Search className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-muted-foreground" />
+            <span className="sr-only">Search shelf</span>
+            <Search
+              aria-hidden
+              className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-muted-foreground"
+            />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
@@ -502,7 +512,7 @@ export function BooksShelf({ books, compose = false }: BooksShelfProps) {
           </button>
         </EmptyState>
       ) : (
-        <ul className="grid gap-3">
+        <ul ref={listParent} className="grid gap-3">
           {filtered.map((book, index) => (
             <BookRow
               key={book.id}

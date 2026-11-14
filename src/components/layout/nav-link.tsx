@@ -2,18 +2,20 @@
 
 import Link from "next/link";
 import { useLinkStatus } from "next/link";
+import type { LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-function NavPendingDot() {
+function NavPendingDot({ collapsed }: { collapsed?: boolean }) {
   const { pending } = useLinkStatus();
 
   return (
     <span
       aria-hidden
       className={cn(
-        "ml-auto size-1.5 shrink-0 rounded-full bg-sidebar-foreground/50 transition-opacity duration-150",
-        pending ? "animate-pulse opacity-100 delay-100" : "opacity-0",
+        "size-1.5 shrink-0 rounded-full bg-sidebar-foreground/45 transition-opacity duration-150",
+        collapsed ? "absolute right-1 top-1" : "ml-auto",
+        pending ? "animate-pulse opacity-100 delay-75" : "opacity-0",
       )}
     />
   );
@@ -23,32 +25,55 @@ type NavLinkProps = {
   href: string;
   isActive: boolean;
   onNavigate?: () => void;
-  children: React.ReactNode;
+  icon: LucideIcon;
+  label: string;
+  collapsed?: boolean;
 };
 
-export function NavLink({ href, isActive, onNavigate, children }: NavLinkProps) {
+/**
+ * Standard sidebar item — icon + label, soft active fill (Linear / Notion / Todoist).
+ * A11y polish set: `layout/sidebar.tsx`, search/books/notes filter labels,
+ * habit check `aria-hidden`, decorative search arrows.
+ */
+export function NavLink({
+  href,
+  isActive,
+  onNavigate,
+  icon: Icon,
+  label,
+  collapsed = false,
+}: NavLinkProps) {
   return (
     <Link
       href={href}
       onClick={onNavigate}
       prefetch
       aria-current={isActive ? "page" : undefined}
+      aria-label={collapsed ? label : undefined}
+      title={collapsed ? label : undefined}
       className={cn(
-        "group/nav relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+        "group/nav relative flex items-center outline-none transition-colors duration-150",
+        "focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+        collapsed
+          ? "mx-auto size-8 justify-center rounded-md"
+          : "h-8 gap-2 rounded-md px-2 text-[13px]",
         isActive
-          ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground shadow-[inset_0_1px_0_color-mix(in_oklab,var(--sidebar-foreground)_6%,transparent)]"
-          : "font-normal text-sidebar-foreground/50 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
+          ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
+          : "text-sidebar-foreground/65 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground",
       )}
     >
-      <span
+      <Icon
         aria-hidden
         className={cn(
-          "absolute left-0 top-1/2 h-3.5 w-[2px] -translate-y-1/2 rounded-full bg-sidebar-foreground transition-opacity duration-150",
-          isActive ? "opacity-90" : "opacity-0 group-hover/nav:opacity-25",
+          "size-4 shrink-0",
+          isActive ? "opacity-100" : "opacity-70",
         )}
+        strokeWidth={isActive ? 2.1 : 1.85}
       />
-      {children}
-      <NavPendingDot />
+      {!collapsed ? (
+        <span className="min-w-0 flex-1 truncate leading-none">{label}</span>
+      ) : null}
+      <NavPendingDot collapsed={collapsed} />
     </Link>
   );
 }

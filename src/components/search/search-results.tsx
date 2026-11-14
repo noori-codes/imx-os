@@ -85,7 +85,7 @@ export function SearchResults({
   if (query.length < 2) {
     return (
       <div className="mx-auto w-full max-w-2xl">
-        <section className="search-spotlight relative overflow-hidden rounded-[1.5rem] imx-surface p-5 sm:p-6">
+        <section className="search-spotlight relative overflow-hidden rounded-2xl imx-surface p-5 sm:p-6">
           <div className="search-spotlight-glow" aria-hidden="true" />
           <div className="relative z-[1]">
             <div className="mb-4 flex items-start justify-between gap-3">
@@ -143,7 +143,7 @@ export function SearchResults({
             ) : (
               <>
                 <EmptyState
-                  icon={Search}
+                  icon={<Search className="size-5" aria-hidden />}
                   title="Start a search"
                   description="Your recent queries will live here."
                   variant="plain"
@@ -193,7 +193,7 @@ export function SearchResults({
     return (
       <div className="mx-auto w-full max-w-2xl">
         <EmptyState
-          icon={Search}
+          icon={<Search className="size-5" aria-hidden />}
           title="No matches"
           description={`Nothing matched “${query}”. Try another word, or jump to a space.`}
         >
@@ -286,7 +286,7 @@ export function SearchResults({
 
       {filtered.length === 0 && filter !== "all" ? (
         <EmptyState
-          icon={Search}
+          icon={<Search className="size-5" aria-hidden />}
           title={`No ${SEARCH_ENTITY_META[filter].plural.toLowerCase()} here`}
           description="Other types still matched — clear the type chip to see them."
         >
@@ -346,7 +346,10 @@ export function SearchResults({
                         {meta.label}
                       </p>
                     </div>
-                    <ArrowUpRight className="size-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                    <ArrowUpRight
+                      aria-hidden
+                      className="size-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+                    />
                   </Link>
                 </li>
               ))}

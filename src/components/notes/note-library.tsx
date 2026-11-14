@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { BookOpen, FileText, NotebookPen, Search } from "lucide-react";
 
 import { CreateNoteButton } from "@/components/notes/create-note-button";
@@ -35,6 +36,7 @@ function formatJournalDate(date: string) {
 export function NoteLibrary({ notes }: NoteLibraryProps) {
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
+  const [gridParent] = useAutoAnimate({ duration: 220, easing: "ease-out" });
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -52,9 +54,9 @@ export function NoteLibrary({ notes }: NoteLibraryProps) {
   if (notes.length === 0) {
     return (
       <EmptyState
-        icon={NotebookPen}
-        title="No notes yet"
-        description="Create a note or open today's journal to start writing."
+        icon={<NotebookPen className="size-5" aria-hidden />}
+        title="A quiet library"
+        description="Capture a note, or open today’s journal when you want a dated page."
       >
         <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
           <CreateNoteButton
@@ -104,7 +106,11 @@ export function NoteLibrary({ notes }: NoteLibraryProps) {
         </div>
 
         <label className="relative block min-w-0 sm:w-64">
-          <Search className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-muted-foreground" />
+          <span className="sr-only">Search library</span>
+          <Search
+            aria-hidden
+            className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-muted-foreground"
+          />
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
@@ -132,7 +138,7 @@ export function NoteLibrary({ notes }: NoteLibraryProps) {
           </button>
         </EmptyState>
       ) : (
-        <ul className="notes-grid grid gap-3 sm:grid-cols-2">
+        <ul ref={gridParent} className="notes-grid grid gap-3 sm:grid-cols-2">
           {filtered.map((note, index) => {
             const preview = note.preview;
             const isJournal = note.type === "journal";

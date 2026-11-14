@@ -22,6 +22,7 @@ import { confirm } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { PREF_CELEBRATE, readBoolPref } from "@/lib/app-preferences";
+import { softCompletePulse } from "@/lib/completion-payoff";
 import { imxToast } from "@/lib/imx-toast";
 import { cn } from "@/lib/utils";
 import { toDateString } from "@/lib/date-utils";
@@ -71,6 +72,7 @@ export function HabitItem({
     const next = !optimistic.completed_today;
     if (next) {
       setBurst(true);
+      softCompletePulse();
       window.setTimeout(() => setBurst(false), 460);
       const nextStreak = optimistic.current_streak + 1;
       setLiveMessage(
@@ -300,7 +302,7 @@ export function HabitItem({
           onClick={onToggle}
           disabled={archivedView}
           className={cn(
-            "habits-check relative mt-0.5 size-10 shrink-0 rounded-full border-2 transition-all duration-150",
+            "habits-check imx-press relative mt-0.5 size-9 shrink-0 rounded-full border-2 transition-[transform,box-shadow,background-color,border-color] duration-150",
             optimistic.completed_today && "text-white shadow-sm",
             archivedView && "opacity-50",
             burst && "habits-check-burst",
@@ -310,7 +312,7 @@ export function HabitItem({
               ? {
                   backgroundColor: optimistic.color,
                   borderColor: optimistic.color,
-                  boxShadow: `0 0 0 3px color-mix(in oklab, ${optimistic.color} 28%, transparent)`,
+                  boxShadow: `0 0 0 4px color-mix(in oklab, ${optimistic.color} 22%, transparent)`,
                 }
               : { borderColor: optimistic.color }
           }
@@ -322,6 +324,7 @@ export function HabitItem({
           aria-pressed={optimistic.completed_today}
         >
           <span
+            aria-hidden
             className={cn(
               "text-sm font-bold transition-all duration-150",
               optimistic.completed_today
