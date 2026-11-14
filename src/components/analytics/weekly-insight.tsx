@@ -74,7 +74,7 @@ export function WeeklyInsight({ className }: { className?: string }) {
     return (
       <div
         className={cn(
-          "rounded-[1.35rem] border border-border/40 bg-foreground/[0.02] px-5 py-4",
+          "rounded-2xl border border-border/40 bg-foreground/[0.02] px-5 py-4",
           className,
         )}
       >
@@ -87,7 +87,7 @@ export function WeeklyInsight({ className }: { className?: string }) {
   return (
     <section
       className={cn(
-        "relative overflow-hidden rounded-[1.35rem] imx-surface imx-surface-rim px-5 py-4",
+        "relative overflow-hidden rounded-2xl imx-surface imx-surface-rim px-5 py-4",
         className,
       )}
     >

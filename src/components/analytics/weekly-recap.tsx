@@ -138,7 +138,7 @@ export function WeeklyRecap({
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="imx-surface-float gap-0 overflow-hidden border-surface-border p-0 sm:max-w-md">
           <DialogHeader className="border-b border-border/40 px-5 pb-4 pt-5 pr-12">
-            <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+            <p className="imx-pulse-eyebrow">
               Weekly recap
             </p>
             <DialogTitle className="mt-1.5 text-lg">

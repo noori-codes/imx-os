@@ -52,7 +52,7 @@ export function SearchQuickCreate() {
   const [, startTransition] = useTransition();
 
   return (
-    <section className="mx-auto w-full max-w-3xl rounded-[1.35rem] imx-surface px-5 py-5 sm:px-6">
+    <section className="mx-auto w-full max-w-3xl rounded-2xl imx-surface px-5 py-5 sm:px-6">
       <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
         Create
       </p>

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { openImxCapture } from "@/lib/imx-events";
 import { cn } from "@/lib/utils";
 
-/** Header trigger — opens the universal Quick Capture dialog. */
+/** Header trigger — opens Quick Capture (C). */
 export function QuickCaptureTrigger({
   className,
 }: {
@@ -18,7 +18,7 @@ export function QuickCaptureTrigger({
       variant="outline"
       size="icon"
       className={cn(
-        "size-9 shrink-0 border-surface-border bg-surface",
+        "size-8 shrink-0 rounded-md border-border/60 bg-background",
         className,
       )}
       aria-label="Quick capture (C)"

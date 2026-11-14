@@ -102,13 +102,27 @@ export function GoalForm({
       </div>
 
       {moreOpen ? (
-        <div className="mt-3">
+        <div className="mt-3 space-y-3">
           <Textarea
             name="description"
             placeholder="What does success look like?"
             rows={2}
             className="resize-none bg-muted/30"
           />
+          <div className="space-y-1.5">
+            <label
+              htmlFor="goal-target-date"
+              className="text-xs font-medium text-muted-foreground"
+            >
+              Target date
+            </label>
+            <Input
+              id="goal-target-date"
+              name="target_date"
+              type="date"
+              className="bg-muted/30"
+            />
+          </div>
         </div>
       ) : null}
 

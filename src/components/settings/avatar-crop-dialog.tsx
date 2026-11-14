@@ -104,7 +104,7 @@ export function AvatarCropDialog({
         }}
       >
         <DialogHeader className="border-b border-border/40 px-5 pb-4 pt-5 pr-12">
-          <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+          <p className="imx-pulse-eyebrow">
             Profile photo
           </p>
           <DialogTitle className="mt-1.5 text-lg">Adjust your photo</DialogTitle>

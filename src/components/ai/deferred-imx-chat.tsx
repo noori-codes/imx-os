@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 
+import { IMX_OPEN_COACH_EVENT } from "@/lib/imx-events";
+
 const ImxChat = dynamic(
   () =>
     import("@/components/ai/imx-chat").then((m) => ({
@@ -11,28 +13,70 @@ const ImxChat = dynamic(
   { ssr: false, loading: () => null },
 );
 
-/** Mount the coach after idle so it doesn’t compete with first paint. */
+function isTypingTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return true;
+  const tag = target.tagName;
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
+  if (target.isContentEditable) return true;
+  return false;
+}
+
+function hasOpenModal() {
+  return Boolean(
+    document.querySelector(
+      '[role="dialog"][aria-modal="true"], [role="dialog"][data-state="open"], [data-slot="dialog-content"][data-state="open"]',
+    ),
+  );
+}
+
+/** Mount the coach after idle; still wake immediately on open event / ⌘⇧I. */
 export function DeferredImxChat() {
   const [ready, setReady] = useState(false);
+  const [bootOpen, setBootOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     let idleId: number | undefined;
     let timeoutId: number | undefined;
+    let mounted = false;
 
-    function enable() {
-      if (!cancelled) setReady(true);
+    function enable(open = false) {
+      if (cancelled) return;
+      if (open) setBootOpen(true);
+      setReady(true);
+      mounted = true;
     }
+
+    function onOpenEvent() {
+      enable(true);
+    }
+
+    function onKey(event: KeyboardEvent) {
+      if (mounted) return;
+      if (!(event.metaKey || event.ctrlKey) || !event.shiftKey) return;
+      if (event.key !== "i" && event.key !== "I") return;
+      if (isTypingTarget(event.target)) return;
+      if (hasOpenModal()) return;
+      if (document.documentElement.dataset.focusSession === "true") return;
+
+      event.preventDefault();
+      enable(true);
+    }
+
+    window.addEventListener(IMX_OPEN_COACH_EVENT, onOpenEvent);
+    window.addEventListener("keydown", onKey);
 
     const ric = window.requestIdleCallback;
     if (typeof ric === "function") {
-      idleId = ric.call(window, enable, { timeout: 3500 });
+      idleId = ric.call(window, () => enable(false), { timeout: 3500 });
     } else {
-      timeoutId = window.setTimeout(enable, 1500);
+      timeoutId = window.setTimeout(() => enable(false), 1500);
     }
 
     return () => {
       cancelled = true;
+      window.removeEventListener(IMX_OPEN_COACH_EVENT, onOpenEvent);
+      window.removeEventListener("keydown", onKey);
       if (idleId != null && typeof window.cancelIdleCallback === "function") {
         window.cancelIdleCallback(idleId);
       }
@@ -41,5 +85,5 @@ export function DeferredImxChat() {
   }, []);
 
   if (!ready) return null;
-  return <ImxChat />;
+  return <ImxChat initialOpen={bootOpen} />;
 }

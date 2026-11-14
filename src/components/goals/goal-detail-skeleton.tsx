@@ -22,7 +22,7 @@ export function GoalDetailSkeleton() {
         <AppPageFrame className="max-w-5xl gap-8 md:py-8">
           <GoalsStage>
             <Bone className="h-3 w-40" />
-            <div className="goals-pulse relative overflow-hidden rounded-[1.35rem] imx-surface px-5 py-5 sm:px-7 sm:py-6">
+            <div className="goals-pulse relative overflow-hidden rounded-2xl imx-surface px-5 py-5 sm:px-7 sm:py-6">
               <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0 flex-1 space-y-3">
                   <Bone className="h-2.5 w-16" />

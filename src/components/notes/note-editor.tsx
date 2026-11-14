@@ -293,7 +293,7 @@ export function NoteEditor({ note }: NoteEditorProps) {
     <form
       action={formAction}
       className={cn(
-        "notes-editor notes-studio relative overflow-hidden rounded-[1.75rem] imx-surface imx-surface-rim",
+        "notes-editor notes-studio relative overflow-hidden rounded-2xl imx-surface imx-surface-rim",
         isJournal && "notes-editor-journal",
       )}
     >
@@ -306,7 +306,7 @@ export function NoteEditor({ note }: NoteEditorProps) {
         <div className="min-w-0 space-y-1">
           <p
             className={cn(
-              "text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground",
+              "imx-pulse-eyebrow",
             )}
           >
             {isJournal ? "Journal" : "Note"}

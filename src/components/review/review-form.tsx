@@ -88,7 +88,7 @@ export function ReviewForm({ date, review }: ReviewFormProps) {
       id="review-form"
       action={formAction}
       className={cn(
-        "review-form relative overflow-hidden rounded-[1.35rem] imx-surface imx-surface-rim",
+        "review-form relative overflow-hidden rounded-2xl imx-surface imx-surface-rim",
         review && "border-foreground/10",
       )}
     >

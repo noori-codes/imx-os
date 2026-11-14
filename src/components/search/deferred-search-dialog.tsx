@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { IMX_OPEN_SEARCH_EVENT } from "@/lib/imx-events";
 
 const SearchDialog = dynamic(
   () =>
@@ -26,7 +27,7 @@ function SearchTriggers({
       <Button
         variant="outline"
         size="icon"
-        className="sm:hidden"
+        className="size-8 rounded-md border-border/60 sm:hidden"
         aria-label="Search (⌘K or /)"
         onClick={onOpen}
       >
@@ -34,28 +35,23 @@ function SearchTriggers({
       </Button>
       <Button
         variant="outline"
-        className="search-trigger hidden h-9 w-[15.5rem] justify-start gap-2 border-surface-border bg-surface text-muted-foreground sm:inline-flex"
+        className="search-trigger hidden h-8 w-56 justify-start gap-2 rounded-md border-border/60 bg-background text-muted-foreground sm:inline-flex"
         aria-label="Search IMX (⌘K or /)"
         onClick={onOpen}
       >
         <Search className="size-3.5 opacity-70" />
-        <span className="flex-1 truncate text-left text-sm">Search IMX…</span>
-        <span className="pointer-events-none flex items-center gap-1">
-          <kbd className="inline-flex h-5 items-center rounded-md border border-border/70 bg-muted/70 px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-            {modKey}K
-          </kbd>
-          <kbd className="inline-flex h-5 items-center rounded-md border border-border/70 bg-muted/70 px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-            /
-          </kbd>
-        </span>
+        <span className="flex-1 truncate text-left text-sm">Search…</span>
+        <kbd className="pointer-events-none inline-flex h-5 items-center rounded border border-border/70 bg-muted/60 px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+          {modKey}K
+        </kbd>
       </Button>
     </>
   );
 }
 
 /**
- * Keeps the heavy search palette off the critical path until ⌘K, `/`, or a
- * trigger click — header still shows lightweight chrome immediately.
+ * Keeps the heavy search palette off the critical path until ⌘K, `/`,
+ * or a header trigger click.
  */
 export function DeferredSearchDialog() {
   const [ready, setReady] = useState(false);
@@ -68,14 +64,18 @@ export function DeferredSearchDialog() {
   }, []);
 
   useEffect(() => {
-    if (ready) return;
-
     function activate() {
       setDefaultOpen(true);
       setReady(true);
     }
 
+    function onOpenSearch() {
+      activate();
+    }
+
     function onGlobalKeyDown(event: KeyboardEvent) {
+      if (ready) return;
+
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
         activate();
@@ -102,8 +102,21 @@ export function DeferredSearchDialog() {
       activate();
     }
 
+    window.addEventListener(IMX_OPEN_SEARCH_EVENT, onOpenSearch);
     document.addEventListener("keydown", onGlobalKeyDown);
-    return () => document.removeEventListener("keydown", onGlobalKeyDown);
+    return () => {
+      window.removeEventListener(IMX_OPEN_SEARCH_EVENT, onOpenSearch);
+      document.removeEventListener("keydown", onGlobalKeyDown);
+    };
+  }, [ready]);
+
+  useEffect(() => {
+    if (!ready) return;
+    function onOpenSearch() {
+      setDefaultOpen(true);
+    }
+    window.addEventListener(IMX_OPEN_SEARCH_EVENT, onOpenSearch);
+    return () => window.removeEventListener(IMX_OPEN_SEARCH_EVENT, onOpenSearch);
   }, [ready]);
 
   if (!ready) {

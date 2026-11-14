@@ -120,9 +120,9 @@ function UserBubble({ text }: { text: string }) {
   );
 }
 
-export function ImxChat() {
+export function ImxChat({ initialOpen = false }: { initialOpen?: boolean }) {
   const [mounted, setMounted] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(initialOpen);
   const [pending, startTransition] = useTransition();
   const [pendingLabel, setPendingLabel] = useState("Thinking…");
   const [messages, setMessages] = useState<ChatMessage[]>(
@@ -354,7 +354,7 @@ export function ImxChat() {
             role="dialog"
             aria-modal="true"
             aria-label="IMX chat"
-            className="imx-chat-panel relative flex h-[min(34rem,calc(100dvh-6.5rem-var(--mobile-chrome-bottom)))] w-[min(25rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-[1.35rem]"
+            className="imx-chat-panel relative flex h-[min(34rem,calc(100dvh-6.5rem-var(--mobile-chrome-bottom)))] w-[min(25rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl"
           >
             <div className="imx-chat-wash" aria-hidden />
 

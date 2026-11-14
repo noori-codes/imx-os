@@ -467,7 +467,7 @@ export function CalendarDayPanel({
   }, [date, items.events]);
 
   return (
-    <aside className="cal-dock relative flex h-full min-h-0 flex-col overflow-hidden rounded-[1.35rem] imx-surface imx-surface-rim">
+    <aside className="cal-dock relative flex h-full min-h-0 flex-col overflow-hidden rounded-2xl imx-surface imx-surface-rim">
       <div className="cal-dock-glow" aria-hidden />
       <div className="relative z-1 border-b border-border/40 px-5 py-4">
         <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
@@ -486,9 +486,9 @@ export function CalendarDayPanel({
       <div className="relative z-1 flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-5 py-4">
         {total === 0 ? (
           <EmptyState
-            icon={CalendarDays}
+            icon={<CalendarDays className="size-5" aria-hidden />}
             title={isToday ? "Today is open" : "Quiet day"}
-            description="Add an event, schedule a task, or leave a journal line."
+            description="Add an event, drop a focus block, schedule a task, or leave a journal line."
             variant="plain"
             className="py-8"
           >

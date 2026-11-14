@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { BookFormDialog } from "@/components/books/book-form-dialog";
 import { ProgressRing } from "@/components/dashboard/progress-ring";
+import { SectionReveal } from "@/components/motion/section-reveal";
 import { cn } from "@/lib/utils";
 
 export type BooksPulseStats = {
@@ -75,9 +76,10 @@ export function BooksPulse({ stats }: BooksPulseProps) {
         : 0;
 
   return (
-    <section
-      className={cn(
-        "books-pulse relative overflow-hidden rounded-[1.75rem] imx-surface px-5 py-6 sm:px-7 sm:py-8",
+    <SectionReveal emphasize>
+      <section
+        className={cn(
+          "books-pulse relative overflow-hidden rounded-2xl imx-surface px-5 py-6 sm:px-7 sm:py-8",
         copy.sealed && "books-pulse-sealed",
       )}
     >
@@ -87,7 +89,7 @@ export function BooksPulse({ stats }: BooksPulseProps) {
       <div className="relative z-1 flex flex-col gap-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 text-center sm:text-left">
-            <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+            <p className="imx-pulse-eyebrow">
               Reading shelf
             </p>
             <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
@@ -176,6 +178,7 @@ export function BooksPulse({ stats }: BooksPulseProps) {
           </ProgressRing>
         </div>
       </div>
-    </section>
+      </section>
+    </SectionReveal>
   );
 }

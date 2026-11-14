@@ -11,7 +11,7 @@ function Bone({ className }: { className?: string }) {
 function GoalsSkeletonBody() {
   return (
     <>
-      <div className="goals-pulse relative overflow-hidden rounded-[1.75rem] imx-surface px-5 py-6 sm:px-7 sm:py-8">
+      <div className="goals-pulse relative overflow-hidden rounded-2xl imx-surface px-5 py-6 sm:px-7 sm:py-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:justify-between">
           <div className="space-y-2 text-center sm:text-left">
             <Bone className="mx-auto h-2.5 w-28 sm:mx-0" />

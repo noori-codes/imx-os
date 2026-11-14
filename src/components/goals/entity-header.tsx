@@ -69,7 +69,7 @@ export function EntityHeader({
 
   if (editing) {
     return (
-      <div className="relative overflow-hidden rounded-[1.35rem] imx-surface p-5 sm:p-6">
+      <div className="relative overflow-hidden rounded-2xl imx-surface p-5 sm:p-6">
         <div className="goals-composer-glow" aria-hidden />
         <div className="relative z-1 space-y-3">
           <Input
@@ -129,7 +129,7 @@ export function EntityHeader({
   return (
     <div
       className={cn(
-        "goals-pulse group relative overflow-hidden rounded-[1.35rem] imx-surface px-5 py-5 sm:px-7 sm:py-6",
+        "goals-pulse group relative overflow-hidden rounded-2xl imx-surface px-5 py-5 sm:px-7 sm:py-6",
         sealed && "goals-pulse-sealed",
       )}
     >
@@ -140,7 +140,7 @@ export function EntityHeader({
         <div className="min-w-0 flex-1">
           <div className="flex items-start gap-3">
             <div className="min-w-0 flex-1">
-              <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+              <p className="imx-pulse-eyebrow">
                 {eyebrow}
               </p>
               <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">

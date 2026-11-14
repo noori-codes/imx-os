@@ -128,7 +128,13 @@ export function QuickCapture({
       if (event.metaKey || event.ctrlKey || event.altKey) return;
       if (isTypingTarget(event.target)) return;
       if (hasOpenModal()) return;
-      if (isRunning) return;
+      // Block during active or paused focus session (theater / session lock).
+      if (
+        isRunning ||
+        document.documentElement.dataset.focusSession === "true"
+      ) {
+        return;
+      }
 
       event.preventDefault();
       setOpen(true);
@@ -207,7 +213,7 @@ export function QuickCapture({
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent className="imx-surface-float gap-0 overflow-hidden border-surface-border p-0 sm:max-w-md">
           <DialogHeader className="border-b border-border/40 px-5 pb-4 pt-5 pr-12">
-            <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+            <p className="imx-pulse-eyebrow">
               Quick capture
             </p>
             <DialogTitle id={titleId} className="mt-1.5 text-lg">

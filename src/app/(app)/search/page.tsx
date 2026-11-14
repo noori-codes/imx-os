@@ -32,7 +32,7 @@ function Bone({ className }: { className?: string }) {
 function SearchResultsFallback({ query }: { query: string }) {
   if (query.length < 2) {
     return (
-      <div className="mx-auto w-full max-w-2xl rounded-[1.5rem] imx-surface p-5 sm:p-6">
+      <div className="mx-auto w-full max-w-2xl rounded-2xl imx-surface p-5 sm:p-6">
         <Bone className="h-2.5 w-24" />
         <Bone className="mt-3 h-3.5 w-48 max-w-full opacity-55" />
         <div className="mt-5 flex flex-wrap gap-2">

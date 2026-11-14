@@ -9,7 +9,7 @@ function Bone({ className }: { className?: string }) {
 function CalendarSkeletonBody() {
   return (
     <>
-      <div className="cal-pulse relative overflow-hidden rounded-[1.75rem] imx-surface px-5 py-6 sm:px-7 sm:py-8">
+      <div className="cal-pulse relative overflow-hidden rounded-2xl imx-surface px-5 py-6 sm:px-7 sm:py-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:justify-between">
           <div className="space-y-2">
             <Bone className="h-2.5 w-20" />
@@ -66,7 +66,7 @@ function CalendarSkeletonBody() {
           </div>
         </div>
 
-        <aside className="min-h-[28rem] overflow-hidden rounded-[1.35rem] imx-surface xl:min-h-[min(70vh,40rem)]">
+        <aside className="min-h-[28rem] overflow-hidden rounded-2xl imx-surface xl:min-h-[min(70vh,40rem)]">
           <div className="space-y-2 border-b border-border/40 px-5 py-4">
             <Bone className="h-2.5 w-20" />
             <Bone className="h-5 w-40" />

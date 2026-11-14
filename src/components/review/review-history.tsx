@@ -50,9 +50,9 @@ export function ReviewHistory({ selectedDate, recent }: ReviewHistoryProps) {
 
       {recent.length === 0 ? (
         <EmptyState
-          icon={Moon}
+          icon={<Moon className="size-5" aria-hidden />}
           title="No reviews yet"
-          description="Saved reviews appear here as a trail."
+          description="Seal tonight’s shutdown — reviews stack into a quiet trail."
           variant="plain"
           className="px-5 py-10"
         >

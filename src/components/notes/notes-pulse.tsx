@@ -3,6 +3,7 @@ import { ArrowUpRight, BookOpen } from "lucide-react";
 
 import { CreateNoteButton } from "@/components/notes/create-note-button";
 import { ProgressRing } from "@/components/dashboard/progress-ring";
+import { SectionReveal } from "@/components/motion/section-reveal";
 import { cn } from "@/lib/utils";
 import type { NoteListItem } from "@/types/note";
 
@@ -64,9 +65,10 @@ export function NotesPulse({
   const hasWriting = Boolean(journal?.preview);
 
   return (
-    <section
-      className={cn(
-        "notes-pulse relative overflow-hidden rounded-[1.75rem] imx-surface px-5 py-6 sm:px-7 sm:py-8",
+    <SectionReveal emphasize>
+      <section
+        className={cn(
+          "notes-pulse relative overflow-hidden rounded-2xl imx-surface px-5 py-6 sm:px-7 sm:py-8",
         journal && "notes-pulse-journal",
         copy.sealed && "notes-pulse-sealed",
       )}
@@ -77,7 +79,7 @@ export function NotesPulse({
       <div className="relative z-1 flex flex-col gap-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 text-center sm:text-left">
-            <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+            <p className="imx-pulse-eyebrow">
               Writing studio
             </p>
             <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
@@ -173,6 +175,7 @@ export function NotesPulse({
           </ProgressRing>
         </div>
       </div>
-    </section>
+      </section>
+    </SectionReveal>
   );
 }

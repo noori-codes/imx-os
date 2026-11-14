@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 
 import { ProgressRing } from "@/components/dashboard/progress-ring";
+import { SectionReveal } from "@/components/motion/section-reveal";
 import { calendarHref, findCalendarNextUp } from "@/lib/calendar";
 import {
   addDays,
@@ -118,9 +119,10 @@ export function CalendarPulse({
       : 0;
 
   return (
-    <section
-      className={cn(
-        "cal-pulse relative overflow-hidden rounded-[1.75rem] imx-surface px-5 py-6 sm:px-7 sm:py-8",
+    <SectionReveal emphasize>
+      <section
+        className={cn(
+          "cal-pulse relative overflow-hidden rounded-2xl imx-surface px-5 py-6 sm:px-7 sm:py-8",
         copy.clear && "cal-pulse-sealed",
       )}
     >
@@ -130,7 +132,7 @@ export function CalendarPulse({
       <div className="relative z-1 flex flex-col gap-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+            <p className="imx-pulse-eyebrow">
               {view === "month" ? "Month view" : "Week view"}
             </p>
             <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -285,6 +287,7 @@ export function CalendarPulse({
           </ProgressRing>
         </div>
       </div>
-    </section>
+      </section>
+    </SectionReveal>
   );
 }

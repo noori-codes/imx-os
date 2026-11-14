@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { WeeklyRecap } from "@/components/analytics/weekly-recap";
+import { SectionReveal } from "@/components/motion/section-reveal";
 import { cn } from "@/lib/utils";
 import {
   ANALYTICS_RANGES,
@@ -116,7 +117,8 @@ export function AnalyticsHero({
     focusMinutes <= 0 && focusSessions <= 0 && habitsAvgRate <= 0;
 
   return (
-    <div className="space-y-6">
+    <SectionReveal emphasize>
+      <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 text-center sm:text-left">
           <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
@@ -213,6 +215,7 @@ export function AnalyticsHero({
           </p>
         </div>
       </div>
-    </div>
+      </div>
+    </SectionReveal>
   );
 }
