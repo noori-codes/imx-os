@@ -2,7 +2,7 @@
 
 import { cache } from "react";
 
-import { getCurrentUser } from "@/lib/auth";
+import { resolveUserForData } from "@/lib/auth";
 import { calendarHref } from "@/lib/calendar";
 import { CACHE_TTL, cacheTags, cachedQuery } from "@/lib/cache";
 import { createAdminClient, hasAdminClient } from "@/lib/supabase/admin";
@@ -256,19 +256,17 @@ export const searchAll = cache(
       return { query, results: [] };
     }
 
-    const user = await getCurrentUser();
-    if (!user) {
-      return { query, results: [] };
-    }
-
     const normalized = query.toLowerCase();
 
-    if (hasAdminClient()) {
+    const { user, userIdForAdminCache } = await resolveUserForData();
+    if (!user) return { query, results: [] };
+
+    if (userIdForAdminCache) {
       return cachedQuery(
-        ["search", user.id, normalized],
-        [cacheTags.search(user.id)],
+        ["search", userIdForAdminCache, normalized],
+        [cacheTags.search(userIdForAdminCache)],
         CACHE_TTL.search,
-        async () => runSearch(query, user.id),
+        async () => runSearch(query, userIdForAdminCache),
       )();
     }
 

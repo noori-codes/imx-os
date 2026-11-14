@@ -4,7 +4,7 @@ import { cache } from "react";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, resolveUserForData } from "@/lib/auth";
 import { CACHE_TTL, cacheTags, cachedQuery, revalidateUserCaches } from "@/lib/cache";
 import { toDateString } from "@/lib/date-utils";
 import { buildNoteListFields } from "@/lib/note-preview";
@@ -195,17 +195,15 @@ async function loadTodayJournal(
 
 /** Notes list — request memoized; cross-request cached when service role is set. */
 export const getNotes = cache(async (type?: NoteType): Promise<NoteListItem[]> => {
-  const user = await getCurrentUser();
-  if (!user) {
-    return [];
-  }
+  const { user, userIdForAdminCache } = await resolveUserForData();
+  if (!user) return [];
 
-  if (hasAdminClient()) {
+  if (userIdForAdminCache) {
     return cachedQuery(
-      ["notes", user.id, type ?? "all", "list-v2"],
-      [cacheTags.notes(user.id)],
+      ["notes", userIdForAdminCache, type ?? "all", "list-v2"],
+      [cacheTags.notes(userIdForAdminCache)],
       CACHE_TTL.notes,
-      async () => loadNotes(user.id, type),
+      async () => loadNotes(userIdForAdminCache, type),
     )();
   }
 
@@ -214,17 +212,15 @@ export const getNotes = cache(async (type?: NoteType): Promise<NoteListItem[]> =
 
 /** Single note — request memoized; cross-request cached when service role is set. */
 export const getNote = cache(async (noteId: string): Promise<Note | null> => {
-  const user = await getCurrentUser();
-  if (!user) {
-    return null;
-  }
+  const { user, userIdForAdminCache } = await resolveUserForData();
+  if (!user) return null;
 
-  if (hasAdminClient()) {
+  if (userIdForAdminCache) {
     return cachedQuery(
-      ["notes", user.id, "detail", noteId, "v1"],
-      [cacheTags.notes(user.id)],
+      ["notes", userIdForAdminCache, "detail", noteId, "v1"],
+      [cacheTags.notes(userIdForAdminCache)],
       CACHE_TTL.notes,
-      async () => loadNote(user.id, noteId),
+      async () => loadNote(userIdForAdminCache, noteId),
     )();
   }
 
@@ -233,25 +229,21 @@ export const getNote = cache(async (noteId: string): Promise<Note | null> => {
 
 /** Today's journal (list fields only) — for spotlight / existence checks. */
 export const getTodayJournal = cache(async (): Promise<NoteListItem | null> => {
-  const user = await getCurrentUser();
-  if (!user) {
-    return null;
-  }
-
   const today = toDateString(new Date());
+  const { user, userIdForAdminCache } = await resolveUserForData();
+  if (!user) return null;
 
-  if (hasAdminClient()) {
+  if (userIdForAdminCache) {
     return cachedQuery(
-      ["notes", user.id, "journal", today, "list-v2"],
-      [cacheTags.notes(user.id)],
+      ["notes", userIdForAdminCache, "journal", today, "list-v2"],
+      [cacheTags.notes(userIdForAdminCache)],
       CACHE_TTL.notes,
-      async () => loadTodayJournal(user.id),
+      async () => loadTodayJournal(userIdForAdminCache),
     )();
   }
 
   return loadTodayJournal(null);
 });
-
 export async function createNote(
   type: NoteType = "note",
   journalDateOrFormData?: string | FormData,

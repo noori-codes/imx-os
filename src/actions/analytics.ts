@@ -2,7 +2,7 @@
 
 import { cache } from "react";
 
-import { getCurrentUser } from "@/lib/auth";
+import { resolveUserForData } from "@/lib/auth";
 import { CACHE_TTL, cacheTags, cachedQuery } from "@/lib/cache";
 import {
   computeStreaks,
@@ -442,17 +442,21 @@ export const getAnalyticsCore = cache(
     rangeDays: number | AnalyticsRangeDays = 30,
   ): Promise<AnalyticsData> => {
     const resolved = parseAnalyticsRange(String(rangeDays));
-    const user = await getCurrentUser();
-    if (!user) {
-      return emptyAnalytics(resolved);
+
+    const { user, userIdForAdminCache } = await resolveUserForData();
+    if (!user) return emptyAnalytics(resolved);
+
+    if (userIdForAdminCache) {
+      return withAnalyticsClient(
+        userIdForAdminCache,
+        ["analytics-core", userIdForAdminCache, String(resolved)],
+        (supabase, scopedUserId) =>
+          loadAnalyticsData(supabase, scopedUserId, resolved),
+      );
     }
 
-    return withAnalyticsClient(
-      user.id,
-      ["analytics-core", user.id, String(resolved)],
-      (supabase, scopedUserId) =>
-        loadAnalyticsData(supabase, scopedUserId, resolved),
-    );
+    const supabase = await createClient();
+    return loadAnalyticsData(supabase, null, resolved);
   },
 );
 
@@ -462,15 +466,21 @@ export const getAnalyticsHabitStreaks = cache(
     rangeDays: number | AnalyticsRangeDays = 30,
   ): Promise<HabitStreakSummary[]> => {
     const resolved = parseAnalyticsRange(String(rangeDays));
-    const user = await getCurrentUser();
+
+    const { user, userIdForAdminCache } = await resolveUserForData();
     if (!user) return [];
 
-    return withAnalyticsClient(
-      user.id,
-      ["analytics-streaks", user.id, String(resolved)],
-      (supabase, scopedUserId) =>
-        loadHabitStreaks(supabase, scopedUserId, resolved),
-    );
+    if (userIdForAdminCache) {
+      return withAnalyticsClient(
+        userIdForAdminCache,
+        ["analytics-streaks", userIdForAdminCache, String(resolved)],
+        (supabase, scopedUserId) =>
+          loadHabitStreaks(supabase, scopedUserId, resolved),
+      );
+    }
+
+    const supabase = await createClient();
+    return loadHabitStreaks(supabase, null, resolved);
   },
 );
 

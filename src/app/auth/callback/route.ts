@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { friendlyAuthError } from "@/lib/auth-messages";
 import { getSupabaseEnv } from "@/lib/supabase/env";
+import { supabaseFetch } from "@/lib/supabase/fetch";
 
 function callbackOrigin(request: NextRequest) {
   const forwardedHost = request.headers.get("x-forwarded-host");
@@ -51,6 +52,7 @@ export async function GET(request: NextRequest) {
     const { url, key } = getSupabaseEnv();
 
     const supabase = createServerClient(url, key, {
+      global: { fetch: supabaseFetch },
       cookies: {
         getAll() {
           return request.cookies.getAll();

@@ -1,6 +1,6 @@
 "use server";
 
-import { getVerifiedUser } from "@/lib/auth";
+import { resolveUserForData } from "@/lib/auth";
 import {
   buildActivitySnapshot,
   snapshotToPromptText,
@@ -156,7 +156,7 @@ async function runCoachAsk(
   label: string,
   hint: string,
 ): Promise<CoachAskResult> {
-  const user = await getVerifiedUser();
+  const { user } = await resolveUserForData();
   if (!user) {
     return { ok: false, code: "auth", error: "Sign in to ask the coach." };
   }

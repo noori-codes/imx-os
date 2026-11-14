@@ -18,6 +18,10 @@ export type AuthState = {
   success?: string;
 };
 
+function authCatchMessage(err: unknown) {
+  return err instanceof Error ? err.message : "fetch failed";
+}
+
 export async function login(
   _prevState: AuthState | null,
   formData: FormData,
@@ -32,14 +36,18 @@ export async function login(
     return { error: "Password is required." };
   }
 
-  const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-  if (error) {
-    return { error: friendlyAuthError(error.message) };
+    if (error) {
+      return { error: friendlyAuthError(error.message) };
+    }
+  } catch (err) {
+    return { error: friendlyAuthError(authCatchMessage(err)) };
   }
 
   revalidatePath("/", "layout");
@@ -67,33 +75,43 @@ export async function signup(
     return { error: "Passwords do not match." };
   }
 
-  const supabase = await createClient();
-  // Prefer live host so confirm links match the app the user signed up on.
-  const origin =
-    (await getOAuthRedirectOrigin().catch(() => null)) ?? getSiteOrigin();
+  let signedIn = false;
 
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      emailRedirectTo: `${origin}/auth/callback`,
-    },
-  });
+  try {
+    const supabase = await createClient();
+    // Prefer live host so confirm links match the app the user signed up on.
+    const origin =
+      (await getOAuthRedirectOrigin().catch(() => null)) ?? getSiteOrigin();
 
-  if (error) {
-    return { error: friendlyAuthError(error.message) };
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${origin}/auth/callback`,
+      },
+    });
+
+    if (error) {
+      return { error: friendlyAuthError(error.message) };
+    }
+
+    // Supabase returns an empty identities list when the email is already taken
+    // (and "Confirm email" is on) — treat that as a clear conflict.
+    if (data.user && (data.user.identities?.length ?? 0) === 0) {
+      return {
+        error: "An account with this email already exists. Sign in instead.",
+      };
+    }
+
+    // Email confirmation disabled → session is created immediately.
+    if (data.session) {
+      signedIn = true;
+    }
+  } catch (err) {
+    return { error: friendlyAuthError(authCatchMessage(err)) };
   }
 
-  // Supabase returns an empty identities list when the email is already taken
-  // (and "Confirm email" is on) — treat that as a clear conflict.
-  if (data.user && (data.user.identities?.length ?? 0) === 0) {
-    return {
-      error: "An account with this email already exists. Sign in instead.",
-    };
-  }
-
-  // Email confirmation disabled → session is created immediately.
-  if (data.session) {
+  if (signedIn) {
     revalidatePath("/", "layout");
     redirect("/dashboard");
   }
@@ -114,16 +132,20 @@ export async function requestPasswordReset(
     return { error: "Enter a valid email address." };
   }
 
-  const supabase = await createClient();
-  const origin =
-    (await getOAuthRedirectOrigin().catch(() => null)) ?? getSiteOrigin();
+  try {
+    const supabase = await createClient();
+    const origin =
+      (await getOAuthRedirectOrigin().catch(() => null)) ?? getSiteOrigin();
 
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${origin}/auth/callback?next=${encodeURIComponent("/update-password")}`,
-  });
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${origin}/auth/callback?next=${encodeURIComponent("/update-password")}`,
+    });
 
-  if (error) {
-    return { error: friendlyAuthError(error.message) };
+    if (error) {
+      return { error: friendlyAuthError(error.message) };
+    }
+  } catch (err) {
+    return { error: friendlyAuthError(authCatchMessage(err)) };
   }
 
   return {
@@ -136,15 +158,6 @@ export async function updatePassword(
   _prevState: AuthState | null,
   formData: FormData,
 ): Promise<AuthState> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { error: "Your reset link expired. Request a new one." };
-  }
-
   const password = normalizePassword(formData.get("password"));
   const confirmPassword = normalizePassword(formData.get("confirmPassword"));
 
@@ -157,10 +170,23 @@ export async function updatePassword(
     return { error: "Passwords do not match." };
   }
 
-  const { error } = await supabase.auth.updateUser({ password });
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  if (error) {
-    return { error: friendlyAuthError(error.message) };
+    if (!user) {
+      return { error: "Your reset link expired. Request a new one." };
+    }
+
+    const { error } = await supabase.auth.updateUser({ password });
+
+    if (error) {
+      return { error: friendlyAuthError(error.message) };
+    }
+  } catch (err) {
+    return { error: friendlyAuthError(authCatchMessage(err)) };
   }
 
   revalidatePath("/", "layout");
@@ -183,22 +209,31 @@ export async function signInWithOAuthProvider(
     return { error: "Unsupported sign-in provider." };
   }
 
-  const supabase = await createClient();
-  const origin = await getOAuthRedirectOrigin();
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider,
-    options: {
-      redirectTo: `${origin}/auth/callback`,
-    },
-  });
+  let oauthUrl: string | null = null;
 
-  if (error) {
-    return { error: friendlyAuthError(error.message) };
+  try {
+    const supabase = await createClient();
+    const origin =
+      (await getOAuthRedirectOrigin().catch(() => null)) ?? getSiteOrigin();
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${origin}/auth/callback`,
+      },
+    });
+
+    if (error) {
+      return { error: friendlyAuthError(error.message) };
+    }
+
+    if (!data.url) {
+      return { error: "Couldn’t start social sign-in. Try again." };
+    }
+
+    oauthUrl = data.url;
+  } catch (err) {
+    return { error: friendlyAuthError(authCatchMessage(err)) };
   }
 
-  if (!data.url) {
-    return { error: "Couldn’t start social sign-in. Try again." };
-  }
-
-  redirect(data.url);
+  redirect(oauthUrl);
 }

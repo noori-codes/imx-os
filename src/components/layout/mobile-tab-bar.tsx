@@ -60,22 +60,22 @@ export function MobileTabBar() {
                 prefetch
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "mobile-tab-item relative flex flex-col items-center justify-center gap-0.5 px-1 py-2 text-[10px] font-medium tracking-wide transition-colors",
+                  "mobile-tab-item imx-press relative flex flex-col items-center justify-center gap-0.5 px-1 py-2 text-[10px] font-medium tracking-wide transition-colors",
                   active
                     ? "text-foreground"
-                    : "text-muted-foreground/70 hover:text-foreground",
+                    : "text-muted-foreground/65 hover:text-foreground",
                 )}
               >
                 <span
                   aria-hidden
                   className={cn(
-                    "absolute inset-x-3 top-0 h-0.5 rounded-full bg-foreground transition-opacity",
+                    "absolute inset-x-4 top-0 h-0.5 rounded-full bg-[var(--imx-signal)] transition-opacity",
                     active ? "opacity-100" : "opacity-0",
                   )}
                 />
                 <Icon
-                  className={cn("size-[1.15rem]", active && "opacity-100")}
-                  strokeWidth={active ? 2.25 : 1.9}
+                  className={cn("size-[1.1rem]", active && "opacity-100")}
+                  strokeWidth={active ? 2.2 : 1.85}
                 />
                 <span>{item.title}</span>
               </Link>
@@ -89,22 +89,22 @@ export function MobileTabBar() {
             aria-haspopup="dialog"
             aria-controls="mobile-more-sheet"
             className={cn(
-              "mobile-tab-item relative flex flex-col items-center justify-center gap-0.5 px-1 py-2 text-[10px] font-medium tracking-wide transition-colors",
+              "mobile-tab-item imx-press relative flex flex-col items-center justify-center gap-0.5 px-1 py-2 text-[10px] font-medium tracking-wide transition-colors",
               moreActive || moreOpen
                 ? "text-foreground"
-                : "text-muted-foreground/70 hover:text-foreground",
+                : "text-muted-foreground/65 hover:text-foreground",
             )}
           >
             <span
               aria-hidden
               className={cn(
-                "absolute inset-x-3 top-0 h-0.5 rounded-full bg-foreground transition-opacity",
+                "absolute inset-x-4 top-0 h-0.5 rounded-full bg-[var(--imx-signal)] transition-opacity",
                 moreActive || moreOpen ? "opacity-100" : "opacity-0",
               )}
             />
             <Ellipsis
-              className="size-[1.15rem]"
-              strokeWidth={moreActive || moreOpen ? 2.25 : 1.9}
+              className="size-[1.1rem]"
+              strokeWidth={moreActive || moreOpen ? 2.2 : 1.85}
             />
             <span>More</span>
           </button>
@@ -194,17 +194,16 @@ export function MobileTabBar() {
             <p className="px-3 pb-2 text-xs text-muted-foreground">
               Theme · top-bar avatar
             </p>
-            <button
-              type="button"
-              onClick={() => {
-                setMoreOpen(false);
-                void signOut();
-              }}
-              className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm text-destructive transition-colors hover:bg-destructive/10"
-            >
-              <LogOut className="size-4 shrink-0" />
-              Sign out
-            </button>
+            <form action={signOut}>
+              <button
+                type="submit"
+                onClick={() => setMoreOpen(false)}
+                className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm text-destructive transition-colors hover:bg-destructive/10"
+              >
+                <LogOut className="size-4 shrink-0" aria-hidden />
+                Sign out
+              </button>
+            </form>
           </div>
         </SheetContent>
       </Sheet>

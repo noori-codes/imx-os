@@ -95,15 +95,16 @@ export function AccountMenu({
 
         <DropdownMenuSeparator />
 
-        <DropdownMenuItem
-          variant="destructive"
-          onSelect={(event) => {
-            event.preventDefault();
-            void signOut();
-          }}
-        >
-          <LogOut className="size-4" />
-          Sign out
+        <DropdownMenuItem asChild variant="destructive">
+          <form action={signOut} className="w-full">
+            <button
+              type="submit"
+              className="flex w-full cursor-default items-center gap-2"
+            >
+              <LogOut className="size-4" />
+              Sign out
+            </button>
+          </form>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

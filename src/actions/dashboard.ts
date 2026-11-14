@@ -2,7 +2,7 @@
 
 import { cache } from "react";
 
-import { getCurrentUser } from "@/lib/auth";
+import { resolveUserForData } from "@/lib/auth";
 import { CACHE_TTL, cacheTags, cachedQuery } from "@/lib/cache";
 import {
   addDaysToDateString,
@@ -504,21 +504,25 @@ async function loadDashboardData(
 
 /** Dashboard aggregates — request cache + optional cross-request cache. */
 export const getDashboardData = cache(async (): Promise<DashboardData> => {
-  const user = await getCurrentUser();
-  if (!user) {
+  const todayStr = await getTodayString();
+  const { user, userIdForAdminCache } = await resolveUserForData();
+  if (!user) return emptyDashboard;
+
+  try {
+    if (userIdForAdminCache) {
+      return await cachedQuery(
+        ["dashboard", userIdForAdminCache, "v12", todayStr],
+        [cacheTags.dashboard(userIdForAdminCache)],
+        CACHE_TTL.dashboard,
+        async () => loadDashboardData(userIdForAdminCache),
+      )();
+    }
+    return await loadDashboardData(null);
+  } catch (err) {
+    console.error(
+      "[dashboard] getDashboardData:",
+      err instanceof Error ? err.message : err,
+    );
     return emptyDashboard;
   }
-
-  const todayStr = await getTodayString();
-
-  if (hasAdminClient()) {
-    return cachedQuery(
-      ["dashboard", user.id, "v12", todayStr],
-      [cacheTags.dashboard(user.id)],
-      CACHE_TTL.dashboard,
-      async () => loadDashboardData(user.id),
-    )();
-  }
-
-  return loadDashboardData(null);
 });
