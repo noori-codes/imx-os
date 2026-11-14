@@ -1,5 +1,7 @@
 export type TaskRecurrence = "daily" | "weekdays" | null;
 
+export type TaskPriority = "low" | "medium" | "high" | "urgent" | null;
+
 export type Task = {
   id: string;
   user_id: string;
@@ -8,9 +10,18 @@ export type Task = {
   completed: boolean;
   due_date: string | null;
   recurrence: TaskRecurrence;
+  priority: TaskPriority;
   created_at: string;
   updated_at: string;
 };
+
+export const TASK_PRIORITIES: { id: Exclude<TaskPriority, null>; label: string }[] =
+  [
+    { id: "urgent", label: "Urgent" },
+    { id: "high", label: "High" },
+    { id: "medium", label: "Medium" },
+    { id: "low", label: "Low" },
+  ];
 
 export type TaskWithContext = Task & {
   context: string | null;

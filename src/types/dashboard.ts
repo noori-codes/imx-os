@@ -155,6 +155,7 @@ export function mapTask(row: TaskRow): TaskWithContext {
     completed: row.completed,
     due_date: row.due_date,
     recurrence: row.recurrence ?? null,
+    priority: row.priority ?? null,
     created_at: row.created_at,
     updated_at: row.updated_at,
     context,

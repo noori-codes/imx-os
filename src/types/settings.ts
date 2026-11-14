@@ -12,6 +12,8 @@ export type UserSettings = {
   auto_start_next: boolean;
   chime_enabled: boolean;
   celebrate_enabled: boolean;
+  streak_freezes_remaining: number;
+  timezone: string | null;
   saved: boolean;
 };
 
@@ -28,4 +30,6 @@ export const DEFAULT_USER_SETTINGS: Omit<UserSettings, "saved"> = {
   auto_start_next: false,
   chime_enabled: true,
   celebrate_enabled: true,
+  streak_freezes_remaining: 1,
+  timezone: null,
 };

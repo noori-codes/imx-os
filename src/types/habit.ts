@@ -1,3 +1,6 @@
+/** Weekdays this habit is due (0=Sun … 6=Sat). null = every day. */
+export type HabitScheduleDays = number[] | null;
+
 export type Habit = {
   id: string;
   user_id: string;
@@ -5,9 +8,20 @@ export type Habit = {
   description: string | null;
   color: string;
   archived: boolean;
+  /** null / empty = every day */
+  schedule_days: HabitScheduleDays;
   created_at: string;
   updated_at: string;
 };
+
+export function habitDueOnWeekday(
+  scheduleDays: HabitScheduleDays,
+  weekday: number,
+) {
+  if (!scheduleDays || scheduleDays.length === 0) return true;
+  return scheduleDays.includes(weekday);
+}
+
 
 export type HabitLog = {
   id: string;
