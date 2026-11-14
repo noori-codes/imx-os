@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * String keys safe to pass from Server Components (no function serialization).
- * Same change set: `app/(app)/**/not-found.tsx`, `analytics/habit-streaks-list.tsx`.
+ * Same change set: app/(app) not-found pages, analytics/habit-streaks-list.tsx.
  */
 export const EMPTY_STATE_GLYPHS = {
   alert: AlertTriangle,
