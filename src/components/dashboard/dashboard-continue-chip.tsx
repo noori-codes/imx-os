@@ -28,21 +28,14 @@ export function DashboardContinueChip() {
   if (!pointer) return null;
 
   return (
-    <Link
-      href={pointer.href}
-      className="dash-reveal group flex items-center justify-between gap-3 rounded-2xl border border-surface-border bg-surface px-4 py-3 transition-colors hover:border-border hover:bg-surface-strong"
-    >
+    <Link href={pointer.href} className="dash-continue group">
       <span className="flex min-w-0 items-center gap-3">
-        <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-xl border border-border/50 bg-background/60 text-foreground">
-          <Timer className="size-4" aria-hidden />
+        <span className="dash-continue-icon">
+          <Timer className="size-3.5" aria-hidden />
         </span>
         <span className="min-w-0">
-          <span className="block text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-            Continue
-          </span>
-          <span className="mt-0.5 block truncate text-sm font-medium text-foreground">
-            {pointer.label}
-          </span>
+          <span className="dash-continue-label">Continue</span>
+          <span className="dash-continue-title">{pointer.label}</span>
         </span>
       </span>
       <ArrowRight

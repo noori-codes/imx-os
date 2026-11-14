@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { useAutoAnimate } from "@formkit/auto-animate/react";
 
 import { ProgressRing } from "@/components/dashboard/progress-ring";
 import { cn } from "@/lib/utils";
@@ -21,6 +22,7 @@ export function HabitsToday({ habits, onToggle }: HabitsTodayProps) {
   const [celebrateSealed, setCelebrateSealed] = useState(false);
   const prevClear = useRef(clear);
   const mounted = useRef(false);
+  const [listParent] = useAutoAnimate({ duration: 220, easing: "ease-out" });
 
   useEffect(() => {
     if (!mounted.current) {
@@ -71,6 +73,7 @@ export function HabitsToday({ habits, onToggle }: HabitsTodayProps) {
           {total > 0 ? (
             <ProgressRing value={pct} size={48} stroke={3.5} sealed={clear}>
               <span
+                aria-hidden={clear}
                 className={cn(
                   "dash-signal-value text-[11px] font-semibold tabular-nums",
                   clear ? "text-foreground" : "text-muted-foreground",
@@ -103,7 +106,7 @@ export function HabitsToday({ habits, onToggle }: HabitsTodayProps) {
         </div>
       ) : (
         <div className="relative z-[1] flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 py-4">
-          <ul className="dash-stagger flex flex-wrap gap-3">
+          <ul ref={listParent} className="dash-stagger flex flex-wrap gap-3">
             {habits.slice(0, 8).map((habit, index) => (
               <li key={habit.id} style={{ ["--i" as string]: index }}>
                 <button
@@ -111,7 +114,7 @@ export function HabitsToday({ habits, onToggle }: HabitsTodayProps) {
                   onClick={() =>
                     handleToggle(habit.id, !habit.completed_today)
                   }
-                  className="group flex w-17 flex-col items-center gap-1.5"
+                  className="group flex w-[4.25rem] flex-col items-center gap-1.5"
                   aria-label={
                     habit.completed_today
                       ? `Undo ${habit.title}`
@@ -138,6 +141,7 @@ export function HabitsToday({ habits, onToggle }: HabitsTodayProps) {
                     }
                   >
                     <span
+                      aria-hidden
                       className={cn(
                         "text-sm font-bold leading-none transition-all duration-150",
                         habit.completed_today

@@ -127,7 +127,7 @@ export function DashboardFocusCta() {
     <Link
       href="/focus"
       className={cn(
-        "dash-focus-cta inline-flex items-center gap-2 rounded-xl bg-foreground px-4 py-2.5 text-sm font-medium text-background transition-[opacity,transform,box-shadow] duration-300",
+        "dash-focus-cta inline-flex h-10 items-center gap-2 rounded-xl bg-foreground px-4 text-sm font-medium text-background transition-opacity duration-200 hover:opacity-90",
         live && "dash-focus-cta-live",
         resume && "dash-focus-cta-resume",
       )}

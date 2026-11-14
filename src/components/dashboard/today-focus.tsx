@@ -6,6 +6,7 @@ import { CheckCircle2, Circle, Timer } from "lucide-react";
 
 import { updateTask } from "@/actions/tasks";
 import { ProgressRing } from "@/components/dashboard/progress-ring";
+import { celebrateMeaningfulClear } from "@/lib/completion-payoff";
 import {
   addDays,
   isOverdue,
@@ -235,6 +236,7 @@ export function TodayFocus({
     }
     if (clear && !prevClear.current) {
       setCelebrateClear(true);
+      celebrateMeaningfulClear("today");
       const timer = window.setTimeout(() => setCelebrateClear(false), 720);
       prevClear.current = clear;
       return () => window.clearTimeout(timer);
@@ -294,7 +296,10 @@ export function TodayFocus({
                 featured
                 sealed={focusMinutes >= focusGoalMinutes}
               >
-                <span className="text-xs font-semibold tabular-nums text-foreground">
+                <span
+                  className="text-xs font-semibold tabular-nums text-foreground"
+                  aria-hidden={focusMinutes >= focusGoalMinutes}
+                >
                   {focusMinutes >= focusGoalMinutes
                     ? "✓"
                     : `${Math.min(
@@ -312,15 +317,20 @@ export function TodayFocus({
               </p>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">Deck is clear</p>
+            <div className="space-y-1.5">
+              <p className="text-sm font-medium text-foreground">Done for today</p>
+              <p className="text-sm text-muted-foreground">
+                Deck is clear — focus or review when you’re ready.
+              </p>
+            </div>
           )}
 
           <div className="flex flex-wrap items-center justify-center gap-2">
             <Link
-              href="/tasks?compose=1"
+              href="/review"
               className="inline-flex h-9 items-center rounded-xl bg-foreground px-3.5 text-xs font-medium text-background transition-opacity hover:opacity-90"
             >
-              Add a task
+              Evening review
             </Link>
             <Link
               href="/focus"

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { m } from "motion/react";
 
 import { calendarHref } from "@/lib/calendar";
 import { toDateString } from "@/lib/date-utils";
@@ -94,9 +95,16 @@ export function WeekOverview({ week }: WeekOverviewProps) {
                   {day.task_count}
                 </span>
                 <div className="flex w-full flex-1 items-end">
-                  <div
+                  <m.div
+                    initial={{ height: "8%" }}
+                    animate={{ height: `${heightPct}%` }}
+                    transition={{
+                      delay: 0.04 * index,
+                      duration: 0.55,
+                      ease: [0.22, 1, 0.36, 1],
+                    }}
                     className={cn(
-                      "dash-bar-rise mx-auto w-full max-w-9 rounded-md transition-colors",
+                      "dash-bar-rise mx-auto w-full max-w-[2.25rem] rounded-md transition-colors",
                       day.is_today
                         ? "bg-foreground"
                         : hasTasks
@@ -104,7 +112,6 @@ export function WeekOverview({ week }: WeekOverviewProps) {
                           : "bg-muted",
                       day.is_today && pulseToday && "dash-week-today",
                     )}
-                    style={{ height: `${heightPct}%` }}
                   />
                 </div>
                 <span

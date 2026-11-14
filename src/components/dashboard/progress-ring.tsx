@@ -1,4 +1,8 @@
+"use client";
+
 import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
+import { m, useReducedMotion } from "motion/react";
 
 import { cn } from "@/lib/utils";
 
@@ -12,7 +16,7 @@ type ProgressRingProps = {
   children?: ReactNode;
 };
 
-/** Shared progress disc used on dashboard Habits / Goals panels. */
+/** Shared progress disc — draws in on mount, settles when sealed. */
 export function ProgressRing({
   value,
   size = 56,
@@ -25,7 +29,14 @@ export function ProgressRing({
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
   const pct = Math.max(0, Math.min(100, value));
-  const offset = circumference * (1 - pct / 100);
+  const reduceMotion = useReducedMotion();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const offset = circumference * (1 - (mounted || reduceMotion ? pct : 0) / 100);
 
   return (
     <div
@@ -53,7 +64,7 @@ export function ProgressRing({
           strokeWidth={stroke}
           className="text-muted/70"
         />
-        <circle
+        <m.circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
@@ -62,7 +73,12 @@ export function ProgressRing({
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={circumference}
-          strokeDashoffset={offset}
+          animate={{ strokeDashoffset: offset }}
+          transition={
+            reduceMotion
+              ? { duration: 0 }
+              : { duration: 0.72, ease: [0.22, 1, 0.36, 1] }
+          }
           className="dash-ring-fill text-foreground"
         />
       </svg>

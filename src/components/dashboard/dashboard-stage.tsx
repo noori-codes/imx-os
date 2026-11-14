@@ -4,16 +4,22 @@ import { useOptimistic, useTransition } from "react";
 
 import { toggleHabitToday } from "@/actions/habits";
 import { toggleTaskComplete } from "@/actions/tasks";
-import { DashboardActivityHeat } from "@/components/dashboard/dashboard-activity-heat";
 import { DashboardAtmosphere } from "@/components/dashboard/dashboard-atmosphere";
 import { DashboardContinueChip } from "@/components/dashboard/dashboard-continue-chip";
-import { DashboardFeaturedGoal } from "@/components/dashboard/dashboard-featured-goal";
-import { DashboardFocusPulse } from "@/components/dashboard/dashboard-focus-pulse";
-import { DashboardHero } from "@/components/dashboard/dashboard-hero";
-import { DashboardInsightStrip } from "@/components/dashboard/dashboard-insight-strip";
+import { DashboardFocusMeter } from "@/components/dashboard/dashboard-focus-meter";
+import { DashboardHomeHeader } from "@/components/dashboard/dashboard-home-header";
+import { DashboardQuickActions } from "@/components/dashboard/dashboard-quick-actions";
+import { DashboardSpotlight } from "@/components/dashboard/dashboard-spotlight";
 import { HabitsToday } from "@/components/dashboard/habits-today";
+import { MorningPlan } from "@/components/dashboard/morning-plan";
+import { StreakShield } from "@/components/dashboard/streak-shield";
 import { TodayFocus } from "@/components/dashboard/today-focus";
 import { WeekOverview } from "@/components/dashboard/week-overview";
+import {
+  celebrateMeaningfulClear,
+  softCompletePulse,
+  softCompleteToast,
+} from "@/lib/completion-payoff";
 import { isOverdue, startOfDay, toDateString } from "@/lib/date-utils";
 import { imxToast } from "@/lib/imx-toast";
 import type {
@@ -28,6 +34,7 @@ type DashboardStageProps = {
   greeting: string;
   data: DashboardData;
   focusGoalMinutes: number;
+  streakFreezesRemaining?: number;
 };
 
 type TaskToggle = { id: string; completed: boolean };
@@ -108,14 +115,22 @@ function weekWithTaskToggle(
   );
 }
 
+/**
+ * Graphite bento home — masthead → continue → jump →
+ * Today + Habits/Focus → Week + Spotlight. Full-bleed.
+ */
 export function DashboardStage({
   name,
   greeting,
   data,
   focusGoalMinutes,
+  streakFreezesRemaining = 1,
 }: DashboardStageProps) {
   const [, startTransition] = useTransition();
   const todayStr = toDateString(startOfDay(new Date()));
+  const activeDates = data.activity.days
+    .filter((day) => day.count > 0)
+    .map((day) => day.date);
 
   const [optimisticTasks, applyOptimisticTask] = useOptimistic(
     data.today_tasks,
@@ -151,17 +166,21 @@ export function DashboardStage({
     (task) => task.due_date && isOverdue(task.due_date),
   ).length;
   const habitsDone = optimisticHabits.filter((h) => h.completed_today).length;
-  const tasksDoneToday = optimisticTasks.filter((task) => task.completed).length;
-  const activeDaysWeek = data.activity.days
-    .slice(-7)
-    .filter((day) => day.count > 0).length;
   const focusMinutes =
     data.focus_today.focus_minutes || data.stats.focus_minutes_today;
   const focusSessions = data.focus_today.sessions;
-  const hasGoals = data.goals.length > 0;
+  const dueOpen = dueToday + overdue;
 
   function onTaskToggle(taskId: string, completed: boolean) {
     const after = applyTaskToggle(optimisticTasks, { id: taskId, completed });
+    const openAfter = after.filter((task) => !task.completed);
+    if (completed) {
+      if (openAfter.length === 0 && openTasks.length > 0) {
+        celebrateMeaningfulClear("today");
+      } else {
+        softCompletePulse();
+      }
+    }
     startTransition(async () => {
       applyOptimisticTask({ id: taskId, completed });
       applyOptimisticWeek({
@@ -196,6 +215,18 @@ export function DashboardStage({
   }
 
   function onHabitToggle(habitId: string, completed: boolean) {
+    const after = applyHabitToggle(optimisticHabits, {
+      id: habitId,
+      completed,
+    });
+    const doneAfter = after.filter((h) => h.completed_today).length;
+    if (completed) {
+      if (after.length > 0 && doneAfter === after.length) {
+        softCompleteToast("Habits sealed");
+      } else {
+        softCompletePulse();
+      }
+    }
     startTransition(async () => {
       applyOptimisticHabit({ id: habitId, completed });
       const result = await toggleHabitToday(habitId, completed);
@@ -211,29 +242,39 @@ export function DashboardStage({
 
   return (
     <DashboardAtmosphere>
-      <div className="dash-reveal">
-        <DashboardHero
+      <section className="dash-reveal dash-desk-top">
+        <DashboardHomeHeader
           name={name}
           greeting={greeting}
           intent={data.review.intent}
           hasTodayReview={data.review.has_today}
-          dueToday={dueToday}
+          dueOpen={dueOpen}
           overdue={overdue}
-          focusMinutes={focusMinutes}
-          focusSessions={focusSessions}
           habitsDone={habitsDone}
           habitsTotal={optimisticHabits.length}
+          focusMinutes={focusMinutes}
           streak={data.stats.activity_streak}
-          attention={dueToday + overdue}
         />
-      </div>
-
-      <div className="dash-reveal dash-reveal-delay-1">
         <DashboardContinueChip />
-      </div>
+        <DashboardQuickActions
+          hasTodayReview={data.review.has_today}
+          habitsOpen={Math.max(0, optimisticHabits.length - habitsDone)}
+          dueOpen={dueOpen}
+        />
+        <MorningPlan
+          date={todayStr}
+          tasks={optimisticTasks}
+          habits={optimisticHabits}
+        />
+        <StreakShield
+          activeDates={activeDates}
+          streak={data.stats.activity_streak}
+          freezesRemaining={streakFreezesRemaining}
+        />
+      </section>
 
-      <div className="dash-bento dash-reveal dash-reveal-delay-1">
-        <div className="dash-bento-today">
+      <div className="dash-home dash-reveal dash-reveal-delay-1">
+        <div className="dash-home-main">
           <TodayFocus
             tasks={optimisticTasks}
             overdueTasks={data.overdue_tasks}
@@ -243,35 +284,21 @@ export function DashboardStage({
             focusGoalMinutes={focusGoalMinutes}
           />
         </div>
-        <div className="dash-bento-side">
-          <HabitsToday
-            habits={optimisticHabits}
-            onToggle={onHabitToggle}
+        <div className="dash-home-side">
+          <HabitsToday habits={optimisticHabits} onToggle={onHabitToggle} />
+          <DashboardFocusMeter
+            focusMinutes={focusMinutes}
+            focusGoalMinutes={focusGoalMinutes}
+            sessions={focusSessions}
           />
-          <DashboardActivityHeat activity={data.activity} />
-        </div>
-        <div className="dash-bento-rhythm">
-          <WeekOverview week={optimisticWeek} />
-          {hasGoals ? (
-            <DashboardFeaturedGoal goals={data.goals} />
-          ) : (
-            <DashboardFocusPulse
-              focusMinutes={focusMinutes}
-              focusGoalMinutes={focusGoalMinutes}
-              sessions={focusSessions}
-            />
-          )}
         </div>
       </div>
 
-      <div className="dash-reveal dash-reveal-delay-2">
-        <DashboardInsightStrip
-          focusMinutes={focusMinutes}
-          tasksDoneToday={tasksDoneToday}
-          habitsDone={habitsDone}
-          habitsTotal={optimisticHabits.length}
-          streak={data.stats.activity_streak}
-          activeDaysWeek={activeDaysWeek}
+      <div className="dash-home-secondary dash-reveal dash-reveal-delay-2">
+        <WeekOverview week={optimisticWeek} />
+        <DashboardSpotlight
+          goals={data.goals}
+          readingBook={data.reading_book}
         />
       </div>
     </DashboardAtmosphere>

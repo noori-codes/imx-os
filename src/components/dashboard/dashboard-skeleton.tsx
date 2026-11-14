@@ -1,4 +1,4 @@
-import { AppPageFrame } from "@/components/shared/app-page-frame";
+import { DashboardAtmosphere } from "@/components/dashboard/dashboard-atmosphere";
 import { cn } from "@/lib/utils";
 
 function Bone({ className }: { className?: string }) {
@@ -13,138 +13,107 @@ function PanelHeader({ withRing = false }: { withRing?: boolean }) {
         <Bone className="h-3 w-20" />
         <Bone className="h-2.5 w-24 opacity-55" />
       </div>
-      <div className="flex items-center gap-3">
-        {withRing ? <Bone className="size-12 rounded-full" /> : null}
-        <Bone className="h-2.5 w-12" />
-      </div>
+      {withRing ? <Bone className="size-12 rounded-full" /> : null}
     </div>
   );
 }
 
 function DashboardSkeletonBody() {
   return (
-    <div className="dash-page-content flex flex-1 flex-col gap-6">
-      <section className="dash-stage dash-stage-hero relative overflow-hidden px-6 py-9 sm:px-9 sm:py-11">
-        <div className="relative z-[2] flex min-h-[min(44vh,23rem)] flex-col justify-between gap-12 sm:min-h-[25rem]">
-          <div className="flex flex-col gap-7 sm:flex-row sm:items-start sm:justify-between">
-            <div className="space-y-3.5 text-center sm:text-left">
-              <Bone className="mx-auto h-2.5 w-36 sm:mx-0" />
-              <Bone className="mx-auto h-9 w-60 max-w-full sm:mx-0 sm:h-10 sm:w-80" />
-              <Bone className="mx-auto h-3.5 w-52 max-w-full opacity-55 sm:mx-0" />
+    <>
+      <section className="dash-desk-top">
+        <header className="dash-masthead">
+          <div className="dash-masthead-top">
+            <div className="min-w-0 flex-1 space-y-2">
+              <Bone className="h-3 w-40" />
+              <Bone className="h-9 w-64 max-w-full sm:w-80" />
+              <Bone className="h-3.5 w-72 max-w-full opacity-55" />
             </div>
-            <Bone className="mx-auto h-10 w-28 rounded-xl sm:mx-0" />
-          </div>
-          <div className="flex flex-col gap-9 sm:flex-row sm:items-end sm:justify-between">
-            <div className="space-y-2.5 text-center sm:text-left">
-              <Bone className="mx-auto h-2.5 w-20 sm:mx-0" />
-              <Bone className="mx-auto h-16 w-28 sm:mx-0 sm:h-[4.5rem]" />
-            </div>
-            <div className="grid grid-cols-3 gap-5 sm:min-w-[17.5rem] sm:gap-7">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="space-y-2 text-center sm:text-left">
-                  <Bone className="mx-auto h-2.5 w-12 sm:mx-0" />
-                  <Bone className="mx-auto h-6 w-14 sm:mx-0" />
-                </div>
-              ))}
+            <div className="flex gap-2">
+              <Bone className="h-10 w-24 rounded-xl" />
+              <Bone className="h-10 w-22 rounded-xl" />
             </div>
           </div>
+          <div className="dash-metric-rail">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="dash-metric">
+                <Bone className="h-2.5 w-12" />
+                <Bone className="mt-2 h-5 w-10" />
+              </div>
+            ))}
+          </div>
+        </header>
+        <div className="flex flex-wrap gap-1.5">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Bone key={i} className="h-8 w-16 rounded-md" />
+          ))}
         </div>
       </section>
 
-      <div className="dash-bento">
-        <div className="dash-bento-today">
-          <section className="dash-panel flex h-full flex-col">
+      <div className="dash-home">
+        <div className="dash-home-main">
+          <section className="dash-panel flex h-full min-h-64 flex-col">
             <PanelHeader />
-            <div className="flex flex-1 flex-col justify-between gap-6 px-5 py-5">
-              <div className="space-y-2">
-                <Bone className="h-2.5 w-20" />
-                <Bone className="h-4 w-64 max-w-full" />
-                <Bone className="h-3 w-48 max-w-full opacity-55" />
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Bone className="h-9 w-24 rounded-xl" />
-                <Bone className="h-9 w-24 rounded-xl" />
-                <Bone className="h-9 w-28 rounded-xl" />
-              </div>
+            <div className="space-y-3 px-5 py-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Bone key={i} className="h-10 w-full rounded-md" />
+              ))}
             </div>
           </section>
         </div>
-
-        <div className="dash-bento-side">
-          <section className="dash-panel flex h-full flex-col">
+        <div className="dash-home-side">
+          <section className="dash-panel flex flex-col">
             <PanelHeader withRing />
             <div className="flex flex-wrap gap-3 px-5 py-4">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="flex w-17 flex-col items-center gap-1.5">
-                  <Bone className="size-10 rounded-full" />
-                  <Bone className="h-2.5 w-10" />
-                </div>
+                <Bone key={i} className="size-10 rounded-full" />
               ))}
             </div>
           </section>
-          <section className="dash-panel flex h-full flex-col">
-            <PanelHeader />
-            <div className="flex flex-1 flex-col justify-between gap-4 px-5 py-4">
-              <div className="grid grid-flow-col grid-rows-7 gap-[3px] self-start">
-                {Array.from({ length: 56 }).map((_, i) => (
-                  <Bone key={i} className="size-2 rounded-[2px]" />
-                ))}
-              </div>
-              <Bone className="h-2.5 w-28" />
-            </div>
-          </section>
-        </div>
-
-        <div className="dash-bento-rhythm">
           <section className="dash-panel">
-            <PanelHeader />
-            <div className="grid h-32 grid-cols-7 items-end gap-2 px-5 py-4 sm:h-36 sm:gap-3">
-              {[
-                "h-8",
-                "h-14",
-                "h-10",
-                "h-20",
-                "h-12",
-                "h-16",
-                "h-9",
-              ].map((height, i) => (
-                <div key={i} className="flex flex-col items-center gap-2">
-                  <Bone className="h-2 w-3 opacity-40" />
-                  <Bone
-                    className={cn("w-full max-w-9 rounded-md", height)}
-                  />
-                  <Bone className="h-2.5 w-5 opacity-55" />
-                </div>
-              ))}
-            </div>
-          </section>
-          <section className="dash-panel flex h-full flex-col">
-            <PanelHeader />
             <div className="flex items-center gap-4 px-5 py-4">
-              <Bone className="size-[4.5rem] shrink-0 rounded-full" />
-              <div className="min-w-0 flex-1 space-y-2">
-                <Bone className="h-3 w-[70%]" />
+              <Bone className="size-14 rounded-full" />
+              <div className="flex-1 space-y-2">
+                <Bone className="h-2.5 w-12" />
+                <Bone className="h-3.5 w-28" />
                 <Bone className="h-2.5 w-24 opacity-55" />
               </div>
             </div>
           </section>
         </div>
       </div>
-    </div>
+
+      <div className="dash-home-secondary">
+        <section className="dash-panel">
+          <PanelHeader />
+          <div className="flex h-24 items-end gap-2 px-5 py-5">
+            {Array.from({ length: 7 }).map((_, i) => (
+              <Bone key={i} className="h-1/2 w-full rounded-md odd:h-3/4 even:h-2/5" />
+            ))}
+          </div>
+        </section>
+        <section className="dash-panel">
+          <div className="flex h-full flex-col justify-between gap-4 px-5 py-4">
+            <div className="space-y-2">
+              <Bone className="h-2.5 w-14" />
+              <Bone className="h-4 w-40 max-w-full" />
+              <Bone className="h-2.5 w-24 opacity-55" />
+            </div>
+            <div className="flex items-center justify-between">
+              <Bone className="size-12 rounded-full" />
+              <Bone className="h-8 w-20 rounded-md" />
+            </div>
+          </div>
+        </section>
+      </div>
+    </>
   );
 }
 
 export function DashboardSkeleton() {
   return (
-    <div
-      className="imx-skeleton dashboard-skeleton"
-      role="status"
-      aria-live="polite"
-      aria-label="Loading dashboard"
-    >
-      <AppPageFrame className="max-w-6xl gap-8 md:py-8">
-        <DashboardSkeletonBody />
-      </AppPageFrame>
-    </div>
+    <DashboardAtmosphere className="imx-skeleton">
+      <DashboardSkeletonBody />
+    </DashboardAtmosphere>
   );
 }

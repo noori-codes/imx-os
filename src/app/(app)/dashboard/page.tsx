@@ -3,13 +3,13 @@ import type { Metadata } from "next";
 
 import { getDashboardData } from "@/actions/dashboard";
 import { getDailyFocusGoal } from "@/actions/focus";
+import { getUserSettings } from "@/actions/settings";
 import { getCurrentUser } from "@/lib/auth";
 import { resolveGreetingName } from "@/lib/display-name";
 import { getHourInZone, getRequestTimeZone } from "@/lib/timezone";
 import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
 import { DashboardStage } from "@/components/dashboard/dashboard-stage";
 import { Header } from "@/components/layout/header";
-import { AppPageFrame } from "@/components/shared/app-page-frame";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -27,23 +27,23 @@ async function getGreeting() {
 }
 
 async function DashboardBody() {
-  const [user, data, dailyGoal, greeting] = await Promise.all([
+  const [user, data, dailyGoal, greeting, settings] = await Promise.all([
     getCurrentUser(),
     getDashboardData(),
     getDailyFocusGoal(),
     getGreeting(),
+    getUserSettings(),
   ]);
   const name = user ? resolveGreetingName(user) : "there";
 
   return (
-    <AppPageFrame className="max-w-6xl gap-8 md:py-8">
-      <DashboardStage
-        name={name}
-        greeting={greeting}
-        data={data}
-        focusGoalMinutes={dailyGoal.minutes}
-      />
-    </AppPageFrame>
+    <DashboardStage
+      name={name}
+      greeting={greeting}
+      data={data}
+      focusGoalMinutes={dailyGoal.minutes}
+      streakFreezesRemaining={settings.streak_freezes_remaining}
+    />
   );
 }
 
