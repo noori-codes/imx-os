@@ -23,6 +23,7 @@ async function revalidateGoals() {
 }
 
 export async function getGoals(): Promise<GoalWithCounts[]> {
+  try {
   const supabase = await createClient();
 
   const [goalsResult, projectsResult, tasksResult] = await Promise.all([
@@ -37,6 +38,12 @@ export async function getGoals(): Promise<GoalWithCounts[]> {
   if (goalsResult.error || !goalsResult.data) {
     console.error("[goals] getGoals:", goalsResult.error?.message);
     return [];
+  }
+  if (projectsResult.error) {
+    console.error("[goals] getGoals projects:", projectsResult.error.message);
+  }
+  if (tasksResult.error) {
+    console.error("[goals] getGoals tasks:", tasksResult.error.message);
   }
 
   const goals = goalsResult.data;
@@ -76,14 +83,34 @@ export async function getGoals(): Promise<GoalWithCounts[]> {
       completed_task_count += stats.completed;
     }
 
+    const raw = goal as Goal & {
+      target_date?: string | null;
+      status?: string | null;
+    };
+    const status =
+      raw.status === "paused" ||
+      raw.status === "completed" ||
+      raw.status === "archived"
+        ? raw.status
+        : "active";
+
     return {
       ...goal,
+      target_date: raw.target_date ?? null,
+      status,
       project_count: goalProjectIds.length,
       task_count,
       completed_task_count,
       first_project_id: goalProjectIds[0] ?? null,
     };
   });
+  } catch (err) {
+    console.error(
+      "[goals] getGoals:",
+      err instanceof Error ? err.message : err,
+    );
+    return [];
+  }
 }
 
 export async function getGoal(goalId: string): Promise<Goal | null> {
@@ -100,7 +127,20 @@ export async function getGoal(goalId: string): Promise<Goal | null> {
     return null;
   }
 
-  return data;
+  if (!data) return null;
+
+  const status =
+    data.status === "paused" ||
+    data.status === "completed" ||
+    data.status === "archived"
+      ? data.status
+      : "active";
+
+  return {
+    ...data,
+    target_date: data.target_date ?? null,
+    status,
+  };
 }
 
 export async function getGoalWithCounts(
@@ -125,19 +165,36 @@ export async function createGoal(
 
   const title = (formData.get("title") as string)?.trim();
   const description = (formData.get("description") as string)?.trim() || null;
+  const targetRaw = (formData.get("target_date") as string)?.trim() || "";
+  const target_date =
+    /^\d{4}-\d{2}-\d{2}$/.test(targetRaw) ? targetRaw : null;
 
   if (!title) {
     return { error: "Goal title is required." };
   }
 
-  const { error } = await supabase.from("goals").insert({
+  const row: Record<string, unknown> = {
     user_id: user.id,
     title,
     description,
-  });
+    status: "active",
+  };
+  if (target_date) row.target_date = target_date;
+
+  let { error } = await supabase.from("goals").insert(row);
+
+  // Migration 022 not applied yet — retry without new columns.
+  if (error && /target_date|status/i.test(error.message)) {
+    const legacy = await supabase.from("goals").insert({
+      user_id: user.id,
+      title,
+      description,
+    });
+    error = legacy.error;
+  }
 
   if (error) {
-    return { error: error.message };
+    return { error: "Couldn’t save. Try again." };
   }
 
   await revalidateGoals();
@@ -146,7 +203,12 @@ export async function createGoal(
 
 export async function updateGoal(
   goalId: string,
-  input: { title: string; description: string | null },
+  input: {
+    title: string;
+    description: string | null;
+    target_date?: string | null;
+    status?: string;
+  },
 ): Promise<GoalActionState> {
   const title = input.title.trim();
   if (!title) {
@@ -154,31 +216,84 @@ export async function updateGoal(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You must be signed in." };
+  }
+
+  const patch: Record<string, unknown> = {
+    title,
+    description: input.description,
+  };
+  if (input.target_date !== undefined) {
+    patch.target_date =
+      input.target_date && /^\d{4}-\d{2}-\d{2}$/.test(input.target_date)
+        ? input.target_date
+        : null;
+  }
+  if (
+    input.status === "active" ||
+    input.status === "paused" ||
+    input.status === "completed" ||
+    input.status === "archived"
+  ) {
+    patch.status = input.status;
+  }
+
+  let { data, error } = await supabase
     .from("goals")
-    .update({
-      title,
-      description: input.description,
-    })
-    .eq("id", goalId);
+    .update(patch)
+    .eq("id", goalId)
+    .eq("user_id", user.id)
+    .select("id");
+
+  if (error && /target_date|status/i.test(error.message)) {
+    const legacy = await supabase
+      .from("goals")
+      .update({ title, description: input.description })
+      .eq("id", goalId)
+      .eq("user_id", user.id)
+      .select("id");
+    data = legacy.data;
+    error = legacy.error;
+  }
 
   if (error) {
-    return { error: error.message };
+    return { error: "Couldn’t save. Try again." };
+  }
+  if (!data?.length) {
+    return { error: "Not found." };
   }
 
   await revalidateGoals();
   return {};
 }
 
-export async function deleteGoal(goalId: string) {
+/** Hardened deletes — pairs with `projects.ts` + goals-board/project-list toasts. */
+export async function deleteGoal(
+  goalId: string,
+): Promise<{ error?: string }> {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "You must be signed in." };
 
-  const { error } = await supabase.from("goals").delete().eq("id", goalId);
+  const { data, error } = await supabase
+    .from("goals")
+    .delete()
+    .eq("id", goalId)
+    .eq("user_id", user.id)
+    .select("id");
 
   if (error) {
     console.error("[goals] deleteGoal:", error.message);
-    return;
+    return { error: "Couldn’t delete that goal." };
   }
+  if (!data?.length) return { error: "Not found." };
 
   await revalidateGoals();
+  return {};
 }

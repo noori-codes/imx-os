@@ -517,19 +517,26 @@ export async function deleteFocusSession(sessionId: string) {
   return deleteFocusSessions([sessionId]);
 }
 
-export async function deleteFocusSessions(sessionIds: string[]) {
+export async function deleteFocusSessions(
+  sessionIds: string[],
+): Promise<{ error?: string } | void> {
   if (sessionIds.length === 0) return;
 
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "You must be signed in." };
 
   const { error } = await supabase
     .from("focus_sessions")
     .delete()
-    .in("id", sessionIds);
+    .in("id", sessionIds)
+    .eq("user_id", user.id);
 
   if (error) {
     console.error("[focus] deleteFocusSessions:", error.message);
-    return;
+    return { error: error.message };
   }
 
   await revalidateFocus();

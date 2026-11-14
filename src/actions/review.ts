@@ -191,17 +191,24 @@ export async function saveDailyReview(
   return { saved: true };
 }
 
-export async function deleteDailyReview(date: string) {
+export async function deleteDailyReview(
+  date: string,
+): Promise<{ error?: string } | void> {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "You must be signed in." };
 
   const { error } = await supabase
     .from("daily_reviews")
     .delete()
-    .eq("review_date", date);
+    .eq("review_date", date)
+    .eq("user_id", user.id);
 
   if (error) {
     console.error("[review] deleteDailyReview:", error.message);
-    return;
+    return { error: error.message };
   }
 
   await revalidateReviews();

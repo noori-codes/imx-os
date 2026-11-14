@@ -305,10 +305,16 @@ export async function updateBookStatus(bookId: string, status: BookStatus) {
   if (!VALID_STATUSES.has(status)) return;
 
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
   const { data: existing, error: loadError } = await supabase
     .from("books")
     .select("*")
     .eq("id", bookId)
+    .eq("user_id", user.id)
     .maybeSingle();
 
   if (loadError || !existing) {
@@ -332,7 +338,8 @@ export async function updateBookStatus(bookId: string, status: BookStatus) {
           ? patch.finished_at
           : existing.finished_at,
     })
-    .eq("id", bookId);
+    .eq("id", bookId)
+    .eq("user_id", user.id);
 
   if (error) {
     console.error("[books] updateBookStatus:", error.message);
@@ -412,10 +419,16 @@ export async function updateBookRating(
   }
 
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "You must be signed in." };
+
   const { error } = await supabase
     .from("books")
     .update({ rating })
-    .eq("id", bookId);
+    .eq("id", bookId)
+    .eq("user_id", user.id);
 
   if (error) {
     console.error("[books] updateBookRating:", error.message);
@@ -426,13 +439,24 @@ export async function updateBookRating(
   return {};
 }
 
-export async function deleteBook(bookId: string) {
+export async function deleteBook(
+  bookId: string,
+): Promise<{ error?: string } | void> {
   const supabase = await createClient();
-  const { error } = await supabase.from("books").delete().eq("id", bookId);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "You must be signed in." };
+
+  const { error } = await supabase
+    .from("books")
+    .delete()
+    .eq("id", bookId)
+    .eq("user_id", user.id);
 
   if (error) {
     console.error("[books] deleteBook:", error.message);
-    return;
+    return { error: error.message };
   }
 
   await revalidateBooks();

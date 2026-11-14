@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useOptimistic, useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { useAutoAnimate } from "@formkit/auto-animate/react";
 import {
   Pencil,
   Search,
@@ -80,6 +81,7 @@ export function GoalsBoard({ goals, compose = false }: GoalsBoardProps) {
   );
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
+  const [gridParent] = useAutoAnimate({ duration: 240, easing: "ease-out" });
 
   useEffect(() => {
     if (!compose) return;
@@ -161,11 +163,11 @@ export function GoalsBoard({ goals, compose = false }: GoalsBoardProps) {
 
       {filtered.length === 0 ? (
         <EmptyState
-          icon={Target}
+          icon={<Target className="size-5" aria-hidden />}
           title={optimisticGoals.length === 0 ? "No goals yet" : "Nothing matches"}
           description={
             optimisticGoals.length === 0
-              ? "Goals are outcomes. Break them into projects, then tasks."
+              ? "Name an outcome you care about. Break it into projects, then tasks."
               : "Try another filter or clear the search."
           }
           className="py-16"
@@ -189,7 +191,7 @@ export function GoalsBoard({ goals, compose = false }: GoalsBoardProps) {
           )}
         </EmptyState>
       ) : (
-        <ul className="goals-grid grid gap-3 sm:grid-cols-2">
+        <ul ref={gridParent} className="goals-grid grid gap-3 sm:grid-cols-2">
           {filtered.map((goal, index) => (
             <GoalCard
               key={goal.id}
@@ -238,7 +240,14 @@ function GoalCard({
       if (!ok) return;
       startTransition(async () => {
         onOptimisticDelete();
-        await deleteGoal(goal.id);
+        const result = await deleteGoal(goal.id);
+        if (result.error) {
+          imxToast("Couldn’t delete", {
+            tone: "error",
+            description: result.error,
+          });
+          return;
+        }
         imxToast("Goal deleted", { tone: "success" });
       });
     })();

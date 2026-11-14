@@ -33,7 +33,7 @@ export function ProjectList({ goalId, projects }: ProjectListProps) {
   if (optimisticProjects.length === 0) {
     return (
       <EmptyState
-        icon={FolderKanban}
+        icon={<FolderKanban className="size-5" aria-hidden />}
         title="No projects yet"
         description="Add a project to break this goal into chunks."
         className="py-12"
@@ -104,7 +104,14 @@ function ProjectRow({
       if (!ok) return;
       startTransition(async () => {
         onOptimisticDelete();
-        await deleteProject(goalId, project.id);
+        const result = await deleteProject(goalId, project.id);
+        if (result.error) {
+          imxToast("Couldn’t delete", {
+            tone: "error",
+            description: result.error,
+          });
+          return;
+        }
         imxToast("Project deleted", { tone: "success" });
       });
     })();

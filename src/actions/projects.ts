@@ -137,6 +137,13 @@ export async function updateProject(
   }
 
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You must be signed in." };
+  }
+
   const { error } = await supabase
     .from("projects")
     .update({
@@ -144,7 +151,8 @@ export async function updateProject(
       description: input.description,
     })
     .eq("id", projectId)
-    .eq("goal_id", goalId);
+    .eq("goal_id", goalId)
+    .eq("user_id", user.id);
 
   if (error) {
     return { error: error.message };
@@ -156,20 +164,31 @@ export async function updateProject(
   return {};
 }
 
-export async function deleteProject(goalId: string, projectId: string) {
+export async function deleteProject(
+  goalId: string,
+  projectId: string,
+): Promise<{ error?: string }> {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "You must be signed in." };
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("projects")
     .delete()
     .eq("id", projectId)
-    .eq("goal_id", goalId);
+    .eq("goal_id", goalId)
+    .eq("user_id", user.id)
+    .select("id");
 
   if (error) {
     console.error("[projects] deleteProject:", error.message);
-    return;
+    return { error: "Couldn’t delete that project." };
   }
+  if (!data?.length) return { error: "Not found." };
 
   await revalidateGoal(goalId);
   revalidatePath("/tasks");
+  return {};
 }

@@ -53,6 +53,7 @@ function mapTask(row: TaskRow): CalendarTask {
     completed: row.completed,
     due_date: row.due_date,
     recurrence: row.recurrence ?? null,
+    priority: row.priority ?? null,
     created_at: row.created_at,
     updated_at: row.updated_at,
     context: project && goal ? `${goal.title} · ${project.title}` : null,
@@ -279,11 +280,16 @@ export async function updateCalendarEvent(
 
 export async function deleteCalendarEvent(eventId: string) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "You must be signed in." };
 
   const { error } = await supabase
     .from("calendar_events")
     .delete()
-    .eq("id", eventId);
+    .eq("id", eventId)
+    .eq("user_id", user.id);
 
   if (error) {
     console.error("[calendar] deleteCalendarEvent:", error.message);
