@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { getSupabaseEnv, isSupabaseConfigured } from "@/lib/supabase/env";
+import { supabaseFetch } from "@/lib/supabase/fetch";
 
 const AUTH_ROUTES = ["/login", "/register", "/forgot-password"];
 const PUBLIC_ROUTES = ["/auth/callback", "/setup"];
@@ -71,6 +72,7 @@ export async function updateSession(request: NextRequest) {
   const { url, key } = getSupabaseEnv();
 
   const supabase = createServerClient(url, key, {
+    global: { fetch: supabaseFetch },
     cookies: {
       getAll() {
         return request.cookies.getAll();
@@ -88,7 +90,8 @@ export async function updateSession(request: NextRequest) {
   });
 
   // getSession reads the JWT from cookies (local) — much faster than getUser (network).
-  // Real validation still happens in the app layout via getUser().
+  // App layout uses getCurrentUser() for the same reason; mutations that need
+  // a network proof should call getVerifiedUser() themselves.
   const {
     data: { session },
   } = await supabase.auth.getSession();

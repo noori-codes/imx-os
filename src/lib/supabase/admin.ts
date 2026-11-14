@@ -1,6 +1,7 @@
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
 import { getSupabaseEnv } from "@/lib/supabase/env";
+import { supabaseFetch } from "@/lib/supabase/fetch";
 
 /** True when the optional service-role key is configured for cross-request caching. */
 export function hasAdminClient() {
@@ -22,6 +23,7 @@ export function createAdminClient() {
   const { url } = getSupabaseEnv();
 
   return createSupabaseClient(url, serviceKey, {
+    global: { fetch: supabaseFetch },
     auth: {
       persistSession: false,
       autoRefreshToken: false,

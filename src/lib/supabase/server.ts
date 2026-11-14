@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { cache } from "react";
 
 import { getSupabaseEnv } from "@/lib/supabase/env";
+import { supabaseFetch } from "@/lib/supabase/fetch";
 
 /**
  * Deduped per request — layouts + pages + actions share one client.
@@ -12,6 +13,7 @@ export const createClient = cache(async () => {
   const { url, key } = getSupabaseEnv();
 
   return createServerClient(url, key, {
+    global: { fetch: supabaseFetch },
     cookies: {
       getAll() {
         return cookieStore.getAll();
