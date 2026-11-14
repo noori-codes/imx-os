@@ -26,7 +26,7 @@ export default function NotFound() {
           <span className="text-2xl font-semibold tracking-tight">IMX OS</span>
         </Link>
 
-        <div className="auth-card w-full space-y-4 rounded-[1.35rem] imx-surface imx-surface-rim p-6  sm:p-7">
+        <div className="auth-card w-full space-y-4 rounded-2xl imx-surface imx-surface-rim p-6  sm:p-7">
           <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
             404
           </p>

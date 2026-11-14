@@ -40,7 +40,7 @@ export default function SetupPage() {
           </span>
         </Link>
 
-        <div className="auth-card w-full overflow-hidden rounded-[1.35rem] imx-surface imx-surface-rim">
+        <div className="auth-card w-full overflow-hidden rounded-2xl imx-surface imx-surface-rim">
           <div className="auth-card-glow" aria-hidden />
           <div className="relative z-1 space-y-5 p-6 sm:p-7">
             <header className="space-y-1.5">

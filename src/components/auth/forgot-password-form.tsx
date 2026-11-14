@@ -17,11 +17,11 @@ export function ForgotPasswordForm() {
   >(requestPasswordReset, null);
 
   return (
-    <div className="auth-card w-full max-w-[24rem] overflow-hidden rounded-[1.5rem] imx-surface imx-surface-rim">
+    <div className="auth-card w-full max-w-[24rem] overflow-hidden rounded-2xl imx-surface imx-surface-rim">
       <div className="auth-card-glow" aria-hidden />
       <div className="relative z-1 space-y-6 p-6 sm:p-8">
         <header className="space-y-2 text-center sm:text-left">
-          <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+          <p className="imx-pulse-eyebrow">
             Account recovery
           </p>
           <h1 className="text-[1.65rem] font-semibold tracking-tight text-foreground sm:text-3xl">
