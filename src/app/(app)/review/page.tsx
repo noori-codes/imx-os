@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 
 import { getReviewPageData } from "@/actions/review";
 import { Header } from "@/components/layout/header";
+import { EveningShutdown } from "@/components/review/evening-shutdown";
 import { ReviewForm } from "@/components/review/review-form";
 import { ReviewHistory } from "@/components/review/review-history";
 import { ReviewPulse } from "@/components/review/review-pulse";
@@ -36,6 +37,10 @@ async function ReviewBody({ date }: { date: string }) {
       <ReviewStage mood={review?.mood}>
         <div className="review-reveal">
           <ReviewPulse date={date} recap={recap} review={review} />
+        </div>
+
+        <div className="review-reveal review-reveal-delay-1">
+          <EveningShutdown date={date} recap={recap} review={review} />
         </div>
 
         <div className="review-reveal review-reveal-delay-1 border-t border-border/30 pt-8">
