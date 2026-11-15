@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition, type ReactNode } from "reac
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight, Send, Sparkles, X } from "lucide-react";
+import { AnimatePresence, m, useReducedMotion } from "motion/react";
 
 import { askCoachMessage, askCoachQuestion, type CoachReply } from "@/actions/ai";
 import {
@@ -69,13 +70,19 @@ function BrandMark({
 }
 
 function AssistantBubble({ children }: { children: ReactNode }) {
+  const reduce = useReducedMotion();
   return (
-    <div className="imx-chat-msg flex gap-2.5">
+    <m.div
+      className="imx-chat-msg flex gap-2.5"
+      initial={reduce ? false : { opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+    >
       <BrandMark size={28} />
       <div className="min-w-0 flex-1 rounded-2xl rounded-tl-md imx-surface imx-surface-rim px-3.5 py-2.5 text-sm leading-relaxed text-foreground">
         {children}
       </div>
-    </div>
+    </m.div>
   );
 }
 
@@ -111,12 +118,18 @@ function SuggestionList({
 }
 
 function UserBubble({ text }: { text: string }) {
+  const reduce = useReducedMotion();
   return (
-    <div className="imx-chat-msg flex justify-end">
+    <m.div
+      className="imx-chat-msg flex justify-end"
+      initial={reduce ? false : { opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+    >
       <div className="max-w-[85%] rounded-2xl rounded-tr-md bg-foreground px-3.5 py-2.5 text-sm leading-relaxed text-background dark:bg-foreground/14 dark:text-foreground dark:ring-1 dark:ring-foreground/15">
         {text}
       </div>
-    </div>
+    </m.div>
   );
 }
 
@@ -348,13 +361,19 @@ export function ImxChat({ initialOpen = false }: { initialOpen?: boolean }) {
         />
       ) : null}
       <div className="pointer-events-auto relative z-10 flex flex-col items-end gap-3">
-        {open ? (
-          <div
+        <AnimatePresence>
+          {open ? (
+          <m.div
+            key="imx-chat-panel"
             ref={panelRef}
             role="dialog"
             aria-modal="true"
             aria-label="IMX chat"
             className="imx-chat-panel relative flex h-[min(34rem,calc(100dvh-6.5rem-var(--mobile-chrome-bottom)))] w-[min(25rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl"
+            initial={{ opacity: 0, y: 12, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 8, scale: 0.98 }}
+            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
           >
             <div className="imx-chat-wash" aria-hidden />
 
@@ -517,8 +536,9 @@ export function ImxChat({ initialOpen = false }: { initialOpen?: boolean }) {
                 </div>
               )}
             </div>
-          </div>
-        ) : null}
+          </m.div>
+          ) : null}
+        </AnimatePresence>
 
         <button
           ref={fabRef}

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { m, useReducedMotion } from "motion/react";
 
 import {
   describeAuthError,
@@ -31,11 +32,15 @@ export function AuthFeedback({
       : describeAuthError(message));
 
   const Icon = tone === "success" ? CheckCircle2 : AlertCircle;
+  const reduce = useReducedMotion();
 
   return (
-    <div
+    <m.div
       role={tone === "error" ? "alert" : "status"}
       aria-live="polite"
+      initial={reduce ? false : { opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
       className={cn(
         "auth-feedback flex gap-3 rounded-2xl border px-3.5 py-3.5",
         tone === "error"
@@ -79,6 +84,6 @@ export function AuthFeedback({
           </p>
         ) : null}
       </div>
-    </div>
+    </m.div>
   );
 }

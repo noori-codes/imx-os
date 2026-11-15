@@ -46,16 +46,14 @@ async function SettingsBody() {
   return (
     <AppPageFrame>
       <SettingsStage>
-        <div className="settings-reveal">
-          <SettingsHub
-            email={user.email ?? "Signed in"}
-            displayName={resolveDisplayName(user)}
-            hasCustomAvatar={hasCustomAvatar(user)}
-            memberSince={memberSince}
-            memberShort={memberShort}
-            settings={settings}
-          />
-        </div>
+        <SettingsHub
+          email={user.email ?? "Signed in"}
+          displayName={resolveDisplayName(user)}
+          hasCustomAvatar={hasCustomAvatar(user)}
+          memberSince={memberSince}
+          memberShort={memberShort}
+          settings={settings}
+        />
       </SettingsStage>
     </AppPageFrame>
   );

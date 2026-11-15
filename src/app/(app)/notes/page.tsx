@@ -3,6 +3,10 @@ import type { Metadata } from "next";
 
 import { getNotes, getTodayJournal } from "@/actions/notes";
 import { Header } from "@/components/layout/header";
+import {
+  REVEAL_DELAY,
+  SectionReveal,
+} from "@/components/motion/section-reveal";
 import { NoteLibrary } from "@/components/notes/note-library";
 import { NotesPulse } from "@/components/notes/notes-pulse";
 import { NotesSkeleton } from "@/components/notes/notes-skeleton";
@@ -27,18 +31,16 @@ async function NotesBody() {
   return (
     <AppPageFrame>
       <NotesStage>
-        <div className="notes-reveal">
-          <NotesPulse
-            journal={todayJournal}
-            noteCount={plainNotes}
-            journalCount={journals}
-            words={words}
-          />
-        </div>
+        <NotesPulse
+          journal={todayJournal}
+          noteCount={plainNotes}
+          journalCount={journals}
+          words={words}
+        />
 
-        <div className="notes-reveal notes-reveal-delay-1">
+        <SectionReveal delay={REVEAL_DELAY[1]}>
           <NoteLibrary notes={notes} />
-        </div>
+        </SectionReveal>
       </NotesStage>
     </AppPageFrame>
   );

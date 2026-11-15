@@ -4,6 +4,10 @@ import { redirect } from "next/navigation";
 
 import { searchAll } from "@/actions/search";
 import { Header } from "@/components/layout/header";
+import {
+  REVEAL_DELAY,
+  SectionReveal,
+} from "@/components/motion/section-reveal";
 import { SearchForm } from "@/components/search/search-form";
 import { SearchHero } from "@/components/search/search-hero";
 import { SearchJumpNav } from "@/components/search/search-jump-nav";
@@ -95,42 +99,40 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       <Header chrome title="Search" />
       <AppPageFrame>
         <SearchStage>
-          <div className="search-reveal">
-            <SearchHero>
-              <header className="text-center sm:text-left">
-                <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-                  Command index
-                </p>
-                <h2 className="mt-2 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-                  Find anything
-                </h2>
-                <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted-foreground sm:mx-0">
-                  Jump to a space by name, or search across tasks, notes, goals,
-                  habits, and more.
-                </p>
-              </header>
+          <SearchHero>
+            <header className="text-center sm:text-left">
+              <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                Command index
+              </p>
+              <h2 className="mt-2 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+                Find anything
+              </h2>
+              <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted-foreground sm:mx-0">
+                Jump to a space by name, or search across tasks, notes, goals,
+                habits, and more.
+              </p>
+            </header>
 
-              <div className="search-composer rounded-2xl imx-surface imx-surface-rim p-2 sm:p-2.5">
-                <SearchForm initialQuery={query} autoFocus hero />
-              </div>
-            </SearchHero>
-          </div>
+            <div className="search-composer rounded-2xl imx-surface imx-surface-rim p-2 sm:p-2.5">
+              <SearchForm initialQuery={query} autoFocus hero />
+            </div>
+          </SearchHero>
 
-          <div className="search-reveal search-reveal-delay-1">
+          <SectionReveal delay={REVEAL_DELAY[1]}>
             <SearchJumpNav query={query} variant="page" />
-          </div>
+          </SectionReveal>
 
           {query.length < 2 ? (
-            <div className="search-reveal search-reveal-delay-2">
+            <SectionReveal delay={REVEAL_DELAY[2]}>
               <SearchQuickCreate />
-            </div>
+            </SectionReveal>
           ) : null}
 
-          <div className="search-reveal search-reveal-delay-2">
+          <SectionReveal delay={REVEAL_DELAY[2]}>
             <Suspense fallback={<SearchResultsFallback query={query} />}>
               <SearchResultsSection query={query} type={params.type} />
             </Suspense>
-          </div>
+          </SectionReveal>
         </SearchStage>
       </AppPageFrame>
     </>

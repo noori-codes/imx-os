@@ -10,6 +10,10 @@ import { GoalsStage } from "@/components/goals/goals-stage";
 import { ProjectForm } from "@/components/goals/project-form";
 import { ProjectList } from "@/components/goals/project-list";
 import { Header } from "@/components/layout/header";
+import {
+  REVEAL_DELAY,
+  SectionReveal,
+} from "@/components/motion/section-reveal";
 import { AppPageFrame } from "@/components/shared/app-page-frame";
 import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 import { goalMotion, goalMotionLabel } from "@/lib/goal-status";
@@ -58,16 +62,16 @@ async function GoalDetailBody({ goalId }: { goalId: string }) {
       <Header chrome title={goal.title} description={metaParts.join(" · ")} />
       <AppPageFrame>
         <GoalsStage>
-          <div className="goals-reveal">
+          <SectionReveal>
             <Breadcrumbs
               items={[
                 { label: "Goals", href: "/goals" },
                 { label: goal.title },
               ]}
             />
-          </div>
+          </SectionReveal>
 
-          <div className="goals-reveal goals-reveal-delay-1">
+          <SectionReveal delay={REVEAL_DELAY[1]}>
             <EntityHeader
               eyebrow="Goal"
               title={goal.title}
@@ -77,9 +81,9 @@ async function GoalDetailBody({ goalId }: { goalId: string }) {
               sealed={motion === "complete"}
               onSave={updateGoal.bind(null, goalId)}
             />
-          </div>
+          </SectionReveal>
 
-          <div className="goals-reveal goals-reveal-delay-2 space-y-5">
+          <SectionReveal delay={REVEAL_DELAY[2]} className="space-y-5">
             <div className="goals-composer relative overflow-hidden rounded-2xl imx-surface p-4 sm:p-5">
               <div className="goals-composer-glow" aria-hidden />
               <div className="relative z-1">
@@ -90,7 +94,7 @@ async function GoalDetailBody({ goalId }: { goalId: string }) {
               </div>
             </div>
             <ProjectList goalId={goalId} projects={projects} />
-          </div>
+          </SectionReveal>
         </GoalsStage>
       </AppPageFrame>
     </>

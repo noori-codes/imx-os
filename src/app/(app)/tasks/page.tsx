@@ -45,23 +45,21 @@ async function TasksBody({
 
   return (
     <TasksStage>
-      <div className="tasks-reveal">
-        <TasksBoard
-          tasks={tasks}
-          view={view}
-          counts={stats.counts}
-          projects={projects}
-          todayFocus={todayFocus}
-          compose={compose}
-          pulseStats={{
-            openCount: stats.openCount,
-            overdueCount: stats.overdueCount,
-            doneToday: stats.doneToday,
-            todayOpen: stats.counts.today,
-            focusMinutes,
-          }}
-        />
-      </div>
+      <TasksBoard
+        tasks={tasks}
+        view={view}
+        counts={stats.counts}
+        projects={projects}
+        todayFocus={todayFocus}
+        compose={compose}
+        pulseStats={{
+          openCount: stats.openCount,
+          overdueCount: stats.overdueCount,
+          doneToday: stats.doneToday,
+          todayOpen: stats.counts.today,
+          focusMinutes,
+        }}
+      />
     </TasksStage>
   );
 }

@@ -17,6 +17,10 @@ import { HabitStreaksList } from "@/components/analytics/habit-streaks-list";
 import { LifeConstellation } from "@/components/analytics/life-constellation";
 import { WeeklyInsight } from "@/components/analytics/weekly-insight";
 import { Header } from "@/components/layout/header";
+import {
+  REVEAL_DELAY,
+  SectionReveal,
+} from "@/components/motion/section-reveal";
 import { AppPageFrame } from "@/components/shared/app-page-frame";
 import { cn } from "@/lib/utils";
 import {
@@ -93,43 +97,56 @@ async function AnalyticsCoreBody({
   return (
     <AppPageFrame className="gap-10">
       <AnalyticsStage>
-        <div className="analytics-reveal">
-          <AnalyticsHero
-            rangeDays={rangeDays}
-            focusMinutes={summary.focus_minutes}
-            habitsAvgRate={summary.habits_avg_rate}
-            bestHabitStreak={summary.best_habit_streak}
-            focusGoalHitDays={summary.focus_goal_hit_days}
-            focusGoalDays={summary.focus_goal_days}
-            focusSessions={summary.focus_sessions}
-            tasksCompleted={summary.tasks_completed}
-            dailyFocusGoalMinutes={summary.daily_focus_goal_minutes}
-          />
-        </div>
+        <AnalyticsHero
+          rangeDays={rangeDays}
+          focusMinutes={summary.focus_minutes}
+          habitsAvgRate={summary.habits_avg_rate}
+          bestHabitStreak={summary.best_habit_streak}
+          focusGoalHitDays={summary.focus_goal_hit_days}
+          focusGoalDays={summary.focus_goal_days}
+          focusSessions={summary.focus_sessions}
+          tasksCompleted={summary.tasks_completed}
+          dailyFocusGoalMinutes={summary.daily_focus_goal_minutes}
+        />
 
-        <div className="analytics-reveal analytics-reveal-delay-1 border-t border-border/30 pt-8">
+        <SectionReveal
+          delay={REVEAL_DELAY[1]}
+          className="border-t border-border/30 pt-8"
+        >
           <WeeklyInsight />
-        </div>
+        </SectionReveal>
 
-        <div className="analytics-reveal analytics-reveal-delay-1 border-t border-border/30 pt-8">
+        <SectionReveal
+          delay={REVEAL_DELAY[1]}
+          className="border-t border-border/30 pt-8"
+        >
           <LifeConstellation series={data.series} />
-        </div>
+        </SectionReveal>
 
-        <div className="analytics-reveal analytics-reveal-delay-1 border-t border-border/30 pt-8">
+        <SectionReveal
+          delay={REVEAL_DELAY[1]}
+          className="border-t border-border/30 pt-8"
+        >
           <FocusMinutesChartLazy
             series={data.series}
             goalMinutes={summary.daily_focus_goal_minutes}
           />
-        </div>
+        </SectionReveal>
 
-        <div className="analytics-reveal analytics-reveal-delay-2 grid gap-10 border-t border-border/30 pt-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:gap-12">
+        <SectionReveal
+          delay={REVEAL_DELAY[2]}
+          className="grid gap-10 border-t border-border/30 pt-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:gap-12"
+        >
           <HabitCompletionChartLazy series={data.series} />
           <Suspense fallback={<HabitStreaksFallback />}>
             <AnalyticsStreaksBody rangeDays={rangeDays} />
           </Suspense>
-        </div>
+        </SectionReveal>
 
-        <div className="analytics-reveal analytics-reveal-delay-3 border-t border-border/30 pt-8">
+        <SectionReveal
+          delay={REVEAL_DELAY[3]}
+          className="border-t border-border/30 pt-8"
+        >
           <MoodEnergyChartLazy series={data.series} />
           {summary.avg_mood !== null || summary.avg_energy !== null ? (
             <p className="mt-4 text-center text-xs tabular-nums text-muted-foreground sm:text-left">
@@ -140,7 +157,7 @@ async function AnalyticsCoreBody({
                 : ""}
             </p>
           ) : null}
-        </div>
+        </SectionReveal>
       </AnalyticsStage>
     </AppPageFrame>
   );

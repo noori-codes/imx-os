@@ -3,6 +3,10 @@ import type { Metadata } from "next";
 
 import { getReviewPageData } from "@/actions/review";
 import { Header } from "@/components/layout/header";
+import {
+  REVEAL_DELAY,
+  SectionReveal,
+} from "@/components/motion/section-reveal";
 import { EveningShutdown } from "@/components/review/evening-shutdown";
 import { ReviewForm } from "@/components/review/review-form";
 import { ReviewHistory } from "@/components/review/review-history";
@@ -35,15 +39,16 @@ async function ReviewBody({ date }: { date: string }) {
   return (
     <AppPageFrame>
       <ReviewStage mood={review?.mood}>
-        <div className="review-reveal">
-          <ReviewPulse date={date} recap={recap} review={review} />
-        </div>
+        <ReviewPulse date={date} recap={recap} review={review} />
 
-        <div className="review-reveal review-reveal-delay-1">
+        <SectionReveal delay={REVEAL_DELAY[1]}>
           <EveningShutdown date={date} recap={recap} review={review} />
-        </div>
+        </SectionReveal>
 
-        <div className="review-reveal review-reveal-delay-1 border-t border-border/30 pt-8">
+        <SectionReveal
+          delay={REVEAL_DELAY[2]}
+          className="border-t border-border/30 pt-8"
+        >
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(17rem,0.85fr)] lg:items-start">
             <ReviewForm key={date} date={date} review={review} />
             <div className="flex flex-col gap-4">
@@ -51,7 +56,7 @@ async function ReviewBody({ date }: { date: string }) {
               <ReviewHistory selectedDate={date} recent={recent} />
             </div>
           </div>
-        </div>
+        </SectionReveal>
       </ReviewStage>
     </AppPageFrame>
   );

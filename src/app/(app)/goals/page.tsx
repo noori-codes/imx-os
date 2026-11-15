@@ -7,6 +7,10 @@ import { GoalsPulse } from "@/components/goals/goals-pulse";
 import { GoalsSkeleton } from "@/components/goals/goals-skeleton";
 import { GoalsStage } from "@/components/goals/goals-stage";
 import { Header } from "@/components/layout/header";
+import {
+  REVEAL_DELAY,
+  SectionReveal,
+} from "@/components/motion/section-reveal";
 import { AppPageFrame } from "@/components/shared/app-page-frame";
 import { goalProgressPercent, pickSpotlightGoal } from "@/lib/goal-status";
 
@@ -34,23 +38,21 @@ async function GoalsBody({ compose }: { compose: boolean }) {
   return (
     <AppPageFrame>
       <GoalsStage>
-        <div className="goals-reveal">
-          <GoalsPulse
-            stats={{
-              goalCount: goals.length,
-              projectCount,
-              completedTasks,
-              totalTasks,
-              momentum,
-              activeCount,
-              spotlight: pickSpotlightGoal(goals),
-            }}
-          />
-        </div>
+        <GoalsPulse
+          stats={{
+            goalCount: goals.length,
+            projectCount,
+            completedTasks,
+            totalTasks,
+            momentum,
+            activeCount,
+            spotlight: pickSpotlightGoal(goals),
+          }}
+        />
 
-        <div className="goals-reveal goals-reveal-delay-1">
+        <SectionReveal delay={REVEAL_DELAY[1]}>
           <GoalsBoard goals={goals} compose={compose} />
-        </div>
+        </SectionReveal>
       </GoalsStage>
     </AppPageFrame>
   );

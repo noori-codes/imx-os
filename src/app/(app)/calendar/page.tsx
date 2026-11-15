@@ -10,6 +10,10 @@ import { CalendarPulse } from "@/components/calendar/calendar-pulse";
 import { CalendarSkeleton } from "@/components/calendar/calendar-skeleton";
 import { CalendarStage } from "@/components/calendar/calendar-stage";
 import { Header } from "@/components/layout/header";
+import {
+  REVEAL_DELAY,
+  SectionReveal,
+} from "@/components/motion/section-reveal";
 import { AppPageFrame } from "@/components/shared/app-page-frame";
 import {
   getMonthGrid,
@@ -72,18 +76,19 @@ async function CalendarBody({
     <AppPageFrame>
       <CalendarStage>
         <CalendarKeyboardNav view={view} date={selectedDate} />
-        <div className="cal-reveal">
-          <CalendarPulse
-            view={view}
-            date={selectedDate}
-            data={data}
-            inViewDates={inViewDates}
-          />
-        </div>
+        <CalendarPulse
+          view={view}
+          date={selectedDate}
+          data={data}
+          inViewDates={inViewDates}
+        />
 
         <CalDayDockScroll date={selectedDate} />
 
-        <div className="cal-reveal cal-reveal-delay-1 grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(18rem,0.85fr)] xl:items-start">
+        <SectionReveal
+          delay={REVEAL_DELAY[1]}
+          className="grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(18rem,0.85fr)] xl:items-start"
+        >
           <div className="min-w-0 space-y-3">
             <CalendarGrid
               view={view}
@@ -115,17 +120,18 @@ async function CalendarBody({
             </div>
           </div>
 
-          <div
+          <SectionReveal
             id="cal-day-dock"
-            className="cal-reveal cal-reveal-delay-2 min-h-0 scroll-mt-20 sm:min-h-[22rem] xl:sticky xl:top-4 xl:min-h-[min(70vh,40rem)]"
+            delay={REVEAL_DELAY[2]}
+            className="min-h-0 scroll-mt-20 sm:min-h-[22rem] xl:sticky xl:top-4 xl:min-h-[min(70vh,40rem)]"
           >
             <CalendarDayPanel
               date={selectedDate}
               items={selectedItems}
               compose={compose}
             />
-          </div>
-        </div>
+          </SectionReveal>
+        </SectionReveal>
       </CalendarStage>
     </AppPageFrame>
   );

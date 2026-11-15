@@ -9,6 +9,10 @@ import { EntityHeader } from "@/components/goals/entity-header";
 import { GoalsStage } from "@/components/goals/goals-stage";
 import { ProjectDetailSkeleton } from "@/components/goals/project-detail-skeleton";
 import { Header } from "@/components/layout/header";
+import {
+  REVEAL_DELAY,
+  SectionReveal,
+} from "@/components/motion/section-reveal";
 import { AppPageFrame } from "@/components/shared/app-page-frame";
 import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 import { TaskForm } from "@/components/tasks/task-form";
@@ -65,7 +69,7 @@ async function ProjectDetailBody({
       <Header chrome title={project.title} description={`${goal.title} · ${meta}`} />
       <AppPageFrame>
         <GoalsStage>
-          <div className="goals-reveal">
+          <SectionReveal>
             <Breadcrumbs
               items={[
                 { label: "Goals", href: "/goals" },
@@ -73,9 +77,9 @@ async function ProjectDetailBody({
                 { label: project.title },
               ]}
             />
-          </div>
+          </SectionReveal>
 
-          <div className="goals-reveal goals-reveal-delay-1">
+          <SectionReveal delay={REVEAL_DELAY[1]}>
             <EntityHeader
               eyebrow="Project"
               title={project.title}
@@ -85,9 +89,9 @@ async function ProjectDetailBody({
               sealed={total > 0 && active === 0}
               onSave={updateProject.bind(null, goalId, projectId)}
             />
-          </div>
+          </SectionReveal>
 
-          <div className="goals-reveal goals-reveal-delay-2 space-y-5">
+          <SectionReveal delay={REVEAL_DELAY[2]} className="space-y-5">
             <div className="goals-composer relative overflow-hidden rounded-2xl imx-surface p-4 sm:p-5" id="tasks-composer">
               <div className="goals-composer-glow" aria-hidden />
               <div className="relative z-1">
@@ -107,7 +111,7 @@ async function ProjectDetailBody({
               </div>
             </div>
             <TaskList tasks={tasks} mode="project" />
-          </div>
+          </SectionReveal>
         </GoalsStage>
       </AppPageFrame>
     </>

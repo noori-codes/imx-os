@@ -7,6 +7,10 @@ import { BooksShelf } from "@/components/books/books-shelf";
 import { BooksSkeleton } from "@/components/books/books-skeleton";
 import { BooksStage } from "@/components/books/books-stage";
 import { Header } from "@/components/layout/header";
+import {
+  REVEAL_DELAY,
+  SectionReveal,
+} from "@/components/motion/section-reveal";
 import { AppPageFrame } from "@/components/shared/app-page-frame";
 import { bookProgressPercent } from "@/types/book";
 
@@ -55,23 +59,21 @@ async function BooksBody({ compose }: { compose: boolean }) {
   return (
     <AppPageFrame>
       <BooksStage>
-        <div className="books-reveal">
-          <BooksPulse
-            stats={{
-              reading,
-              finishedYear,
-              wantToRead,
-              avgRating,
-              year,
-              readingProgress,
-              currentTitle: lead?.title ?? null,
-            }}
-          />
-        </div>
+        <BooksPulse
+          stats={{
+            reading,
+            finishedYear,
+            wantToRead,
+            avgRating,
+            year,
+            readingProgress,
+            currentTitle: lead?.title ?? null,
+          }}
+        />
 
-        <div className="books-reveal books-reveal-delay-1">
+        <SectionReveal delay={REVEAL_DELAY[1]}>
           <BooksShelf books={books} compose={compose} />
-        </div>
+        </SectionReveal>
       </BooksStage>
     </AppPageFrame>
   );

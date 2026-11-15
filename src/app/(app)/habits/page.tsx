@@ -83,21 +83,19 @@ async function HabitsBody({
   return (
     <AppPageFrame>
       <HabitsStage>
-        <div className="habits-reveal">
-          <HabitsBoard
-            habits={habits}
-            view={view}
-            activeCount={activeCount}
-            archivedCount={archivedCount}
-            compose={compose}
-            pulseStats={{
-              doneToday,
-              activeCount: statsHabits.length,
-              bestStreak,
-              weekRate,
-            }}
-          />
-        </div>
+        <HabitsBoard
+          habits={habits}
+          view={view}
+          activeCount={activeCount}
+          archivedCount={archivedCount}
+          compose={compose}
+          pulseStats={{
+            doneToday,
+            activeCount: statsHabits.length,
+            bestStreak,
+            weekRate,
+          }}
+        />
       </HabitsStage>
     </AppPageFrame>
   );

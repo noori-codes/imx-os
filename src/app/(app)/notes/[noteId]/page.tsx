@@ -6,6 +6,10 @@ import { ArrowLeft } from "lucide-react";
 
 import { getNote } from "@/actions/notes";
 import { Header } from "@/components/layout/header";
+import {
+  REVEAL_DELAY,
+  SectionReveal,
+} from "@/components/motion/section-reveal";
 import { NoteDetailSkeleton } from "@/components/notes/note-detail-skeleton";
 import { NoteEditor } from "@/components/notes/note-editor";
 import { NotesStage } from "@/components/notes/notes-stage";
@@ -46,7 +50,7 @@ async function NoteDetailBody({ noteId }: { noteId: string }) {
       <Header chrome title={displayTitle} />
       <AppPageFrame className="gap-5">
         <NotesStage>
-          <div className="notes-reveal flex flex-wrap items-center justify-between gap-3">
+          <SectionReveal className="flex flex-wrap items-center justify-between gap-3">
             <Breadcrumbs
               items={[
                 { label: "Notes", href: "/notes" },
@@ -60,10 +64,10 @@ async function NoteDetailBody({ noteId }: { noteId: string }) {
               <ArrowLeft className="size-3.5" />
               Library
             </Link>
-          </div>
-          <div className="notes-reveal notes-reveal-delay-1">
+          </SectionReveal>
+          <SectionReveal delay={REVEAL_DELAY[1]}>
             <NoteEditor note={note} />
-          </div>
+          </SectionReveal>
         </NotesStage>
       </AppPageFrame>
     </>

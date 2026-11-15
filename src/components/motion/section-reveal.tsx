@@ -5,9 +5,18 @@ import { m, useReducedMotion } from "motion/react";
 
 import { cn } from "@/lib/utils";
 
+/** Matches former CSS `*-reveal-delay-N` timing (60ms steps). */
+export const REVEAL_DELAY = {
+  0: 0,
+  1: 0.06,
+  2: 0.12,
+  3: 0.18,
+} as const;
+
 type SectionRevealProps = {
   children: ReactNode;
   className?: string;
+  id?: string;
   delay?: number;
   /** Slightly stronger lift for hero/pulse panels. */
   emphasize?: boolean;
@@ -17,17 +26,23 @@ type SectionRevealProps = {
 export function SectionReveal({
   children,
   className,
+  id,
   delay = 0,
   emphasize = false,
 }: SectionRevealProps) {
   const reduce = useReducedMotion();
 
   if (reduce) {
-    return <div className={className}>{children}</div>;
+    return (
+      <div id={id} className={className}>
+        {children}
+      </div>
+    );
   }
 
   return (
     <m.div
+      id={id}
       className={className}
       initial={{ opacity: 0, y: emphasize ? 12 : 8 }}
       animate={{ opacity: 1, y: 0 }}

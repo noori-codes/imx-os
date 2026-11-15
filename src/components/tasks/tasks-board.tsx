@@ -4,6 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 
+import {
+  REVEAL_DELAY,
+  SectionReveal,
+} from "@/components/motion/section-reveal";
 import { TaskForm } from "@/components/tasks/task-form";
 import { TaskList } from "@/components/tasks/task-list";
 import { useTaskOptimistic } from "@/components/tasks/task-item";
@@ -77,7 +81,10 @@ export function TasksBoard({
     <div className="flex flex-col gap-6">
       <TasksPulse stats={pulseStats} focusNext={focusNext} />
 
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      <SectionReveal
+        delay={REVEAL_DELAY[1]}
+        className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"
+      >
         <TasksViewTabs active={view} counts={counts} />
         <div className="relative min-w-0 sm:max-w-xs lg:w-72">
           <Search className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -89,45 +96,49 @@ export function TasksBoard({
             aria-label="Search tasks"
           />
         </div>
-      </div>
+      </SectionReveal>
 
-      <div
-        id="tasks-composer"
-        className="tasks-composer relative overflow-hidden rounded-2xl imx-surface imx-surface-rim p-4 sm:p-5"
-      >
-        <div className="tasks-composer-glow" aria-hidden />
-        <div className="relative z-1">
-          <div className="mb-3">
-            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-              Capture
-            </p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Add fast. Schedule with chips. Press{" "}
-              <kbd className="rounded border border-border/60 bg-muted/50 px-1.5 py-0.5 font-mono text-[10px]">
-                N
-              </kbd>{" "}
-              to focus.
-            </p>
+      <SectionReveal delay={REVEAL_DELAY[2]}>
+        <div
+          id="tasks-composer"
+          className="tasks-composer relative overflow-hidden rounded-2xl imx-surface imx-surface-rim p-4 sm:p-5"
+        >
+          <div className="tasks-composer-glow" aria-hidden />
+          <div className="relative z-1">
+            <div className="mb-3">
+              <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                Capture
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Add fast. Schedule with chips. Press{" "}
+                <kbd className="rounded border border-border/60 bg-muted/50 px-1.5 py-0.5 font-mono text-[10px]">
+                  N
+                </kbd>{" "}
+                to focus.
+              </p>
+            </div>
+            <TaskForm
+              projects={projects}
+              variant="quick"
+              autoFocusTitle={focusComposer}
+            />
           </div>
-          <TaskForm
-            projects={projects}
-            variant="quick"
-            autoFocusTitle={focusComposer}
-          />
         </div>
-      </div>
+      </SectionReveal>
 
-      <TaskList
-        tasks={filtered}
-        view={view}
-        mode="smart"
-        todayFocus={todayFocus}
-        searching={query.trim().length > 0}
-        projects={projects}
-        boardOpenCount={pulseStats.openCount}
-        inboxCount={counts.inbox}
-        optimistic={optimistic}
-      />
+      <SectionReveal delay={REVEAL_DELAY[3]}>
+        <TaskList
+          tasks={filtered}
+          view={view}
+          mode="smart"
+          todayFocus={todayFocus}
+          searching={query.trim().length > 0}
+          projects={projects}
+          boardOpenCount={pulseStats.openCount}
+          inboxCount={counts.inbox}
+          optimistic={optimistic}
+        />
+      </SectionReveal>
     </div>
   );
 }

@@ -16,6 +16,10 @@ import { StreakShield } from "@/components/dashboard/streak-shield";
 import { TodayFocus } from "@/components/dashboard/today-focus";
 import { WeekOverview } from "@/components/dashboard/week-overview";
 import {
+  REVEAL_DELAY,
+  SectionReveal,
+} from "@/components/motion/section-reveal";
+import {
   celebrateMeaningfulClear,
   softCompletePulse,
   softCompleteToast,
@@ -242,7 +246,7 @@ export function DashboardStage({
 
   return (
     <DashboardAtmosphere>
-      <section className="dash-reveal dash-desk-top">
+      <section className="dash-desk-top">
         <DashboardHomeHeader
           name={name}
           greeting={greeting}
@@ -255,25 +259,27 @@ export function DashboardStage({
           focusMinutes={focusMinutes}
           streak={data.stats.activity_streak}
         />
-        <DashboardContinueChip />
-        <DashboardQuickActions
-          hasTodayReview={data.review.has_today}
-          habitsOpen={Math.max(0, optimisticHabits.length - habitsDone)}
-          dueOpen={dueOpen}
-        />
-        <MorningPlan
-          date={todayStr}
-          tasks={optimisticTasks}
-          habits={optimisticHabits}
-        />
-        <StreakShield
-          activeDates={activeDates}
-          streak={data.stats.activity_streak}
-          freezesRemaining={streakFreezesRemaining}
-        />
+        <SectionReveal delay={REVEAL_DELAY[1]}>
+          <DashboardContinueChip />
+          <DashboardQuickActions
+            hasTodayReview={data.review.has_today}
+            habitsOpen={Math.max(0, optimisticHabits.length - habitsDone)}
+            dueOpen={dueOpen}
+          />
+          <MorningPlan
+            date={todayStr}
+            tasks={optimisticTasks}
+            habits={optimisticHabits}
+          />
+          <StreakShield
+            activeDates={activeDates}
+            streak={data.stats.activity_streak}
+            freezesRemaining={streakFreezesRemaining}
+          />
+        </SectionReveal>
       </section>
 
-      <div className="dash-home dash-reveal dash-reveal-delay-1">
+      <SectionReveal delay={REVEAL_DELAY[2]} className="dash-home">
         <div className="dash-home-main">
           <TodayFocus
             tasks={optimisticTasks}
@@ -292,15 +298,15 @@ export function DashboardStage({
             sessions={focusSessions}
           />
         </div>
-      </div>
+      </SectionReveal>
 
-      <div className="dash-home-secondary dash-reveal dash-reveal-delay-2">
+      <SectionReveal delay={REVEAL_DELAY[3]} className="dash-home-secondary">
         <WeekOverview week={optimisticWeek} />
         <DashboardSpotlight
           goals={data.goals}
           readingBook={data.reading_book}
         />
-      </div>
+      </SectionReveal>
     </DashboardAtmosphere>
   );
 }
