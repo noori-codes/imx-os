@@ -32,7 +32,7 @@ async function GoalsBody({ compose }: { compose: boolean }) {
   ).length;
 
   return (
-    <AppPageFrame className="max-w-5xl gap-8 md:py-8">
+    <AppPageFrame>
       <GoalsStage>
         <div className="goals-reveal">
           <GoalsPulse

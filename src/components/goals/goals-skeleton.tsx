@@ -79,7 +79,7 @@ export function GoalsSkeleton() {
       aria-live="polite"
       aria-label="Loading goals"
     >
-      <AppPageFrame className="max-w-5xl gap-8 md:py-8">
+      <AppPageFrame>
         <GoalsStage>
           <GoalsSkeletonBody />
         </GoalsStage>

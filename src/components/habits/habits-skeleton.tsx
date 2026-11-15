@@ -70,7 +70,7 @@ export function HabitsSkeleton() {
       aria-live="polite"
       aria-label="Loading habits"
     >
-      <AppPageFrame className="max-w-5xl gap-8 md:py-8">
+      <AppPageFrame>
         <HabitsStage>
           <HabitsSkeletonBody />
         </HabitsStage>

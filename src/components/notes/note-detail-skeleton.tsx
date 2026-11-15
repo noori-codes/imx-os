@@ -19,7 +19,7 @@ export function NoteDetailSkeleton() {
         aria-live="polite"
         aria-label="Loading note"
       >
-        <AppPageFrame className="max-w-4xl gap-5 md:py-8">
+        <AppPageFrame className="gap-5">
           <NotesStage>
             <div className="flex items-center justify-between gap-3">
               <Bone className="h-3 w-36" />

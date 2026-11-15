@@ -66,7 +66,7 @@ export function SettingsSkeleton() {
       aria-live="polite"
       aria-label="Loading settings"
     >
-      <AppPageFrame className="max-w-5xl gap-8 md:py-8">
+      <AppPageFrame>
         <SettingsStage>
           <SettingsSkeletonBody />
         </SettingsStage>

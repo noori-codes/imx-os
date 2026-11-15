@@ -19,7 +19,7 @@ export function ProjectDetailSkeleton() {
         aria-live="polite"
         aria-label="Loading project"
       >
-        <AppPageFrame className="max-w-5xl gap-8 md:py-8">
+        <AppPageFrame>
           <GoalsStage>
             <Bone className="h-3 w-56" />
             <div className="goals-pulse relative overflow-hidden rounded-2xl imx-surface px-5 py-5 sm:px-7 sm:py-6">

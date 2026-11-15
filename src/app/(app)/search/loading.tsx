@@ -71,7 +71,7 @@ export default function SearchLoading() {
         aria-live="polite"
         aria-label="Loading search"
       >
-        <AppPageFrame className="max-w-5xl gap-8 md:py-8">
+        <AppPageFrame>
           <SearchStage>
             <SearchSkeletonBody />
           </SearchStage>

@@ -23,7 +23,7 @@ export default function AppLoading() {
         aria-live="polite"
         aria-label="Loading page"
       >
-        <AppPageFrame className="max-w-5xl gap-8 md:py-8">
+        <AppPageFrame>
           <div className="space-y-3 rounded-2xl border border-border/40 p-5 sm:p-7">
             <Bone className="h-3 w-20" />
             <Bone className="h-8 w-56 max-w-full" />

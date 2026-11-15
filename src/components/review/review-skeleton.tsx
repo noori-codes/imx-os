@@ -98,7 +98,7 @@ export function ReviewSkeleton() {
       aria-live="polite"
       aria-label="Loading review"
     >
-      <AppPageFrame className="max-w-5xl gap-8 md:py-8">
+      <AppPageFrame>
         <ReviewStage>
           <ReviewSkeletonBody />
         </ReviewStage>

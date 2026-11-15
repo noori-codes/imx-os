@@ -81,7 +81,7 @@ async function HabitsBody({
   const weekRate = weekHitRate(statsHabits);
 
   return (
-    <AppPageFrame className="max-w-5xl gap-8 md:py-8">
+    <AppPageFrame>
       <HabitsStage>
         <div className="habits-reveal">
           <HabitsBoard

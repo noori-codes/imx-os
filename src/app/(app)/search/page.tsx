@@ -93,7 +93,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   return (
     <>
       <Header chrome title="Search" />
-      <AppPageFrame className="max-w-5xl gap-8 md:py-8">
+      <AppPageFrame>
         <SearchStage>
           <div className="search-reveal">
             <SearchHero>

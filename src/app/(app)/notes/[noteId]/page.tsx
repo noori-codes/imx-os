@@ -44,7 +44,7 @@ async function NoteDetailBody({ noteId }: { noteId: string }) {
   return (
     <>
       <Header chrome title={displayTitle} />
-      <AppPageFrame className="max-w-4xl gap-5 md:py-8">
+      <AppPageFrame className="gap-5">
         <NotesStage>
           <div className="notes-reveal flex flex-wrap items-center justify-between gap-3">
             <Breadcrumbs

@@ -10,7 +10,7 @@ export default function GoalNotFound() {
   return (
     <>
       <Header chrome title="Goal" />
-      <AppPageFrame className="max-w-5xl gap-8 md:py-8">
+      <AppPageFrame>
         <GoalsStage>
           <EmptyState
             glyph="target"

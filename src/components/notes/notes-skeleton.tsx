@@ -72,7 +72,7 @@ export function NotesSkeleton() {
       aria-live="polite"
       aria-label="Loading notes"
     >
-      <AppPageFrame className="max-w-5xl gap-8 md:py-8">
+      <AppPageFrame>
         <NotesStage>
           <NotesSkeletonBody />
         </NotesStage>

@@ -33,7 +33,7 @@ async function ReviewBody({ date }: { date: string }) {
   const { recap, review, recent } = await getReviewPageData(date);
 
   return (
-    <AppPageFrame className="max-w-5xl gap-8 md:py-8">
+    <AppPageFrame>
       <ReviewStage mood={review?.mood}>
         <div className="review-reveal">
           <ReviewPulse date={date} recap={recap} review={review} />

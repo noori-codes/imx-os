@@ -10,7 +10,7 @@ export default function AppNotFound() {
   return (
     <>
       <Header chrome title="Not found" />
-      <AppPageFrame className="max-w-lg gap-8 md:py-12">
+      <AppPageFrame className="mx-auto max-w-lg gap-8 md:py-12">
         <EmptyState
           glyph="target"
           title="Page not found"

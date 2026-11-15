@@ -25,7 +25,7 @@ async function NotesBody() {
   const words = notes.reduce((sum, note) => sum + note.word_count, 0);
 
   return (
-    <AppPageFrame className="max-w-5xl gap-8 md:py-8">
+    <AppPageFrame>
       <NotesStage>
         <div className="notes-reveal">
           <NotesPulse

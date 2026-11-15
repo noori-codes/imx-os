@@ -69,7 +69,7 @@ async function CalendarBody({
       : days.map((day) => day.date);
 
   return (
-    <AppPageFrame className="max-w-6xl gap-8 md:py-8">
+    <AppPageFrame>
       <CalendarStage>
         <CalendarKeyboardNav view={view} date={selectedDate} />
         <div className="cal-reveal">

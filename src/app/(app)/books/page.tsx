@@ -53,7 +53,7 @@ async function BooksBody({ compose }: { compose: boolean }) {
     null;
 
   return (
-    <AppPageFrame className="max-w-5xl gap-8 md:py-8">
+    <AppPageFrame>
       <BooksStage>
         <div className="books-reveal">
           <BooksPulse

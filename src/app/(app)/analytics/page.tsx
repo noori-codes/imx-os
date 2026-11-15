@@ -91,7 +91,7 @@ async function AnalyticsCoreBody({
   const { summary } = data;
 
   return (
-    <AppPageFrame className="max-w-5xl gap-10 md:py-8">
+    <AppPageFrame className="gap-10">
       <AnalyticsStage>
         <div className="analytics-reveal">
           <AnalyticsHero

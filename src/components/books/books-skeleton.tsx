@@ -81,7 +81,7 @@ export function BooksSkeleton() {
       aria-live="polite"
       aria-label="Loading books"
     >
-      <AppPageFrame className="max-w-5xl gap-8 md:py-8">
+      <AppPageFrame>
         <BooksStage>
           <BooksSkeletonBody />
         </BooksStage>

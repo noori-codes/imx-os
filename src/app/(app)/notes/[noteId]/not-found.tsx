@@ -10,7 +10,7 @@ export default function NoteNotFound() {
   return (
     <>
       <Header chrome title="Note" />
-      <AppPageFrame className="max-w-3xl gap-6 md:py-8">
+      <AppPageFrame>
         <NotesStage>
           <EmptyState
             glyph="note"

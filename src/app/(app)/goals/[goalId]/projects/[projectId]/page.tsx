@@ -63,7 +63,7 @@ async function ProjectDetailBody({
   return (
     <>
       <Header chrome title={project.title} description={`${goal.title} · ${meta}`} />
-      <AppPageFrame className="max-w-5xl gap-8 md:py-8">
+      <AppPageFrame>
         <GoalsStage>
           <div className="goals-reveal">
             <Breadcrumbs

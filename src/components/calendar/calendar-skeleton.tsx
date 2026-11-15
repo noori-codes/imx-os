@@ -92,7 +92,7 @@ export function CalendarSkeleton() {
       aria-live="polite"
       aria-label="Loading calendar"
     >
-      <AppPageFrame className="max-w-6xl gap-8 md:py-8">
+      <AppPageFrame>
         <CalendarStage>
           <CalendarSkeletonBody />
         </CalendarStage>

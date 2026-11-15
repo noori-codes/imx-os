@@ -22,7 +22,7 @@ export default function AppError({ error, reset }: AppErrorProps) {
   return (
     <>
       <Header chrome title="Something went wrong" />
-      <AppPageFrame className="max-w-lg gap-8 md:py-12">
+      <AppPageFrame className="mx-auto max-w-lg gap-8 md:py-12">
         <EmptyState
           icon={<AlertTriangle className="size-5" aria-hidden />}
           title="This page hit a snag"

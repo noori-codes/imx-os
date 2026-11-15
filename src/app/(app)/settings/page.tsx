@@ -44,7 +44,7 @@ async function SettingsBody() {
     : "—";
 
   return (
-    <AppPageFrame className="max-w-5xl gap-8 md:py-8">
+    <AppPageFrame>
       <SettingsStage>
         <div className="settings-reveal">
           <SettingsHub

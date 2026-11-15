@@ -56,7 +56,7 @@ async function GoalDetailBody({ goalId }: { goalId: string }) {
   return (
     <>
       <Header chrome title={goal.title} description={metaParts.join(" · ")} />
-      <AppPageFrame className="max-w-5xl gap-8 md:py-8">
+      <AppPageFrame>
         <GoalsStage>
           <div className="goals-reveal">
             <Breadcrumbs
