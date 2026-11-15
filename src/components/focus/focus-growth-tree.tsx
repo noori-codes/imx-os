@@ -1,6 +1,13 @@
 "use client";
 
-import { useId, type CSSProperties, type ReactNode } from "react";
+import {
+  useEffect,
+  useId,
+  useRef,
+  type CSSProperties,
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+} from "react";
 import { useReducedMotion } from "motion/react";
 
 import { focusGrowthProgress } from "@/lib/focus-growth";
@@ -26,6 +33,65 @@ function lerp(a: number, b: number, t: number) {
 function breezeSlot(n: number): 1 | 2 | 3 {
   return (((Math.max(1, Math.floor(n)) - 1) % 3) + 1) as 1 | 2 | 3;
 }
+
+/** Leaf react lane — varied sway amp / phase for cascading canopy wind. */
+function leafReact(n: number): 1 | 2 | 3 | 4 | 5 | 6 {
+  return (((Math.max(1, Math.floor(n)) - 1) % 6) + 1) as 1 | 2 | 3 | 4 | 5 | 6;
+}
+
+type WindTier = "low" | "mid" | "high" | "crown" | "twig";
+
+type FallingLeaf = {
+  el: SVGGElement;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  rot: number;
+  spin: number;
+  age: number;
+  life: number;
+  scale: number;
+  liftMs: number;
+  phase: number;
+  lastTs: number;
+};
+
+/** Same silhouette as the on-tree Leaf illustration. */
+const FALL_LEAF_PATH =
+  "M0 0 C 5 -3.8 8.8 -10 8 -17 C 7.2 -22.5 3.6 -27.2 0 -28.8 C -3.6 -27.2 -7.2 -22.5 -8 -17 C -8.8 -10 -5 -3.8 0 0 Z";
+const FALL_LEAF_SHADE =
+  "M0 0 C 5.2 -4 9.2 -10.5 8.4 -17.5 C 7.6 -23.2 3.8 -28 0 -29.5 C -3.8 -28 -7.6 -23.2 -8.4 -17.5 C -9.2 -10.5 -5.2 -4 0 0 Z";
+const FALL_LEAF_VEIN = "M0 -1.2 C 0.55 -9 0.35 -17.5 0 -26";
+
+/**
+ * Real canopy detach points — tip / mid-leaf coords from the drawn branches,
+ * not arbitrary floating spawn spots.
+ */
+const FALL_SPAWN_POINTS: Array<[number, number]> = [
+  [28, 302],
+  [256, 300],
+  [16, 202],
+  [268, 222],
+  [52, 174],
+  [48, 120],
+  [254, 154],
+  [94, 98],
+  [206, 108],
+  [143, 34],
+  [100, 54],
+  [192, 56],
+  [95, 268],
+  [185, 262],
+  [70, 200],
+  [215, 198],
+  [112, 160],
+  [210, 142],
+  [118, 112],
+  [172, 108],
+  [142, 62],
+  [148, 48],
+];
 
 /**
  * Delicate botanical leaf — tip forward, slight asymmetry.
@@ -59,49 +125,53 @@ function Leaf({
         ? "var(--fg-leaf-shade)"
         : "var(--fg-leaf)";
   const breezeAttr = breeze > 0 ? breezeSlot(breeze) : undefined;
+  const react = leafReact(breeze > 0 ? breeze : 1);
 
   return (
     <g
       opacity={0.22 + open * 0.78}
       transform={`translate(${x} ${y}) rotate(${rot + fold * 0.35}) scale(${s * scale})`}
     >
-      <g
-        className={breezeAttr ? "focus-growth-leaf" : undefined}
-        data-breeze={breezeAttr}
-      >
-        {/* Soft underside shade for depth */}
-        <path
-          d="M0 0
-             C 5.2 -4 9.2 -10.5 8.4 -17.5
-             C 7.6 -23.2 3.8 -28 0 -29.5
-             C -3.8 -28 -7.6 -23.2 -8.4 -17.5
-             C -9.2 -10.5 -5.2 -4 0 0 Z"
-          fill="var(--fg-leaf-shade)"
-          opacity={0.28}
-          transform="translate(0.8 1.2) scale(0.92)"
-        />
-        <path
-          d="M0 0
-             C 5 -3.8 8.8 -10 8 -17
-             C 7.2 -22.5 3.6 -27.2 0 -28.8
-             C -3.6 -27.2 -7.2 -22.5 -8 -17
-             C -8.8 -10 -5 -3.8 0 0 Z"
-          fill={fill}
-        />
-        {/* Slight highlight lobe */}
-        <path
-          d="M -1.2 -4 C 0.8 -8 2.2 -14 1.6 -20 C 0.4 -18 -0.6 -12 -1.2 -4 Z"
-          fill="var(--fg-leaf-lit)"
-          opacity={0.35 * open}
-        />
-        <path
-          d="M0 -1.2 C 0.55 -9 0.35 -17.5 0 -26"
-          stroke="var(--fg-vein)"
-          strokeWidth="0.55"
-          strokeLinecap="round"
-          fill="none"
-          opacity={0.4 * open}
-        />
+      {/* Interactive wind layer — independent of placement + ambient flutter */}
+      <g className="focus-growth-leaf-wind" data-react={react}>
+        <g
+          className={breezeAttr ? "focus-growth-leaf" : undefined}
+          data-breeze={breezeAttr}
+        >
+          {/* Soft underside shade for depth */}
+          <path
+            d="M0 0
+               C 5.2 -4 9.2 -10.5 8.4 -17.5
+               C 7.6 -23.2 3.8 -28 0 -29.5
+               C -3.8 -28 -7.6 -23.2 -8.4 -17.5
+               C -9.2 -10.5 -5.2 -4 0 0 Z"
+            fill="var(--fg-leaf-shade)"
+            opacity={0.28}
+            transform="translate(0.8 1.2) scale(0.92)"
+          />
+          <path
+            d="M0 0
+               C 5 -3.8 8.8 -10 8 -17
+               C 7.2 -22.5 3.6 -27.2 0 -28.8
+               C -3.6 -27.2 -7.2 -22.5 -8 -17
+               C -8.8 -10 -5 -3.8 0 0 Z"
+            fill={fill}
+          />
+          {/* Slight highlight lobe */}
+          <path
+            d="M -1.2 -4 C 0.8 -8 2.2 -14 1.6 -20 C 0.4 -18 -0.6 -12 -1.2 -4 Z"
+            fill="var(--fg-leaf-lit)"
+            opacity={0.35 * open}
+          />
+          <path
+            d="M0 -1.2 C 0.55 -9 0.35 -17.5 0 -26"
+            stroke="var(--fg-vein)"
+            strokeWidth="0.55"
+            strokeLinecap="round"
+            fill="none"
+            opacity={0.4 * open}
+          />
+        </g>
       </g>
     </g>
   );
@@ -193,7 +263,7 @@ function LeafTuft({
 
 /**
  * Branch limb — draws on, then tips bow slightly as the canopy weighs.
- * Mid-leaf sprouts along the limb for a living canopy, not tip-only dots.
+ * Wind bends the limb around its trunk joint; foliage follows after wood forms.
  */
 function Branch({
   d,
@@ -207,6 +277,7 @@ function Branch({
   tipRot = 0,
   tipSide = 1,
   breeze = 1,
+  tier = "mid",
   midLeaves,
   denseTip = false,
   children,
@@ -222,6 +293,7 @@ function Branch({
   tipRot?: number;
   tipSide?: 1 | -1;
   breeze?: number;
+  tier?: WindTier;
   midLeaves?: Array<{
     x: number;
     y: number;
@@ -237,58 +309,72 @@ function Branch({
   const len = 140;
   const bowDrop = bow * 5.5;
   const bowRot = tipSide * bow * 3.5;
+  // Limb draws first; foliage only after the branch is mostly formed.
+  const limb = Math.min(1, open / 0.62);
+  const foliage = reveal(open, 0.58, 0.42);
 
   return (
     <g
       className="focus-growth-branch"
-      opacity={0.28 + open * 0.72}
+      opacity={0.28 + limb * 0.72}
       transform={`translate(0 ${bowDrop}) rotate(${bowRot} ${ox} ${oy})`}
     >
-      <path
-        className="focus-growth-branch-stroke"
-        d={d}
-        stroke="var(--fg-bark)"
-        strokeWidth={width}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-        pathLength={len}
-        strokeDasharray={len}
-        strokeDashoffset={len * (1 - open)}
-      />
-      <path
-        d={d}
-        stroke="var(--fg-bark-lit)"
-        strokeWidth={Math.max(0.65, width * 0.32)}
-        strokeLinecap="round"
-        fill="none"
-        pathLength={len}
-        strokeDasharray={len}
-        strokeDashoffset={len * (1 - open)}
-        opacity={0.45}
-      />
-      {midLeaves?.map((leaf, i) => (
-        <Leaf
-          key={i}
-          x={leaf.x}
-          y={leaf.y}
-          rot={leaf.rot}
-          scale={leaf.scale ?? 0.72}
-          open={reveal(open, leaf.at ?? 0.35, 0.45)}
-          tone={leaf.tone ?? "mid"}
-          breeze={breeze + i}
+      <g
+        className="focus-growth-branch-wind"
+        data-tier={tier}
+        style={
+          {
+            ["--fg-bx" as string]: `${ox}px`,
+            ["--fg-by" as string]: `${oy}px`,
+          } as CSSProperties
+        }
+      >
+        <path
+          className="focus-growth-branch-stroke"
+          d={d}
+          stroke="var(--fg-bark)"
+          strokeWidth={width}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          fill="none"
+          pathLength={len}
+          strokeDasharray={len}
+          strokeDashoffset={len * (1 - limb)}
         />
-      ))}
-      <LeafTuft
-        x={tipX}
-        y={tipY}
-        rot={tipRot + tipSide * bow * 10}
-        open={open}
-        side={tipSide}
-        breeze={breeze}
-        dense={denseTip}
-      />
-      {children}
+        <path
+          d={d}
+          stroke="var(--fg-bark-lit)"
+          strokeWidth={Math.max(0.65, width * 0.32)}
+          strokeLinecap="round"
+          fill="none"
+          pathLength={len}
+          strokeDasharray={len}
+          strokeDashoffset={len * (1 - limb)}
+          opacity={0.45}
+        />
+        {midLeaves?.map((leaf, i) => (
+          <Leaf
+            key={i}
+            x={leaf.x}
+            y={leaf.y}
+            rot={leaf.rot}
+            scale={leaf.scale ?? 0.72}
+            open={reveal(foliage, leaf.at ?? 0.15, 0.5)}
+            tone={leaf.tone ?? "mid"}
+            breeze={breeze + i}
+          />
+        ))}
+        <LeafTuft
+          x={tipX}
+          y={tipY}
+          rot={tipRot + tipSide * bow * 10}
+          open={foliage}
+          side={tipSide}
+          breeze={breeze}
+          dense={denseTip}
+        />
+        {children}
+      </g>
     </g>
   );
 }
@@ -300,6 +386,33 @@ function Branch({
 export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
   const uid = useId().replace(/:/g, "");
   const reduce = useReducedMotion();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const fallLayerRef = useRef<SVGGElement>(null);
+  /**
+   * Garden breeze + falling leaves — all motion state lives in a ref so
+   * pointer / faller updates never trigger React re-renders.
+   */
+  const fx = useRef({
+    presence: 0,
+    presenceTarget: 0,
+    dirX: 0,
+    dirY: 0,
+    dirTX: 0,
+    dirTY: 0,
+    energy: 0,
+    px: 0,
+    py: 0,
+    hasPoint: false,
+    raf: 0 as number,
+    fallers: [] as FallingLeaf[],
+    lastSpawn: 0,
+    spawnCooldown: 2800,
+    lastSpawnIdx: -1,
+    shedPressure: 0,
+    growth: 0,
+    live: false,
+    canAnimate: false,
+  });
   const isRunning = useFocusTimer((s) => s.isRunning);
 
   // Same subscription contract as before — do not change growth math.
@@ -324,6 +437,319 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
   const g = Math.round(growth * 1000) / 1000;
   const mature = g >= 0.92;
   const live = isRunning && !wilt && !reduce;
+  const canWind = !reduce && !wilt && g > 0.12;
+
+  // Keep imperative loop in sync with React-derived flags (no render on move).
+  fx.current.growth = g;
+  fx.current.live = live;
+  fx.current.canAnimate = !reduce && !wilt;
+
+  useEffect(() => {
+    const state = fx.current;
+    return () => {
+      if (state.raf) cancelAnimationFrame(state.raf);
+      for (const f of state.fallers) f.el.remove();
+      state.fallers = [];
+    };
+  }, []);
+
+  function createFallerElement(fill: string) {
+    const gEl = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    gEl.setAttribute("class", "focus-growth-faller");
+
+    const shade = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    shade.setAttribute("d", FALL_LEAF_SHADE);
+    shade.setAttribute("fill", "var(--fg-leaf-shade)");
+    shade.setAttribute("opacity", "0.28");
+    shade.setAttribute("transform", "translate(0.8 1.2) scale(0.92)");
+
+    const body = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    body.setAttribute("d", FALL_LEAF_PATH);
+    body.setAttribute("fill", fill);
+
+    const vein = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    vein.setAttribute("d", FALL_LEAF_VEIN);
+    vein.setAttribute("stroke", "var(--fg-vein)");
+    vein.setAttribute("stroke-width", "0.55");
+    vein.setAttribute("stroke-linecap", "round");
+    vein.setAttribute("fill", "none");
+    vein.setAttribute("opacity", "0.35");
+
+    gEl.append(shade, body, vein);
+    return gEl;
+  }
+
+  /**
+   * Occasional, interaction-driven shed — never every hover.
+   * Pressure builds from presence + sudden motion; rare rolls only.
+   */
+  function maybeSpawnFaller(now: number, force: number, dirX: number, energy: number) {
+    const layer = fallLayerRef.current;
+    const state = fx.current;
+    if (!layer || !state.canAnimate) return;
+    if (state.growth < 0.58) return;
+    // One or two in the air at most — never a shower.
+    if (state.fallers.length >= 2) return;
+    // Long cool-down so drops feel spontaneous.
+    if (now - state.lastSpawn < state.spawnCooldown) return;
+    // Only while the pointer is (or just was) engaging the canopy.
+    if (state.presence < 0.12 && state.presenceTarget < 0.5) return;
+
+    // Gentle hover barely sheds; sharp movement raises pressure.
+    const build = state.presence * 0.004 + energy * 0.055 + Math.max(0, force - 0.35) * 0.03;
+    state.shedPressure = Math.min(1.6, state.shedPressure + build);
+
+    if (state.shedPressure < 0.85) return;
+    // Still a low roll — nature, not a hover trigger.
+    const rollChance = 0.08 + energy * 0.12;
+    if (Math.random() > rollChance) {
+      state.shedPressure *= 0.72;
+      return;
+    }
+
+    let idx = Math.floor(Math.random() * FALL_SPAWN_POINTS.length);
+    if (idx === state.lastSpawnIdx) {
+      idx = (idx + 1 + Math.floor(Math.random() * 5)) % FALL_SPAWN_POINTS.length;
+    }
+    const [sx, sy] = FALL_SPAWN_POINTS[idx]!;
+    state.lastSpawnIdx = idx;
+
+    const toneRoll = Math.random();
+    const fill =
+      toneRoll < 0.34
+        ? "var(--fg-leaf-lit)"
+        : toneRoll < 0.67
+          ? "var(--fg-leaf)"
+          : "var(--fg-leaf-shade)";
+
+    const gEl = createFallerElement(fill);
+    layer.appendChild(gEl);
+
+    const drift = dirX * 0.7 + (Math.random() - 0.5) * 0.55;
+    const faller: FallingLeaf = {
+      el: gEl,
+      x: sx + (Math.random() - 0.5) * 4,
+      y: sy + (Math.random() - 0.5) * 3,
+      // Brief lift / sideways float before gravity takes over.
+      vx: drift * 0.9 + (Math.random() - 0.5) * 0.35,
+      vy: -(0.12 + Math.random() * 0.22),
+      rot: (Math.random() - 0.5) * 40,
+      spin: (Math.random() - 0.5) * 2.2 + drift * 0.9,
+      age: 0,
+      life: 2800 + Math.random() * 1800,
+      scale: 0.62 + Math.random() * 0.38,
+      liftMs: 280 + Math.random() * 420,
+      phase: Math.random() * Math.PI * 2,
+      lastTs: now,
+    };
+    state.fallers.push(faller);
+    state.lastSpawn = now;
+    state.spawnCooldown = 2800 + Math.random() * 2200;
+    state.shedPressure = 0;
+
+    // Rarely arm a second leaf from another branch after a strong gust.
+    if (state.fallers.length < 2 && energy > 0.55 && Math.random() < 0.16) {
+      state.shedPressure = 0.92;
+      state.spawnCooldown = 420 + Math.random() * 380;
+    }
+  }
+
+  function updateFallers(now: number, dirX: number, force: number) {
+    const state = fx.current;
+    const windPush = dirX * (0.03 + force * 0.05);
+
+    for (let i = state.fallers.length - 1; i >= 0; i--) {
+      const f = state.fallers[i]!;
+      const rawDt = now - f.lastTs;
+      const dtMs = Math.min(34, Math.max(8, rawDt > 0 ? rawDt : 16.7));
+      f.lastTs = now;
+      const step = dtMs / 16.7;
+      f.age += dtMs;
+      const t = f.age / f.life;
+
+      if (f.age < f.liftMs) {
+        // Detach: float up / aside like a leaf catching the breeze.
+        f.vy += (-0.004 + Math.sin(now * 0.005 + f.phase) * 0.006) * step;
+        f.vx += (windPush * 1.4 + Math.sin(now * 0.004 + f.phase) * 0.03) * step;
+      } else {
+        // Descend with soft gravity and fluttering drag.
+        f.vy += (0.022 + Math.sin(now * 0.004 + f.phase) * 0.006) * step;
+        f.vx += (windPush + Math.sin(now * 0.003 + f.y * 0.025 + f.phase) * 0.028) * step;
+        f.vy = Math.min(f.vy, 1.55);
+      }
+
+      f.vx *= Math.pow(0.991, step);
+      f.x += f.vx * step;
+      f.y += f.vy * step;
+      f.rot += (f.spin + Math.sin(now * 0.007 + f.x * 0.04) * 0.55) * step;
+
+      // Subtle tumble — leaf flips as it dances.
+      const tumble = Math.sin(now * 0.008 + f.phase + f.age * 0.004);
+      const scaleX = f.scale * (0.72 + Math.abs(tumble) * 0.28);
+      const scaleY = f.scale * (0.9 + tumble * 0.08);
+
+      // Soft landing near the soil line.
+      let fade = t < 0.06 ? t / 0.06 : 1;
+      let landScale = 1;
+      if (f.y > 330) {
+        const land = Math.min(1, (f.y - 330) / 40);
+        fade *= 1 - land * 0.92;
+        landScale = 1 - land * 0.28;
+        f.vy *= 0.94;
+        f.spin *= 0.97;
+      }
+      if (t > 0.78) {
+        fade *= Math.max(0, 1 - (t - 0.78) / 0.22);
+      }
+
+      f.el.setAttribute(
+        "transform",
+        `translate(${f.x.toFixed(2)} ${f.y.toFixed(2)}) rotate(${f.rot.toFixed(2)}) scale(${(scaleX * landScale).toFixed(3)} ${(scaleY * landScale).toFixed(3)})`,
+      );
+      f.el.setAttribute("opacity", (0.92 * fade).toFixed(3));
+
+      if (t >= 1 || f.y > 368 || fade < 0.02) {
+        f.el.remove();
+        state.fallers.splice(i, 1);
+      }
+    }
+  }
+
+  function paintFx(now: number) {
+    const el = rootRef.current;
+    const w = fx.current;
+    const dt = 1;
+
+    // Soft presence ramp — enter/leave without jumps.
+    const pEase = w.presenceTarget > w.presence ? 0.045 : 0.028;
+    w.presence += (w.presenceTarget - w.presence) * pEase * dt;
+
+    // Direction eases toward cursor bias + leftover motion.
+    w.dirX += (w.dirTX - w.dirX) * 0.07 * dt;
+    w.dirY += (w.dirTY - w.dirY) * 0.07 * dt;
+
+    // Energy decays; while present, a quiet base keeps a garden hush.
+    w.energy *= w.presenceTarget > 0.5 ? 0.965 : 0.92;
+    const calm = w.presence * 0.22;
+    const force = Math.min(1, calm + w.energy);
+
+    const t = now * 0.001;
+    const a = Math.sin(t * 2.15) * force;
+    const b = Math.sin(t * 3.35 + 1.15) * force;
+    const c = Math.sin(t * 5.05 + 2.4) * force * 0.85;
+    const flutter =
+      Math.sin(t * 8.4 + 0.7) *
+      Math.min(1, w.energy * 1.4 + w.presence * 0.15);
+
+    if (el) {
+      el.style.setProperty("--fg-breeze", w.presence.toFixed(4));
+      el.style.setProperty("--fg-wind-x", (w.dirX * force).toFixed(4));
+      el.style.setProperty("--fg-wind-y", (w.dirY * force).toFixed(4));
+      el.style.setProperty("--fg-wind-a", a.toFixed(4));
+      el.style.setProperty("--fg-wind-b", b.toFixed(4));
+      el.style.setProperty("--fg-wind-c", c.toFixed(4));
+      el.style.setProperty("--fg-wind-flutter", flutter.toFixed(4));
+      el.style.setProperty("--fg-wind-energy", force.toFixed(4));
+      el.classList.toggle(
+        "focus-growth-breezy",
+        w.presence > 0.04 || force > 0.04,
+      );
+    }
+
+    if (w.canAnimate && w.growth >= 0.58) {
+      maybeSpawnFaller(now, force, w.dirX, w.energy);
+      updateFallers(now, w.dirX, force);
+    } else if (w.shedPressure > 0) {
+      w.shedPressure *= 0.96;
+    }
+
+    const breezeSettled =
+      w.presence < 0.004 &&
+      w.presenceTarget < 0.01 &&
+      Math.abs(w.dirX) < 0.004 &&
+      Math.abs(w.dirY) < 0.004 &&
+      w.energy < 0.008;
+
+    const keepAlive = !breezeSettled || w.fallers.length > 0;
+
+    if (!keepAlive) {
+      w.presence = 0;
+      w.dirX = 0;
+      w.dirY = 0;
+      w.energy = 0;
+      w.raf = 0;
+      if (el) {
+        el.style.setProperty("--fg-breeze", "0");
+        el.style.setProperty("--fg-wind-x", "0");
+        el.style.setProperty("--fg-wind-y", "0");
+        el.style.setProperty("--fg-wind-a", "0");
+        el.style.setProperty("--fg-wind-b", "0");
+        el.style.setProperty("--fg-wind-c", "0");
+        el.style.setProperty("--fg-wind-flutter", "0");
+        el.style.setProperty("--fg-wind-energy", "0");
+        el.classList.remove("focus-growth-breezy");
+      }
+      return;
+    }
+
+    w.raf = requestAnimationFrame(paintFx);
+  }
+
+  function kickFx() {
+    if (!fx.current.raf) {
+      fx.current.raf = requestAnimationFrame(paintFx);
+    }
+  }
+
+  function onPointerMove(e: ReactPointerEvent<HTMLDivElement>) {
+    if (!canWind) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    if (rect.width < 1 || rect.height < 1) return;
+
+    const x = (e.clientX - rect.left) / rect.width;
+    const y = (e.clientY - rect.top) / rect.height;
+    const w = fx.current;
+    w.presenceTarget = 1;
+
+    const nx = x * 2 - 1;
+    const ny = y * 2 - 1;
+
+    if (w.hasPoint) {
+      const dx = x - w.px;
+      const dy = y - w.py;
+      const speed = Math.hypot(dx, dy);
+      w.energy = Math.min(1, w.energy + speed * 2.8);
+      w.dirTX = Math.max(-1, Math.min(1, nx * 0.55 + dx * 8));
+      w.dirTY = Math.max(-1, Math.min(1, ny * 0.35 + dy * 5));
+    } else {
+      w.hasPoint = true;
+      w.dirTX = nx * 0.4;
+      w.dirTY = ny * 0.25;
+      w.energy = Math.min(1, w.energy + 0.12);
+    }
+    w.px = x;
+    w.py = y;
+    kickFx();
+  }
+
+  function onPointerEnter(e: ReactPointerEvent<HTMLDivElement>) {
+    if (!canWind) return;
+    fx.current.presenceTarget = 1;
+    fx.current.hasPoint = false;
+    onPointerMove(e);
+  }
+
+  function onPointerLeave() {
+    const w = fx.current;
+    w.presenceTarget = 0;
+    w.hasPoint = false;
+    w.dirTX *= 0.35;
+    w.dirTY *= 0.35;
+    w.energy *= 0.55;
+    w.shedPressure *= 0.4;
+    // In-flight leaves keep falling via keepAlive while fallers.length > 0.
+    kickFx();
+  }
 
   const stem = reveal(g, 0, 0.2);
   const sprout = reveal(g, 0.02, 0.14);
@@ -373,13 +799,30 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
 
   return (
     <div
+      ref={rootRef}
       className={cn(
-        "focus-growth pointer-events-none relative z-0 w-full",
+        "focus-growth relative z-0 w-full",
+        canWind ? "pointer-events-auto cursor-default" : "pointer-events-none",
         live && "focus-growth-live",
         wilt && "focus-growth-wilt",
         mature && "focus-growth-mature",
       )}
-      style={{ ["--fg-growth" as string]: g.toFixed(4) } as CSSProperties}
+      style={
+        {
+          ["--fg-growth" as string]: g.toFixed(4),
+          ["--fg-breeze" as string]: "0",
+          ["--fg-wind-x" as string]: "0",
+          ["--fg-wind-y" as string]: "0",
+          ["--fg-wind-a" as string]: "0",
+          ["--fg-wind-b" as string]: "0",
+          ["--fg-wind-c" as string]: "0",
+          ["--fg-wind-flutter" as string]: "0",
+          ["--fg-wind-energy" as string]: "0",
+        } as CSSProperties
+      }
+      onPointerEnter={onPointerEnter}
+      onPointerMove={onPointerMove}
+      onPointerLeave={onPointerLeave}
       aria-hidden
     >
       <svg
@@ -400,29 +843,144 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
             <stop offset="50%" stopColor="var(--fg-leaf-shade)" />
             <stop offset="100%" stopColor="var(--fg-leaf)" />
           </linearGradient>
-          <radialGradient id={`fg-soil-${uid}`} cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="var(--fg-soil)" stopOpacity="0.5" />
-            <stop offset="65%" stopColor="var(--fg-soil)" stopOpacity="0.14" />
+          <radialGradient id={`fg-soil-glow-${uid}`} cx="50%" cy="42%" r="55%">
+            <stop offset="0%" stopColor="var(--fg-soil-lit)" stopOpacity="0.55" />
+            <stop offset="45%" stopColor="var(--fg-soil)" stopOpacity="0.22" />
             <stop offset="100%" stopColor="var(--fg-soil)" stopOpacity="0" />
+          </radialGradient>
+          <linearGradient id={`fg-soil-mound-${uid}`} x1="140" y1="348" x2="140" y2="372">
+            <stop offset="0%" stopColor="var(--fg-soil-lit)" />
+            <stop offset="48%" stopColor="var(--fg-soil)" />
+            <stop offset="100%" stopColor="var(--fg-soil-deep)" />
+          </linearGradient>
+          <radialGradient id={`fg-soil-shadow-${uid}`} cx="50%" cy="35%" r="55%">
+            <stop offset="0%" stopColor="var(--fg-soil-deep)" stopOpacity="0.45" />
+            <stop offset="100%" stopColor="var(--fg-soil-deep)" stopOpacity="0" />
           </radialGradient>
         </defs>
 
-        {/* Soil */}
-        <ellipse
-          cx="140"
-          cy="358"
-          rx={24 + g * 52}
-          ry={7.5 + g * 3.5}
-          fill={`url(#fg-soil-${uid})`}
-          opacity={0.48 + g * 0.38}
-        />
-        <path
-          d="M72 354 Q140 363 208 354"
-          stroke="var(--fg-bark)"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          opacity={0.22 + g * 0.28}
-        />
+        {/* Ground — soft earth mound, moss, delicate blades */}
+        <g
+          className="focus-growth-ground"
+          opacity={0.5 + g * 0.5}
+        >
+          {/* Ambient light pool */}
+          <ellipse
+            cx="140"
+            cy="358"
+            rx={36 + g * 58}
+            ry={11 + g * 5}
+            fill={`url(#fg-soil-glow-${uid})`}
+          />
+          {/* Soft contact shadow under trunk */}
+          <ellipse
+            cx="141"
+            cy="356.5"
+            rx={10 + wood * 8}
+            ry={3.2 + wood * 1.4}
+            fill={`url(#fg-soil-shadow-${uid})`}
+            opacity={0.55 + wood * 0.35}
+          />
+          {/* Asymmetric soil mound */}
+          <path
+            d={`M${(88 - g * 18).toFixed(1)} 356
+                C ${(108 - g * 8).toFixed(1)} 351 ${(122 - g * 2).toFixed(1)} 349.5 140 349
+                C ${(158 + g * 2).toFixed(1)} 349.5 ${(176 + g * 10).toFixed(1)} 351.5 ${(194 + g * 20).toFixed(1)} 356.5
+                C ${(188 + g * 14).toFixed(1)} 364 ${(168 + g * 6).toFixed(1)} 368.5 140 369
+                C ${(112 - g * 6).toFixed(1)} 368.5 ${(94 - g * 12).toFixed(1)} 363.5 ${(88 - g * 18).toFixed(1)} 356 Z`}
+            fill={`url(#fg-soil-mound-${uid})`}
+            opacity={0.72 + g * 0.22}
+          />
+          {/* Earth ridge highlight */}
+          <path
+            d={`M${(96 - g * 12).toFixed(1)} 355.5
+                C 118 351.2 132 350 140 350
+                C 150 350.2 168 352.2 ${(186 + g * 14).toFixed(1)} 356`}
+            stroke="var(--fg-soil-lit)"
+            strokeWidth="1.15"
+            strokeLinecap="round"
+            fill="none"
+            opacity={0.45 + g * 0.25}
+          />
+          {/* Deeper contour */}
+          <path
+            d={`M${(104 - g * 8).toFixed(1)} 360.5
+                C 124 365 156 365.5 ${(178 + g * 10).toFixed(1)} 361`}
+            stroke="var(--fg-soil-deep)"
+            strokeWidth="1"
+            strokeLinecap="round"
+            fill="none"
+            opacity={0.28 + g * 0.2}
+          />
+          {/* Moss patches */}
+          <ellipse
+            cx="112"
+            cy="354.5"
+            rx={5.5 + g * 3}
+            ry={2.1 + g * 0.6}
+            fill="var(--fg-moss)"
+            opacity={0.35 + g * 0.35}
+            transform="rotate(-8 112 354.5)"
+          />
+          <ellipse
+            cx="168"
+            cy="355"
+            rx={6.2 + g * 3.5}
+            ry={2.3 + g * 0.7}
+            fill="var(--fg-moss-lit)"
+            opacity={0.28 + g * 0.32}
+            transform="rotate(6 168 355)"
+          />
+          <ellipse
+            cx="148"
+            cy="352.8"
+            rx={3.2 + g * 1.5}
+            ry={1.3}
+            fill="var(--fg-moss)"
+            opacity={0.22 + g * 0.28}
+          />
+          {/* Tiny grass blades — left */}
+          <g
+            stroke="var(--fg-moss-lit)"
+            strokeLinecap="round"
+            fill="none"
+            opacity={0.25 + g * 0.45}
+          >
+            <path d="M102 355 C 100.5 350 99.2 346 98.5 343" strokeWidth="0.9" />
+            <path d="M106 355.5 C 105.2 351 105.6 347.5 106.5 344.5" strokeWidth="0.75" />
+            <path d="M99 356 C 97.8 352.5 96.2 350 94.8 348" strokeWidth="0.7" />
+          </g>
+          {/* Tiny grass blades — right */}
+          <g
+            stroke="var(--fg-moss)"
+            strokeLinecap="round"
+            fill="none"
+            opacity={0.22 + g * 0.42}
+          >
+            <path d="M178 355.5 C 179.2 351 180.5 347.5 181.2 344.5" strokeWidth="0.85" />
+            <path d="M183 356 C 184.5 352 186.2 349.5 187.5 347" strokeWidth="0.7" />
+            <path d="M174 355 C 174.8 351.5 174.2 348.5 173.2 346" strokeWidth="0.75" />
+          </g>
+          {/* Pebble accents */}
+          <ellipse
+            cx="126"
+            cy="357.5"
+            rx="2.1"
+            ry="1.15"
+            fill="var(--fg-bark)"
+            opacity={0.28 + g * 0.25}
+            transform="rotate(-12 126 357.5)"
+          />
+          <ellipse
+            cx="156"
+            cy="358"
+            rx="1.6"
+            ry="0.95"
+            fill="var(--fg-bark-lit)"
+            opacity={0.22 + g * 0.22}
+            transform="rotate(18 156 358)"
+          />
+        </g>
 
         {/* Outer: CSS sway. Inner: organic lean. */}
         <g className="focus-growth-plant">
@@ -489,6 +1047,7 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
               tipRot={-58}
               tipSide={-1}
               breeze={1}
+              tier="low"
               denseTip={dense > 0.4}
               midLeaves={[
                 { x: 95, y: 268, rot: -38, scale: 0.7, tone: "shade", at: 0.4 },
@@ -507,6 +1066,7 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
               tipRot={52}
               tipSide={1}
               breeze={2}
+              tier="low"
               denseTip={dense > 0.4}
               midLeaves={[
                 { x: 185, y: 262, rot: 36, scale: 0.68, tone: "lit", at: 0.4 },
@@ -527,6 +1087,7 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
               tipRot={-44}
               tipSide={-1}
               breeze={3}
+              tier="mid"
               denseTip
               midLeaves={[
                 { x: 100, y: 212, rot: -28, scale: 0.78, tone: "lit", at: 0.35 },
@@ -546,6 +1107,7 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
               tipRot={40}
               tipSide={1}
               breeze={1}
+              tier="mid"
               denseTip
               midLeaves={[
                 { x: 180, y: 204, rot: 24, scale: 0.75, tone: "mid", at: 0.35 },
@@ -566,6 +1128,7 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
               tipRot={-30}
               tipSide={-1}
               breeze={2}
+              tier="twig"
               midLeaves={[{ x: 70, y: 192, rot: -40, scale: 0.58, tone: "lit", at: 0.4 }]}
             />
 
@@ -582,6 +1145,7 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
               tipRot={-34}
               tipSide={-1}
               breeze={3}
+              tier="high"
               denseTip
               midLeaves={[
                 { x: 112, y: 160, rot: -22, scale: 0.72, tone: "shade", at: 0.35 },
@@ -600,6 +1164,7 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
               tipRot={30}
               tipSide={1}
               breeze={1}
+              tier="high"
               denseTip
               midLeaves={[
                 { x: 175, y: 152, rot: 20, scale: 0.7, tone: "lit", at: 0.35 },
@@ -620,6 +1185,7 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
               tipRot={-26}
               tipSide={-1}
               breeze={2}
+              tier="high"
               denseTip
               midLeaves={[{ x: 118, y: 122, rot: -30, scale: 0.65, tone: "lit", at: 0.4 }]}
             />
@@ -635,6 +1201,7 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
               tipRot={24}
               tipSide={1}
               breeze={3}
+              tier="high"
               denseTip
               midLeaves={[{ x: 168, y: 118, rot: 28, scale: 0.65, tone: "shade", at: 0.4 }]}
             />
@@ -652,6 +1219,7 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
               tipRot={-6}
               tipSide={1}
               breeze={1}
+              tier="crown"
               denseTip
               midLeaves={[
                 { x: 138, y: 95, rot: -35, scale: 0.7, tone: "mid", at: 0.3 },
@@ -671,6 +1239,7 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
               tipRot={-32}
               tipSide={-1}
               breeze={2}
+              tier="twig"
               denseTip
             />
             <Branch
@@ -685,6 +1254,7 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
               tipRot={28}
               tipSide={1}
               breeze={3}
+              tier="twig"
               denseTip
             />
 
@@ -707,6 +1277,13 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
             </g>
           </g>
         </g>
+
+        {/* Falling leaves — imperatively spawned, drifts with the breeze */}
+        <g
+          ref={fallLayerRef}
+          className="focus-growth-fallers"
+          pointerEvents="none"
+        />
 
         {live && g > 0.45 ? (
           <g className="focus-growth-motes">

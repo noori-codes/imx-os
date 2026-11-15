@@ -246,7 +246,11 @@ html[data-focus-theater="true"] .focus-continue-bar {
   --fg-leaf-lit: color-mix(in oklab, oklch(0.73 0.11 140) 86%, white 14%);
   --fg-leaf-shade: color-mix(in oklab, oklch(0.45 0.1 150) 90%, black 10%);
   --fg-vein: color-mix(in oklab, var(--fg-bark) 55%, var(--fg-leaf-shade) 45%);
-  --fg-soil: color-mix(in oklab, oklch(0.34 0.03 58) 72%, var(--focus-accent) 28%);
+  --fg-soil: color-mix(in oklab, oklch(0.34 0.035 58) 74%, var(--focus-accent) 26%);
+  --fg-soil-lit: color-mix(in oklab, oklch(0.48 0.04 65) 70%, var(--focus-accent) 30%);
+  --fg-soil-deep: color-mix(in oklab, oklch(0.26 0.03 50) 78%, black 22%);
+  --fg-moss: color-mix(in oklab, var(--fg-leaf-shade) 70%, var(--fg-bark) 30%);
+  --fg-moss-lit: color-mix(in oklab, var(--fg-leaf) 55%, var(--fg-leaf-lit) 45%);
   width: 100%;
   /* Sit mid-column beside the dial — never pinned to the viewport floor */
   height: min(42vh, 18rem);
@@ -281,7 +285,11 @@ html[data-focus-theater="true"] .focus-continue-bar {
   --fg-leaf-lit: color-mix(in oklab, oklch(0.76 0.11 140) 82%, white 18%);
   --fg-leaf-shade: color-mix(in oklab, oklch(0.5 0.11 150) 88%, black 12%);
   --fg-vein: color-mix(in oklab, var(--fg-bark-lit) 40%, var(--fg-leaf-shade) 60%);
-  --fg-soil: color-mix(in oklab, oklch(0.4 0.03 58) 68%, var(--focus-accent) 32%);
+  --fg-soil: color-mix(in oklab, oklch(0.4 0.035 58) 70%, var(--focus-accent) 30%);
+  --fg-soil-lit: color-mix(in oklab, oklch(0.54 0.04 65) 68%, var(--focus-accent) 32%);
+  --fg-soil-deep: color-mix(in oklab, oklch(0.3 0.03 50) 75%, black 25%);
+  --fg-moss: color-mix(in oklab, var(--fg-leaf-shade) 68%, var(--fg-bark-lit) 32%);
+  --fg-moss-lit: color-mix(in oklab, var(--fg-leaf) 52%, var(--fg-leaf-lit) 48%);
 }
 
 .focus-growth-svg {
@@ -300,26 +308,178 @@ html[data-focus-theater="true"] .focus-continue-bar {
   transition: stroke-dashoffset 820ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* Slow trunk sway in a breeze */
-.focus-growth-live .focus-growth-plant {
-  animation: focus-growth-sway 11s ease-in-out infinite;
+/*
+ * Interactive garden breeze
+ * Trunk stays put. Branches bend from their joint. Leaves flutter freely.
+ * Cascading amps: low < mid < high < crown / twig.
+ */
+.focus-growth-branch-wind {
+  transform-box: view-box;
+  transform-origin: var(--fg-bx, 140px) var(--fg-by, 200px);
+  transform: rotate(
+    calc(
+      var(--fg-wind-x, 0) * var(--fg-tier-k, 1.4) * 1deg +
+        var(--fg-wind-a, 0) * var(--fg-tier-a, 0.55) * 1deg +
+        var(--fg-wind-b, 0) * var(--fg-tier-b, 0.3) * 1deg
+    )
+  );
 }
 
-/* Individual leaves flutter when mature / live (inner group only) */
+.focus-growth-branch-wind[data-tier="low"] {
+  --fg-tier-k: 0.7;
+  --fg-tier-a: 0.28;
+  --fg-tier-b: 0.12;
+}
+
+.focus-growth-branch-wind[data-tier="mid"] {
+  --fg-tier-k: 1.35;
+  --fg-tier-a: 0.55;
+  --fg-tier-b: 0.28;
+}
+
+.focus-growth-branch-wind[data-tier="high"] {
+  --fg-tier-k: 2.1;
+  --fg-tier-a: 0.85;
+  --fg-tier-b: 0.45;
+}
+
+.focus-growth-branch-wind[data-tier="crown"] {
+  --fg-tier-k: 2.6;
+  --fg-tier-a: 1.05;
+  --fg-tier-b: 0.55;
+}
+
+.focus-growth-branch-wind[data-tier="twig"] {
+  --fg-tier-k: 3.2;
+  --fg-tier-a: 1.35;
+  --fg-tier-b: 0.75;
+}
+
+.focus-growth-leaf-wind {
+  --fg-leaf-kx: 7;
+  --fg-leaf-ky: 2.2;
+  --fg-leaf-a: 5;
+  --fg-leaf-b: 3.2;
+  --fg-leaf-c: 2.4;
+  --fg-leaf-f: 3.8;
+  --fg-leaf-tx: 1.1;
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  transform: rotate(
+      calc(
+        var(--fg-wind-x, 0) * var(--fg-leaf-kx) * 1deg +
+          var(--fg-wind-y, 0) * var(--fg-leaf-ky) * 1deg +
+          var(--fg-wind-a, 0) * var(--fg-leaf-a) * 1deg +
+          var(--fg-wind-b, 0) * var(--fg-leaf-b) * 1deg +
+          var(--fg-wind-c, 0) * var(--fg-leaf-c) * 1deg +
+          var(--fg-wind-flutter, 0) * var(--fg-leaf-f) * 1deg
+      )
+    )
+    translate(
+      calc(
+        var(--fg-wind-x, 0) * var(--fg-leaf-tx) * 1px +
+          var(--fg-wind-a, 0) * 0.35px
+      ),
+      calc(var(--fg-wind-flutter, 0) * -0.55px)
+    );
+}
+
+.focus-growth-leaf-wind[data-react="1"] {
+  --fg-leaf-kx: 8.5;
+  --fg-leaf-ky: 2;
+  --fg-leaf-a: 5.8;
+  --fg-leaf-b: 2.4;
+  --fg-leaf-c: 1.8;
+  --fg-leaf-f: 4.2;
+  --fg-leaf-tx: 1.25;
+}
+
+.focus-growth-leaf-wind[data-react="2"] {
+  --fg-leaf-kx: -6;
+  --fg-leaf-ky: 2.8;
+  --fg-leaf-a: -4.2;
+  --fg-leaf-b: 4.5;
+  --fg-leaf-c: 2.2;
+  --fg-leaf-f: 3.2;
+  --fg-leaf-tx: 0.85;
+}
+
+.focus-growth-leaf-wind[data-react="3"] {
+  --fg-leaf-kx: 9.2;
+  --fg-leaf-ky: -1.8;
+  --fg-leaf-a: 3.5;
+  --fg-leaf-b: -3.8;
+  --fg-leaf-c: 4.6;
+  --fg-leaf-f: 5;
+  --fg-leaf-tx: 1.4;
+}
+
+.focus-growth-leaf-wind[data-react="4"] {
+  --fg-leaf-kx: -5.2;
+  --fg-leaf-ky: 1.5;
+  --fg-leaf-a: 6.2;
+  --fg-leaf-b: -2.2;
+  --fg-leaf-c: -3.4;
+  --fg-leaf-f: 2.8;
+  --fg-leaf-tx: 0.95;
+}
+
+.focus-growth-leaf-wind[data-react="5"] {
+  --fg-leaf-kx: 7.4;
+  --fg-leaf-ky: 3.2;
+  --fg-leaf-a: -5.5;
+  --fg-leaf-b: 2.8;
+  --fg-leaf-c: 3.6;
+  --fg-leaf-f: 4.6;
+  --fg-leaf-tx: 1.15;
+}
+
+.focus-growth-leaf-wind[data-react="6"] {
+  --fg-leaf-kx: -8;
+  --fg-leaf-ky: -2.4;
+  --fg-leaf-a: 4;
+  --fg-leaf-b: 5.2;
+  --fg-leaf-c: -2.6;
+  --fg-leaf-f: 3.5;
+  --fg-leaf-tx: 1.3;
+}
+
+/* Ambient live flutter — quieter while the user is breezing the canopy */
+.focus-growth-live .focus-growth-plant {
+  /* Trunk must not spin as one unit — only the tiniest settle */
+  animation: none;
+}
+
 .focus-growth-live.focus-growth-mature .focus-growth-leaf[data-breeze="1"] {
-  animation: focus-growth-leaf-breeze 5.2s ease-in-out infinite;
+  animation: focus-growth-leaf-breeze 6.4s ease-in-out infinite;
   transform-box: fill-box;
   transform-origin: 50% 100%;
 }
 .focus-growth-live.focus-growth-mature .focus-growth-leaf[data-breeze="2"] {
-  animation: focus-growth-leaf-breeze 6.1s ease-in-out 0.45s infinite;
+  animation: focus-growth-leaf-breeze 7.6s ease-in-out 0.55s infinite;
   transform-box: fill-box;
   transform-origin: 50% 100%;
 }
 .focus-growth-live.focus-growth-mature .focus-growth-leaf[data-breeze="3"] {
-  animation: focus-growth-leaf-breeze 4.7s ease-in-out 0.9s infinite;
+  animation: focus-growth-leaf-breeze 5.8s ease-in-out 1.1s infinite;
   transform-box: fill-box;
   transform-origin: 50% 100%;
+}
+
+.focus-growth-breezy.focus-growth-live.focus-growth-mature .focus-growth-leaf {
+  animation-duration: 3.6s;
+}
+
+.focus-growth-fallers {
+  pointer-events: none;
+}
+
+.focus-growth-faller {
+  transform-box: fill-box;
+  transform-origin: center;
+  filter: drop-shadow(
+    0 1px 1.5px color-mix(in oklab, var(--fg-bark) 22%, transparent)
+  );
 }
 
 .focus-growth-mote {
@@ -356,26 +516,21 @@ html[data-focus-theater="true"] .focus-continue-bar {
   animation: none !important;
 }
 
-@keyframes focus-growth-sway {
-  0%,
-  100% {
-    transform: rotate(-0.55deg);
-  }
-  50% {
-    transform: rotate(0.7deg);
-  }
+.focus-growth-wilt .focus-growth-leaf-wind,
+.focus-growth-wilt .focus-growth-branch-wind {
+  transform: none !important;
 }
 
 @keyframes focus-growth-leaf-breeze {
   0%,
   100% {
-    transform: rotate(-1.6deg) translateY(0);
+    transform: rotate(-1.2deg) translateY(0);
   }
-  40% {
-    transform: rotate(2.1deg) translateY(-0.4px);
+  35% {
+    transform: rotate(1.6deg) translateY(-0.35px);
   }
   70% {
-    transform: rotate(-0.9deg) translateY(0.2px);
+    transform: rotate(-0.7deg) translateY(0.15px);
   }
 }
 
@@ -396,6 +551,15 @@ html[data-focus-theater="true"] .focus-continue-bar {
   .focus-growth-live .focus-growth-leaf,
   .focus-growth-live .focus-growth-mote {
     animation: none;
+  }
+
+  .focus-growth-leaf-wind,
+  .focus-growth-branch-wind {
+    transform: none !important;
+  }
+
+  .focus-growth-fallers {
+    display: none;
   }
 
   .focus-growth-stem,
