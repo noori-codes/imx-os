@@ -15,6 +15,67 @@ import { focusGrowthProgress } from "@/lib/focus-growth";
 import { cn } from "@/lib/utils";
 import { useFocusTimer } from "@/stores/focus-timer";
 
+/** Soft blossom for post-maturity count-up richness. */
+function Blossom({
+  x,
+  y,
+  open,
+  scale = 1,
+}: {
+  x: number;
+  y: number;
+  open: number;
+  scale?: number;
+}) {
+  if (open <= 0.04) return null;
+  const s = (0.35 + open * 0.65) * scale;
+  return (
+    <g
+      opacity={0.15 + open * 0.75}
+      transform={`translate(${x} ${y}) scale(${s.toFixed(3)})`}
+    >
+      <ellipse cx="0" cy="-2.8" rx="1.55" ry="2.35" fill="var(--fg-blossom)" opacity={0.88} />
+      <ellipse cx="2.55" cy="-0.85" rx="1.55" ry="2.35" fill="var(--fg-blossom)" opacity={0.82} transform="rotate(72 2.55 -0.85)" />
+      <ellipse cx="1.55" cy="2.35" rx="1.55" ry="2.35" fill="var(--fg-blossom)" opacity={0.8} transform="rotate(144 1.55 2.35)" />
+      <ellipse cx="-1.55" cy="2.35" rx="1.55" ry="2.35" fill="var(--fg-blossom)" opacity={0.8} transform="rotate(216 -1.55 2.35)" />
+      <ellipse cx="-2.55" cy="-0.85" rx="1.55" ry="2.35" fill="var(--fg-blossom)" opacity={0.82} transform="rotate(288 -2.55 -0.85)" />
+      <circle cx="0" cy="0" r="1.55" fill="var(--fg-blossom-heart)" opacity={0.92} />
+    </g>
+  );
+}
+
+function TinyFruit({
+  x,
+  y,
+  open,
+  scale = 1,
+}: {
+  x: number;
+  y: number;
+  open: number;
+  scale?: number;
+}) {
+  if (open <= 0.05) return null;
+  const s = (0.4 + open * 0.6) * scale;
+  return (
+    <g
+      opacity={0.2 + open * 0.7}
+      transform={`translate(${x} ${y}) scale(${s.toFixed(3)})`}
+    >
+      <ellipse cx="0" cy="1.2" rx="2.2" ry="2.6" fill="var(--fg-fruit)" />
+      <ellipse cx="-0.5" cy="0.2" rx="0.7" ry="0.9" fill="var(--fg-fruit-lit)" opacity={0.55} />
+      <path
+        d="M0 -1.2 C 0.4 -2.4 1.2 -3 1.6 -3.4"
+        stroke="var(--fg-bark)"
+        strokeWidth="0.55"
+        strokeLinecap="round"
+        fill="none"
+        opacity={0.55}
+      />
+    </g>
+  );
+}
+
 type FocusGrowthTreeProps = {
   wilt?: boolean;
 };
@@ -384,7 +445,8 @@ function Branch({
 
 /**
  * Living focus tree — hand-illustrated SVG botanical.
- * Growth value comes only from existing focusGrowthProgress.
+ * Growth from focusGrowthProgress: countdown 0–1 by duration;
+ * count-up milestones through maturity, then advanced >1 richness.
  */
 export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
   const uid = useId().replace(/:/g, "");
@@ -418,7 +480,7 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
   });
   const isRunning = useFocusTimer((s) => s.isRunning);
 
-  // Same subscription contract as before — do not change growth math.
+  // Timer → growth model only. Pause freezes elapsed; mode switch recalculates.
   const growthTarget = useFocusTimer((s) => {
     void s.tickMs;
     void s.lastDisplaySecond;
@@ -487,8 +549,12 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
     };
   }, [growthTarget, reduce]);
 
-  const g = displayGrowth;
-  const mature = g >= 0.92;
+  // Structure (0–1) drives the living tree. Advanced (>0) is post-maturity richness.
+  const g = Math.min(1, displayGrowth);
+  const advanced = Math.max(0, displayGrowth - 1);
+  const flourish = Math.min(1, advanced);
+  const legendary = Math.max(0, advanced - 1);
+  const mature = g >= 0.92 || advanced > 0;
   const live = isRunning && !wilt && !reduce;
   const canWind = !reduce && !wilt && g > 0.12;
 
@@ -805,11 +871,12 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
   }
 
   /*
-   * Organic growth timeline (maps onto focusGrowthProgress 0→1):
+   * Organic growth timeline (structure 0→1 from countdown duration or count-up milestones):
    *  0.00–0.10  tiny seedling (short stem + fixed cotyledons)
    *  0.06–0.34  trunk rises & thickens (cotyledons stay at their node, then fade)
    *  0.22+      first lateral branch, then more — leaves along each limb base→tip
    *  0.72+      crown + secondary canopy fill
+   * Advanced (count-up past maturity) adds richness without resizing the silhouette.
    */
   const seedling = reveal(g, 0, 0.1);
   const cotyledon = reveal(g, 0.015, 0.1);
@@ -830,6 +897,10 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
   const b8 = reveal(g, 0.68, 0.14);
   const crown = reveal(g, 0.74, 0.18);
   const dense = reveal(g, 0.84, 0.16);
+  const deepRoots = reveal(flourish, 0, 0.55);
+  const blossomOpen = reveal(flourish, 0.28, 0.5);
+  const fruitOpen = reveal(flourish, 0.55, 0.45);
+  const legendaryCanopy = reveal(legendary, 0, 0.8);
 
   const baseY = 355;
   // Seedling is SHORT — never a tall empty pole with tip leaves.
@@ -873,10 +944,12 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
         live && "focus-growth-live",
         wilt && "focus-growth-wilt",
         mature && "focus-growth-mature",
+        flourish > 0.08 && "focus-growth-flourish",
       )}
       style={
         {
           ["--fg-growth" as string]: g.toFixed(4),
+          ["--fg-advanced" as string]: advanced.toFixed(4),
           ["--fg-breeze" as string]: "0",
           ["--fg-wind-x" as string]: "0",
           ["--fg-wind-y" as string]: "0",
@@ -1158,6 +1231,35 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
                 fill="none"
                 opacity={wood * 0.45}
               />
+              {/* Deep roots — count-up post-maturity */}
+              {deepRoots > 0.02 ? (
+                <g opacity={deepRoots}>
+                  <path
+                    d="M130 355.5 C 118 359 106 364 98 370"
+                    stroke="var(--fg-bark)"
+                    strokeWidth={0.75 + deepRoots * 0.35}
+                    strokeLinecap="round"
+                    fill="none"
+                    opacity={0.4 + deepRoots * 0.25}
+                  />
+                  <path
+                    d="M150 355 C 162 358.5 174 363 184 368.5"
+                    stroke="var(--fg-bark)"
+                    strokeWidth={0.7 + deepRoots * 0.3}
+                    strokeLinecap="round"
+                    fill="none"
+                    opacity={0.36 + deepRoots * 0.22}
+                  />
+                  <path
+                    d="M142 355.8 C 148 360 152 365 154 369"
+                    stroke="var(--fg-bark-lit)"
+                    strokeWidth="0.65"
+                    strokeLinecap="round"
+                    fill="none"
+                    opacity={0.3 + deepRoots * 0.28}
+                  />
+                </g>
+              ) : null}
             </g>
 
             {/* Cotyledons — fixed on the seedling node, never ride the crown */}
@@ -1427,6 +1529,170 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
               <Leaf x={182} y={122} rot={26} scale={0.82} open={reveal(dense, 0.35, 0.45)} tone="lit" breeze={1} />
               <Leaf x={148} y={48} rot={8} scale={0.9} open={reveal(dense, 0.4, 0.45)} tone="lit" breeze={2} />
             </g>
+
+            {/*
+              Post-maturity richness (count-up beyond ~45m).
+              Adds foliage irregularity, blossoms, fruit — not overall scale.
+            */}
+            {flourish > 0.02 ? (
+              <g className="focus-growth-advanced">
+                <Branch
+                  ox={72}
+                  oy={248}
+                  d="M72 248 C 58 242 46 236 38 228"
+                  open={reveal(flourish, 0.05, 0.45)}
+                  width={1.25}
+                  bow={bow * 0.4}
+                  tipX={38}
+                  tipY={228}
+                  tipRot={-38}
+                  tipSide={-1}
+                  breeze={2}
+                  tier="twig"
+                  midLeaves={[
+                    { x: 64, y: 246, rot: -26, scale: 0.48, tone: "lit", at: 0.08 },
+                    { x: 50, y: 236, rot: -40, scale: 0.52, tone: "mid", at: 0.4 },
+                  ]}
+                />
+                <Branch
+                  ox={210}
+                  oy={246}
+                  d="M210 246 C 224 238 236 232 246 226"
+                  open={reveal(flourish, 0.1, 0.45)}
+                  width={1.2}
+                  bow={bow * 0.38}
+                  tipX={246}
+                  tipY={226}
+                  tipRot={34}
+                  tipSide={1}
+                  breeze={1}
+                  tier="twig"
+                  midLeaves={[
+                    { x: 218, y: 242, rot: 22, scale: 0.48, tone: "shade", at: 0.08 },
+                    { x: 232, y: 232, rot: 36, scale: 0.52, tone: "lit", at: 0.4 },
+                  ]}
+                />
+                <LeafTuft
+                  x={96}
+                  y={148}
+                  rot={-18}
+                  open={reveal(flourish, 0.18, 0.5)}
+                  side={-1}
+                  breeze={3}
+                  dense
+                />
+                <LeafTuft
+                  x={188}
+                  y={142}
+                  rot={14}
+                  open={reveal(flourish, 0.22, 0.5)}
+                  side={1}
+                  breeze={1}
+                  dense
+                />
+                <Leaf
+                  x={132}
+                  y={72}
+                  rot={-14}
+                  scale={0.7}
+                  open={reveal(flourish, 0.3, 0.45)}
+                  tone="shade"
+                  breeze={2}
+                />
+                <Leaf
+                  x={156}
+                  y={70}
+                  rot={18}
+                  scale={0.68}
+                  open={reveal(flourish, 0.34, 0.45)}
+                  tone="lit"
+                  breeze={3}
+                />
+                <Leaf
+                  x={64}
+                  y={188}
+                  rot={-42}
+                  scale={0.58}
+                  open={reveal(flourish, 0.4, 0.4)}
+                  tone="mid"
+                  breeze={1}
+                />
+                <Leaf
+                  x={218}
+                  y={184}
+                  rot={38}
+                  scale={0.56}
+                  open={reveal(flourish, 0.44, 0.4)}
+                  tone="shade"
+                  breeze={2}
+                />
+
+                <Blossom x={104} y={118} open={blossomOpen} scale={0.85} />
+                <Blossom x={176} y={112} open={reveal(blossomOpen, 0.15, 0.5)} scale={0.78} />
+                <Blossom x={140} y={56} open={reveal(blossomOpen, 0.28, 0.5)} scale={0.72} />
+                <Blossom
+                  x={52}
+                  y={196}
+                  open={reveal(blossomOpen, 0.4, 0.45)}
+                  scale={0.65}
+                />
+
+                <TinyFruit x={198} y={156} open={fruitOpen} scale={0.9} />
+                <TinyFruit
+                  x={86}
+                  y={168}
+                  open={reveal(fruitOpen, 0.2, 0.5)}
+                  scale={0.82}
+                />
+                <TinyFruit
+                  x={148}
+                  y={92}
+                  open={reveal(fruitOpen, 0.35, 0.5)}
+                  scale={0.75}
+                />
+
+                {legendaryCanopy > 0.02 ? (
+                  <g opacity={legendaryCanopy}>
+                    <LeafTuft
+                      x={110}
+                      y={98}
+                      rot={-8}
+                      open={legendaryCanopy}
+                      side={-1}
+                      breeze={2}
+                      dense
+                    />
+                    <LeafTuft
+                      x={170}
+                      y={94}
+                      rot={10}
+                      open={reveal(legendaryCanopy, 0.15, 0.5)}
+                      side={1}
+                      breeze={1}
+                      dense
+                    />
+                    <Blossom
+                      x={124}
+                      y={78}
+                      open={reveal(legendaryCanopy, 0.25, 0.5)}
+                      scale={0.7}
+                    />
+                    <Blossom
+                      x={162}
+                      y={74}
+                      open={reveal(legendaryCanopy, 0.35, 0.5)}
+                      scale={0.68}
+                    />
+                    <TinyFruit
+                      x={132}
+                      y={130}
+                      open={reveal(legendaryCanopy, 0.4, 0.5)}
+                      scale={0.7}
+                    />
+                  </g>
+                ) : null}
+              </g>
+            ) : null}
           </g>
         </g>
 

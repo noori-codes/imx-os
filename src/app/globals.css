@@ -244,6 +244,7 @@ html[data-focus-theater="true"] .focus-continue-bar {
 
 .focus-growth {
   --fg-growth: 0;
+  --fg-advanced: 0;
   /* Botanical palette — soft greens + earth, gently warmed by scene accent */
   --fg-bark: color-mix(in oklab, oklch(0.36 0.045 52) 82%, var(--focus-accent) 18%);
   --fg-bark-lit: color-mix(in oklab, oklch(0.52 0.05 62) 72%, var(--focus-accent) 28%);
@@ -251,6 +252,10 @@ html[data-focus-theater="true"] .focus-continue-bar {
   --fg-leaf-lit: color-mix(in oklab, oklch(0.73 0.11 140) 86%, white 14%);
   --fg-leaf-shade: color-mix(in oklab, oklch(0.45 0.1 150) 90%, black 10%);
   --fg-vein: color-mix(in oklab, var(--fg-bark) 55%, var(--fg-leaf-shade) 45%);
+  --fg-blossom: color-mix(in oklab, oklch(0.78 0.08 25) 70%, var(--focus-accent) 30%);
+  --fg-blossom-heart: color-mix(in oklab, oklch(0.72 0.12 55) 75%, var(--focus-accent) 25%);
+  --fg-fruit: color-mix(in oklab, oklch(0.58 0.14 35) 78%, var(--focus-accent) 22%);
+  --fg-fruit-lit: color-mix(in oklab, oklch(0.7 0.1 45) 70%, white 30%);
   --fg-soil: color-mix(in oklab, oklch(0.34 0.035 58) 74%, var(--focus-accent) 26%);
   --fg-soil-lit: color-mix(in oklab, oklch(0.48 0.04 65) 70%, var(--focus-accent) 30%);
   --fg-soil-deep: color-mix(in oklab, oklch(0.26 0.03 50) 78%, black 22%);
@@ -294,6 +299,10 @@ html[data-focus-theater="true"] .focus-continue-bar {
   --fg-leaf-lit: color-mix(in oklab, oklch(0.76 0.11 140) 82%, white 18%);
   --fg-leaf-shade: color-mix(in oklab, oklch(0.5 0.11 150) 88%, black 12%);
   --fg-vein: color-mix(in oklab, var(--fg-bark-lit) 40%, var(--fg-leaf-shade) 60%);
+  --fg-blossom: color-mix(in oklab, oklch(0.82 0.09 25) 68%, var(--focus-accent) 32%);
+  --fg-blossom-heart: color-mix(in oklab, oklch(0.76 0.13 55) 72%, var(--focus-accent) 28%);
+  --fg-fruit: color-mix(in oklab, oklch(0.64 0.14 35) 76%, var(--focus-accent) 24%);
+  --fg-fruit-lit: color-mix(in oklab, oklch(0.74 0.1 45) 68%, white 32%);
   --fg-soil: color-mix(in oklab, oklch(0.4 0.035 58) 70%, var(--focus-accent) 30%);
   --fg-soil-lit: color-mix(in oklab, oklch(0.54 0.04 65) 68%, var(--focus-accent) 32%);
   --fg-soil-deep: color-mix(in oklab, oklch(0.3 0.03 50) 75%, black 25%);
