@@ -1531,7 +1531,7 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
             </g>
 
             {/*
-              Post-maturity richness (count-up beyond ~45m).
+              Post-maturity richness (count-up beyond ~60m).
               Adds foliage irregularity, blossoms, fruit — not overall scale.
             */}
             {flourish > 0.02 ? (
