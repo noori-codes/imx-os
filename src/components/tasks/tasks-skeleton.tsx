@@ -1,4 +1,3 @@
-import { AppPageFrame } from "@/components/shared/app-page-frame";
 import { TasksStage } from "@/components/tasks/tasks-stage";
 import { cn } from "@/lib/utils";
 
@@ -79,11 +78,9 @@ export function TasksSkeleton() {
       aria-live="polite"
       aria-label="Loading tasks"
     >
-      <AppPageFrame className="max-w-5xl gap-8 md:py-8">
-        <TasksStage>
-          <TasksSkeletonBody />
-        </TasksStage>
-      </AppPageFrame>
+      <TasksStage>
+        <TasksSkeletonBody />
+      </TasksStage>
     </div>
   );
 }

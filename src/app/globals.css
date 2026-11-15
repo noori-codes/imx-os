@@ -4575,12 +4575,20 @@ html[data-focus-session] body {
   transform: none !important;
 }
 
+.tasks-page-frame {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+}
+
 .tasks-stage {
   position: relative;
   isolation: isolate;
   display: flex;
   flex: 1;
   flex-direction: column;
+  width: 100%;
+  min-width: 0;
   gap: 1.5rem;
 }
 
@@ -4593,24 +4601,35 @@ html[data-focus-session] body {
 }
 
 .tasks-stage-wash {
-  top: -1.5rem;
-  left: 50%;
-  width: min(100%, 46rem);
+  inset: -1rem 0 auto;
   height: 16rem;
-  transform: translateX(-50%);
-  background: radial-gradient(
-    ellipse 70% 80% at 50% 0%,
-    color-mix(in oklab, var(--foreground) 5%, transparent) 0%,
-    transparent 72%
-  );
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--foreground) 3.2%, var(--background)) 0%,
+      color-mix(in oklab, var(--foreground) 1.1%, transparent) 48%,
+      transparent 100%
+    ),
+    radial-gradient(
+      100% 80% at 18% -10%,
+      color-mix(in oklab, var(--foreground) 4%, transparent) 0%,
+      transparent 68%
+    );
 }
 
 .dark .tasks-stage-wash {
-  background: radial-gradient(
-    ellipse 70% 80% at 50% 0%,
-    color-mix(in oklab, var(--foreground) 7%, transparent) 0%,
-    transparent 72%
-  );
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--foreground) 5.5%, var(--background)) 0%,
+      color-mix(in oklab, var(--foreground) 1.6%, transparent) 46%,
+      transparent 100%
+    ),
+    radial-gradient(
+      110% 85% at 14% -12%,
+      color-mix(in oklab, var(--foreground) 6%, transparent) 0%,
+      transparent 66%
+    );
 }
 
 .tasks-stage-glow {
@@ -4653,6 +4672,8 @@ html[data-focus-session] body {
   display: flex;
   flex: 1;
   flex-direction: column;
+  width: 100%;
+  min-width: 0;
   gap: 1.5rem;
 }
 
@@ -4925,13 +4946,21 @@ html[data-focus-session] body {
   }
 }
 
-/* Focus studio — idle shell */
+/* Focus studio — full-bleed idle shell */
+.focus-page-frame {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+}
+
 .focus-studio {
   position: relative;
   isolation: isolate;
   display: flex;
   flex: 1;
   flex-direction: column;
+  width: 100%;
+  min-width: 0;
 }
 
 .focus-studio-wash,
@@ -4943,24 +4972,35 @@ html[data-focus-session] body {
 }
 
 .focus-studio-wash {
-  top: -1.5rem;
-  left: 50%;
-  width: min(100%, 46rem);
+  inset: -1rem 0 auto;
   height: 16rem;
-  transform: translateX(-50%);
-  background: radial-gradient(
-    ellipse 70% 80% at 50% 0%,
-    color-mix(in oklab, var(--foreground) 5%, transparent) 0%,
-    transparent 72%
-  );
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--foreground) 3.2%, var(--background)) 0%,
+      color-mix(in oklab, var(--foreground) 1.1%, transparent) 48%,
+      transparent 100%
+    ),
+    radial-gradient(
+      100% 80% at 18% -10%,
+      color-mix(in oklab, var(--foreground) 4%, transparent) 0%,
+      transparent 68%
+    );
 }
 
 .dark .focus-studio-wash {
-  background: radial-gradient(
-    ellipse 70% 80% at 50% 0%,
-    color-mix(in oklab, var(--foreground) 7%, transparent) 0%,
-    transparent 72%
-  );
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--foreground) 5.5%, var(--background)) 0%,
+      color-mix(in oklab, var(--foreground) 1.6%, transparent) 46%,
+      transparent 100%
+    ),
+    radial-gradient(
+      110% 85% at 14% -12%,
+      color-mix(in oklab, var(--foreground) 6%, transparent) 0%,
+      transparent 66%
+    );
 }
 
 .focus-studio-glow {
@@ -5000,6 +5040,8 @@ html[data-focus-session] body {
 .focus-studio-content {
   position: relative;
   z-index: 1;
+  width: 100%;
+  min-width: 0;
 }
 
 /* Ambient Focus scene washes — ink-slate, soft tint only */

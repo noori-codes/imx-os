@@ -9,7 +9,6 @@ import {
   getTasksForView,
 } from "@/actions/tasks";
 import { Header } from "@/components/layout/header";
-import { AppPageFrame } from "@/components/shared/app-page-frame";
 import { TasksBoard } from "@/components/tasks/tasks-board";
 import { TasksSkeleton } from "@/components/tasks/tasks-skeleton";
 import { TasksStage } from "@/components/tasks/tasks-stage";
@@ -45,27 +44,25 @@ async function TasksBody({
   );
 
   return (
-    <AppPageFrame className="max-w-5xl gap-8 md:py-8">
-      <TasksStage>
-        <div className="tasks-reveal">
-          <TasksBoard
-            tasks={tasks}
-            view={view}
-            counts={stats.counts}
-            projects={projects}
-            todayFocus={todayFocus}
-            compose={compose}
-            pulseStats={{
-              openCount: stats.openCount,
-              overdueCount: stats.overdueCount,
-              doneToday: stats.doneToday,
-              todayOpen: stats.counts.today,
-              focusMinutes,
-            }}
-          />
-        </div>
-      </TasksStage>
-    </AppPageFrame>
+    <TasksStage>
+      <div className="tasks-reveal">
+        <TasksBoard
+          tasks={tasks}
+          view={view}
+          counts={stats.counts}
+          projects={projects}
+          todayFocus={todayFocus}
+          compose={compose}
+          pulseStats={{
+            openCount: stats.openCount,
+            overdueCount: stats.overdueCount,
+            doneToday: stats.doneToday,
+            todayOpen: stats.counts.today,
+            focusMinutes,
+          }}
+        />
+      </div>
+    </TasksStage>
   );
 }
 
