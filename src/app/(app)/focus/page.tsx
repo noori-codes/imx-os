@@ -35,10 +35,10 @@ async function FocusBody({ taskParam }: { taskParam: string | null }) {
   const remaining = Math.max(0, dailyGoal.minutes - stats.focus_minutes);
   const goalHint =
     stats.focus_minutes === 0
-      ? "One session lights the day"
+      ? "Start the day with one clean block"
       : remaining > 0
-        ? `${formatFocusMinutesCompact(remaining) || `${remaining}m`} still open on the goal`
-        : "Daily goal sealed — keep going if you want";
+        ? `${formatFocusMinutesCompact(remaining) || `${remaining}m`} left on today’s goal`
+        : "Goal sealed — keep going if you want";
 
   return (
     <FocusWorkspace
@@ -51,16 +51,11 @@ async function FocusBody({ taskParam }: { taskParam: string | null }) {
           initialTaskId={taskParam}
         />
       }
-      sky={<FocusStatsLazy stats={stats} dailyGoal={dailyGoal} />}
-      sessions={
-        <div className="focus-secondary space-y-6">
+      pulse={<FocusStatsLazy stats={stats} dailyGoal={dailyGoal} />}
+      log={
+        <div className="space-y-3">
           <FocusSessionList sessions={sessions} />
-          <section className="focus-panel relative overflow-hidden rounded-2xl imx-surface p-4 sm:p-5">
-            <div className="focus-panel-glow" aria-hidden="true" />
-            <div className="relative z-1">
-              <LogFocusForm tasks={tasks} />
-            </div>
-          </section>
+          <LogFocusForm tasks={tasks} />
         </div>
       }
     />

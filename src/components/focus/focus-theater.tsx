@@ -16,10 +16,6 @@ type FocusTheaterProps = {
 /**
  * Full-viewport distraction-free stage. Portals above app chrome and
  * marks html[data-focus-theater] so sidebar/header/tabs hide via CSS.
- * Minimize exits theater and restores the inline session layout + chrome.
- *
- * Same change set: `layout/focus-chrome-sync.tsx`, `focus-workspace.tsx`,
- * and `html[data-focus-theater]` rules in `globals.css`.
  */
 export function FocusTheater({ children, active }: FocusTheaterProps) {
   const [mounted, setMounted] = useState(false);
@@ -60,7 +56,6 @@ export function FocusTheater({ children, active }: FocusTheaterProps) {
     return () => window.removeEventListener("keydown", onKey);
   }, [active, minimized]);
 
-  // Keep the screen awake while a session is running (theater or inline).
   useEffect(() => {
     if (!active || !isRunning) return;
     let lock: WakeLockSentinel | null = null;
@@ -81,19 +76,22 @@ export function FocusTheater({ children, active }: FocusTheaterProps) {
 
   if (!active) return <>{children}</>;
 
-  // Exit theater: restore sidebar/header and show the player inline.
   if (minimized) {
     return (
       <div className="focus-theater-inline relative flex min-h-0 w-full min-w-0 flex-1 flex-col">
-        <div className="relative z-1 flex shrink-0 items-center justify-end gap-1.5 px-4 py-2 sm:px-6">
+        <div className="focus-theater-chrome relative z-1 flex shrink-0 items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
+          <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+            Session · page
+          </p>
           <button
             type="button"
             onClick={() => setMinimized(false)}
-            className="inline-flex size-9 items-center justify-center rounded-xl border border-border/40 text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
+            className="inline-flex h-8 items-center gap-1.5 rounded-full border border-border/50 px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
             aria-label="Enter focus theater"
             title="Enter theater"
           >
-            <Maximize2 className="size-4" />
+            <Maximize2 className="size-3.5" />
+            Theater
           </button>
         </div>
         <div className="relative z-1 flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -120,19 +118,20 @@ export function FocusTheater({ children, active }: FocusTheaterProps) {
       aria-label="Focus theater"
     >
       <div className="pointer-events-none absolute inset-0 focus-theater-wash" aria-hidden />
-      <div className="relative z-1 flex items-center justify-between gap-3 px-4 py-3 sm:px-6">
-        <p className="text-[10px] font-medium uppercase tracking-[0.28em] text-muted-foreground">
-          Focus theater
+      <div className="focus-theater-chrome relative z-1 flex items-center justify-between gap-3 px-4 py-2.5 sm:px-8">
+        <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+          Distraction free
         </p>
         <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={() => setMinimized(true)}
-            className="inline-flex size-9 items-center justify-center rounded-xl border border-border/40 text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
+            className="inline-flex h-8 items-center gap-1.5 rounded-full border border-border/45 px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
             aria-label="Exit theater to page"
             title="Minimize (Esc)"
           >
-            <Minimize2 className="size-4" />
+            <Minimize2 className="size-3.5" />
+            Page
           </button>
           <button
             type="button"
@@ -140,11 +139,11 @@ export function FocusTheater({ children, active }: FocusTheaterProps) {
               if (isRunning) pause();
               setMinimized(true);
             }}
-            className="inline-flex size-9 items-center justify-center rounded-xl border border-border/40 text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
+            className="inline-flex size-8 items-center justify-center rounded-full border border-border/45 text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
             aria-label="Pause and exit theater"
-            title="Exit theater"
+            title="Pause and exit"
           >
-            <X className="size-4" />
+            <X className="size-3.5" />
           </button>
         </div>
       </div>

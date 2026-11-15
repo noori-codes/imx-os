@@ -19,11 +19,10 @@ import { useFocusTimer } from "@/stores/focus-timer";
 
 type FocusWorkspaceProps = {
   timer: ReactNode;
-  sky: ReactNode;
-  sessions: ReactNode;
+  pulse: ReactNode;
+  log: ReactNode;
 };
 
-/** Full-bleed idle frame — matches dashboard / tasks edge padding. */
 function FocusPageFrame({
   children,
   className,
@@ -35,9 +34,9 @@ function FocusPageFrame({
     <div
       className={cn(
         "focus-page-frame flex w-full min-w-0 max-w-none flex-1 flex-col",
-        "px-4 pt-4 pb-[calc(1.25rem+var(--mobile-tab-h))] sm:px-5",
-        "md:px-6 md:pt-5 md:pb-8",
-        "lg:px-8 lg:pt-6 lg:pb-10",
+        "px-4 pt-3 pb-[calc(0.85rem+var(--mobile-tab-h))] sm:px-5",
+        "md:px-6 md:pt-4 md:pb-5",
+        "lg:px-7 lg:pt-4 lg:pb-6",
         className,
       )}
     >
@@ -46,14 +45,14 @@ function FocusPageFrame({
   );
 }
 
-export function FocusWorkspace({
-  timer,
-  sky,
-  sessions,
-}: FocusWorkspaceProps) {
+/**
+ * Focus desk — daily instrument.
+ * Idle: board + pulse side by side, session log below.
+ * Live: quiet theater shell.
+ */
+export function FocusWorkspace({ timer, pulse, log }: FocusWorkspaceProps) {
   const isRunning = useFocusTimer((s) => s.isRunning);
   const continueBarVisible = useFocusContinueBarVisible();
-  // Keep the session shell while paused so the timer doesn't remount and wipe time.
   const inSession = isRunning || continueBarVisible;
   const soundId = useFocusSound((s) => s.activeId);
   const scene = focusSceneForTrack(soundId);
@@ -77,7 +76,7 @@ export function FocusWorkspace({
           initial={reduce ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={reduce ? undefined : { opacity: 0 }}
-          transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
         >
           <FocusTheater active>
             <div
@@ -92,34 +91,35 @@ export function FocusWorkspace({
         <m.div
           key="focus-idle"
           className="flex w-full min-w-0 flex-1 flex-col"
-          initial={reduce ? false : { opacity: 0, y: 8 }}
+          initial={reduce ? false : { opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={reduce ? undefined : { opacity: 0, y: -6 }}
-          transition={{ duration: 0.36, ease: [0.22, 1, 0.36, 1] }}
+          exit={reduce ? undefined : { opacity: 0, y: -4 }}
+          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
         >
           <FocusPageFrame>
             <div className="focus-studio" data-focus-scene={scene}>
               <div className="focus-studio-wash" aria-hidden="true" />
-              <div className="focus-studio-glow" aria-hidden="true" />
-              <div className="focus-studio-glow-soft" aria-hidden="true" />
-              <div className="focus-studio-content flex w-full flex-col gap-8">
-                <SectionReveal emphasize className="w-full">
+              <div className="focus-studio-content focus-desk">
+                <SectionReveal
+                  emphasize
+                  className="focus-desk-board flex h-full min-h-0 min-w-0 flex-col"
+                >
                   {timer}
                 </SectionReveal>
 
                 <SectionReveal
                   delay={REVEAL_DELAY[1]}
-                  className="w-full border-t border-border/40 pt-8"
+                  className="focus-desk-pulse focus-surface min-w-0"
                 >
-                  {sky}
+                  {pulse}
                 </SectionReveal>
 
                 <SectionReveal
                   delay={REVEAL_DELAY[2]}
-                  className="w-full"
+                  className="focus-desk-log focus-surface min-w-0"
                   id="focus-recent-sessions"
                 >
-                  {sessions}
+                  {log}
                 </SectionReveal>
               </div>
             </div>

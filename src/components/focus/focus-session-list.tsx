@@ -256,7 +256,7 @@ export function FocusSessionList({ sessions }: FocusSessionListProps) {
     return (
       <div key={group.key}>
         <div className="mb-3 flex items-baseline justify-between gap-3">
-          <h3 className="imx-pulse-eyebrow">
+          <h3 className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
             {group.label}
           </h3>
           <span className="text-xs tabular-nums text-muted-foreground">
@@ -467,21 +467,21 @@ export function FocusSessionList({ sessions }: FocusSessionListProps) {
 
   return (
     <section>
-      <div className="mb-6 flex items-end justify-between gap-3">
+      <div className="mb-3 flex items-end justify-between gap-3">
         <div>
-          <p className="imx-pulse-eyebrow">
+          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
             Recent sessions
           </p>
-          <p className="mt-1.5 text-sm text-muted-foreground">
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
             {displaySessions.length} logged
             {hasPending ? (
-              <span className="ml-2 text-foreground/80">· saving…</span>
+              <span className="ml-1.5 text-foreground/80">· saving…</span>
             ) : null}
           </p>
         </div>
       </div>
 
-      <div className="space-y-7">
+      <div className="space-y-4">
         {previewGroups.map(renderDayGroup)}
 
         {hasEarlierDays ? (

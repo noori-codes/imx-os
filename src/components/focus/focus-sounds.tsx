@@ -56,10 +56,10 @@ export function FocusSounds({
 
   if (compact) {
     return (
-      <div className="focus-sound-dock focus-sound-dock-live relative flex w-full items-center justify-center gap-3 sm:gap-4">
+      <div className="focus-sound-dock focus-sound-dock-live relative flex w-full items-center justify-center gap-3">
         <VolumeControls volume={volume} setVolume={setVolume} />
         <div
-          className="flex items-center gap-2.5 sm:gap-3"
+          className="flex items-center gap-1.5"
           role="listbox"
           aria-label="Ambient scenes"
         >
@@ -73,7 +73,8 @@ export function FocusSounds({
                 aria-label={track.label}
                 aria-selected={isLive}
                 onClick={() => void toggle(track.id)}
-                className="group/orb relative flex size-9 items-center justify-center sm:size-10"
+                className="group/orb relative flex size-8 items-center justify-center"
+                title={track.label}
               >
                 {isLive ? (
                   <span
@@ -83,10 +84,10 @@ export function FocusSounds({
                 ) : null}
                 <span
                   className={cn(
-                    "relative size-7 rounded-full bg-linear-to-br shadow-[inset_0_1px_0_rgba(255,255,255,0.14)] transition-all duration-300 sm:size-8",
+                    "relative size-5 rounded-full bg-linear-to-br shadow-[inset_0_1px_0_rgba(255,255,255,0.14)] transition-all duration-300 sm:size-6",
                     track.tone,
                     isLive
-                      ? "scale-110 ring-2 ring-foreground/40"
+                      ? "scale-110 ring-2 ring-foreground/35"
                       : "opacity-55 group-hover/orb:scale-105 group-hover/orb:opacity-100",
                   )}
                 />
@@ -95,7 +96,7 @@ export function FocusSounds({
           })}
         </div>
         {playing ? (
-          <p className="hidden min-w-0 truncate text-[11px] tracking-wide text-muted-foreground sm:block">
+          <p className="hidden min-w-0 truncate text-xs tracking-wide text-muted-foreground sm:block">
             {active.label}
           </p>
         ) : null}

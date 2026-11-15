@@ -143,24 +143,20 @@ export function FocusClockFace({
         </g>
       </svg>
 
-      <div className="relative px-8 text-center">
+      <div className="relative px-4 text-center">
         <p
           className={cn(
-            "focus-clock text-foreground",
+            "focus-clock text-foreground leading-none",
             isRunning && "focus-clock-live",
             shownSeconds >= 3600
-              ? isRunning
-                ? "text-[clamp(2.15rem,5.5vw,3.75rem)]"
-                : "text-[clamp(2.25rem,6.5vw,3.75rem)]"
-              : isRunning
-                ? "text-[clamp(2.65rem,7vw,4.75rem)]"
-                : "text-[clamp(2.75rem,8vw,4.75rem)]",
+              ? "text-[clamp(1.65rem,4vw,2.35rem)]"
+              : "text-[clamp(1.95rem,4.6vw,2.65rem)]",
           )}
         >
           {formatFocusClock(shownSeconds)}
         </p>
-        {compactHints && isRunning ? null : (
-          <p className="mt-1.5 imx-pulse-eyebrow">
+        {compactHints ? null : (
+          <p className="mt-1 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
             {isStopwatch
               ? "Count up · Open"
               : `Countdown · ${formatFocusMinutes(Math.round(durationSeconds / 60))} ${FOCUS_PRESETS[mode].label}`}

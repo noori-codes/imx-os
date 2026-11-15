@@ -632,7 +632,7 @@ function ConstellationSky({
         ) : null}
       </svg>
 
-      <p className="focus-sky-caption mt-2 min-h-5 text-center text-[11px] tabular-nums text-muted-foreground">
+      <p className="focus-sky-caption mt-2 min-h-5 text-[11px] tabular-nums text-muted-foreground">
         {!ready
           ? ""
           : selected
@@ -652,7 +652,7 @@ function ConstellationSky({
         <div className="mt-2 flex justify-center">
           <a
             href="#focus-timer"
-            className="inline-flex items-center gap-2 rounded-xl bg-foreground px-3.5 py-1.5 text-xs font-medium text-background transition-opacity hover:opacity-90"
+            className="inline-flex items-center gap-2 rounded-full bg-foreground px-3.5 py-1.5 text-xs font-medium text-background transition-opacity hover:opacity-90"
           >
             <Play className="size-3 fill-current" />
             Start block
@@ -964,13 +964,13 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
       data-streak={streakTier(stats.current_streak)}
       className="focus-progress focus-companion relative flex min-h-0 w-full flex-col"
     >
-      <div className="relative z-[1] grid w-full gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-start lg:gap-10 xl:gap-12">
-        <div className="flex min-w-0 flex-col gap-3">
-          <div className="text-center lg:text-left">
-            <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-              Your sky
+      <div className="relative z-[1] flex w-full flex-col gap-3.5">
+        <div className="flex min-w-0 flex-col gap-1.5">
+          <div>
+            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+              Pulse
             </p>
-            <p className="mt-1.5 flex min-h-5 items-baseline justify-center gap-2 text-sm text-muted-foreground lg:justify-start">
+            <p className="mt-1 flex items-baseline gap-1.5 text-xs text-muted-foreground">
               <span>
                 {liveFocus
                   ? "Session in flight"
@@ -979,7 +979,7 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
                     : (weekday ?? "Today")}
               </span>
               {displayMarks.length > 0 || liveFocus ? (
-                <span className="text-xs tabular-nums text-muted-foreground/70">
+                <span className="tabular-nums text-muted-foreground/70">
                   · {constellationLitLabel}
                 </span>
               ) : null}
@@ -1001,7 +1001,7 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
         <div
           className={cn(
             "focus-progress-hero relative flex min-w-0 flex-col transition-all duration-500",
-            compact ? "gap-4" : "gap-5",
+            compact ? "gap-2.5" : "gap-3",
           )}
           role="progressbar"
           aria-valuemin={0}
@@ -1009,12 +1009,12 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
           aria-valuenow={Math.min(todayTotalSeconds, goalTotalSeconds)}
           aria-label="Daily focus goal progress"
         >
-          <div className="text-center lg:text-left">
-            <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+          <div>
+            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
               Today
             </p>
-            <p className="mt-1.5 flex min-h-5 items-baseline justify-center gap-2 lg:justify-start">
-              <span className="text-2xl font-medium tracking-tight tabular-nums text-foreground sm:text-3xl">
+            <p className="mt-1 flex items-baseline gap-1.5">
+              <span className="text-[1.65rem] font-semibold tracking-tight tabular-nums text-foreground sm:text-[1.85rem]">
                 {ready ? todayTotalLabel : "—"}
               </span>
               <span className="text-sm tabular-nums text-muted-foreground">
@@ -1026,44 +1026,30 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
           {!compact ? (
             <>
               {story ? (
-                <p className="text-center text-sm leading-snug text-foreground/90 lg:text-left">
+                <p className="text-xs leading-snug text-foreground/80">
                   {story}
                 </p>
               ) : null}
 
               {canContinue ? (
-                <div className="text-center lg:text-left">
+                <div>
                   <button
                     type="button"
                     onClick={() => start()}
-                    className="inline-flex items-center gap-2 rounded-xl bg-foreground px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-90"
+                    className="inline-flex h-7 items-center gap-1.5 rounded-full bg-foreground px-3 text-xs font-medium text-background transition-opacity hover:opacity-90"
                   >
-                    <Play className="size-3.5 fill-current" />
+                    <Play className="size-3 fill-current" />
                     Continue · {formatFocusDuration(sessionSeconds)}
                   </button>
                   {pickupHint ? (
-                    <p className="mt-2 text-xs text-muted-foreground">
+                    <p className="mt-1.5 text-[11px] text-muted-foreground">
                       {pickupHint}
                     </p>
                   ) : null}
                 </div>
-              ) : focusMinutes === 0 && !isRunning ? (
-                <div className="text-center lg:text-left">
-                  <a
-                    href="#focus-timer"
-                    className="inline-flex items-center gap-2 rounded-xl bg-foreground px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-90"
-                  >
-                    <Play className="size-3.5 fill-current" />
-                    Start block
-                  </a>
-                </div>
               ) : null}
 
-              <p className="text-center text-xs text-muted-foreground lg:text-left">
-                Goal · {goalLabel}
-              </p>
-
-              <div className="w-full border-t border-border/30 pt-5">
+              <div className="w-full border-t border-border/30 pt-3">
                 <div className="flex items-center justify-between gap-2">
                   <button
                     type="button"
@@ -1074,7 +1060,7 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
                   >
                     <ChevronLeft className="size-4" />
                   </button>
-                  <p className="min-w-0 flex-1 text-center imx-pulse-eyebrow lg:text-left">
+                  <p className="imx-pulse-eyebrow min-w-0 flex-1 text-center">
                     {weekLabel}
                   </p>
                   <button
@@ -1109,7 +1095,7 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
                         className="flex min-w-0 flex-col items-center gap-1.5"
                         title={`${formatFocusMinutes(day.minutes)} focused`}
                       >
-                        <div className="relative flex h-14 w-full items-end rounded-lg bg-muted/30 px-1 pb-1 sm:h-16">
+                        <div className="relative flex h-11 w-full items-end rounded-md bg-muted/30 px-1 pb-1 sm:h-12">
                           {goalLinePct > 8 && goalLinePct < 96 ? (
                             <span
                               aria-hidden
@@ -1149,11 +1135,11 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
                   })}
                 </div>
                 {pace ? (
-                  <p className="mt-3 text-center text-[11px] text-muted-foreground lg:text-left">
+                  <p className="mt-3 text-[11px] text-muted-foreground">
                     {pace}
                   </p>
                 ) : weekSummary ? (
-                  <p className="mt-3 text-center text-[11px] text-muted-foreground lg:text-left">
+                  <p className="mt-3 text-[11px] text-muted-foreground">
                     {weekSummary}
                   </p>
                 ) : null}
@@ -1161,7 +1147,7 @@ export function FocusStats({ stats, dailyGoal }: FocusStatsProps) {
             </>
           ) : null}
 
-          <div className="flex items-baseline justify-between gap-3 border-t border-border/30 pt-3.5 text-xs text-muted-foreground">
+          <div className="flex items-baseline justify-between gap-3 border-t border-border/30 pt-2.5 text-[11px] text-muted-foreground">
             <span>
               Streak{" "}
               <span className="tabular-nums text-foreground">

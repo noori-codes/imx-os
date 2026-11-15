@@ -11,50 +11,47 @@ function Bone({ className }: { className?: string }) {
 export function FocusTimerChunkFallback() {
   return (
     <div
-      className="imx-skeleton overflow-hidden rounded-2xl imx-surface p-5 sm:p-7 lg:p-8"
+      className="imx-skeleton focus-board w-full"
       role="status"
       aria-label="Loading timer"
     >
-      <div className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center lg:gap-10">
-        <div className="flex flex-col items-center gap-4 lg:items-start">
-          <Bone className="h-2.5 w-16" />
-          <Bone className="size-[14.5rem] rounded-full sm:size-[16.5rem]" />
+      <Bone className="h-7 w-full rounded-full" />
+      <div className="focus-board-stack">
+        <Bone className="h-3 w-48" />
+        <Bone className="size-[12rem] rounded-full sm:size-[13rem]" />
+        <div className="flex gap-1.5">
+          <Bone className="h-7 w-20 rounded-full" />
+          <Bone className="h-7 w-20 rounded-full" />
+          <Bone className="h-7 w-20 rounded-full" />
         </div>
-        <div className="flex flex-col gap-5">
-          <Bone className="h-9 w-28" />
-          <Bone className="h-12 w-full rounded-xl" />
-          <Bone className="h-9 w-full rounded-xl" />
-          <div className="flex items-center gap-3">
-            <Bone className="size-12 rounded-full" />
-            <Bone className="h-14 w-40 rounded-full" />
-            <Bone className="size-12 rounded-full" />
-          </div>
-        </div>
+        <Bone className="h-10 w-full max-w-sm rounded-full" />
+        <Bone className="h-10 w-full max-w-sm rounded-xl" />
       </div>
     </div>
   );
 }
 
-/** Placeholder while FocusStats / sky chunk loads. */
+/** Placeholder while FocusStats / pulse chunk loads. */
 export function FocusStatsChunkFallback() {
   return (
     <div
-      className="imx-skeleton grid gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-10"
+      className="imx-skeleton flex flex-col gap-4"
       role="status"
-      aria-label="Loading sky"
+      aria-label="Loading pulse"
     >
-      <div className="space-y-4">
-        <Bone className="mx-auto h-2.5 w-16 lg:mx-0" />
-        <div className="relative mx-auto aspect-[100/68] w-full max-w-xl lg:mx-0 lg:max-w-none">
-          <Bone className="absolute inset-x-[12%] bottom-[12%] top-[8%] rounded-t-full" />
+      <div className="space-y-2">
+        <Bone className="h-2 w-14" />
+        <Bone className="h-3 w-28" />
+        <div className="relative aspect-[100/58] w-full">
+          <Bone className="absolute inset-x-[14%] bottom-[14%] top-[10%] rounded-t-full" />
         </div>
       </div>
-      <div className="space-y-5">
-        <Bone className="mx-auto h-8 w-36 lg:mx-0" />
-        <Bone className="h-4 w-3/4" />
-        <div className="grid grid-cols-7 gap-1.5">
+      <div className="space-y-3">
+        <Bone className="h-2 w-12" />
+        <Bone className="h-6 w-28" />
+        <div className="grid grid-cols-7 gap-1">
           {Array.from({ length: 7 }).map((_, i) => (
-            <Bone key={i} className="h-14 w-full rounded-lg sm:h-16" />
+            <Bone key={i} className="h-8 w-full rounded-md" />
           ))}
         </div>
       </div>
