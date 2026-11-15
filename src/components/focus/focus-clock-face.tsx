@@ -149,8 +149,12 @@ export function FocusClockFace({
             "focus-clock text-foreground leading-none",
             isRunning && "focus-clock-live",
             shownSeconds >= 3600
-              ? "text-[clamp(1.65rem,4vw,2.35rem)]"
-              : "text-[clamp(1.95rem,4.6vw,2.65rem)]",
+              ? isRunning
+                ? "text-[clamp(2.6rem,6.5vw,4.1rem)]"
+                : "text-[clamp(1.9rem,4.5vw,2.85rem)]"
+              : isRunning
+                ? "text-[clamp(3.1rem,7.5vw,5rem)]"
+                : "text-[clamp(2.25rem,5.2vw,3.25rem)]",
           )}
         >
           {formatFocusClock(shownSeconds)}

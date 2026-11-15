@@ -117,16 +117,17 @@ export function FocusTheater({ children, active }: FocusTheaterProps) {
       aria-modal="true"
       aria-label="Focus theater"
     >
-      <div className="pointer-events-none absolute inset-0 focus-theater-wash" aria-hidden />
-      <div className="focus-theater-chrome relative z-1 flex items-center justify-between gap-3 px-4 py-2.5 sm:px-8">
-        <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-          Distraction free
-        </p>
-        <div className="flex items-center gap-1.5">
+      <div
+        className="pointer-events-none absolute inset-0 focus-theater-wash"
+        aria-hidden
+      />
+      <div className="pointer-events-none absolute inset-0 focus-theater-glow" aria-hidden />
+      <div className="focus-theater-chrome pointer-events-none absolute inset-x-0 top-0 z-2 flex items-start justify-end gap-2 px-5 py-4 sm:px-8">
+        <div className="pointer-events-auto flex items-center gap-2">
           <button
             type="button"
             onClick={() => setMinimized(true)}
-            className="inline-flex h-8 items-center gap-1.5 rounded-full border border-border/45 px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
+            className="inline-flex h-8 items-center gap-1.5 rounded-full border border-border/40 bg-background/40 px-3 text-xs font-medium text-muted-foreground backdrop-blur-sm transition-colors hover:bg-muted/40 hover:text-foreground"
             aria-label="Exit theater to page"
             title="Minimize (Esc)"
           >
@@ -139,7 +140,7 @@ export function FocusTheater({ children, active }: FocusTheaterProps) {
               if (isRunning) pause();
               setMinimized(true);
             }}
-            className="inline-flex size-8 items-center justify-center rounded-full border border-border/45 text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
+            className="inline-flex size-8 items-center justify-center rounded-full border border-border/40 bg-background/40 text-muted-foreground backdrop-blur-sm transition-colors hover:bg-muted/40 hover:text-foreground"
             aria-label="Pause and exit theater"
             title="Pause and exit"
           >

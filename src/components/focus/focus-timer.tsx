@@ -918,7 +918,7 @@ export function FocusTimer({
       className={cn(
         "focus-stage group relative flex w-full flex-col overflow-hidden",
         isRunning || canContinue
-          ? "h-full min-h-0 flex-1 items-center justify-center px-4 py-5 sm:px-6"
+          ? "h-full min-h-0 flex-1 items-center justify-center px-0 py-0"
           : "flex h-full min-h-0 flex-col px-0 py-0",
       )}
       id="focus-timer"
@@ -934,77 +934,86 @@ export function FocusTimer({
       <div className="focus-run-vignette" aria-hidden />
 
       {isRunning || canContinue ? (
-        <div className="focus-board focus-board-live relative z-1 mx-auto w-full max-w-lg">
-          <div className="focus-board-top">
-            <div className="flex min-w-0 items-center gap-2">
-              {isRunning ? <span className="focus-live-dot" aria-hidden /> : null}
-              <p className="truncate text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                {isRunning ? runningLabel : "Paused"}
-              </p>
+        <div className="focus-chamber relative z-1 flex h-full w-full flex-col items-center justify-center">
+          <div className="focus-chamber-stage flex w-full max-w-2xl flex-col items-center gap-7 px-6 sm:gap-8 sm:px-8">
+            <div className="flex flex-col items-center gap-2 text-center">
+              <div className="flex items-center gap-2.5">
+                {isRunning ? (
+                  <span className="focus-live-dot" aria-hidden />
+                ) : null}
+                <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground">
+                  {isRunning ? runningLabel : "Paused"}
+                </p>
+              </div>
+              {runningDetail ? (
+                <p className="max-w-md truncate text-[15px] text-foreground/70">
+                  {runningDetail}
+                </p>
+              ) : null}
             </div>
+
+            <div className="focus-chamber-dial flex flex-col items-center gap-5">
+              {renderClock(
+                "size-[min(82vw,20.5rem)] sm:size-[23rem] lg:size-[25rem]",
+              )}
+              {renderTicks()}
+            </div>
+
+            <div className="focus-chamber-controls flex items-center justify-center gap-5">
+              <button
+                type="button"
+                onClick={handleDiscardSession}
+                className="focus-icon-btn focus-chamber-side"
+                aria-label="Discard session"
+                title="Discard without saving"
+              >
+                <RotateCcw className="size-4" />
+              </button>
+              <button
+                type="button"
+                onClick={handleToggle}
+                className="focus-run-pause flex size-[4.5rem] items-center justify-center rounded-full bg-foreground text-background transition-opacity hover:opacity-90 active:scale-95"
+                aria-label={isRunning ? "Pause timer" : "Resume timer"}
+              >
+                {isRunning ? (
+                  <Pause className="size-7 fill-current" />
+                ) : (
+                  <Play className="size-7 fill-current" />
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={handleStopAndSave}
+                disabled={isStopwatch ? !canSealStopwatch : false}
+                className={cn(
+                  "focus-icon-btn focus-chamber-side",
+                  isStopwatch &&
+                    !canSealStopwatch &&
+                    "pointer-events-none opacity-30",
+                )}
+                aria-label="Stop and save"
+                title="Stop and save"
+              >
+                {isStopwatch ? (
+                  <Square className="size-4 fill-current" />
+                ) : (
+                  <CircleCheck className="size-4" />
+                )}
+              </button>
+            </div>
+
+            <div className="focus-chamber-dock w-full max-w-sm pt-2">
+              <FocusSounds compact />
+            </div>
+          </div>
+
+          <div className="absolute top-3 left-4 z-2 sm:top-4 sm:left-6">
             <FocusSettings
               dailyGoalMinutes={dailyGoalMinutes}
               onClockChange={handleClockChange}
               iconOnly
-              className="shrink-0"
             />
           </div>
-
-          {runningDetail ? (
-            <p className="truncate text-center text-sm text-foreground/75">
-              {runningDetail}
-            </p>
-          ) : null}
-
-          <div className="flex flex-col items-center gap-3.5 py-2">
-            {renderClock("size-[13rem] sm:size-[14rem]")}
-            {renderTicks()}
-          </div>
-
-          <div className="focus-board-actions">
-            <button
-              type="button"
-              onClick={handleDiscardSession}
-              className="focus-icon-btn"
-              aria-label="Discard session"
-              title="Discard without saving"
-            >
-              <RotateCcw className="size-4" />
-            </button>
-            <button
-              type="button"
-              onClick={handleToggle}
-              className="focus-run-pause flex size-[3.5rem] items-center justify-center rounded-full bg-foreground text-background transition-opacity hover:opacity-92 active:scale-95"
-              aria-label={isRunning ? "Pause timer" : "Resume timer"}
-            >
-              {isRunning ? (
-                <Pause className="size-5 fill-current" />
-              ) : (
-                <Play className="size-5 fill-current" />
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={handleStopAndSave}
-              disabled={isStopwatch ? !canSealStopwatch : false}
-              className={cn(
-                "focus-icon-btn",
-                isStopwatch &&
-                  !canSealStopwatch &&
-                  "pointer-events-none opacity-30",
-              )}
-              aria-label="Stop and save"
-              title="Stop and save"
-            >
-              {isStopwatch ? (
-                <Square className="size-3.5 fill-current" />
-              ) : (
-                <CircleCheck className="size-3.5" />
-              )}
-            </button>
-          </div>
-
-          <FocusSounds compact />
         </div>
       ) : (
         <div className="focus-board relative z-1 flex h-full w-full flex-col">
@@ -1069,7 +1078,7 @@ export function FocusTimer({
             <p className="focus-board-hint text-center">{boardMeta}</p>
 
             <div className="focus-board-dial">
-              {renderClock("size-[12rem] sm:size-[13rem]")}
+              {renderClock("size-[14rem] sm:size-[15.5rem]")}
               {renderTicks()}
             </div>
 
@@ -1101,7 +1110,7 @@ export function FocusTimer({
               </div>
             ) : null}
 
-            <div className="focus-board-actions mx-auto w-full max-w-sm">
+            <div className="focus-board-actions">
               <button
                 type="button"
                 onClick={handleReset}
@@ -1159,20 +1168,20 @@ export function FocusTimer({
             </div>
 
             {mode === "focus" || isStopwatch ? (
-              <div className="mx-auto w-full max-w-sm space-y-2">
+              <div className="w-full max-w-md space-y-2">
                 <Input
                   value={intention}
                   onChange={(e) => setIntention(e.target.value)}
                   placeholder="What are you focusing on?"
                   aria-label="What are you focusing on"
                   data-imx-capture
-                  className="h-10 w-full rounded-xl border-border/50 bg-background/65 px-3 text-sm shadow-none placeholder:font-normal focus-visible:ring-1"
+                  className="h-11 w-full rounded-xl border-border/50 bg-background/65 px-3.5 text-sm shadow-none placeholder:font-normal focus-visible:ring-1"
                 />
                 {tasks.length > 0 ? (
                   <BrandSelect
                     value={linkedTaskId ?? ""}
                     aria-label="Link a task"
-                    className="h-10 w-full border-border/40 bg-background/50 text-sm"
+                    className="h-11 w-full border-border/40 bg-background/50 text-sm"
                     placeholder="Link a task"
                     options={[
                       { value: "", label: "Link a task" },
@@ -1200,7 +1209,7 @@ export function FocusTimer({
               </div>
             ) : null}
 
-            <div className="mx-auto w-full max-w-sm">
+            <div className="w-full max-w-md">
               <FocusSounds compact />
             </div>
           </div>
