@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
 
 import { ProgressRing } from "@/components/dashboard/progress-ring";
 import { cn } from "@/lib/utils";
@@ -12,7 +13,7 @@ type DashboardFocusMeterProps = {
   sessions: number;
 };
 
-/** Compact Forest-style daily focus progress — one ring, one CTA. */
+/** Focus tile — matches habits header rhythm, fills the bento cell. */
 export function DashboardFocusMeter({
   focusMinutes,
   focusGoalMinutes,
@@ -23,12 +24,26 @@ export function DashboardFocusMeter({
   const sealed = focusMinutes >= goal;
 
   return (
-    <section className="dash-panel relative overflow-hidden">
-      <div className="dash-panel-glow" aria-hidden />
-      <div className="relative z-[1] flex items-center gap-4 px-5 py-4">
+    <section className="dash-panel relative flex h-full min-h-0 flex-col overflow-hidden">
+      <div className="dash-tile-head">
+        <div>
+          <p className="dash-panel-eyebrow">Studio</p>
+          <h3 className="dash-tile-title">Focus</h3>
+          <p className="dash-tile-sub">
+            {sealed ? "Daily goal hit" : "Today’s block"}
+          </p>
+        </div>
+        <Link href="/focus" className="dash-tile-link">
+          Open
+          <ArrowUpRight className="size-3 opacity-70" aria-hidden />
+        </Link>
+      </div>
+      <div className="dash-tile-rule" aria-hidden />
+
+      <div className="relative z-[1] flex min-h-0 flex-1 items-center gap-4 px-5 py-4">
         <ProgressRing
           value={pct}
-          size={56}
+          size={58}
           stroke={4}
           sealed={sealed}
           className="shrink-0"
@@ -44,29 +59,25 @@ export function DashboardFocusMeter({
         </ProgressRing>
 
         <div className="min-w-0 flex-1">
-          <p className="dash-panel-eyebrow">Focus</p>
-          <p className="mt-0.5 text-sm font-semibold tracking-tight text-foreground">
-            {sealed ? "Daily goal hit" : "Today’s block"}
-          </p>
-          <p className="mt-0.5 text-xs text-muted-foreground">
+          <p className="text-sm font-semibold tracking-tight text-foreground">
             {formatFocusMinutes(focusMinutes)}
-            <span className="text-muted-foreground/50"> / </span>
-            {formatFocusMinutes(focusGoalMinutes)}
-            {sessions > 0 ? (
-              <span className="text-muted-foreground/70">
-                {" "}
-                · {sessions} session{sessions === 1 ? "" : "s"}
-              </span>
-            ) : null}
+            <span className="font-medium text-muted-foreground/55"> / </span>
+            <span className="font-medium text-muted-foreground">
+              {formatFocusMinutes(focusGoalMinutes)}
+            </span>
           </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {sessions > 0
+              ? `${sessions} session${sessions === 1 ? "" : "s"} today`
+              : "No sessions yet"}
+          </p>
+          <div className="dash-kpi-meter mt-3" aria-hidden>
+            <span
+              className="dash-kpi-meter-fill"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
         </div>
-
-        <Link
-          href="/focus"
-          className="shrink-0 rounded-md px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
-        >
-          Open
-        </Link>
       </div>
     </section>
   );

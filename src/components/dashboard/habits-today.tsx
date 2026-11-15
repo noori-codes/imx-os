@@ -54,14 +54,11 @@ export function HabitsToday({ habits, onToggle }: HabitsTodayProps) {
         celebrateSealed && "dash-signal-celebrate",
       )}
     >
-      <div className="dash-panel-glow" aria-hidden="true" />
-      <div className="relative z-[1] flex items-center justify-between gap-3 border-b border-border/25 px-5 py-3.5">
+      <div className="dash-tile-head">
         <div>
-          <p className="dash-panel-eyebrow">Today’s pulse</p>
-          <h3 className="mt-0.5 text-sm font-semibold tracking-tight text-foreground">
-            Habits
-          </h3>
-          <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
+          <p className="dash-panel-eyebrow">Rhythm</p>
+          <h3 className="dash-tile-title">Habits</h3>
+          <p className="dash-tile-sub">
             {total === 0
               ? "No habits yet"
               : clear
@@ -71,7 +68,7 @@ export function HabitsToday({ habits, onToggle }: HabitsTodayProps) {
         </div>
         <div className="flex items-center gap-3">
           {total > 0 ? (
-            <ProgressRing value={pct} size={48} stroke={3.5} sealed={clear}>
+            <ProgressRing value={pct} size={44} stroke={3.25} sealed={clear}>
               <span
                 aria-hidden={clear}
                 className={cn(
@@ -83,14 +80,12 @@ export function HabitsToday({ habits, onToggle }: HabitsTodayProps) {
               </span>
             </ProgressRing>
           ) : null}
-          <Link
-            href="/habits"
-            className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
-          >
-            View all
+          <Link href="/habits" className="dash-tile-link">
+            All
           </Link>
         </div>
       </div>
+      <div className="dash-tile-rule" aria-hidden />
 
       {total === 0 ? (
         <div className="relative z-[1] flex min-h-0 flex-1 flex-col gap-3 px-5 py-4">

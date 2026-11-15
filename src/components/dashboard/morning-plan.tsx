@@ -61,15 +61,14 @@ export function MorningPlan({ date, tasks, habits }: MorningPlanProps) {
     ).length;
     const topTotal = plan.topTaskIds.length;
     return (
-      <section className="dash-panel relative overflow-hidden px-5 py-4">
-        <div className="dash-panel-glow" aria-hidden />
+      <section className="dash-plan relative overflow-hidden px-4 py-3.5 sm:px-5">
         <div className="relative z-1 flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="dash-panel-eyebrow">Morning plan</p>
+            <p className="dash-panel-eyebrow">Plan</p>
             <p className="mt-0.5 text-sm font-medium text-foreground">
               {topTotal === 0
-                ? "Plan locked in"
-                : `${topDone}/${topTotal} Top ${topTotal} done`}
+                ? "Locked in"
+                : `${topDone}/${topTotal} top tasks done`}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -200,20 +199,19 @@ export function MorningPlan({ date, tasks, habits }: MorningPlanProps) {
   }
 
   return (
-    <section className="dash-panel relative overflow-hidden">
-      <div className="dash-panel-glow" aria-hidden />
-      <div className="relative z-1 border-b border-border/25 px-5 py-3.5">
+    <section className="dash-plan relative overflow-hidden">
+      <div className="relative z-1 border-b border-border/25 px-4 py-3.5 sm:px-5">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="dash-panel-eyebrow inline-flex items-center gap-1.5">
               <Sunrise className="size-3 opacity-70" aria-hidden />
               Morning plan
             </p>
-            <h3 className="mt-0.5 text-sm font-semibold tracking-tight text-foreground">
-              Set the day in two minutes
+            <h3 className="mt-1 text-sm font-semibold tracking-tight text-foreground">
+              Set the day
             </h3>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              Pick up to three, glance habits, choose one focus block.
+              Top 3, habits, one focus block.
             </p>
           </div>
           <button

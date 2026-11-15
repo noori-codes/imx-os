@@ -8,7 +8,7 @@ import { DashboardAtmosphere } from "@/components/dashboard/dashboard-atmosphere
 import { DashboardContinueChip } from "@/components/dashboard/dashboard-continue-chip";
 import { DashboardFocusMeter } from "@/components/dashboard/dashboard-focus-meter";
 import { DashboardHomeHeader } from "@/components/dashboard/dashboard-home-header";
-import { DashboardQuickActions } from "@/components/dashboard/dashboard-quick-actions";
+import { DashboardKpis } from "@/components/dashboard/dashboard-kpis";
 import { DashboardSpotlight } from "@/components/dashboard/dashboard-spotlight";
 import { HabitsToday } from "@/components/dashboard/habits-today";
 import { MorningPlan } from "@/components/dashboard/morning-plan";
@@ -120,8 +120,7 @@ function weekWithTaskToggle(
 }
 
 /**
- * Graphite bento home — masthead → continue → jump →
- * Today + Habits/Focus → Week + Spotlight. Full-bleed.
+ * Modern bento home — masthead → KPIs → Today hero + side tiles → week row.
  */
 export function DashboardStage({
   name,
@@ -252,35 +251,39 @@ export function DashboardStage({
           greeting={greeting}
           intent={data.review.intent}
           hasTodayReview={data.review.has_today}
+        />
+
+        <SectionReveal delay={REVEAL_DELAY[1]} className="dash-desk-aside">
+          <DashboardContinueChip />
+          <StreakShield
+            activeDates={activeDates}
+            streak={data.stats.activity_streak}
+            freezesRemaining={streakFreezesRemaining}
+            riskOnly
+          />
+        </SectionReveal>
+
+        <DashboardKpis
           dueOpen={dueOpen}
           overdue={overdue}
           habitsDone={habitsDone}
           habitsTotal={optimisticHabits.length}
           focusMinutes={focusMinutes}
+          focusGoalMinutes={focusGoalMinutes}
           streak={data.stats.activity_streak}
         />
+
         <SectionReveal delay={REVEAL_DELAY[1]}>
-          <DashboardContinueChip />
-          <DashboardQuickActions
-            hasTodayReview={data.review.has_today}
-            habitsOpen={Math.max(0, optimisticHabits.length - habitsDone)}
-            dueOpen={dueOpen}
-          />
           <MorningPlan
             date={todayStr}
             tasks={optimisticTasks}
             habits={optimisticHabits}
           />
-          <StreakShield
-            activeDates={activeDates}
-            streak={data.stats.activity_streak}
-            freezesRemaining={streakFreezesRemaining}
-          />
         </SectionReveal>
       </section>
 
-      <SectionReveal delay={REVEAL_DELAY[2]} className="dash-home">
-        <div className="dash-home-main">
+      <SectionReveal delay={REVEAL_DELAY[2]} className="dash-bento">
+        <div className="dash-bento-today">
           <TodayFocus
             tasks={optimisticTasks}
             overdueTasks={data.overdue_tasks}
@@ -290,22 +293,25 @@ export function DashboardStage({
             focusGoalMinutes={focusGoalMinutes}
           />
         </div>
-        <div className="dash-home-side">
+        <div className="dash-bento-habits">
           <HabitsToday habits={optimisticHabits} onToggle={onHabitToggle} />
+        </div>
+        <div className="dash-bento-focus">
           <DashboardFocusMeter
             focusMinutes={focusMinutes}
             focusGoalMinutes={focusGoalMinutes}
             sessions={focusSessions}
           />
         </div>
-      </SectionReveal>
-
-      <SectionReveal delay={REVEAL_DELAY[3]} className="dash-home-secondary">
-        <WeekOverview week={optimisticWeek} />
-        <DashboardSpotlight
-          goals={data.goals}
-          readingBook={data.reading_book}
-        />
+        <div className="dash-bento-week">
+          <WeekOverview week={optimisticWeek} />
+        </div>
+        <div className="dash-bento-spot">
+          <DashboardSpotlight
+            goals={data.goals}
+            readingBook={data.reading_book}
+          />
+        </div>
       </SectionReveal>
     </DashboardAtmosphere>
   );

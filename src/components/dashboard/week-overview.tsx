@@ -39,24 +39,19 @@ export function WeekOverview({ week }: WeekOverviewProps) {
 
   return (
     <section className="dash-panel relative flex h-full min-h-0 flex-col overflow-hidden">
-      <div className="dash-panel-glow" aria-hidden="true" />
-      <div className="relative z-[1] flex items-center justify-between gap-3 border-b border-border/25 px-5 py-3.5">
+      <div className="dash-tile-head">
         <div>
-          <p className="dash-panel-eyebrow">This week</p>
-          <h3 className="mt-0.5 text-sm font-semibold tracking-tight text-foreground">
-            Week load
-          </h3>
-          <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
+          <p className="dash-panel-eyebrow">Horizon</p>
+          <h3 className="dash-tile-title">This week</h3>
+          <p className="dash-tile-sub">
             {empty ? "Nothing scheduled" : `${total} due this week`}
           </p>
         </div>
-        <Link
-          href="/tasks?compose=1"
-          className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
-        >
-          Tasks
+        <Link href="/calendar" className="dash-tile-link">
+          Calendar
         </Link>
       </div>
+      <div className="dash-tile-rule" aria-hidden />
 
       <div className="relative z-[1] flex min-h-0 flex-1 flex-col gap-4 px-5 py-4">
         <div className="dash-stagger grid h-32 flex-1 grid-cols-7 items-end gap-2 sm:h-36 sm:gap-3">
@@ -104,12 +99,12 @@ export function WeekOverview({ week }: WeekOverviewProps) {
                       ease: [0.22, 1, 0.36, 1],
                     }}
                     className={cn(
-                      "dash-bar-rise mx-auto w-full max-w-[2.25rem] rounded-md transition-colors",
+                      "dash-bar-rise mx-auto w-full max-w-[2.5rem] rounded-lg transition-colors",
                       day.is_today
                         ? "bg-foreground"
                         : hasTasks
-                          ? "bg-foreground/35"
-                          : "bg-muted",
+                          ? "bg-foreground/32"
+                          : "bg-muted/80",
                       day.is_today && pulseToday && "dash-week-today",
                     )}
                   />

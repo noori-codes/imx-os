@@ -10,8 +10,7 @@ type DashboardAtmosphereProps = {
 };
 
 /**
- * Full-bleed graphite desk — soft top fade, no max-width.
- * Spans main column from sidebar edge to scrollbar.
+ * Full-bleed desk — atmosphere wash spans the whole page height.
  */
 export function DashboardAtmosphere({
   children,
@@ -27,7 +26,7 @@ export function DashboardAtmosphere({
         className,
       )}
     >
-      <div className="dash-page-atmosphere">
+      <div className="dash-page-atmosphere flex-1">
         <div className="dash-page-wash" aria-hidden="true" />
         <div className="dash-page-content">{children}</div>
       </div>

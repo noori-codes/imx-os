@@ -101,7 +101,7 @@ function TaskRow({
   return (
     <li
       className={cn(
-        "group flex flex-col gap-1.5 rounded-xl px-2 py-2.5 transition-colors hover:bg-muted/40",
+        "dash-task-row group flex flex-col gap-1.5 rounded-xl px-2.5 py-2.5 transition-colors hover:bg-muted/35",
         flash && "dash-task-row-done",
       )}
       style={{ ["--i" as string]: index }}
@@ -161,7 +161,7 @@ function TaskRow({
       </div>
 
       {!task.completed ? (
-        <div className="flex flex-wrap items-center gap-1 pl-10">
+        <div className="dash-task-schedule flex flex-wrap items-center gap-1 pl-10">
           {(
             [
               { label: "Today", value: today },
@@ -255,32 +255,27 @@ export function TodayFocus({
   return (
     <section
       className={cn(
-        "dash-panel relative flex h-full min-h-0 flex-col overflow-hidden",
+        "dash-panel dash-panel-primary relative flex h-full min-h-0 flex-col overflow-hidden",
         celebrateClear && "dash-signal-celebrate",
       )}
     >
-      <div className="dash-panel-glow" aria-hidden="true" />
-      <div className="relative z-1 flex items-center justify-between gap-3 border-b border-border/25 px-5 py-3.5">
+      <div className="dash-tile-head dash-tile-head-hero">
         <div>
-          <p className="dash-panel-eyebrow">Smart today</p>
-          <h3 className="mt-0.5 text-sm font-semibold tracking-tight text-foreground">
-            Today
-          </h3>
-          <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
+          <p className="dash-panel-eyebrow">Priority desk</p>
+          <h3 className="dash-tile-title dash-tile-title-hero">Today</h3>
+          <p className="dash-tile-sub">
             {smart.length === 0
-              ? "Clear"
+              ? "Nothing open — deck is clear"
               : clear
                 ? "All clear"
                 : `${openCount} prioritized`}
           </p>
         </div>
-        <Link
-          href="/tasks?view=today"
-          className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
-        >
-          View all
+        <Link href="/tasks?view=today" className="dash-tile-link">
+          All tasks
         </Link>
       </div>
+      <div className="dash-tile-rule" aria-hidden />
 
       {smart.length === 0 ? (
         <div className="relative z-1 flex min-h-0 flex-1 flex-col items-center justify-center gap-8 px-5 py-8 text-center">
@@ -342,7 +337,7 @@ export function TodayFocus({
           </div>
         </div>
       ) : (
-        <ul className="dash-stagger relative z-1 min-h-0 flex-1 space-y-0.5 overflow-y-auto px-3 py-3">
+        <ul className="dash-stagger relative z-1 min-h-0 flex-1 space-y-0.5 overflow-y-auto px-3 py-3 sm:px-4">
           {smart.map((item, index) => (
             <TaskRow
               key={item.task.id}

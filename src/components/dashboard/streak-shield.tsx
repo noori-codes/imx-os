@@ -25,12 +25,15 @@ type StreakShieldProps = {
   /** Server streak before freezes */
   streak: number;
   freezesRemaining: number;
+  /** When true, only render if the streak needs attention. */
+  riskOnly?: boolean;
 };
 
 export function StreakShield({
   activeDates,
   streak,
   freezesRemaining: initialFreezes,
+  riskOnly = false,
 }: StreakShieldProps) {
   const [, startTransition] = useTransition();
   const [freezes, setFreezes] = useState(initialFreezes);
@@ -113,23 +116,25 @@ export function StreakShield({
   }
 
   if (displayStreak <= 0 && !atRisk) return null;
+  if (riskOnly && !atRisk) return null;
 
   return (
     <section
       className={cn(
-        "dash-panel relative overflow-hidden px-5 py-4",
-        atRisk && "border-foreground/15",
+        "dash-alert relative overflow-hidden px-4 py-3.5 sm:px-5",
+        atRisk && "dash-alert-risk",
       )}
     >
-      <div className="dash-panel-glow" aria-hidden />
       <div className="relative z-1 flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="dash-panel-eyebrow inline-flex items-center gap-1.5">
             <Flame className="size-3 opacity-70" aria-hidden />
-            Activity streak
+            Streak at risk
           </p>
           <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">
-            {displayStreak > 0 ? `${displayStreak} day${displayStreak === 1 ? "" : "s"}` : "At risk"}
+            {displayStreak > 0
+              ? `${displayStreak} day${displayStreak === 1 ? "" : "s"}`
+              : "Chain broken soon"}
             {protectedYesterday ? (
               <span className="ml-2 text-xs font-medium text-muted-foreground">
                 · freeze used
@@ -137,37 +142,24 @@ export function StreakShield({
             ) : null}
           </p>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            {atRisk
-              ? "Yesterday went quiet. Protect the streak or repair with focus."
-              : freezes > 0
-                ? `${freezes} freeze${freezes === 1 ? "" : "s"} ready this week`
-                : "No freezes left — a short session keeps the chain fair"}
+            Yesterday went quiet. Protect it or repair with a short focus block.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {atRisk ? (
-            <>
-              <button
-                type="button"
-                onClick={protectStreak}
-                className="inline-flex h-8 items-center gap-1.5 rounded-xl bg-foreground px-3 text-xs font-medium text-background transition-opacity hover:opacity-90"
-              >
-                <Shield className="size-3.5" aria-hidden />
-                Use freeze
-              </button>
-              <Link
-                href="/focus"
-                className="inline-flex h-8 items-center rounded-xl border border-surface-border bg-surface px-3 text-xs font-medium text-foreground transition-colors hover:border-border"
-              >
-                Repair in focus
-              </Link>
-            </>
-          ) : (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-border/50 px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
-              <Shield className="size-3 opacity-70" aria-hidden />
-              {freezes}/3 freezes
-            </span>
-          )}
+          <button
+            type="button"
+            onClick={protectStreak}
+            className="inline-flex h-8 items-center gap-1.5 rounded-xl bg-foreground px-3 text-xs font-medium text-background transition-opacity hover:opacity-90"
+          >
+            <Shield className="size-3.5" aria-hidden />
+            Use freeze
+          </button>
+          <Link
+            href="/focus"
+            className="inline-flex h-8 items-center rounded-xl border border-surface-border bg-surface px-3 text-xs font-medium text-foreground transition-colors hover:border-border"
+          >
+            Repair in focus
+          </Link>
         </div>
       </div>
     </section>
