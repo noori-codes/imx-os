@@ -4,6 +4,7 @@ import {
   useEffect,
   useId,
   useRef,
+  useState,
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
@@ -115,7 +116,7 @@ function Leaf({
   tone?: "lit" | "mid" | "shade";
   breeze?: number;
 }) {
-  if (open <= 0.02) return null;
+  if (open <= 0.01) return null;
   const s = 0.22 + open * 0.78;
   const fold = (1 - open) * 18;
   const fill =
@@ -262,8 +263,8 @@ function LeafTuft({
 }
 
 /**
- * Branch limb — draws on, then tips bow slightly as the canopy weighs.
- * Wind bends the limb around its trunk joint; foliage follows after wood forms.
+ * Branch limb — wood draws base→tip first; leaves unfold along the limb
+ * from the trunk joint toward the tip (never tip-only pops).
  */
 function Branch({
   d,
@@ -300,6 +301,7 @@ function Branch({
     rot: number;
     scale?: number;
     tone?: "lit" | "mid" | "shade";
+    /** 0 = near trunk joint, 1 = near tip */
     at?: number;
   }>;
   denseTip?: boolean;
@@ -309,9 +311,10 @@ function Branch({
   const len = 140;
   const bowDrop = bow * 5.5;
   const bowRot = tipSide * bow * 3.5;
-  // Limb draws first; foliage only after the branch is mostly formed.
-  const limb = Math.min(1, open / 0.62);
-  const foliage = reveal(open, 0.58, 0.42);
+  // Limb extends first; foliage waits until wood has real length.
+  const limb = Math.min(1, open / 0.55);
+  const foliage = reveal(open, 0.42, 0.55);
+  const tipFoliage = reveal(foliage, 0.55, 0.45);
 
   return (
     <g
@@ -359,7 +362,7 @@ function Branch({
             y={leaf.y}
             rot={leaf.rot}
             scale={leaf.scale ?? 0.72}
-            open={reveal(foliage, leaf.at ?? 0.15, 0.5)}
+            open={reveal(foliage, leaf.at ?? i * 0.18, 0.42)}
             tone={leaf.tone ?? "mid"}
             breeze={breeze + i}
           />
@@ -368,7 +371,7 @@ function Branch({
           x={tipX}
           y={tipY}
           rot={tipRot + tipSide * bow * 10}
-          open={foliage}
+          open={tipFoliage}
           side={tipSide}
           breeze={breeze}
           dense={denseTip}
@@ -416,7 +419,7 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
   const isRunning = useFocusTimer((s) => s.isRunning);
 
   // Same subscription contract as before — do not change growth math.
-  const growth = useFocusTimer((s) => {
+  const growthTarget = useFocusTimer((s) => {
     void s.tickMs;
     void s.lastDisplaySecond;
     void s.elapsedSeconds;
@@ -434,7 +437,57 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
     });
   });
 
-  const g = Math.round(growth * 1000) / 1000;
+  /**
+   * Visual growth eases toward the timer-derived target so second-scale
+   * progress ticks never snap the trunk / foliage. Math source stays exact.
+   */
+  const smoothRef = useRef({ value: growthTarget, target: growthTarget });
+  const [displayGrowth, setDisplayGrowth] = useState(growthTarget);
+
+  useEffect(() => {
+    smoothRef.current.target = growthTarget;
+    if (reduce) {
+      smoothRef.current.value = growthTarget;
+      setDisplayGrowth(growthTarget);
+      return;
+    }
+
+    let raf = 0;
+    let alive = true;
+    let lastTs = 0;
+
+    const tick = (now: number) => {
+      if (!alive) return;
+      const s = smoothRef.current;
+      const dt = lastTs ? Math.min(0.05, (now - lastTs) / 1000) : 1 / 60;
+      lastTs = now;
+      const diff = s.target - s.value;
+
+      if (Math.abs(diff) < 0.00004) {
+        if (s.value !== s.target) {
+          s.value = s.target;
+          setDisplayGrowth(s.target);
+        }
+        raf = 0;
+        return;
+      }
+
+      // ~0.9–1.1s settle between second ticks; faster catch-up on big jumps.
+      const rate = Math.abs(diff) > 0.04 ? 7.5 : 4.2;
+      const alpha = 1 - Math.exp(-rate * dt);
+      s.value += diff * alpha;
+      setDisplayGrowth(Math.round(s.value * 10000) / 10000);
+      raf = requestAnimationFrame(tick);
+    };
+
+    raf = requestAnimationFrame(tick);
+    return () => {
+      alive = false;
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [growthTarget, reduce]);
+
+  const g = displayGrowth;
   const mature = g >= 0.92;
   const live = isRunning && !wilt && !reduce;
   const canWind = !reduce && !wilt && g > 0.12;
@@ -751,42 +804,56 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
     kickFx();
   }
 
-  const stem = reveal(g, 0, 0.2);
-  const sprout = reveal(g, 0.02, 0.14);
-  const sproutFade = Math.max(0, 1 - reveal(g, 0.18, 0.16));
-  const wood = reveal(g, 0.08, 0.3);
-  const lean = reveal(g, 0.32, 0.55);
-  const bow = reveal(g, 0.28, 0.6);
+  /*
+   * Organic growth timeline (maps onto focusGrowthProgress 0→1):
+   *  0.00–0.10  tiny seedling (short stem + fixed cotyledons)
+   *  0.06–0.34  trunk rises & thickens (cotyledons stay at their node, then fade)
+   *  0.22+      first lateral branch, then more — leaves along each limb base→tip
+   *  0.72+      crown + secondary canopy fill
+   */
+  const seedling = reveal(g, 0, 0.1);
+  const cotyledon = reveal(g, 0.015, 0.1);
+  const cotyledonFade = Math.max(0, 1 - reveal(g, 0.16, 0.18));
+  const trunkRise = reveal(g, 0.05, 0.3);
+  const wood = reveal(g, 0.1, 0.28);
+  const lean = reveal(g, 0.38, 0.5);
+  const bow = reveal(g, 0.32, 0.55);
 
-  const b1 = reveal(g, 0.14, 0.16);
-  const b2 = reveal(g, 0.2, 0.16);
-  const b3 = reveal(g, 0.28, 0.16);
-  const b4 = reveal(g, 0.34, 0.16);
-  const b5 = reveal(g, 0.42, 0.16);
-  const b6 = reveal(g, 0.48, 0.16);
-  const b7 = reveal(g, 0.55, 0.16);
-  const b8 = reveal(g, 0.62, 0.16);
-  const crown = reveal(g, 0.58, 0.22);
-  const dense = reveal(g, 0.7, 0.24);
-
-  const stemDash = 260;
-  const trunkLean = lean * 4.2;
-  const trunkTopY = lerp(348, 98, stem);
-  const heightT = stem;
+  // Staggered branches — trunk must exist before laterals appear.
+  const bFirst = reveal(g, 0.22, 0.14); // first lateral (right, lower)
+  const bSecond = reveal(g, 0.28, 0.14); // left lower
+  const b3 = reveal(g, 0.36, 0.14);
+  const b4 = reveal(g, 0.42, 0.14);
+  const b5 = reveal(g, 0.5, 0.14);
+  const b6 = reveal(g, 0.56, 0.14);
+  const b7 = reveal(g, 0.62, 0.14);
+  const b8 = reveal(g, 0.68, 0.14);
+  const crown = reveal(g, 0.74, 0.18);
+  const dense = reveal(g, 0.84, 0.16);
 
   const baseY = 355;
+  // Seedling is SHORT — never a tall empty pole with tip leaves.
+  const seedlingHeight = lerp(14, 26, seedling);
+  const seedlingTopY = baseY - seedlingHeight;
+  // Cotyledons stay at this fixed node — they do not ride the rising crown.
+  const cotyledonY = baseY - lerp(12, 22, seedling);
+
+  const trunkTopY = lerp(seedlingTopY, 98, trunkRise);
+  const heightT = trunkRise;
+  const trunkLean = lean * 4.2;
+
   const mid1 = lerp(baseY, 298, heightT);
   const mid2 = lerp(baseY, 245, heightT);
   const mid3 = lerp(baseY, 185, heightT);
   const mid4 = lerp(baseY, 138, heightT);
-  const halfBase = lerp(2.1, 9.4, wood);
-  const halfMid = lerp(1.55, 6.8, wood);
-  const halfUpper = lerp(1.1, 4.4, wood);
-  const halfTop = lerp(0.65, 2.45, wood);
+  const halfBase = lerp(1.4, 9.4, Math.max(seedling * 0.35, wood));
+  const halfMid = lerp(1.0, 6.8, Math.max(seedling * 0.25, wood));
+  const halfUpper = lerp(0.7, 4.4, wood);
+  const halfTop = lerp(0.45, 2.45, wood);
   const left = 140 - halfBase;
   const right = 140 + halfBase * 0.88;
 
-  // Slight S-curve: left recessed mid, right fuller near base
+  const stemDash = 80;
   const trunkPath = [
     `M${left.toFixed(1)} ${baseY}`,
     `C ${(138.5 - halfMid * 1.1).toFixed(1)} ${mid1.toFixed(1)} ${(137.8 - halfMid).toFixed(1)} ${mid2.toFixed(1)} ${(137.2 - halfUpper).toFixed(1)} ${mid3.toFixed(1)}`,
@@ -843,164 +910,180 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
             <stop offset="50%" stopColor="var(--fg-leaf-shade)" />
             <stop offset="100%" stopColor="var(--fg-leaf)" />
           </linearGradient>
-          <radialGradient id={`fg-soil-glow-${uid}`} cx="50%" cy="42%" r="55%">
-            <stop offset="0%" stopColor="var(--fg-soil-lit)" stopOpacity="0.55" />
-            <stop offset="45%" stopColor="var(--fg-soil)" stopOpacity="0.22" />
-            <stop offset="100%" stopColor="var(--fg-soil)" stopOpacity="0" />
+          <radialGradient id={`fg-soil-glow-${uid}`} cx="48%" cy="40%" r="62%">
+            <stop offset="0%" stopColor="var(--fg-soil-lit)" stopOpacity="0.62" />
+            <stop offset="40%" stopColor="var(--fg-soil)" stopOpacity="0.28" />
+            <stop offset="100%" stopColor="var(--fg-soil-deep)" stopOpacity="0" />
           </radialGradient>
-          <linearGradient id={`fg-soil-mound-${uid}`} x1="140" y1="348" x2="140" y2="372">
+          <linearGradient id={`fg-soil-mound-${uid}`} x1="100" y1="346" x2="180" y2="372">
             <stop offset="0%" stopColor="var(--fg-soil-lit)" />
-            <stop offset="48%" stopColor="var(--fg-soil)" />
+            <stop offset="38%" stopColor="var(--fg-soil)" />
+            <stop offset="72%" stopColor="var(--fg-soil)" />
             <stop offset="100%" stopColor="var(--fg-soil-deep)" />
           </linearGradient>
-          <radialGradient id={`fg-soil-shadow-${uid}`} cx="50%" cy="35%" r="55%">
-            <stop offset="0%" stopColor="var(--fg-soil-deep)" stopOpacity="0.45" />
+          <linearGradient id={`fg-soil-top-${uid}`} x1="140" y1="346" x2="140" y2="358">
+            <stop offset="0%" stopColor="var(--fg-soil-lit)" stopOpacity="0.9" />
+            <stop offset="100%" stopColor="var(--fg-soil)" stopOpacity="0" />
+          </linearGradient>
+          <radialGradient id={`fg-soil-shadow-${uid}`} cx="50%" cy="30%" r="60%">
+            <stop offset="0%" stopColor="var(--fg-soil-deep)" stopOpacity="0.55" />
+            <stop offset="70%" stopColor="var(--fg-soil-deep)" stopOpacity="0.12" />
             <stop offset="100%" stopColor="var(--fg-soil-deep)" stopOpacity="0" />
           </radialGradient>
         </defs>
 
-        {/* Ground — soft earth mound, moss, delicate blades */}
-        <g
-          className="focus-growth-ground"
-          opacity={0.5 + g * 0.5}
-        >
-          {/* Ambient light pool */}
+        {/*
+          Ground scene — always present, gently enriched with growth.
+          Layered mound + moss + pebbles; roots join from the trunk after wood forms.
+        */}
+        <g className="focus-growth-ground">
+          {/* Soft earth glow — keeps the scene grounded even as a sapling */}
           <ellipse
             cx="140"
-            cy="358"
-            rx={36 + g * 58}
-            ry={11 + g * 5}
+            cy="360"
+            rx={42 + g * 48}
+            ry={13 + g * 4.5}
             fill={`url(#fg-soil-glow-${uid})`}
+            opacity={0.72 + g * 0.28}
           />
-          {/* Soft contact shadow under trunk */}
-          <ellipse
-            cx="141"
-            cy="356.5"
-            rx={10 + wood * 8}
-            ry={3.2 + wood * 1.4}
-            fill={`url(#fg-soil-shadow-${uid})`}
-            opacity={0.55 + wood * 0.35}
-          />
-          {/* Asymmetric soil mound */}
+
+          {/* Far soil shelf — irregular silhouette */}
           <path
-            d={`M${(88 - g * 18).toFixed(1)} 356
-                C ${(108 - g * 8).toFixed(1)} 351 ${(122 - g * 2).toFixed(1)} 349.5 140 349
-                C ${(158 + g * 2).toFixed(1)} 349.5 ${(176 + g * 10).toFixed(1)} 351.5 ${(194 + g * 20).toFixed(1)} 356.5
-                C ${(188 + g * 14).toFixed(1)} 364 ${(168 + g * 6).toFixed(1)} 368.5 140 369
-                C ${(112 - g * 6).toFixed(1)} 368.5 ${(94 - g * 12).toFixed(1)} 363.5 ${(88 - g * 18).toFixed(1)} 356 Z`}
+            d={`M${(72 - g * 14).toFixed(1)} 358.5
+                C ${(92 - g * 6).toFixed(1)} 352.5 118 348.5 140 348
+                C 164 348.2 ${(190 + g * 8).toFixed(1)} 352 ${(210 + g * 16).toFixed(1)} 359
+                C ${(204 + g * 12).toFixed(1)} 366.5 ${(176 + g * 4).toFixed(1)} 372.5 140 373
+                C ${(104 - g * 4).toFixed(1)} 372.5 ${(80 - g * 10).toFixed(1)} 366 ${(72 - g * 14).toFixed(1)} 358.5 Z`}
             fill={`url(#fg-soil-mound-${uid})`}
-            opacity={0.72 + g * 0.22}
+            opacity={0.88}
           />
-          {/* Earth ridge highlight */}
+
+          {/* Raised inner mound under the trunk */}
           <path
-            d={`M${(96 - g * 12).toFixed(1)} 355.5
-                C 118 351.2 132 350 140 350
-                C 150 350.2 168 352.2 ${(186 + g * 14).toFixed(1)} 356`}
+            d={`M${(102 - g * 6).toFixed(1)} 356
+                C 118 350.5 130 348.2 140 348
+                C 151 348.2 166 350.8 ${(180 + g * 8).toFixed(1)} 356.5
+                C ${(174 + g * 4).toFixed(1)} 361.5 158 364.5 140 365
+                C 122 364.5 ${(108 - g * 2).toFixed(1)} 361 ${(102 - g * 6).toFixed(1)} 356 Z`}
+            fill={`url(#fg-soil-top-${uid})`}
+            opacity={0.7 + wood * 0.25}
+          />
+
+          {/* Contact shadow — tree planted in the earth */}
+          <ellipse
+            cx="140.5"
+            cy="355.5"
+            rx={9 + halfBase * 1.15}
+            ry={2.8 + wood * 1.6}
+            fill={`url(#fg-soil-shadow-${uid})`}
+            opacity={0.5 + wood * 0.4}
+          />
+
+          {/* Surface ridge (lit edge of the mound) */}
+          <path
+            d={`M${(84 - g * 10).toFixed(1)} 357.5
+                C 108 351.5 126 348.8 140 348.5
+                C 156 348.6 176 351.8 ${(198 + g * 12).toFixed(1)} 358`}
             stroke="var(--fg-soil-lit)"
-            strokeWidth="1.15"
+            strokeWidth="1.35"
             strokeLinecap="round"
             fill="none"
-            opacity={0.45 + g * 0.25}
+            opacity={0.55}
           />
-          {/* Deeper contour */}
+          {/* Soft underside contour */}
           <path
-            d={`M${(104 - g * 8).toFixed(1)} 360.5
-                C 124 365 156 365.5 ${(178 + g * 10).toFixed(1)} 361`}
+            d={`M${(96 - g * 6).toFixed(1)} 363
+                C 120 368 160 368.5 ${(186 + g * 8).toFixed(1)} 363.5`}
             stroke="var(--fg-soil-deep)"
-            strokeWidth="1"
+            strokeWidth="1.1"
             strokeLinecap="round"
             fill="none"
-            opacity={0.28 + g * 0.2}
+            opacity={0.32}
           />
-          {/* Moss patches */}
+          {/* Tiny soil grain marks */}
+          <g stroke="var(--fg-soil-deep)" strokeLinecap="round" fill="none" opacity={0.18 + g * 0.12}>
+            <path d="M118 358.5 C 120 357.8 122.5 358.2 124 357.6" strokeWidth="0.55" />
+            <path d="M152 359 C 154.5 358.2 157 358.8 159 358" strokeWidth="0.5" />
+            <path d="M134 361.5 C 136 360.8 138.5 361.2 140.5 360.6" strokeWidth="0.45" />
+          </g>
+
+          {/* Moss cushions */}
           <ellipse
-            cx="112"
+            cx="108"
+            cy="354"
+            rx={7 + g * 2.5}
+            ry={2.4 + g * 0.5}
+            fill="var(--fg-moss)"
+            opacity={0.42}
+            transform="rotate(-10 108 354)"
+          />
+          <ellipse
+            cx="171"
             cy="354.5"
-            rx={5.5 + g * 3}
-            ry={2.1 + g * 0.6}
-            fill="var(--fg-moss)"
-            opacity={0.35 + g * 0.35}
-            transform="rotate(-8 112 354.5)"
-          />
-          <ellipse
-            cx="168"
-            cy="355"
-            rx={6.2 + g * 3.5}
-            ry={2.3 + g * 0.7}
+            rx={7.5 + g * 3}
+            ry={2.6 + g * 0.55}
             fill="var(--fg-moss-lit)"
-            opacity={0.28 + g * 0.32}
-            transform="rotate(6 168 355)"
+            opacity={0.36}
+            transform="rotate(8 171 354.5)"
           />
           <ellipse
-            cx="148"
-            cy="352.8"
-            rx={3.2 + g * 1.5}
-            ry={1.3}
+            cx="146"
+            cy="351.8"
+            rx={3.8 + g}
+            ry="1.4"
             fill="var(--fg-moss)"
-            opacity={0.22 + g * 0.28}
+            opacity={0.3}
           />
-          {/* Tiny grass blades — left */}
-          <g
-            stroke="var(--fg-moss-lit)"
-            strokeLinecap="round"
-            fill="none"
-            opacity={0.25 + g * 0.45}
-          >
-            <path d="M102 355 C 100.5 350 99.2 346 98.5 343" strokeWidth="0.9" />
-            <path d="M106 355.5 C 105.2 351 105.6 347.5 106.5 344.5" strokeWidth="0.75" />
-            <path d="M99 356 C 97.8 352.5 96.2 350 94.8 348" strokeWidth="0.7" />
-          </g>
-          {/* Tiny grass blades — right */}
-          <g
-            stroke="var(--fg-moss)"
-            strokeLinecap="round"
-            fill="none"
-            opacity={0.22 + g * 0.42}
-          >
-            <path d="M178 355.5 C 179.2 351 180.5 347.5 181.2 344.5" strokeWidth="0.85" />
-            <path d="M183 356 C 184.5 352 186.2 349.5 187.5 347" strokeWidth="0.7" />
-            <path d="M174 355 C 174.8 351.5 174.2 348.5 173.2 346" strokeWidth="0.75" />
-          </g>
-          {/* Pebble accents */}
           <ellipse
-            cx="126"
-            cy="357.5"
-            rx="2.1"
+            cx="124"
+            cy="356.2"
+            rx="3"
             ry="1.15"
-            fill="var(--fg-bark)"
-            opacity={0.28 + g * 0.25}
-            transform="rotate(-12 126 357.5)"
+            fill="var(--fg-moss-lit)"
+            opacity={0.26}
+            transform="rotate(-4 124 356.2)"
           />
-          <ellipse
-            cx="156"
-            cy="358"
-            rx="1.6"
-            ry="0.95"
-            fill="var(--fg-bark-lit)"
-            opacity={0.22 + g * 0.22}
-            transform="rotate(18 156 358)"
-          />
+
+          {/* Delicate grass — sparse, not a cartoon lawn */}
+          <g strokeLinecap="round" fill="none" opacity={0.38 + g * 0.28}>
+            <path d="M96 355.5 C 94.6 351 93.2 347.5 92.4 344.5" stroke="var(--fg-moss-lit)" strokeWidth="0.85" />
+            <path d="M100 355 C 99.4 351.2 99.8 348 100.8 345.2" stroke="var(--fg-moss)" strokeWidth="0.7" />
+            <path d="M93 356 C 91.5 353 90 351 88.6 349.2" stroke="var(--fg-moss-lit)" strokeWidth="0.65" />
+            <path d="M184 355.5 C 185.4 351.2 186.8 348 187.8 345" stroke="var(--fg-moss)" strokeWidth="0.8" />
+            <path d="M189 356 C 190.6 352.5 192.2 350.2 193.6 348" stroke="var(--fg-moss-lit)" strokeWidth="0.65" />
+            <path d="M179 355 C 179.6 351.5 179 348.8 178 346.5" stroke="var(--fg-moss)" strokeWidth="0.7" />
+          </g>
+
+          {/* Pebbles */}
+          <ellipse cx="122" cy="358.2" rx="2.4" ry="1.25" fill="var(--fg-bark)" opacity={0.4} transform="rotate(-14 122 358.2)" />
+          <ellipse cx="160" cy="358.8" rx="1.9" ry="1.05" fill="var(--fg-bark-lit)" opacity={0.34} transform="rotate(16 160 358.8)" />
+          <ellipse cx="138" cy="360.5" rx="1.35" ry="0.8" fill="var(--fg-soil-deep)" opacity={0.3} transform="rotate(6 138 360.5)" />
+          <ellipse cx="175" cy="357.5" rx="1.5" ry="0.85" fill="var(--fg-bark)" opacity={0.28} transform="rotate(-8 175 357.5)" />
         </g>
 
         {/* Outer: CSS sway. Inner: organic lean. */}
         <g className="focus-growth-plant">
           <g transform={`rotate(${trunkLean} 140 355)`}>
-            {/* Sapling stem */}
+            {/* Tiny seedling stem — short, from soil only */}
             <path
               className="focus-growth-stem"
-              d={`M140 355 C 137.5 ${lerp(318, 275, stem)} 135.5 ${lerp(275, 195, stem)} 137.5 ${trunkTopY + 22} C 138.5 ${trunkTopY + 10} 140.5 ${trunkTopY} 142 ${trunkTopY}`}
+              d={`M140 355 C 139.2 ${((baseY + seedlingTopY) / 2).toFixed(1)} 139.6 ${((baseY + seedlingTopY) / 2 - 4).toFixed(1)} 140.4 ${seedlingTopY.toFixed(1)}`}
               stroke={`url(#fg-stem-${uid})`}
-              strokeWidth={2 + stem * 1.8 * (1 - wood * 0.55)}
+              strokeWidth={1.6 + seedling * 1.1 * (1 - wood * 0.7)}
               strokeLinecap="round"
               fill="none"
               pathLength={stemDash}
               strokeDasharray={stemDash}
-              strokeDashoffset={stemDash * (1 - stem)}
-              opacity={Math.max(0.12, 1 - wood * 0.88)}
+              strokeDashoffset={stemDash * (1 - seedling)}
+              opacity={Math.max(0.15, seedling * (1 - wood * 0.85))}
             />
 
-            {/* Woody trunk */}
-            <path d={trunkPath} fill={`url(#fg-bark-${uid})`} opacity={wood * 0.98} />
+            {/* Rising woody trunk — grows from the seedling */}
+            <path
+              d={trunkPath}
+              fill={`url(#fg-bark-${uid})`}
+              opacity={Math.max(wood * 0.98, trunkRise * seedling * 0.35)}
+            />
             <path
               d={`M138.8 348 C 137.8 ${mid1.toFixed(1)} 138.2 ${mid2.toFixed(1)} 139.2 ${mid3.toFixed(1)} C 139.8 ${mid4.toFixed(1)} 140.6 ${lerp(mid4, trunkTopY, 0.55).toFixed(1)} 141.4 ${(trunkTopY + 6).toFixed(1)}`}
               stroke="var(--fg-bark-lit)"
@@ -1023,54 +1106,108 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
               opacity={wood * 0.26}
             />
 
-            {/* Cotyledons — fade as wood forms */}
-            {sproutFade > 0.02 ? (
+            {/* Root collar + exposed roots — develop as the tree matures */}
+            <g opacity={wood * 0.95} className="focus-growth-roots">
+              {/* Flare where trunk meets earth */}
+              <path
+                d={`M${(140 - halfBase * 0.92).toFixed(1)} 353.5
+                    C ${(138 - halfBase * 0.2).toFixed(1)} 356.2  ${(142 + halfBase * 0.15).toFixed(1)} 356.4 ${(140 + halfBase * 0.85).toFixed(1)} 353.8
+                    C ${(141 + halfBase * 0.35).toFixed(1)} 355.6 ${(139 - halfBase * 0.25).toFixed(1)} 355.8 ${(140 - halfBase * 0.92).toFixed(1)} 353.5 Z`}
+                fill="var(--fg-bark)"
+                opacity={0.85}
+              />
+              {/* Primary roots into the mound */}
+              <path
+                d="M134 354.5 C 126 356.5 116 358.5 108 361.5 C 103 363.5 99 365.5 96 367"
+                stroke="var(--fg-bark)"
+                strokeWidth={1.35 + wood * 0.55}
+                strokeLinecap="round"
+                fill="none"
+                opacity={0.55 + wood * 0.25}
+              />
+              <path
+                d="M146.5 354.2 C 156 356 166 357.8 174 360.5 C 179 362.2 183 364 186 365.5"
+                stroke="var(--fg-bark)"
+                strokeWidth={1.25 + wood * 0.5}
+                strokeLinecap="round"
+                fill="none"
+                opacity={0.5 + wood * 0.25}
+              />
+              {/* Finer secondary roots */}
+              <path
+                d="M132 355 C 124 357.5 118 360 114 363"
+                stroke="var(--fg-bark-lit)"
+                strokeWidth="0.85"
+                strokeLinecap="round"
+                fill="none"
+                opacity={0.35 + wood * 0.25}
+              />
+              <path
+                d="M148 354.8 C 155 356.5 161 359 166 362"
+                stroke="var(--fg-bark-lit)"
+                strokeWidth="0.8"
+                strokeLinecap="round"
+                fill="none"
+                opacity={0.32 + wood * 0.22}
+              />
+              <path
+                d="M138 355.5 C 132 358 128 361.5 126 364.5"
+                stroke="var(--fg-bark)"
+                strokeWidth="0.7"
+                strokeLinecap="round"
+                fill="none"
+                opacity={wood * 0.45}
+              />
+            </g>
+
+            {/* Cotyledons — fixed on the seedling node, never ride the crown */}
+            {cotyledonFade > 0.02 ? (
               <g
-                opacity={sprout * sproutFade}
-                transform={`translate(141 ${lerp(350, trunkTopY + 4, stem)})`}
+                opacity={cotyledon * cotyledonFade}
+                transform={`translate(140 ${cotyledonY.toFixed(1)})`}
               >
-                <Leaf x={-10} y={0} rot={-52} scale={0.9} open={sprout} tone="lit" />
-                <Leaf x={10} y={1} rot={48} scale={0.88} open={sprout} tone="mid" />
+                <Leaf x={-8} y={1} rot={-48} scale={0.72} open={cotyledon} tone="lit" />
+                <Leaf x={8} y={2} rot={44} scale={0.7} open={cotyledon} tone="mid" />
               </g>
             ) : null}
 
-            {/* Lower — longer left, shorter right */}
+            {/* First laterals — only after trunk has risen */}
             <Branch
-              ox={137}
-              oy={272}
-              d="M137 272 C 115 265 88 262 62 272 C 48 278 36 290 28 302"
-              open={b2}
-              width={3.1}
-              bow={bow * 0.95}
-              tipX={28}
-              tipY={302}
-              tipRot={-58}
-              tipSide={-1}
-              breeze={1}
-              tier="low"
-              denseTip={dense > 0.4}
-              midLeaves={[
-                { x: 95, y: 268, rot: -38, scale: 0.7, tone: "shade", at: 0.4 },
-                { x: 72, y: 275, rot: -62, scale: 0.65, tone: "mid", at: 0.5 },
-              ]}
-            />
-            <Branch
-              ox={147}
-              oy={262}
-              d="M147 262 C 172 252 202 256 228 270 C 240 278 250 290 256 300"
-              open={b1}
-              width={2.7}
-              bow={bow * 0.78}
-              tipX={256}
-              tipY={300}
-              tipRot={52}
+              ox={146}
+              oy={300}
+              d="M146 300 C 162 296 182 298 200 308 C 210 314 218 322 224 330"
+              open={bFirst}
+              width={2.2}
+              bow={bow * 0.55}
+              tipX={224}
+              tipY={330}
+              tipRot={42}
               tipSide={1}
               breeze={2}
               tier="low"
-              denseTip={dense > 0.4}
               midLeaves={[
-                { x: 185, y: 262, rot: 36, scale: 0.68, tone: "lit", at: 0.4 },
-                { x: 218, y: 274, rot: 55, scale: 0.62, tone: "mid", at: 0.52 },
+                { x: 158, y: 298, rot: 28, scale: 0.55, tone: "lit", at: 0.02 },
+                { x: 178, y: 302, rot: 40, scale: 0.62, tone: "mid", at: 0.2 },
+                { x: 198, y: 312, rot: 52, scale: 0.58, tone: "shade", at: 0.38 },
+              ]}
+            />
+            <Branch
+              ox={136}
+              oy={288}
+              d="M136 288 C 118 284 96 286 76 296 C 64 302 54 312 46 322"
+              open={bSecond}
+              width={2.45}
+              bow={bow * 0.7}
+              tipX={46}
+              tipY={322}
+              tipRot={-52}
+              tipSide={-1}
+              breeze={1}
+              tier="low"
+              midLeaves={[
+                { x: 124, y: 286, rot: -30, scale: 0.55, tone: "mid", at: 0.02 },
+                { x: 100, y: 288, rot: -42, scale: 0.65, tone: "shade", at: 0.18 },
+                { x: 78, y: 298, rot: -55, scale: 0.6, tone: "lit", at: 0.36 },
               ]}
             />
 
@@ -1090,9 +1227,10 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
               tier="mid"
               denseTip
               midLeaves={[
-                { x: 100, y: 212, rot: -28, scale: 0.78, tone: "lit", at: 0.35 },
-                { x: 70, y: 200, rot: -50, scale: 0.7, tone: "shade", at: 0.48 },
-                { x: 48, y: 194, rot: -18, scale: 0.62, tone: "mid", at: 0.58 },
+                { x: 122, y: 218, rot: -22, scale: 0.58, tone: "lit", at: 0.02 },
+                { x: 100, y: 212, rot: -28, scale: 0.72, tone: "mid", at: 0.16 },
+                { x: 70, y: 200, rot: -50, scale: 0.68, tone: "shade", at: 0.32 },
+                { x: 48, y: 194, rot: -18, scale: 0.6, tone: "mid", at: 0.48 },
               ]}
             />
             <Branch
@@ -1110,17 +1248,17 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
               tier="mid"
               denseTip
               midLeaves={[
-                { x: 180, y: 204, rot: 24, scale: 0.75, tone: "mid", at: 0.35 },
-                { x: 215, y: 198, rot: 48, scale: 0.68, tone: "lit", at: 0.48 },
-                { x: 245, y: 206, rot: 18, scale: 0.6, tone: "shade", at: 0.58 },
+                { x: 160, y: 210, rot: 18, scale: 0.55, tone: "mid", at: 0.02 },
+                { x: 180, y: 204, rot: 24, scale: 0.7, tone: "lit", at: 0.16 },
+                { x: 215, y: 198, rot: 48, scale: 0.65, tone: "shade", at: 0.34 },
+                { x: 245, y: 206, rot: 18, scale: 0.58, tone: "mid", at: 0.5 },
               ]}
             />
-            {/* Twig off mid-left */}
             <Branch
               ox={86}
               oy={208}
               d="M86 208 C 72 196 60 184 52 174"
-              open={reveal(b3, 0.35, 0.5)}
+              open={reveal(b3, 0.4, 0.5)}
               width={1.45}
               bow={bow * 0.55}
               tipX={52}
@@ -1129,7 +1267,10 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
               tipSide={-1}
               breeze={2}
               tier="twig"
-              midLeaves={[{ x: 70, y: 192, rot: -40, scale: 0.58, tone: "lit", at: 0.4 }]}
+              midLeaves={[
+                { x: 78, y: 202, rot: -28, scale: 0.5, tone: "lit", at: 0.05 },
+                { x: 66, y: 190, rot: -40, scale: 0.55, tone: "mid", at: 0.35 },
+              ]}
             />
 
             {/* Upper */}
@@ -1148,8 +1289,9 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
               tier="high"
               denseTip
               midLeaves={[
-                { x: 112, y: 160, rot: -22, scale: 0.72, tone: "shade", at: 0.35 },
-                { x: 88, y: 140, rot: -48, scale: 0.68, tone: "mid", at: 0.5 },
+                { x: 128, y: 168, rot: -16, scale: 0.55, tone: "shade", at: 0.02 },
+                { x: 112, y: 160, rot: -22, scale: 0.68, tone: "mid", at: 0.18 },
+                { x: 88, y: 140, rot: -48, scale: 0.65, tone: "lit", at: 0.4 },
               ]}
             />
             <Branch
@@ -1167,8 +1309,9 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
               tier="high"
               denseTip
               midLeaves={[
-                { x: 175, y: 152, rot: 20, scale: 0.7, tone: "lit", at: 0.35 },
-                { x: 210, y: 142, rot: 42, scale: 0.65, tone: "mid", at: 0.5 },
+                { x: 158, y: 162, rot: 14, scale: 0.52, tone: "lit", at: 0.02 },
+                { x: 175, y: 152, rot: 20, scale: 0.66, tone: "mid", at: 0.18 },
+                { x: 210, y: 142, rot: 42, scale: 0.62, tone: "shade", at: 0.4 },
               ]}
             />
 
@@ -1187,7 +1330,10 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
               breeze={2}
               tier="high"
               denseTip
-              midLeaves={[{ x: 118, y: 122, rot: -30, scale: 0.65, tone: "lit", at: 0.4 }]}
+              midLeaves={[
+                { x: 132, y: 132, rot: -18, scale: 0.52, tone: "lit", at: 0.05 },
+                { x: 118, y: 122, rot: -30, scale: 0.62, tone: "mid", at: 0.3 },
+              ]}
             />
             <Branch
               ox={145}
@@ -1203,10 +1349,13 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
               breeze={3}
               tier="high"
               denseTip
-              midLeaves={[{ x: 168, y: 118, rot: 28, scale: 0.65, tone: "shade", at: 0.4 }]}
+              midLeaves={[
+                { x: 154, y: 128, rot: 16, scale: 0.52, tone: "shade", at: 0.05 },
+                { x: 168, y: 118, rot: 28, scale: 0.62, tone: "lit", at: 0.3 },
+              ]}
             />
 
-            {/* Crown leader + side sprays */}
+            {/* Crown leader */}
             <Branch
               ox={141}
               oy={122}
@@ -1222,9 +1371,10 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
               tier="crown"
               denseTip
               midLeaves={[
-                { x: 138, y: 95, rot: -35, scale: 0.7, tone: "mid", at: 0.3 },
-                { x: 146, y: 88, rot: 32, scale: 0.68, tone: "lit", at: 0.4 },
-                { x: 140, y: 68, rot: -12, scale: 0.75, tone: "shade", at: 0.5 },
+                { x: 140, y: 112, rot: -20, scale: 0.55, tone: "mid", at: 0.05 },
+                { x: 138, y: 95, rot: -35, scale: 0.68, tone: "lit", at: 0.22 },
+                { x: 146, y: 88, rot: 32, scale: 0.65, tone: "shade", at: 0.36 },
+                { x: 140, y: 68, rot: -12, scale: 0.72, tone: "mid", at: 0.52 },
               ]}
             />
             <Branch
@@ -1241,6 +1391,10 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
               breeze={2}
               tier="twig"
               denseTip
+              midLeaves={[
+                { x: 132, y: 82, rot: -24, scale: 0.48, tone: "lit", at: 0.08 },
+                { x: 116, y: 68, rot: -36, scale: 0.55, tone: "mid", at: 0.4 },
+              ]}
             />
             <Branch
               ox={144}
@@ -1256,24 +1410,22 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
               breeze={3}
               tier="twig"
               denseTip
+              midLeaves={[
+                { x: 152, y: 78, rot: 20, scale: 0.48, tone: "shade", at: 0.08 },
+                { x: 170, y: 66, rot: 32, scale: 0.55, tone: "lit", at: 0.4 },
+              ]}
             />
 
-            {/* Late canopy — fills the silhouette without blobs */}
+            {/* Late canopy — only after structure exists */}
             <g opacity={dense}>
               <LeafTuft x={118} y={112} rot={-22} open={dense} side={-1} breeze={1} dense />
-              <LeafTuft x={172} y={108} rot={18} open={dense} side={1} breeze={2} dense />
+              <LeafTuft x={172} y={108} rot={16} open={dense} side={1} breeze={2} dense />
               <LeafTuft x={142} y={62} rot={4} open={dense} side={1} breeze={3} dense />
-              <LeafTuft x={128} y={88} rot={-12} open={dense} side={-1} breeze={2} />
-              <LeafTuft x={160} y={84} rot={14} open={dense} side={1} breeze={1} />
-              <Leaf x={88} y={148} rot={-48} scale={0.92} open={dense} tone="shade" breeze={1} />
-              <Leaf x={198} y={142} rot={44} scale={0.9} open={dense} tone="lit" breeze={2} />
-              <Leaf x={108} y={128} rot={-28} scale={0.8} open={dense} tone="mid" breeze={3} />
-              <Leaf x={182} y={122} rot={26} scale={0.82} open={dense} tone="lit" breeze={1} />
-              <Leaf x={132} y={142} rot={-10} scale={0.78} open={dense} tone="mid" breeze={2} />
-              <Leaf x={158} y={138} rot={16} scale={0.78} open={dense} tone="shade" breeze={3} />
-              <Leaf x={148} y={48} rot={8} scale={0.95} open={dense} tone="lit" breeze={1} />
-              <Leaf x={120} y={72} rot={-36} scale={0.72} open={dense} tone="shade" breeze={2} />
-              <Leaf x={170} y={68} rot={30} scale={0.72} open={dense} tone="mid" breeze={3} />
+              <LeafTuft x={128} y={88} rot={-12} open={reveal(dense, 0.2, 0.5)} side={-1} breeze={2} />
+              <LeafTuft x={160} y={84} rot={14} open={reveal(dense, 0.25, 0.5)} side={1} breeze={1} />
+              <Leaf x={108} y={128} rot={-28} scale={0.8} open={reveal(dense, 0.3, 0.45)} tone="mid" breeze={3} />
+              <Leaf x={182} y={122} rot={26} scale={0.82} open={reveal(dense, 0.35, 0.45)} tone="lit" breeze={1} />
+              <Leaf x={148} y={48} rot={8} scale={0.9} open={reveal(dense, 0.4, 0.45)} tone="lit" breeze={2} />
             </g>
           </g>
         </g>

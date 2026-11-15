@@ -944,12 +944,12 @@ export function FocusTimer({
 
       {isRunning || canContinue || growthWilt ? (
         <div className="focus-chamber relative z-1 flex h-full w-full flex-col">
-          <div className="focus-chamber-split relative z-1 mx-auto flex h-full w-full max-w-6xl flex-1 flex-col items-stretch gap-5 px-5 py-5 sm:gap-7 sm:px-8 lg:flex-row lg:items-stretch lg:gap-8 lg:px-10 lg:py-6">
-            <div className="focus-chamber-grove flex min-h-[11rem] flex-1 items-center justify-center lg:min-h-0 lg:basis-1/2 lg:self-stretch">
+          <div className="focus-chamber-split relative z-1 mx-auto grid h-full w-full max-w-5xl flex-1 grid-cols-1 items-center gap-6 px-5 py-5 sm:gap-8 sm:px-8 lg:max-w-6xl lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-x-6 lg:gap-y-0 lg:px-10 lg:py-6">
+            <div className="focus-chamber-grove flex min-h-[11rem] w-full items-center justify-center lg:min-h-0">
               <FocusGrowthTree wilt={growthWilt} />
             </div>
 
-            <div className="focus-chamber-instrument relative z-1 flex w-full min-w-0 flex-1 flex-col items-center justify-center gap-5 sm:gap-6 lg:basis-1/2 lg:w-auto">
+            <div className="focus-chamber-instrument relative z-1 flex w-full min-w-0 flex-col items-center justify-center gap-5 sm:gap-6">
               <div className="flex flex-col items-center gap-2 text-center">
                 <div className="flex items-center gap-2.5">
                   {isRunning ? (
