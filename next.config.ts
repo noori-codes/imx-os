@@ -5,6 +5,8 @@ import type { NextConfig } from "next";
 const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
+  // Allow a second `next dev` via NEXT_DIST_DIR=.next-3003 (avoids .next/dev lock).
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   // Keep Turbopack rooted on this repo — a stray lockfile in /home/ims
   // otherwise makes compile hang while it walks the parent tree.
   turbopack: {

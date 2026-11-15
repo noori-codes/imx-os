@@ -3,6 +3,7 @@
 import {
   useEffect,
   useRef,
+  useState,
   useTransition,
   type CSSProperties,
 } from "react";
@@ -15,6 +16,7 @@ import { logFocusSession, updateFocusSession } from "@/actions/focus";
 import { completeTodayFocusBlocks } from "@/actions/calendar";
 import { toggleTaskComplete } from "@/actions/tasks";
 import { FocusClockFace } from "@/components/focus/focus-clock-face";
+import { FocusGrowthTree } from "@/components/focus/focus-growth-tree";
 import { FocusSettings } from "@/components/focus/focus-settings";
 import { FocusSounds } from "@/components/focus/focus-sounds";
 import { showFocusSealToast } from "@/components/focus/focus-seal-toast";
@@ -174,6 +176,7 @@ export function FocusTimer({
   }, [linkedTaskId, linkedTask, tasks, setLinkedTaskId]);
 
   const [, startTransition] = useTransition();
+  const [growthWilt, setGrowthWilt] = useState(false);
   const loggedRef = useRef(false);
   const flowNudgeRef = useRef(false);
   const todayMinutesRef = useRef(focusMinutesToday);
@@ -538,6 +541,14 @@ export function FocusTimer({
     handleStopAndSave();
   }
 
+  async function wiltThenReset() {
+    setGrowthWilt(true);
+    stopFocusSound();
+    await new Promise((r) => window.setTimeout(r, 480));
+    reset();
+    setGrowthWilt(false);
+  }
+
   function handleDiscardSession() {
     if (!isStopwatch && isRunning) pause();
     const actual = isStopwatch
@@ -556,13 +567,11 @@ export function FocusTimer({
           destructive: true,
         });
         if (!ok) return;
-        stopFocusSound();
-        reset();
+        await wiltThenReset();
       })();
       return;
     }
-    stopFocusSound();
-    reset();
+    void wiltThenReset();
   }
 
   function handleClockChange(next: FocusClock) {
@@ -933,87 +942,103 @@ export function FocusTimer({
       <div className="focus-run-mist" aria-hidden />
       <div className="focus-run-vignette" aria-hidden />
 
-      {isRunning || canContinue ? (
-        <div className="focus-chamber relative z-1 flex h-full w-full flex-col items-center justify-center">
-          <div className="focus-chamber-stage flex w-full max-w-2xl flex-col items-center gap-7 px-6 sm:gap-8 sm:px-8">
-            <div className="flex flex-col items-center gap-2 text-center">
-              <div className="flex items-center gap-2.5">
-                {isRunning ? (
-                  <span className="focus-live-dot" aria-hidden />
+      {isRunning || canContinue || growthWilt ? (
+        <div className="focus-chamber relative z-1 flex h-full w-full flex-col">
+          <div className="focus-chamber-split relative z-1 mx-auto flex h-full w-full max-w-6xl flex-1 flex-col items-stretch gap-5 px-5 py-5 sm:gap-7 sm:px-8 lg:flex-row lg:items-stretch lg:gap-8 lg:px-10 lg:py-6">
+            <div className="focus-chamber-grove flex min-h-[11rem] flex-1 items-center justify-center lg:min-h-0 lg:basis-1/2 lg:self-stretch">
+              <FocusGrowthTree wilt={growthWilt} />
+            </div>
+
+            <div className="focus-chamber-instrument relative z-1 flex w-full min-w-0 flex-1 flex-col items-center justify-center gap-5 sm:gap-6 lg:basis-1/2 lg:w-auto">
+              <div className="flex flex-col items-center gap-2 text-center">
+                <div className="flex items-center gap-2.5">
+                  {isRunning ? (
+                    <span className="focus-live-dot" aria-hidden />
+                  ) : null}
+                  <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground">
+                    {isRunning
+                      ? runningLabel
+                      : growthWilt
+                        ? "Letting go"
+                        : "Paused"}
+                  </p>
+                </div>
+                {runningDetail && !growthWilt ? (
+                  <p className="max-w-md truncate text-[15px] text-foreground/70">
+                    {runningDetail}
+                  </p>
                 ) : null}
-                <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground">
-                  {isRunning ? runningLabel : "Paused"}
-                </p>
               </div>
-              {runningDetail ? (
-                <p className="max-w-md truncate text-[15px] text-foreground/70">
-                  {runningDetail}
-                </p>
-              ) : null}
-            </div>
 
-            <div className="focus-chamber-dial flex flex-col items-center gap-5">
-              {renderClock(
-                "size-[min(82vw,20.5rem)] sm:size-[23rem] lg:size-[25rem]",
+              <div className="focus-chamber-dial flex flex-col items-center gap-4">
+                {renderClock(
+                  "size-[min(72vw,17.5rem)] sm:size-[19.5rem] lg:size-[21rem]",
+                )}
+                {renderTicks()}
+              </div>
+
+              {growthWilt ? null : (
+                <>
+                  <div className="focus-chamber-controls flex items-center justify-center gap-5">
+                    <button
+                      type="button"
+                      onClick={handleDiscardSession}
+                      className="focus-icon-btn focus-chamber-side"
+                      aria-label="Discard session"
+                      title="Discard without saving"
+                    >
+                      <RotateCcw className="size-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleToggle}
+                      className="focus-run-pause flex size-[4.5rem] items-center justify-center rounded-full bg-foreground text-background transition-opacity hover:opacity-90 active:scale-95"
+                      aria-label={isRunning ? "Pause timer" : "Resume timer"}
+                    >
+                      {isRunning ? (
+                        <Pause className="size-7 fill-current" />
+                      ) : (
+                        <Play className="size-7 fill-current" />
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleStopAndSave}
+                      disabled={isStopwatch ? !canSealStopwatch : false}
+                      className={cn(
+                        "focus-icon-btn focus-chamber-side",
+                        isStopwatch &&
+                          !canSealStopwatch &&
+                          "pointer-events-none opacity-30",
+                      )}
+                      aria-label="Stop and save"
+                      title="Stop and save"
+                    >
+                      {isStopwatch ? (
+                        <Square className="size-4 fill-current" />
+                      ) : (
+                        <CircleCheck className="size-4" />
+                      )}
+                    </button>
+                  </div>
+
+                  <div className="focus-chamber-dock w-full max-w-sm pt-1">
+                    <FocusSounds compact />
+                  </div>
+                </>
               )}
-              {renderTicks()}
-            </div>
-
-            <div className="focus-chamber-controls flex items-center justify-center gap-5">
-              <button
-                type="button"
-                onClick={handleDiscardSession}
-                className="focus-icon-btn focus-chamber-side"
-                aria-label="Discard session"
-                title="Discard without saving"
-              >
-                <RotateCcw className="size-4" />
-              </button>
-              <button
-                type="button"
-                onClick={handleToggle}
-                className="focus-run-pause flex size-[4.5rem] items-center justify-center rounded-full bg-foreground text-background transition-opacity hover:opacity-90 active:scale-95"
-                aria-label={isRunning ? "Pause timer" : "Resume timer"}
-              >
-                {isRunning ? (
-                  <Pause className="size-7 fill-current" />
-                ) : (
-                  <Play className="size-7 fill-current" />
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={handleStopAndSave}
-                disabled={isStopwatch ? !canSealStopwatch : false}
-                className={cn(
-                  "focus-icon-btn focus-chamber-side",
-                  isStopwatch &&
-                    !canSealStopwatch &&
-                    "pointer-events-none opacity-30",
-                )}
-                aria-label="Stop and save"
-                title="Stop and save"
-              >
-                {isStopwatch ? (
-                  <Square className="size-4 fill-current" />
-                ) : (
-                  <CircleCheck className="size-4" />
-                )}
-              </button>
-            </div>
-
-            <div className="focus-chamber-dock w-full max-w-sm pt-2">
-              <FocusSounds compact />
             </div>
           </div>
 
-          <div className="absolute top-3 left-4 z-2 sm:top-4 sm:left-6">
-            <FocusSettings
-              dailyGoalMinutes={dailyGoalMinutes}
-              onClockChange={handleClockChange}
-              iconOnly
-            />
-          </div>
+          {growthWilt ? null : (
+            <div className="absolute top-3 left-4 z-2 sm:top-4 sm:left-6">
+              <FocusSettings
+                dailyGoalMinutes={dailyGoalMinutes}
+                onClockChange={handleClockChange}
+                iconOnly
+              />
+            </div>
+          )}
         </div>
       ) : (
         <div className="focus-board relative z-1 flex h-full w-full flex-col">
