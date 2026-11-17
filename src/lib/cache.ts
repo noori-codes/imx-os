@@ -34,6 +34,19 @@ export function revalidateUserCaches(userId: string) {
   revalidatePath("/search");
 }
 
+/**
+ * Habit mutations only — skip notes/search and avoid revalidatePath("/dashboard")
+ * so optimistic dashboard UI is not blocked by a full RSC rebuild.
+ * updateTag keeps the next cold/soft dashboard load fresh.
+ */
+export function revalidateHabitCaches(userId: string) {
+  updateTag(cacheTags.dashboard(userId));
+  updateTag(cacheTags.analytics(userId));
+  revalidatePath("/habits");
+  revalidatePath("/review");
+  revalidatePath("/analytics");
+}
+
 /** Typed wrapper around unstable_cache with consistent defaults. */
 export function cachedQuery<TArgs extends unknown[], TResult>(
   keyParts: string[],

@@ -28,6 +28,11 @@ import {
   type DashboardData,
   type DashboardHabit,
 } from "@/types/dashboard";
+import {
+  clampDailyFocusGoal,
+  FOCUS_DAILY_GOAL_DEFAULT,
+} from "@/types/focus";
+import { DEFAULT_USER_SETTINGS } from "@/types/settings";
 
 /** Enough for streak + week insight; analytics keeps the long window. */
 const ACTIVITY_RANGE_DAYS = 90;
@@ -55,13 +60,22 @@ const emptyDashboard: DashboardData = {
   focus_today: { sessions: 0, focus_minutes: 0 },
   review: { has_today: false, intent: null },
   reading_book: null,
+  daily_focus_goal_minutes: FOCUS_DAILY_GOAL_DEFAULT,
+  streak_freezes_remaining: DEFAULT_USER_SETTINGS.streak_freezes_remaining,
 };
 
+type HabitLogRow = { habit_id: string; logged_on: string };
+
+/**
+ * Activity from tasks + focus. Habit-log day counts are merged in by the
+ * caller from the shared 90-day habit_logs fetch (avoids a duplicate query).
+ */
 async function loadActivity(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string | null,
   todayStr: string,
   timeZone: string | null,
+  habitLogDates: string[],
 ): Promise<ActivitySummary> {
   const rangeStartStr = addDaysToDateString(todayStr, -(ACTIVITY_RANGE_DAYS - 1));
   const rangeEndExclusiveStr = addDaysToDateString(todayStr, 1);
@@ -83,12 +97,6 @@ async function loadActivity(
     .gte("updated_at", rangeStartIso)
     .lt("updated_at", rangeEndIso);
 
-  let habitLogsQuery = supabase
-    .from("habit_logs")
-    .select("logged_on")
-    .gte("logged_on", rangeStartStr)
-    .lte("logged_on", todayStr);
-
   let focusQuery = supabase
     .from("focus_sessions")
     .select("started_at")
@@ -98,13 +106,11 @@ async function loadActivity(
 
   if (userId) {
     tasksQuery = tasksQuery.eq("user_id", userId);
-    habitLogsQuery = habitLogsQuery.eq("user_id", userId);
     focusQuery = focusQuery.eq("user_id", userId);
   }
 
-  const [tasksResult, habitsResult, focusResult] = await Promise.all([
+  const [tasksResult, focusResult] = await Promise.all([
     tasksQuery,
-    habitLogsQuery,
     focusQuery,
   ]);
 
@@ -119,8 +125,9 @@ async function loadActivity(
     counts.set(date, (counts.get(date) ?? 0) + 1);
   }
 
-  for (const log of habitsResult.data ?? []) {
-    counts.set(log.logged_on, (counts.get(log.logged_on) ?? 0) + 1);
+  for (const loggedOn of habitLogDates) {
+    if (loggedOn < rangeStartStr || loggedOn > todayStr) continue;
+    counts.set(loggedOn, (counts.get(loggedOn) ?? 0) + 1);
   }
 
   for (const session of focusResult.data ?? []) {
@@ -136,6 +143,7 @@ async function loadDashboardExtras(
   userId: string | null,
   todayStr: string,
   timeZone: string | null,
+  habitLogs: HabitLogRow[],
 ) {
   const yesterdayStr = addDaysToDateString(todayStr, -1);
   const focusBounds = timeZone
@@ -175,45 +183,41 @@ async function loadDashboardExtras(
     .order("updated_at", { ascending: false })
     .limit(1);
 
+  let settingsQuery = supabase
+    .from("user_settings")
+    .select("daily_focus_goal_minutes, streak_freezes_remaining");
+
   if (userId) {
     habitsQuery = habitsQuery.eq("user_id", userId);
     focusQuery = focusQuery.eq("user_id", userId);
     todayReviewQuery = todayReviewQuery.eq("user_id", userId);
     intentReviewQuery = intentReviewQuery.eq("user_id", userId);
     readingBookQuery = readingBookQuery.eq("user_id", userId);
+    settingsQuery = settingsQuery.eq("user_id", userId);
   }
 
-  const [habitsResult, focusResult, todayReview, intentReview, readingBookResult] =
-    await Promise.all([
-      habitsQuery,
-      focusQuery,
-      todayReviewQuery.maybeSingle(),
-      intentReviewQuery.maybeSingle(),
-      readingBookQuery.maybeSingle(),
-    ]);
+  const [
+    habitsResult,
+    focusResult,
+    todayReview,
+    intentReview,
+    readingBookResult,
+    settingsResult,
+  ] = await Promise.all([
+    habitsQuery,
+    focusQuery,
+    todayReviewQuery.maybeSingle(),
+    intentReviewQuery.maybeSingle(),
+    readingBookQuery.maybeSingle(),
+    settingsQuery.maybeSingle(),
+  ]);
 
   const habits = habitsResult.data ?? [];
-  const habitIds = habits.map((habit) => habit.id);
-
-  let habitLogsQuery = supabase
-    .from("habit_logs")
-    .select("habit_id, logged_on")
-    .gte("logged_on", addDaysToDateString(todayStr, -90));
-
-  if (userId) {
-    habitLogsQuery = habitLogsQuery.eq("user_id", userId);
-  }
-  if (habitIds.length > 0) {
-    habitLogsQuery = habitLogsQuery.in("habit_id", habitIds);
-  }
-
-  const logsResult =
-    habitIds.length > 0
-      ? await habitLogsQuery
-      : { data: [] as { habit_id: string; logged_on: string }[], error: null };
+  const habitIdSet = new Set(habits.map((habit) => habit.id));
 
   const logsByHabit = new Map<string, string[]>();
-  for (const log of logsResult.data ?? []) {
+  for (const log of habitLogs) {
+    if (!habitIdSet.has(log.habit_id)) continue;
     const list = logsByHabit.get(log.habit_id) ?? [];
     list.push(log.logged_on);
     logsByHabit.set(log.habit_id, list);
@@ -257,6 +261,47 @@ async function loadDashboardExtras(
     };
   }
 
+  const settingsRow = settingsResult.data;
+  const freezes = Number(settingsRow?.streak_freezes_remaining);
+  const daily_focus_goal_minutes = settingsRow
+    ? clampDailyFocusGoal(
+        Number(settingsRow.daily_focus_goal_minutes) ||
+          FOCUS_DAILY_GOAL_DEFAULT,
+      )
+    : FOCUS_DAILY_GOAL_DEFAULT;
+  const streak_freezes_remaining = Number.isFinite(freezes)
+    ? Math.max(0, Math.min(3, Math.round(freezes)))
+    : DEFAULT_USER_SETTINGS.streak_freezes_remaining;
+
+  // Migration 022 may not be applied — fall back when streak column missing.
+  if (settingsResult.error && /streak_freezes/i.test(settingsResult.error.message)) {
+    let legacyQ = supabase
+      .from("user_settings")
+      .select("daily_focus_goal_minutes");
+    if (userId) legacyQ = legacyQ.eq("user_id", userId);
+    const legacy = await legacyQ.maybeSingle();
+    return {
+      habits_today,
+      focus_today: {
+        sessions: focusResult.data?.length ?? 0,
+        focus_minutes,
+      },
+      review: {
+        has_today: Boolean(todayReview.data?.id),
+        intent,
+      },
+      reading_book,
+      daily_focus_goal_minutes: legacy.data
+        ? clampDailyFocusGoal(
+            Number(legacy.data.daily_focus_goal_minutes) ||
+              FOCUS_DAILY_GOAL_DEFAULT,
+          )
+        : FOCUS_DAILY_GOAL_DEFAULT,
+      streak_freezes_remaining:
+        DEFAULT_USER_SETTINGS.streak_freezes_remaining,
+    };
+  }
+
   return {
     habits_today,
     focus_today: {
@@ -268,6 +313,8 @@ async function loadDashboardExtras(
       intent,
     },
     reading_book,
+    daily_focus_goal_minutes,
+    streak_freezes_remaining,
   };
 }
 
@@ -377,6 +424,12 @@ async function loadDashboardData(
     .gte("due_date", weekStartStr)
     .lte("due_date", weekEndStr);
 
+  // Shared 90-day logs — one round-trip for streaks + activity habit days.
+  let habitLogsQ = supabase
+    .from("habit_logs")
+    .select("habit_id, logged_on")
+    .gte("logged_on", addDaysToDateString(todayStr, -90));
+
   if (scopedUserId) {
     goalsQuery = goalsQuery.eq("user_id", scopedUserId);
     projectsQuery = projectsQuery.eq("user_id", scopedUserId);
@@ -390,7 +443,12 @@ async function loadDashboardData(
     overdueListQ = overdueListQ.eq("user_id", scopedUserId);
     nextTasksQ = nextTasksQ.eq("user_id", scopedUserId);
     weekOpenQ = weekOpenQ.eq("user_id", scopedUserId);
+    habitLogsQ = habitLogsQ.eq("user_id", scopedUserId);
   }
+
+  const habitLogsPromise = habitLogsQ.then(
+    (result) => (result.data ?? []) as HabitLogRow[],
+  );
 
   const [
     goalsResult,
@@ -420,8 +478,18 @@ async function loadDashboardData(
     overdueListQ,
     nextTasksQ,
     weekOpenQ,
-    loadActivity(supabase, scopedUserId, todayStr, timeZone),
-    loadDashboardExtras(supabase, scopedUserId, todayStr, timeZone),
+    habitLogsPromise.then((logs) =>
+      loadActivity(
+        supabase,
+        scopedUserId,
+        todayStr,
+        timeZone,
+        logs.map((log) => log.logged_on),
+      ),
+    ),
+    habitLogsPromise.then((logs) =>
+      loadDashboardExtras(supabase, scopedUserId, todayStr, timeZone, logs),
+    ),
   ]);
 
   if (goalsResult.error) {
@@ -499,6 +567,8 @@ async function loadDashboardData(
     focus_today: extras.focus_today,
     review: extras.review,
     reading_book: extras.reading_book,
+    daily_focus_goal_minutes: extras.daily_focus_goal_minutes,
+    streak_freezes_remaining: extras.streak_freezes_remaining,
   };
 }
 
@@ -511,7 +581,7 @@ export const getDashboardData = cache(async (): Promise<DashboardData> => {
   try {
     if (userIdForAdminCache) {
       return await cachedQuery(
-        ["dashboard", userIdForAdminCache, "v12", todayStr],
+        ["dashboard", userIdForAdminCache, "v13", todayStr],
         [cacheTags.dashboard(userIdForAdminCache)],
         CACHE_TTL.dashboard,
         async () => loadDashboardData(userIdForAdminCache),

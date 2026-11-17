@@ -3,22 +3,19 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-import { MOBILE_MORE_ITEMS, MOBILE_TAB_ITEMS, NAV_ITEMS } from "@/lib/constants";
+import { MOBILE_TAB_ITEMS } from "@/lib/constants";
 
-/** Hottest destinations first — don’t stampede the RSC/data layer at once. */
+/**
+ * Primary destinations only — skip heavy routes (analytics/search/review/books)
+ * so idle prefetch does not compete with first dashboard paint or early actions.
+ */
 const IDLE_PREFETCH_HREFS = Array.from(
   new Set([
     ...MOBILE_TAB_ITEMS.map((item) => item.href),
     "/calendar",
     "/goals",
     "/notes",
-    "/review",
-    "/analytics",
-    "/books",
-    "/search",
     "/settings",
-    ...NAV_ITEMS.map((item) => item.href),
-    ...MOBILE_MORE_ITEMS.map((item) => item.href),
   ]),
 );
 
@@ -47,7 +44,7 @@ export function IdleRoutePrefetch() {
         // Prefetch is best-effort.
       }
       if (index < IDLE_PREFETCH_HREFS.length) {
-        gapId = window.setTimeout(prefetchNext, 350);
+        gapId = window.setTimeout(prefetchNext, 700);
       }
     }
 

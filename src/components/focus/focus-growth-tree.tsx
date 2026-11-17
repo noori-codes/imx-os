@@ -502,14 +502,51 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
   /**
    * Visual growth eases toward the timer-derived target so second-scale
    * progress ticks never snap the trunk / foliage. Math source stays exact.
+   * Ease runs at rAF; React SVG reconcile is throttled (~12fps / quanta).
    */
-  const smoothRef = useRef({ value: growthTarget, target: growthTarget });
+  const smoothRef = useRef({
+    value: growthTarget,
+    target: growthTarget,
+    publishedQuantum: Math.round(growthTarget * 500),
+    publishedValue: growthTarget,
+    lastReactTs: 0,
+  });
   const [displayGrowth, setDisplayGrowth] = useState(growthTarget);
+  const boundsRef = useRef({
+    left: 0,
+    top: 0,
+    width: 0,
+    height: 0,
+    ready: false,
+  });
+
+  function paintGrowthVars(value: number) {
+    const el = rootRef.current;
+    if (!el) return;
+    const structure = Math.min(1, value);
+    const adv = Math.max(0, value - 1);
+    el.style.setProperty("--fg-growth", structure.toFixed(4));
+    el.style.setProperty("--fg-advanced", adv.toFixed(4));
+  }
+
+  function syncBounds(el: HTMLDivElement) {
+    const rect = el.getBoundingClientRect();
+    boundsRef.current = {
+      left: rect.left,
+      top: rect.top,
+      width: rect.width,
+      height: rect.height,
+      ready: rect.width >= 1 && rect.height >= 1,
+    };
+  }
 
   useEffect(() => {
     smoothRef.current.target = growthTarget;
     if (reduce) {
       smoothRef.current.value = growthTarget;
+      smoothRef.current.publishedQuantum = Math.round(growthTarget * 500);
+      smoothRef.current.publishedValue = growthTarget;
+      paintGrowthVars(growthTarget);
       setDisplayGrowth(growthTarget);
       return;
     }
@@ -517,6 +554,22 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
     let raf = 0;
     let alive = true;
     let lastTs = 0;
+    const REACT_MIN_MS = 80; // ~12.5 fps React structure updates
+
+    const publishReact = (value: number, now: number, force = false) => {
+      const s = smoothRef.current;
+      const quantum = Math.round(value * 500);
+      const due = now - s.lastReactTs >= REACT_MIN_MS;
+      const quantumChanged = quantum !== s.publishedQuantum;
+      const drifted = Math.abs(value - s.publishedValue) >= 0.002;
+
+      if (!force && !quantumChanged && !(due && drifted)) return;
+
+      s.publishedQuantum = quantum;
+      s.publishedValue = value;
+      s.lastReactTs = now;
+      setDisplayGrowth(Math.round(value * 10000) / 10000);
+    };
 
     const tick = (now: number) => {
       if (!alive) return;
@@ -528,7 +581,8 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
       if (Math.abs(diff) < 0.00004) {
         if (s.value !== s.target) {
           s.value = s.target;
-          setDisplayGrowth(s.target);
+          paintGrowthVars(s.target);
+          publishReact(s.target, now, true);
         }
         raf = 0;
         return;
@@ -538,7 +592,8 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
       const rate = Math.abs(diff) > 0.04 ? 7.5 : 4.2;
       const alpha = 1 - Math.exp(-rate * dt);
       s.value += diff * alpha;
-      setDisplayGrowth(Math.round(s.value * 10000) / 10000);
+      paintGrowthVars(s.value);
+      publishReact(s.value, now);
       raf = requestAnimationFrame(tick);
     };
 
@@ -565,7 +620,12 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
 
   useEffect(() => {
     const state = fx.current;
+    const onResize = () => {
+      boundsRef.current.ready = false;
+    };
+    window.addEventListener("resize", onResize, { passive: true });
     return () => {
+      window.removeEventListener("resize", onResize);
       if (state.raf) cancelAnimationFrame(state.raf);
       for (const f of state.fallers) f.el.remove();
       state.fallers = [];
@@ -822,11 +882,15 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
 
   function onPointerMove(e: ReactPointerEvent<HTMLDivElement>) {
     if (!canWind) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    if (rect.width < 1 || rect.height < 1) return;
+    const bounds = boundsRef.current;
+    if (!bounds.ready) {
+      syncBounds(e.currentTarget);
+      if (!boundsRef.current.ready) return;
+    }
 
-    const x = (e.clientX - rect.left) / rect.width;
-    const y = (e.clientY - rect.top) / rect.height;
+    const { left, top, width, height } = boundsRef.current;
+    const x = (e.clientX - left) / width;
+    const y = (e.clientY - top) / height;
     const w = fx.current;
     w.presenceTarget = 1;
 
@@ -853,6 +917,7 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
 
   function onPointerEnter(e: ReactPointerEvent<HTMLDivElement>) {
     if (!canWind) return;
+    syncBounds(e.currentTarget);
     fx.current.presenceTarget = 1;
     fx.current.hasPoint = false;
     onPointerMove(e);
@@ -948,16 +1013,9 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
       )}
       style={
         {
+          // Growth only — paintFx owns --fg-wind-* / --fg-breeze exclusively.
           ["--fg-growth" as string]: g.toFixed(4),
           ["--fg-advanced" as string]: advanced.toFixed(4),
-          ["--fg-breeze" as string]: "0",
-          ["--fg-wind-x" as string]: "0",
-          ["--fg-wind-y" as string]: "0",
-          ["--fg-wind-a" as string]: "0",
-          ["--fg-wind-b" as string]: "0",
-          ["--fg-wind-c" as string]: "0",
-          ["--fg-wind-flutter" as string]: "0",
-          ["--fg-wind-energy" as string]: "0",
         } as CSSProperties
       }
       onPointerEnter={onPointerEnter}

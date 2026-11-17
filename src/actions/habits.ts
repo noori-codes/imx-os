@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { getCurrentUser } from "@/lib/auth";
-import { revalidateUserCaches } from "@/lib/cache";
+import { revalidateHabitCaches } from "@/lib/cache";
 import {
   addDaysToDateString,
   computeStreaks,
@@ -16,17 +16,14 @@ export type HabitActionState = {
   error?: string;
 };
 
-const HABITS_PATH = "/habits";
-
 async function revalidateHabits() {
-  revalidatePath(HABITS_PATH);
-  revalidatePath("/review");
-  revalidatePath("/analytics");
   const user = await getCurrentUser();
   if (user) {
-    revalidateUserCaches(user.id);
+    revalidateHabitCaches(user.id);
   } else {
-    revalidatePath("/dashboard");
+    revalidatePath("/habits");
+    revalidatePath("/review");
+    revalidatePath("/analytics");
   }
 }
 
@@ -128,9 +125,7 @@ export async function createHabit(
   formData: FormData,
 ): Promise<HabitActionState> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     return { error: "You must be signed in." };
@@ -173,9 +168,7 @@ export async function updateHabit(
   }
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) {
     return { error: "You must be signed in." };
   }
@@ -204,9 +197,7 @@ export async function updateHabit(
 
 export async function setHabitArchived(habitId: string, archived: boolean) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) return;
 
   const { data, error } = await supabase
@@ -240,9 +231,7 @@ export async function toggleHabitOnDate(
   }
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     return { error: "You must be signed in." };
@@ -286,9 +275,7 @@ export async function toggleHabitToday(
 
 export async function deleteHabit(habitId: string) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) return;
 
   const { data, error } = await supabase

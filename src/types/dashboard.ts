@@ -81,6 +81,9 @@ export type DashboardData = {
   };
   /** Currently reading book for Morning Brief, if any. */
   reading_book: { id: string; title: string; progress: number | null } | null;
+  /** From user_settings — folded into dashboard to avoid extra Auth round-trips. */
+  daily_focus_goal_minutes: number;
+  streak_freezes_remaining: number;
 };
 
 export function activityLevel(count: number): 0 | 1 | 2 | 3 | 4 {

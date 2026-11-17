@@ -2,8 +2,6 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 
 import { getDashboardData } from "@/actions/dashboard";
-import { getDailyFocusGoal } from "@/actions/focus";
-import { getUserSettings } from "@/actions/settings";
 import { getCurrentUser } from "@/lib/auth";
 import { resolveGreetingName } from "@/lib/display-name";
 import { getHourInZone, getRequestTimeZone } from "@/lib/timezone";
@@ -27,12 +25,12 @@ async function getGreeting() {
 }
 
 async function DashboardBody() {
-  const [user, data, dailyGoal, greeting, settings] = await Promise.all([
+  // Goal + freezes ride on getDashboardData (one Auth path) — no parallel
+  // getDailyFocusGoal / getUserSettings stampedes.
+  const [user, data, greeting] = await Promise.all([
     getCurrentUser(),
     getDashboardData(),
-    getDailyFocusGoal(),
     getGreeting(),
-    getUserSettings(),
   ]);
   const name = user ? resolveGreetingName(user) : "there";
 
@@ -41,8 +39,8 @@ async function DashboardBody() {
       name={name}
       greeting={greeting}
       data={data}
-      focusGoalMinutes={dailyGoal.minutes}
-      streakFreezesRemaining={settings.streak_freezes_remaining}
+      focusGoalMinutes={data.daily_focus_goal_minutes}
+      streakFreezesRemaining={data.streak_freezes_remaining}
     />
   );
 }
