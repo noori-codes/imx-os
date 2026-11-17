@@ -34,7 +34,10 @@ import {
 } from "@/types/focus";
 import { DEFAULT_USER_SETTINGS } from "@/types/settings";
 
-/** Enough for streak + week insight; analytics keeps the long window. */
+/**
+ * Heatmap display window only — underlying habit/focus/task rows are kept
+ * forever; streaks use the full shared habit_logs fetch below.
+ */
 const ACTIVITY_RANGE_DAYS = 90;
 
 const emptyDashboard: DashboardData = {
@@ -424,11 +427,10 @@ async function loadDashboardData(
     .gte("due_date", weekStartStr)
     .lte("due_date", weekEndStr);
 
-  // Shared 90-day logs — one round-trip for streaks + activity habit days.
+  // Full habit history — one round-trip for accurate streaks + activity days.
   let habitLogsQ = supabase
     .from("habit_logs")
-    .select("habit_id, logged_on")
-    .gte("logged_on", addDaysToDateString(todayStr, -90));
+    .select("habit_id, logged_on");
 
   if (scopedUserId) {
     goalsQuery = goalsQuery.eq("user_id", scopedUserId);
@@ -581,7 +583,7 @@ export const getDashboardData = cache(async (): Promise<DashboardData> => {
   try {
     if (userIdForAdminCache) {
       return await cachedQuery(
-        ["dashboard", userIdForAdminCache, "v13", todayStr],
+        ["dashboard", userIdForAdminCache, "v14", todayStr],
         [cacheTags.dashboard(userIdForAdminCache)],
         CACHE_TTL.dashboard,
         async () => loadDashboardData(userIdForAdminCache),

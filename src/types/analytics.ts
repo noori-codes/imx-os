@@ -1,4 +1,4 @@
-export const ANALYTICS_RANGES = [7, 30, 90] as const;
+export const ANALYTICS_RANGES = [7, 30, 90, 365] as const;
 export type AnalyticsRangeDays = (typeof ANALYTICS_RANGES)[number];
 
 export function parseAnalyticsRange(
@@ -6,7 +6,7 @@ export function parseAnalyticsRange(
 ): AnalyticsRangeDays {
   const value = Array.isArray(raw) ? raw[0] : raw;
   const n = Number(value);
-  if (n === 7 || n === 30 || n === 90) return n;
+  if (n === 7 || n === 30 || n === 90 || n === 365) return n;
   return 30;
 }
 

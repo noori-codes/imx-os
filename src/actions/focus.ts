@@ -113,15 +113,11 @@ export async function getFocusOverviewStats() {
   const days = getWeekDays(startOfWeek(new Date()));
   const today = toDateString(new Date());
 
-  const streakLookback = new Date();
-  streakLookback.setDate(streakLookback.getDate() - 120);
-  streakLookback.setHours(0, 0, 0, 0);
-
+  // Full history so longest/current streaks are never capped by a lookback.
   const { data, error } = await supabase
     .from("focus_sessions")
     .select("id, actual_seconds, started_at, task_id, note")
-    .eq("mode", "focus")
-    .gte("started_at", streakLookback.toISOString());
+    .eq("mode", "focus");
 
   if (error) {
     console.error("[focus] getFocusOverviewStats:", error.message);

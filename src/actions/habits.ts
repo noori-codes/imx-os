@@ -53,13 +53,11 @@ async function loadHabitsWithStats(
 
   const habitIds = habits.map((h) => h.id);
 
-  const lookbackStr = addDaysToDateString(today, -90);
-
+  // Full history — streaks and week chips need every log, not a rolling window.
   const { data: logs, error: logsError } = await supabase
     .from("habit_logs")
     .select("*")
     .in("habit_id", habitIds)
-    .gte("logged_on", lookbackStr)
     .order("logged_on", { ascending: true });
 
   if (logsError) {

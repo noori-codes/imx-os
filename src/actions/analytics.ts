@@ -219,7 +219,7 @@ async function loadAnalyticsData(
   });
 
   // Fast path: streak stats from logs already fetched for the selected range.
-  // Full 120-day lookback streams separately via getAnalyticsHabitStreaks.
+  // Full-history streaks stream separately via getAnalyticsHabitStreaks.
   const habit_streaks: HabitStreakSummary[] = habits
     .map((habit) => {
       const rangeDates = logsByHabit.get(habit.id) ?? [];
@@ -356,10 +356,7 @@ async function loadHabitStreaks(
     logsByHabit.set(log.habit_id, list);
   }
 
-  const streakLookback = new Date();
-  streakLookback.setDate(streakLookback.getDate() - 120);
-  const streakLookbackStr = toDateString(streakLookback);
-
+  // Full history for current/longest streaks (never capped by a lookback).
   let longQuery = supabase
     .from("habit_logs")
     .select("habit_id, logged_on")
@@ -367,7 +364,6 @@ async function loadHabitStreaks(
       "habit_id",
       habits.map((h) => h.id),
     )
-    .gte("logged_on", streakLookbackStr)
     .order("logged_on", { ascending: true });
 
   if (userId) {
@@ -434,7 +430,7 @@ async function withAnalyticsClient<T>(
 }
 
 /**
- * Core analytics (series + summary) without the 120-day streak lookback.
+ * Core analytics (series + summary) without full-history streak enrichment.
  * Streams ahead of habit streak enrichment.
  */
 export const getAnalyticsCore = cache(
@@ -460,7 +456,7 @@ export const getAnalyticsCore = cache(
   },
 );
 
-/** Full habit streaks with 120-day lookback — streamed after core. */
+/** Full-history habit streaks — streamed after core. */
 export const getAnalyticsHabitStreaks = cache(
   async (
     rangeDays: number | AnalyticsRangeDays = 30,
