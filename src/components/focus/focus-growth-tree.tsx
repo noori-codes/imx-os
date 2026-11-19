@@ -11,7 +11,10 @@ import {
 } from "react";
 import { useReducedMotion } from "motion/react";
 
-import { focusGrowthProgress } from "@/lib/focus-growth";
+import {
+  FOCUS_GROWTH_COUNTUP_MATURE_SECONDS,
+  focusGrowthProgress,
+} from "@/lib/focus-growth";
 import { cn } from "@/lib/utils";
 import { useFocusTimer } from "@/stores/focus-timer";
 
@@ -78,6 +81,13 @@ function TinyFruit({
 
 type FocusGrowthTreeProps = {
   wilt?: boolean;
+  /**
+   * Focus seconds already sealed today (excludes the live session).
+   * Day tree = base + live focus elapsed, always on the count-up curve.
+   */
+  baseElapsedSeconds?: number;
+  /** Smaller grove for the idle board. */
+  compact?: boolean;
 };
 
 /** Smoothstep gate — continuous organic reveal, not hard stage swaps. */
@@ -445,10 +455,14 @@ function Branch({
 
 /**
  * Living focus tree — hand-illustrated SVG botanical.
- * Growth from focusGrowthProgress: countdown 0–1 by duration;
- * count-up milestones through maturity, then advanced >1 richness.
+ * Day progress = sealed today + live focus elapsed, always on the count-up
+ * curve (mature ~60m, flourish through ~120m+).
  */
-export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
+export function FocusGrowthTree({
+  wilt = false,
+  baseElapsedSeconds = 0,
+  compact = false,
+}: FocusGrowthTreeProps) {
   const uid = useId().replace(/:/g, "");
   const reduce = useReducedMotion();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -480,23 +494,23 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
   });
   const isRunning = useFocusTimer((s) => s.isRunning);
 
-  // Timer → growth model only. Pause freezes elapsed; mode switch recalculates.
-  const growthTarget = useFocusTimer((s) => {
+  // Live focus seconds only (breaks contribute 0). Recomputes on timer ticks.
+  const liveFocusSeconds = useFocusTimer((s) => {
     void s.tickMs;
     void s.lastDisplaySecond;
     void s.elapsedSeconds;
     void s.remainingSeconds;
-    const isStopwatch = s.clock === "up";
-    const grows = isStopwatch || s.mode === "focus";
-    const elapsed = isStopwatch
-      ? s.liveElapsedSeconds()
-      : Math.max(0, s.durationSeconds - s.displaySeconds());
-    return focusGrowthProgress({
-      grows,
-      isStopwatch,
-      elapsedSeconds: elapsed,
-      durationSeconds: s.durationSeconds,
-    });
+    if (s.mode !== "focus") return 0;
+    if (s.clock === "up") return s.liveElapsedSeconds();
+    return Math.max(0, s.durationSeconds - s.displaySeconds());
+  });
+
+  // Day tree: sealed today + live focus, always on the count-up curve.
+  const growthTarget = focusGrowthProgress({
+    grows: true,
+    isStopwatch: true,
+    elapsedSeconds: Math.max(0, baseElapsedSeconds) + liveFocusSeconds,
+    durationSeconds: FOCUS_GROWTH_COUNTUP_MATURE_SECONDS,
   });
 
   /**
@@ -1005,6 +1019,7 @@ export function FocusGrowthTree({ wilt = false }: FocusGrowthTreeProps) {
       ref={rootRef}
       className={cn(
         "focus-growth relative z-0 w-full",
+        compact && "focus-growth-compact",
         canWind ? "pointer-events-auto cursor-default" : "pointer-events-none",
         live && "focus-growth-live",
         wilt && "focus-growth-wilt",

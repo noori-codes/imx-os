@@ -177,13 +177,28 @@ export function FocusTimer({
 
   const [, startTransition] = useTransition();
   const [growthWilt, setGrowthWilt] = useState(false);
+  /** Sealed today minutes — drives the day tree (plus live focus elapsed). */
+  const [sealedTodayMinutes, setSealedTodayMinutes] =
+    useState(focusMinutesToday);
   const loggedRef = useRef(false);
   const flowNudgeRef = useRef(false);
   const todayMinutesRef = useRef(focusMinutesToday);
   const prevRemaining = useRef(remainingSeconds);
+
+  function bumpSealedTodayMinutes(addedMinutes: number) {
+    if (addedMinutes <= 0) return todayMinutesRef.current;
+    const next = todayMinutesRef.current + addedMinutes;
+    todayMinutesRef.current = next;
+    setSealedTodayMinutes(next);
+    return next;
+  }
+
   useEffect(() => {
     todayMinutesRef.current = focusMinutesToday;
+    setSealedTodayMinutes(focusMinutesToday);
   }, [focusMinutesToday]);
+
+  const baseElapsedSeconds = Math.max(0, sealedTodayMinutes) * 60;
 
   useEffect(() => {
     const stored = window.localStorage.getItem("imx-focus-auto-start") === "1";
@@ -323,10 +338,10 @@ export function FocusTimer({
 
       const addedMinutes =
         currentMode === "focus" ? Math.max(1, Math.round(planned / 60)) : 0;
-      const todayMinutes = todayMinutesRef.current + addedMinutes;
-      if (currentMode === "focus") {
-        todayMinutesRef.current = todayMinutes;
-      }
+      const todayMinutes =
+        currentMode === "focus"
+          ? bumpSealedTodayMinutes(addedMinutes)
+          : todayMinutesRef.current;
 
       const linkedTaskForToast =
         currentMode === "focus" && taskId
@@ -492,8 +507,7 @@ export function FocusTimer({
     playFocusChime();
     notifyFocusPhase("Session sealed", formatFocusClock(actual));
 
-    const todayMinutes = todayMinutesRef.current + addedMinutes;
-    todayMinutesRef.current = todayMinutes;
+    const todayMinutes = bumpSealedTodayMinutes(addedMinutes);
 
     const linkedTaskForToast = taskId
       ? {
@@ -685,8 +699,7 @@ export function FocusTimer({
         }),
       );
       const addedMinutes = Math.max(1, Math.round(actual / 60));
-      const todayMinutes = todayMinutesRef.current + addedMinutes;
-      todayMinutesRef.current = todayMinutes;
+      const todayMinutes = bumpSealedTodayMinutes(addedMinutes);
       showFocusSealToast({
         kind: "focus",
         title: "Stopped early",
@@ -741,7 +754,7 @@ export function FocusTimer({
         }),
       );
       const addedMinutes = Math.max(1, Math.round(actual / 60));
-      todayMinutesRef.current += addedMinutes;
+      bumpSealedTodayMinutes(addedMinutes);
     }
 
     if (actual >= 5) {
@@ -946,7 +959,10 @@ export function FocusTimer({
         <div className="focus-chamber relative z-1 flex h-full w-full flex-col">
           <div className="focus-chamber-split relative z-1 mx-auto grid h-full w-full max-w-5xl flex-1 grid-cols-1 items-center gap-6 px-5 py-5 sm:gap-8 sm:px-8 lg:max-w-6xl lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-x-6 lg:gap-y-0 lg:px-10 lg:py-6">
             <div className="focus-chamber-grove flex min-h-[11rem] w-full items-center justify-center lg:min-h-0">
-              <FocusGrowthTree wilt={growthWilt} />
+              <FocusGrowthTree
+                wilt={growthWilt}
+                baseElapsedSeconds={baseElapsedSeconds}
+              />
             </div>
 
             <div className="focus-chamber-instrument relative z-1 flex w-full min-w-0 flex-col items-center justify-center gap-5 sm:gap-6">
@@ -1100,6 +1116,13 @@ export function FocusTimer({
           </div>
 
           <div className="focus-board-stack">
+            <div className="focus-board-grove">
+              <FocusGrowthTree
+                baseElapsedSeconds={baseElapsedSeconds}
+                compact
+              />
+            </div>
+
             <p className="focus-board-hint text-center">{boardMeta}</p>
 
             <div className="focus-board-dial">
