@@ -962,6 +962,7 @@ export function FocusTimer({
               <FocusGrowthTree
                 wilt={growthWilt}
                 baseElapsedSeconds={baseElapsedSeconds}
+                dailyGoalMinutes={dailyGoalMinutes}
               />
             </div>
 
@@ -1119,6 +1120,7 @@ export function FocusTimer({
             <div className="focus-board-grove">
               <FocusGrowthTree
                 baseElapsedSeconds={baseElapsedSeconds}
+                dailyGoalMinutes={dailyGoalMinutes}
                 compact
               />
             </div>

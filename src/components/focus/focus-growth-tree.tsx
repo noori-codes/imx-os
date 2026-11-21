@@ -11,12 +11,10 @@ import {
 } from "react";
 import { useReducedMotion } from "motion/react";
 
-import {
-  FOCUS_GROWTH_COUNTUP_MATURE_SECONDS,
-  focusGrowthProgress,
-} from "@/lib/focus-growth";
+import { focusGrowthProgress } from "@/lib/focus-growth";
 import { cn } from "@/lib/utils";
 import { useFocusTimer } from "@/stores/focus-timer";
+import { FOCUS_DAILY_GOAL_DEFAULT } from "@/types/focus";
 
 /** Soft blossom for post-maturity count-up richness. */
 function Blossom({
@@ -83,9 +81,11 @@ type FocusGrowthTreeProps = {
   wilt?: boolean;
   /**
    * Focus seconds already sealed today (excludes the live session).
-   * Day tree = base + live focus elapsed, always on the count-up curve.
+   * Day tree = base + live focus elapsed, scaled to the daily goal.
    */
   baseElapsedSeconds?: number;
+  /** Daily focus goal in minutes — structure matures at this target. */
+  dailyGoalMinutes?: number;
   /** Smaller grove for the idle board. */
   compact?: boolean;
 };
@@ -455,12 +455,13 @@ function Branch({
 
 /**
  * Living focus tree — hand-illustrated SVG botanical.
- * Day progress = sealed today + live focus elapsed, always on the count-up
- * curve (mature ~60m, flourish through ~120m+).
+ * Day progress = sealed today + live focus, scaled so structure matures at
+ * the daily goal; past-goal minutes unlock advanced richness.
  */
 export function FocusGrowthTree({
   wilt = false,
   baseElapsedSeconds = 0,
+  dailyGoalMinutes = FOCUS_DAILY_GOAL_DEFAULT,
   compact = false,
 }: FocusGrowthTreeProps) {
   const uid = useId().replace(/:/g, "");
@@ -493,6 +494,7 @@ export function FocusGrowthTree({
     canAnimate: false,
   });
   const isRunning = useFocusTimer((s) => s.isRunning);
+  const goalSeconds = Math.max(1, dailyGoalMinutes) * 60;
 
   // Live focus seconds only (breaks contribute 0). Recomputes on timer ticks.
   const liveFocusSeconds = useFocusTimer((s) => {
@@ -505,12 +507,13 @@ export function FocusGrowthTree({
     return Math.max(0, s.durationSeconds - s.displaySeconds());
   });
 
-  // Day tree: sealed today + live focus, always on the count-up curve.
+  // Day tree: sealed today + live focus, scaled to the daily goal.
   const growthTarget = focusGrowthProgress({
     grows: true,
     isStopwatch: true,
     elapsedSeconds: Math.max(0, baseElapsedSeconds) + liveFocusSeconds,
-    durationSeconds: FOCUS_GROWTH_COUNTUP_MATURE_SECONDS,
+    durationSeconds: goalSeconds,
+    goalSeconds,
   });
 
   /**
@@ -950,12 +953,12 @@ export function FocusGrowthTree({
   }
 
   /*
-   * Organic growth timeline (structure 0→1 from countdown duration or count-up milestones):
+   * Organic growth timeline (structure 0→1 scales to daily goal):
    *  0.00–0.10  tiny seedling (short stem + fixed cotyledons)
-   *  0.06–0.34  trunk rises & thickens (cotyledons stay at their node, then fade)
-   *  0.22+      first lateral branch, then more — leaves along each limb base→tip
-   *  0.72+      crown + secondary canopy fill
-   * Advanced (count-up past maturity) adds richness without resizing the silhouette.
+   *  0.06–0.34  trunk rises & thickens
+   *  0.18+      laterals one at a time (each mostly finishes before the next)
+   *  0.82+      crown + dense canopy
+   * Advanced (past daily goal) adds richness without resizing the silhouette.
    */
   const seedling = reveal(g, 0, 0.1);
   const cotyledon = reveal(g, 0.015, 0.1);
@@ -965,21 +968,25 @@ export function FocusGrowthTree({
   const lean = reveal(g, 0.38, 0.5);
   const bow = reveal(g, 0.32, 0.55);
 
-  // Staggered branches — trunk must exist before laterals appear.
-  const bFirst = reveal(g, 0.22, 0.14); // first lateral (right, lower)
-  const bSecond = reveal(g, 0.28, 0.14); // left lower
-  const b3 = reveal(g, 0.36, 0.14);
-  const b4 = reveal(g, 0.42, 0.14);
-  const b5 = reveal(g, 0.5, 0.14);
-  const b6 = reveal(g, 0.56, 0.14);
-  const b7 = reveal(g, 0.62, 0.14);
-  const b8 = reveal(g, 0.68, 0.14);
-  const crown = reveal(g, 0.74, 0.18);
-  const dense = reveal(g, 0.84, 0.16);
+  // One limb at a time — short exclusive windows so pairs don’t open together.
+  const BRANCH_SPAN = 0.07;
+  const bFirst = reveal(g, 0.18, BRANCH_SPAN); // right lower
+  const bSecond = reveal(g, 0.26, BRANCH_SPAN); // left lower
+  const b3 = reveal(g, 0.34, BRANCH_SPAN);
+  const b4 = reveal(g, 0.42, BRANCH_SPAN);
+  const b5 = reveal(g, 0.5, BRANCH_SPAN);
+  const b6 = reveal(g, 0.58, BRANCH_SPAN);
+  const b7 = reveal(g, 0.66, BRANCH_SPAN);
+  const b8 = reveal(g, 0.74, BRANCH_SPAN);
+  const crown = reveal(g, 0.82, 0.1);
+  const dense = reveal(g, 0.9, 0.1);
   const deepRoots = reveal(flourish, 0, 0.55);
   const blossomOpen = reveal(flourish, 0.28, 0.5);
   const fruitOpen = reveal(flourish, 0.55, 0.45);
   const legendaryCanopy = reveal(legendary, 0, 0.8);
+  // Flourish secondaries — left finishes before right starts.
+  const flourishTwigL = reveal(flourish, 0.06, 0.32);
+  const flourishTwigR = reveal(flourish, 0.42, 0.32);
 
   const baseY = 355;
   // Seedling is SHORT — never a tall empty pole with tip leaves.
@@ -1365,7 +1372,29 @@ export function FocusGrowthTree({
                 { x: 178, y: 302, rot: 40, scale: 0.62, tone: "mid", at: 0.2 },
                 { x: 198, y: 312, rot: 52, scale: 0.58, tone: "shade", at: 0.38 },
               ]}
-            />
+            >
+              {/* Flourish secondary — after left twig; sprouts from this limb */}
+              {flourishTwigR > 0.02 ? (
+                <Branch
+                  ox={182}
+                  oy={300}
+                  d="M182 300 C 196 292 208 286 218 282"
+                  open={flourishTwigR}
+                  width={1.15}
+                  bow={bow * 0.28}
+                  tipX={218}
+                  tipY={282}
+                  tipRot={28}
+                  tipSide={1}
+                  breeze={1}
+                  tier="twig"
+                  midLeaves={[
+                    { x: 190, y: 296, rot: 22, scale: 0.46, tone: "shade", at: 0.08 },
+                    { x: 204, y: 288, rot: 34, scale: 0.5, tone: "lit", at: 0.4 },
+                  ]}
+                />
+              ) : null}
+            </Branch>
             <Branch
               ox={136}
               oy={288}
@@ -1384,7 +1413,29 @@ export function FocusGrowthTree({
                 { x: 100, y: 288, rot: -42, scale: 0.65, tone: "shade", at: 0.18 },
                 { x: 78, y: 298, rot: -55, scale: 0.6, tone: "lit", at: 0.36 },
               ]}
-            />
+            >
+              {/* Flourish secondary — grows first; sprouts from this limb */}
+              {flourishTwigL > 0.02 ? (
+                <Branch
+                  ox={100}
+                  oy={288}
+                  d="M100 288 C 86 280 74 274 64 270"
+                  open={flourishTwigL}
+                  width={1.2}
+                  bow={bow * 0.3}
+                  tipX={64}
+                  tipY={270}
+                  tipRot={-32}
+                  tipSide={-1}
+                  breeze={2}
+                  tier="twig"
+                  midLeaves={[
+                    { x: 92, y: 284, rot: -24, scale: 0.46, tone: "lit", at: 0.08 },
+                    { x: 78, y: 276, rot: -38, scale: 0.5, tone: "mid", at: 0.4 },
+                  ]}
+                />
+              ) : null}
+            </Branch>
 
             {/* Mid canopy */}
             <Branch
@@ -1429,11 +1480,12 @@ export function FocusGrowthTree({
                 { x: 245, y: 206, rot: 18, scale: 0.58, tone: "mid", at: 0.5 },
               ]}
             />
+            {/* Twig off b3 — only after that limb is mostly grown */}
             <Branch
               ox={86}
               oy={208}
               d="M86 208 C 72 196 60 184 52 174"
-              open={reveal(b3, 0.4, 0.5)}
+              open={reveal(b3, 0.72, 0.28)}
               width={1.45}
               bow={bow * 0.55}
               tipX={52}
@@ -1556,7 +1608,7 @@ export function FocusGrowthTree({
               ox={140}
               oy={88}
               d="M140 88 C 124 76 110 64 100 54"
-              open={reveal(crown, 0.22, 0.5)}
+              open={reveal(crown, 0.35, 0.4)}
               width={1.4}
               bow={bow * 0.35}
               tipX={100}
@@ -1575,7 +1627,7 @@ export function FocusGrowthTree({
               ox={144}
               oy={84}
               d="M144 84 C 162 72 178 62 192 56"
-              open={reveal(crown, 0.28, 0.5)}
+              open={reveal(crown, 0.72, 0.28)}
               width={1.35}
               bow={bow * 0.32}
               tipX={192}
@@ -1609,42 +1661,6 @@ export function FocusGrowthTree({
             */}
             {flourish > 0.02 ? (
               <g className="focus-growth-advanced">
-                <Branch
-                  ox={72}
-                  oy={248}
-                  d="M72 248 C 58 242 46 236 38 228"
-                  open={reveal(flourish, 0.05, 0.45)}
-                  width={1.25}
-                  bow={bow * 0.4}
-                  tipX={38}
-                  tipY={228}
-                  tipRot={-38}
-                  tipSide={-1}
-                  breeze={2}
-                  tier="twig"
-                  midLeaves={[
-                    { x: 64, y: 246, rot: -26, scale: 0.48, tone: "lit", at: 0.08 },
-                    { x: 50, y: 236, rot: -40, scale: 0.52, tone: "mid", at: 0.4 },
-                  ]}
-                />
-                <Branch
-                  ox={210}
-                  oy={246}
-                  d="M210 246 C 224 238 236 232 246 226"
-                  open={reveal(flourish, 0.1, 0.45)}
-                  width={1.2}
-                  bow={bow * 0.38}
-                  tipX={246}
-                  tipY={226}
-                  tipRot={34}
-                  tipSide={1}
-                  breeze={1}
-                  tier="twig"
-                  midLeaves={[
-                    { x: 218, y: 242, rot: 22, scale: 0.48, tone: "shade", at: 0.08 },
-                    { x: 232, y: 232, rot: 36, scale: 0.52, tone: "lit", at: 0.4 },
-                  ]}
-                />
                 <LeafTuft
                   x={96}
                   y={148}
