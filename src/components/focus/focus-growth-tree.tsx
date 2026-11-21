@@ -77,14 +77,21 @@ function TinyFruit({
   );
 }
 
+type FocusGrowthTreeVariant = "day" | "session";
+
 type FocusGrowthTreeProps = {
   wilt?: boolean;
   /**
+   * `day` — main grove on /focus: sealed today only, scaled to daily goal.
+   * `session` — ephemeral tree for the active focus block, grows from scratch.
+   */
+  variant?: FocusGrowthTreeVariant;
+  /**
    * Focus seconds already sealed today (excludes the live session).
-   * Day tree = base + live focus elapsed, scaled to the daily goal.
+   * Used by the day tree; ignored for session trees.
    */
   baseElapsedSeconds?: number;
-  /** Daily focus goal in minutes — structure matures at this target. */
+  /** Daily focus goal in minutes — day-tree structure matures at this target. */
   dailyGoalMinutes?: number;
   /** Smaller grove for the idle board. */
   compact?: boolean;
@@ -455,11 +462,14 @@ function Branch({
 
 /**
  * Living focus tree — hand-illustrated SVG botanical.
- * Day progress = sealed today + live focus, scaled so structure matures at
- * the daily goal; past-goal minutes unlock advanced richness.
+ *
+ * Day grove: sealed today only, scaled to the daily goal.
+ * Session grove: grows from scratch for the active focus block; sealing
+ * adds that time into the day grove on /focus.
  */
 export function FocusGrowthTree({
   wilt = false,
+  variant = "day",
   baseElapsedSeconds = 0,
   dailyGoalMinutes = FOCUS_DAILY_GOAL_DEFAULT,
   compact = false,
@@ -495,25 +505,49 @@ export function FocusGrowthTree({
   });
   const isRunning = useFocusTimer((s) => s.isRunning);
   const goalSeconds = Math.max(1, dailyGoalMinutes) * 60;
+  const isSession = variant === "session";
 
-  // Live focus seconds only (breaks contribute 0). Recomputes on timer ticks.
-  const liveFocusSeconds = useFocusTimer((s) => {
+  // Session / day inputs from the timer. Day ignores live session time.
+  const growthTarget = useFocusTimer((s) => {
     void s.tickMs;
     void s.lastDisplaySecond;
     void s.elapsedSeconds;
     void s.remainingSeconds;
-    if (s.mode !== "focus") return 0;
-    if (s.clock === "up") return s.liveElapsedSeconds();
-    return Math.max(0, s.durationSeconds - s.displaySeconds());
-  });
 
-  // Day tree: sealed today + live focus, scaled to the daily goal.
-  const growthTarget = focusGrowthProgress({
-    grows: true,
-    isStopwatch: true,
-    elapsedSeconds: Math.max(0, baseElapsedSeconds) + liveFocusSeconds,
-    durationSeconds: goalSeconds,
-    goalSeconds,
+    if (!isSession) {
+      return focusGrowthProgress({
+        grows: true,
+        isStopwatch: true,
+        elapsedSeconds: Math.max(0, baseElapsedSeconds),
+        durationSeconds: goalSeconds,
+        goalSeconds,
+      });
+    }
+
+    // Ephemeral session tree — focus only; breaks stay at seed.
+    const focusing = s.mode === "focus";
+    if (!focusing) {
+      return focusGrowthProgress({
+        grows: false,
+        isStopwatch: false,
+        elapsedSeconds: 0,
+        durationSeconds: s.durationSeconds,
+      });
+    }
+
+    const isStopwatch = s.clock === "up";
+    const elapsed = isStopwatch
+      ? s.liveElapsedSeconds()
+      : Math.max(0, s.durationSeconds - s.displaySeconds());
+
+    return focusGrowthProgress({
+      grows: true,
+      isStopwatch,
+      elapsedSeconds: elapsed,
+      durationSeconds: s.durationSeconds,
+      // Count-up sessions use absolute milestones; timed sessions mature at end.
+      goalSeconds: undefined,
+    });
   });
 
   /**
@@ -1353,85 +1387,85 @@ export function FocusGrowthTree({
               </g>
             ) : null}
 
-            {/* First laterals — only after trunk has risen */}
+            {/* First laterals — raised on the trunk, tip outward/slightly up */}
             <Branch
-              ox={146}
-              oy={300}
-              d="M146 300 C 162 296 182 298 200 308 C 210 314 218 322 224 330"
+              ox={145}
+              oy={268}
+              d="M145 268 C 164 258 188 252 210 250 C 220 250 228 254 234 260"
               open={bFirst}
               width={2.2}
-              bow={bow * 0.55}
-              tipX={224}
-              tipY={330}
-              tipRot={42}
+              bow={bow * 0.4}
+              tipX={234}
+              tipY={260}
+              tipRot={28}
               tipSide={1}
               breeze={2}
               tier="low"
               midLeaves={[
-                { x: 158, y: 298, rot: 28, scale: 0.55, tone: "lit", at: 0.02 },
-                { x: 178, y: 302, rot: 40, scale: 0.62, tone: "mid", at: 0.2 },
-                { x: 198, y: 312, rot: 52, scale: 0.58, tone: "shade", at: 0.38 },
+                { x: 158, y: 264, rot: 18, scale: 0.55, tone: "lit", at: 0.02 },
+                { x: 180, y: 256, rot: 28, scale: 0.62, tone: "mid", at: 0.2 },
+                { x: 206, y: 252, rot: 38, scale: 0.58, tone: "shade", at: 0.38 },
               ]}
             >
               {/* Flourish secondary — after left twig; sprouts from this limb */}
               {flourishTwigR > 0.02 ? (
                 <Branch
-                  ox={182}
-                  oy={300}
-                  d="M182 300 C 196 292 208 286 218 282"
+                  ox={188}
+                  oy={254}
+                  d="M188 254 C 200 246 210 240 218 236"
                   open={flourishTwigR}
                   width={1.15}
-                  bow={bow * 0.28}
+                  bow={bow * 0.24}
                   tipX={218}
-                  tipY={282}
-                  tipRot={28}
+                  tipY={236}
+                  tipRot={22}
                   tipSide={1}
                   breeze={1}
                   tier="twig"
                   midLeaves={[
-                    { x: 190, y: 296, rot: 22, scale: 0.46, tone: "shade", at: 0.08 },
-                    { x: 204, y: 288, rot: 34, scale: 0.5, tone: "lit", at: 0.4 },
+                    { x: 196, y: 250, rot: 18, scale: 0.46, tone: "shade", at: 0.08 },
+                    { x: 208, y: 242, rot: 28, scale: 0.5, tone: "lit", at: 0.4 },
                   ]}
                 />
               ) : null}
             </Branch>
             <Branch
-              ox={136}
-              oy={288}
-              d="M136 288 C 118 284 96 286 76 296 C 64 302 54 312 46 322"
+              ox={137}
+              oy={258}
+              d="M137 258 C 116 248 92 244 70 246 C 58 248 50 254 44 262"
               open={bSecond}
               width={2.45}
-              bow={bow * 0.7}
-              tipX={46}
-              tipY={322}
-              tipRot={-52}
+              bow={bow * 0.45}
+              tipX={44}
+              tipY={262}
+              tipRot={-32}
               tipSide={-1}
               breeze={1}
               tier="low"
               midLeaves={[
-                { x: 124, y: 286, rot: -30, scale: 0.55, tone: "mid", at: 0.02 },
-                { x: 100, y: 288, rot: -42, scale: 0.65, tone: "shade", at: 0.18 },
-                { x: 78, y: 298, rot: -55, scale: 0.6, tone: "lit", at: 0.36 },
+                { x: 124, y: 254, rot: -18, scale: 0.55, tone: "mid", at: 0.02 },
+                { x: 98, y: 248, rot: -28, scale: 0.65, tone: "shade", at: 0.18 },
+                { x: 72, y: 248, rot: -38, scale: 0.6, tone: "lit", at: 0.36 },
               ]}
             >
               {/* Flourish secondary — grows first; sprouts from this limb */}
               {flourishTwigL > 0.02 ? (
                 <Branch
-                  ox={100}
-                  oy={288}
-                  d="M100 288 C 86 280 74 274 64 270"
+                  ox={96}
+                  oy={248}
+                  d="M96 248 C 82 240 70 234 60 230"
                   open={flourishTwigL}
                   width={1.2}
-                  bow={bow * 0.3}
-                  tipX={64}
-                  tipY={270}
-                  tipRot={-32}
+                  bow={bow * 0.26}
+                  tipX={60}
+                  tipY={230}
+                  tipRot={-26}
                   tipSide={-1}
                   breeze={2}
                   tier="twig"
                   midLeaves={[
-                    { x: 92, y: 284, rot: -24, scale: 0.46, tone: "lit", at: 0.08 },
-                    { x: 78, y: 276, rot: -38, scale: 0.5, tone: "mid", at: 0.4 },
+                    { x: 88, y: 244, rot: -18, scale: 0.46, tone: "lit", at: 0.08 },
+                    { x: 74, y: 236, rot: -30, scale: 0.5, tone: "mid", at: 0.4 },
                   ]}
                 />
               ) : null}

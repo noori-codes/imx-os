@@ -959,7 +959,14 @@ export function FocusTimer({
         <div className="focus-chamber relative z-1 flex h-full w-full flex-col">
           <div className="focus-chamber-split relative z-1 mx-auto grid h-full w-full max-w-5xl flex-1 grid-cols-1 items-center gap-6 px-5 py-5 sm:gap-8 sm:px-8 lg:max-w-6xl lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-x-6 lg:gap-y-0 lg:px-10 lg:py-6">
             <div className="focus-chamber-grove flex min-h-[11rem] w-full items-center justify-center lg:min-h-0">
+              {/*
+                Focus block → ephemeral session tree from scratch.
+                Break / after seal → main day tree (session minutes already sealed).
+                key remounts so we never ease a mature session tree backward.
+              */}
               <FocusGrowthTree
+                key={mode === "focus" ? "session" : "day"}
+                variant={mode === "focus" ? "session" : "day"}
                 wilt={growthWilt}
                 baseElapsedSeconds={baseElapsedSeconds}
                 dailyGoalMinutes={dailyGoalMinutes}
@@ -1116,151 +1123,154 @@ export function FocusTimer({
             </div>
           </div>
 
-          <div className="focus-board-stack">
+          <div className="focus-board-split">
             <div className="focus-board-grove">
+              {/* Main grove — sealed today only; sessions add into this on seal. */}
               <FocusGrowthTree
+                variant="day"
                 baseElapsedSeconds={baseElapsedSeconds}
                 dailyGoalMinutes={dailyGoalMinutes}
-                compact
               />
             </div>
 
-            <p className="focus-board-hint text-center">{boardMeta}</p>
+            <div className="focus-board-instrument">
+              <p className="focus-board-hint text-center">{boardMeta}</p>
 
-            <div className="focus-board-dial">
-              {renderClock("size-[14rem] sm:size-[15.5rem]")}
-              {renderTicks()}
-            </div>
-
-            {!isStopwatch ? (
-              <div
-                className="focus-profile-chips justify-center"
-                role="group"
-                aria-label="Duration profile"
-              >
-                {FOCUS_PROFILES.map((profile) => {
-                  const active = profileId === profile.id;
-                  return (
-                    <button
-                      key={profile.id}
-                      type="button"
-                      onClick={() => applyProfile(profile.id)}
-                      className={cn(
-                        "focus-profile-chip",
-                        active && "focus-profile-chip-active",
-                      )}
-                      aria-pressed={active}
-                      title={profile.hint}
-                    >
-                      {profile.label}
-                      <span className="opacity-60"> · {profile.focus}m</span>
-                    </button>
-                  );
-                })}
+              <div className="focus-board-dial">
+                {renderClock("size-[14rem] sm:size-[15.5rem]")}
+                {renderTicks()}
               </div>
-            ) : null}
 
-            <div className="focus-board-actions">
-              <button
-                type="button"
-                onClick={handleReset}
-                className="focus-icon-btn"
-                aria-label={
-                  canSealStopwatch ? "Discard session" : "Reset timer"
-                }
-              >
-                <RotateCcw className="size-4" />
-              </button>
-              <button
-                type="button"
-                onClick={handleToggle}
-                className="focus-primary-btn"
-                aria-label={
-                  canContinue
-                    ? "Continue session"
-                    : isStopwatch
-                      ? "Start focus"
-                      : "Begin session"
-                }
-              >
-                <Play className="size-4 fill-current" />
-                {canContinue
-                  ? "Continue"
-                  : isStopwatch
-                    ? "Start"
-                    : mode === "focus"
-                      ? "Start focus"
-                      : "Start break"}
-              </button>
               {!isStopwatch ? (
+                <div
+                  className="focus-profile-chips justify-center"
+                  role="group"
+                  aria-label="Duration profile"
+                >
+                  {FOCUS_PROFILES.map((profile) => {
+                    const active = profileId === profile.id;
+                    return (
+                      <button
+                        key={profile.id}
+                        type="button"
+                        onClick={() => applyProfile(profile.id)}
+                        className={cn(
+                          "focus-profile-chip",
+                          active && "focus-profile-chip-active",
+                        )}
+                        aria-pressed={active}
+                        title={profile.hint}
+                      >
+                        {profile.label}
+                        <span className="opacity-60"> · {profile.focus}m</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : null}
+
+              <div className="focus-board-actions">
                 <button
                   type="button"
-                  onClick={handleSkip}
+                  onClick={handleReset}
                   className="focus-icon-btn"
-                  aria-label="Skip to next phase"
+                  aria-label={
+                    canSealStopwatch ? "Discard session" : "Reset timer"
+                  }
                 >
-                  <SkipForward className="size-4" />
+                  <RotateCcw className="size-4" />
                 </button>
-              ) : (
                 <button
                   type="button"
-                  onClick={handleSealStopwatch}
-                  disabled={!canSealStopwatch}
-                  className={cn(
-                    "focus-icon-btn",
-                    !canSealStopwatch && "pointer-events-none opacity-30",
-                  )}
-                  aria-label="Seal session"
+                  onClick={handleToggle}
+                  className="focus-primary-btn"
+                  aria-label={
+                    canContinue
+                      ? "Continue session"
+                      : isStopwatch
+                        ? "Start focus"
+                        : "Begin session"
+                  }
                 >
-                  <CircleCheck className="size-4" />
+                  <Play className="size-4 fill-current" />
+                  {canContinue
+                    ? "Continue"
+                    : isStopwatch
+                      ? "Start"
+                      : mode === "focus"
+                        ? "Start focus"
+                        : "Start break"}
                 </button>
-              )}
-            </div>
-
-            {mode === "focus" || isStopwatch ? (
-              <div className="w-full max-w-md space-y-2">
-                <Input
-                  value={intention}
-                  onChange={(e) => setIntention(e.target.value)}
-                  placeholder="What are you focusing on?"
-                  aria-label="What are you focusing on"
-                  data-imx-capture
-                  className="h-11 w-full rounded-xl border-border/50 bg-background/65 px-3.5 text-sm shadow-none placeholder:font-normal focus-visible:ring-1"
-                />
-                {tasks.length > 0 ? (
-                  <BrandSelect
-                    value={linkedTaskId ?? ""}
-                    aria-label="Link a task"
-                    className="h-11 w-full border-border/40 bg-background/50 text-sm"
-                    placeholder="Link a task"
-                    options={[
-                      { value: "", label: "Link a task" },
-                      ...tasks.map((task) => ({
-                        value: task.id,
-                        label: task.context
-                          ? `${task.title} · ${task.context}`
-                          : task.title,
-                      })),
-                    ]}
-                    onValueChange={(nextId) => {
-                      const id = nextId || null;
-                      if (!id) {
-                        setLinkedTaskId(null);
-                        return;
-                      }
-                      const task = tasks.find((item) => item.id === id);
-                      setLinkedTaskId(id, task?.title ?? null);
-                      if (task && !intention.trim()) {
-                        setIntention(task.title);
-                      }
-                    }}
-                  />
-                ) : null}
+                {!isStopwatch ? (
+                  <button
+                    type="button"
+                    onClick={handleSkip}
+                    className="focus-icon-btn"
+                    aria-label="Skip to next phase"
+                  >
+                    <SkipForward className="size-4" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleSealStopwatch}
+                    disabled={!canSealStopwatch}
+                    className={cn(
+                      "focus-icon-btn",
+                      !canSealStopwatch && "pointer-events-none opacity-30",
+                    )}
+                    aria-label="Seal session"
+                  >
+                    <CircleCheck className="size-4" />
+                  </button>
+                )}
               </div>
-            ) : null}
 
-            <div className="w-full max-w-md">
-              <FocusSounds compact />
+              {mode === "focus" || isStopwatch ? (
+                <div className="w-full max-w-md space-y-2">
+                  <Input
+                    value={intention}
+                    onChange={(e) => setIntention(e.target.value)}
+                    placeholder="What are you focusing on?"
+                    aria-label="What are you focusing on"
+                    data-imx-capture
+                    className="h-11 w-full rounded-xl border-border/50 bg-background/65 px-3.5 text-sm shadow-none placeholder:font-normal focus-visible:ring-1"
+                  />
+                  {tasks.length > 0 ? (
+                    <BrandSelect
+                      value={linkedTaskId ?? ""}
+                      aria-label="Link a task"
+                      className="h-11 w-full border-border/40 bg-background/50 text-sm"
+                      placeholder="Link a task"
+                      options={[
+                        { value: "", label: "Link a task" },
+                        ...tasks.map((task) => ({
+                          value: task.id,
+                          label: task.context
+                            ? `${task.title} · ${task.context}`
+                            : task.title,
+                        })),
+                      ]}
+                      onValueChange={(nextId) => {
+                        const id = nextId || null;
+                        if (!id) {
+                          setLinkedTaskId(null);
+                          return;
+                        }
+                        const task = tasks.find((item) => item.id === id);
+                        setLinkedTaskId(id, task?.title ?? null);
+                        if (task && !intention.trim()) {
+                          setIntention(task.title);
+                        }
+                      }}
+                    />
+                  ) : null}
+                </div>
+              ) : null}
+
+              <div className="w-full max-w-md">
+                <FocusSounds compact />
+              </div>
             </div>
           </div>
         </div>

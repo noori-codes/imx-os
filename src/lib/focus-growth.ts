@@ -1,9 +1,11 @@
 /**
  * Focus tree growth model — separate from timer state.
  *
- * DAY TREE (chamber): structure scales to the user’s daily focus goal;
- * past-goal minutes unlock advanced richness so heavy days keep rewarding.
- * COUNTDOWN (session fraction): kept for any session-scoped callers.
+ * DAY TREE (/focus main grove): sealed today only, scaled to daily goal;
+ * past-goal minutes unlock advanced richness.
+ * SESSION TREE (active focus block): grows from scratch — countdown matures
+ * at session end; count-up uses absolute-minute milestones. Sealing adds
+ * that session into the day tree.
  */
 
 import {
