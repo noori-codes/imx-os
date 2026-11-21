@@ -2,10 +2,12 @@
  * Focus tree growth model — separate from timer state.
  *
  * DAY TREE (/focus main grove): sealed today only, scaled to daily goal;
- * past-goal minutes unlock advanced richness.
- * SESSION TREE (active focus block): grows from scratch — countdown matures
- * at session end; count-up uses absolute-minute milestones. Sealing adds
- * that session into the day tree.
+ * past-goal minutes unlock advanced richness (good for heavy focus days).
+ *
+ * SESSION TREE (active focus block): grows from scratch.
+ *   - Timed: matures exactly when the countdown ends.
+ *   - Count-up: structure matures at 60m, flourish through ~2h, legendary soft-tails
+ *     after that so 2h+ sessions keep rewarding without a hard freeze.
  */
 
 import {
@@ -13,35 +15,41 @@ import {
   FOCUS_DAILY_GOAL_DEFAULT,
 } from "@/types/focus";
 
-/** Fallback when no goal is provided — matches default daily goal. */
-export const FOCUS_GROWTH_COUNTUP_MATURE_SECONDS =
-  FOCUS_DAILY_GOAL_DEFAULT * 60;
+/** Session count-up: structural maturity for one focus block. */
+export const FOCUS_GROWTH_SESSION_MATURE_SECONDS = 60 * 60;
 
-/** @deprecated Prefer goal-scaled dayAdvancedProgress. */
+/** Session count-up: flourish fills 60m → 2h of the same block. */
+export const FOCUS_GROWTH_SESSION_FLOURISH_SECONDS = 120 * 60;
+
+/** @deprecated Prefer FOCUS_GROWTH_SESSION_MATURE_SECONDS. */
+export const FOCUS_GROWTH_COUNTUP_MATURE_SECONDS =
+  FOCUS_GROWTH_SESSION_MATURE_SECONDS;
+
+/** @deprecated Prefer FOCUS_GROWTH_SESSION_FLOURISH_SECONDS. */
 export const FOCUS_GROWTH_COUNTUP_FLOURISH_SECONDS =
-  FOCUS_GROWTH_COUNTUP_MATURE_SECONDS * 2;
+  FOCUS_GROWTH_SESSION_FLOURISH_SECONDS;
 
 /**
  * Day-structure curve on t = elapsed/goal ∈ [0,1].
- * Front-loaded so early focus feels alive; lands on 1 at the daily goal.
+ * Front-loaded; lands on 1 at the daily goal.
  */
 const DAY_STRUCTURE_CURVE: ReadonlyArray<readonly [number, number]> = [
   [0, 0],
-  [0.04, 0.12], // seedling
-  [0.1, 0.22], // stem
-  [0.18, 0.32], // first lateral
-  [0.28, 0.42], // more limbs + leaves
-  [0.42, 0.58], // young canopy
-  [0.58, 0.74], // recognizable tree
-  [0.78, 0.9], // dense canopy
-  [1, 1], // mature exactly at daily goal
+  [0.04, 0.12],
+  [0.1, 0.22],
+  [0.18, 0.32],
+  [0.28, 0.42],
+  [0.42, 0.58],
+  [0.58, 0.74],
+  [0.78, 0.9],
+  [1, 1],
 ];
 
 /**
- * Absolute-minute milestones — used only when no goalSeconds is passed
- * (legacy count-up session path).
+ * Session count-up structure (absolute seconds in this block).
+ * Front-loaded; mature at 60m. Long sessions continue via advanced.
  */
-const COUNTUP_STRUCTURE_MILESTONES: ReadonlyArray<readonly [number, number]> = [
+const SESSION_COUNTUP_STRUCTURE: ReadonlyArray<readonly [number, number]> = [
   [0, 0],
   [30, 0.1],
   [90, 0.2],
@@ -50,11 +58,11 @@ const COUNTUP_STRUCTURE_MILESTONES: ReadonlyArray<readonly [number, number]> = [
   [15 * 60, 0.58],
   [28 * 60, 0.74],
   [42 * 60, 0.88],
-  [FOCUS_GROWTH_COUNTUP_MATURE_SECONDS, 1],
+  [FOCUS_GROWTH_SESSION_MATURE_SECONDS, 1],
 ];
 
 /**
- * Countdown visual curve on session fraction t∈[0,1] → structure.
+ * Timed session curve on fraction t∈[0,1] — mature exactly at completion.
  */
 const COUNTDOWN_CURVE: ReadonlyArray<readonly [number, number]> = [
   [0, 0],
@@ -91,11 +99,11 @@ type FocusGrowthArgs = {
   grows: boolean;
   isStopwatch: boolean;
   elapsedSeconds: number;
-  /** Selected countdown duration; ignored for day/count-up. */
+  /** Timed session duration; ignored for day / count-up. */
   durationSeconds: number;
   /**
-   * Daily focus goal in seconds. When set (day tree), structure matures at
-   * the goal and advanced richness continues past it.
+   * Daily focus goal in seconds. When set → day-tree path.
+   * When omitted on count-up → session path (60m mature / 2h flourish).
    */
   goalSeconds?: number;
 };
@@ -124,7 +132,6 @@ function piecewise(
   return points[points.length - 1][1];
 }
 
-/** Resolve a safe goal floor so short goals still have room to grow. */
 export function resolveGrowthGoalSeconds(goalSeconds?: number): number {
   if (goalSeconds == null || !Number.isFinite(goalSeconds)) {
     return FOCUS_DAILY_GOAL_DEFAULT * 60;
@@ -134,9 +141,9 @@ export function resolveGrowthGoalSeconds(goalSeconds?: number): number {
 }
 
 /**
- * Day / count-up structure 0–1.
- * With goalSeconds: matures exactly at the daily goal.
- * Without: legacy absolute-minute milestones (mature ~60m / default goal).
+ * Structure 0–1.
+ * Day (goalSeconds set): matures at daily goal.
+ * Session count-up (no goal): matures at 60m of this block.
  */
 export function countUpStructureProgress(
   elapsedSeconds: number,
@@ -148,34 +155,49 @@ export function countUpStructureProgress(
     if (elapsed >= goal) return 1;
     return piecewise(elapsed / goal, DAY_STRUCTURE_CURVE);
   }
-  if (elapsed >= FOCUS_GROWTH_COUNTUP_MATURE_SECONDS) return 1;
-  return piecewise(elapsed, COUNTUP_STRUCTURE_MILESTONES);
+  if (elapsed >= FOCUS_GROWTH_SESSION_MATURE_SECONDS) return 1;
+  return piecewise(elapsed, SESSION_COUNTUP_STRUCTURE);
 }
 
 /**
  * Advanced richness after structural maturity.
- * With goal: flourish fills over another full goal; legendary soft-tails after.
- * Heavy focus days keep developing instead of freezing at a 120m wall.
+ * Day: flourish over another full goal length, then legendary soft-tail.
+ * Session: flourish 60m→2h, legendary soft-tail after (keeps 2h+ sessions alive).
  */
 export function countUpAdvancedProgress(
   elapsedSeconds: number,
   goalSeconds?: number,
 ): number {
   const elapsed = Math.max(0, elapsedSeconds);
-  const goal = resolveGrowthGoalSeconds(goalSeconds);
-  if (elapsed <= goal) return 0;
 
-  const intoFlourish = elapsed - goal;
-  const flourishSpan = goal; // 0→1 advanced across one more goal length
+  if (goalSeconds != null) {
+    const goal = resolveGrowthGoalSeconds(goalSeconds);
+    if (elapsed <= goal) return 0;
+    const intoFlourish = elapsed - goal;
+    const flourishSpan = goal;
+    if (intoFlourish <= flourishSpan) {
+      const t = intoFlourish / flourishSpan;
+      return 1 - (1 - t) ** 1.35;
+    }
+    const past = intoFlourish - flourishSpan;
+    const legendary = 1 - Math.exp(-past / (goal * 1.5));
+    return 1 + legendary * 0.55;
+  }
+
+  // Session count-up — no daily goal coupling.
+  if (elapsed <= FOCUS_GROWTH_SESSION_MATURE_SECONDS) return 0;
+  const intoFlourish = elapsed - FOCUS_GROWTH_SESSION_MATURE_SECONDS;
+  const flourishSpan =
+    FOCUS_GROWTH_SESSION_FLOURISH_SECONDS - FOCUS_GROWTH_SESSION_MATURE_SECONDS;
 
   if (intoFlourish <= flourishSpan) {
     const t = intoFlourish / flourishSpan;
     return 1 - (1 - t) ** 1.35;
   }
 
+  // After 2h in one block: keep developing slowly (3h, 4h… still matter).
   const past = intoFlourish - flourishSpan;
-  const legendaryTau = goal * 1.5;
-  const legendary = 1 - Math.exp(-past / legendaryTau);
+  const legendary = 1 - Math.exp(-past / (90 * 60));
   return 1 + legendary * 0.55;
 }
 
@@ -229,6 +251,7 @@ export function focusGrowthModel({
 
   const elapsed = Math.max(0, elapsedSeconds);
 
+  // Day tree (goal set) or session count-up.
   if (isStopwatch || goalSeconds != null) {
     const structure = countUpStructureProgress(elapsed, goalSeconds);
     const advanced = countUpAdvancedProgress(elapsed, goalSeconds);
@@ -242,6 +265,7 @@ export function focusGrowthModel({
     };
   }
 
+  // Timed session — mature exactly at countdown zero.
   const structure = countdownStructureProgress(elapsed, durationSeconds);
   const layers = layerFromStructure(structure);
   return {
@@ -257,7 +281,7 @@ export function focusGrowthProgress(args: FocusGrowthArgs): number {
   return focusGrowthModel(args).progress;
 }
 
-/** @deprecated Prefer focusGrowthModel — kept for any staged callers. */
+/** @deprecated Prefer focusGrowthModel. */
 export function focusGrowthLayers(growth: number) {
   const structure = clamp01(growth);
   const advanced = Math.max(0, growth - 1);
@@ -269,9 +293,9 @@ export function focusGrowthLayers(growth: number) {
   };
 }
 
-/** @deprecated Use FOCUS_GROWTH_COUNTUP_MATURE_SECONDS. */
+/** @deprecated */
 export const FOCUS_GROWTH_COUNTUP_TARGET_SECONDS =
-  FOCUS_GROWTH_COUNTUP_MATURE_SECONDS;
+  FOCUS_GROWTH_SESSION_MATURE_SECONDS;
 
 export function easeOutCubic(t: number): number {
   const x = clamp01(t);

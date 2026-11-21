@@ -177,12 +177,17 @@ export function FocusTimer({
 
   const [, startTransition] = useTransition();
   const [growthWilt, setGrowthWilt] = useState(false);
-  /** Sealed today minutes — drives the day tree (plus live focus elapsed). */
+  /** Toast / copy — minute granularity from server stats. */
   const [sealedTodayMinutes, setSealedTodayMinutes] =
     useState(focusMinutesToday);
+  /** Day tree — actual sealed focus seconds (avoids round-minute drift). */
+  const [sealedTodaySeconds, setSealedTodaySeconds] = useState(
+    () => Math.max(0, focusMinutesToday) * 60,
+  );
   const loggedRef = useRef(false);
   const flowNudgeRef = useRef(false);
   const todayMinutesRef = useRef(focusMinutesToday);
+  const todaySecondsRef = useRef(Math.max(0, focusMinutesToday) * 60);
   const prevRemaining = useRef(remainingSeconds);
 
   function bumpSealedTodayMinutes(addedMinutes: number) {
@@ -193,12 +198,27 @@ export function FocusTimer({
     return next;
   }
 
+  /** Credit the main day grove with real focus seconds from a sealed block. */
+  function bumpSealedTodaySeconds(addedSeconds: number) {
+    if (addedSeconds <= 0) return todaySecondsRef.current;
+    const next = todaySecondsRef.current + addedSeconds;
+    todaySecondsRef.current = next;
+    setSealedTodaySeconds(next);
+    return next;
+  }
+
   useEffect(() => {
     todayMinutesRef.current = focusMinutesToday;
     setSealedTodayMinutes(focusMinutesToday);
+    const serverSecs = Math.max(0, focusMinutesToday) * 60;
+    // Prefer server when it has caught up; keep optimistic seconds if ahead.
+    if (serverSecs >= todaySecondsRef.current) {
+      todaySecondsRef.current = serverSecs;
+      setSealedTodaySeconds(serverSecs);
+    }
   }, [focusMinutesToday]);
 
-  const baseElapsedSeconds = Math.max(0, sealedTodayMinutes) * 60;
+  const baseElapsedSeconds = Math.max(0, sealedTodaySeconds);
 
   useEffect(() => {
     const stored = window.localStorage.getItem("imx-focus-auto-start") === "1";
@@ -342,6 +362,9 @@ export function FocusTimer({
         currentMode === "focus"
           ? bumpSealedTodayMinutes(addedMinutes)
           : todayMinutesRef.current;
+      if (currentMode === "focus") {
+        bumpSealedTodaySeconds(planned);
+      }
 
       const linkedTaskForToast =
         currentMode === "focus" && taskId
@@ -451,13 +474,12 @@ export function FocusTimer({
 
     const note = intention;
     const taskId = linkedTaskId;
-    const addedMinutes = Math.max(1, Math.round(incremental / 60));
+    const sealSeconds = isContinuation ? incremental : actual;
+    const addedMinutes = Math.max(1, Math.round(sealSeconds / 60));
     const sealStartedAt =
       isContinuation && continuedStartedAt
         ? new Date(continuedStartedAt).toISOString()
         : new Date(Date.now() - actual * 1000).toISOString();
-
-    const sealSeconds = isContinuation ? incremental : actual;
     const session = buildOptimisticFocusSession({
       id: isContinuation && continuedSessionId ? continuedSessionId : undefined,
       mode: "focus",
@@ -507,6 +529,8 @@ export function FocusTimer({
     playFocusChime();
     notifyFocusPhase("Session sealed", formatFocusClock(actual));
 
+    // Only the new focus time joins the day grove (continuations use incremental).
+    bumpSealedTodaySeconds(sealSeconds);
     const todayMinutes = bumpSealedTodayMinutes(addedMinutes);
 
     const linkedTaskForToast = taskId
@@ -698,6 +722,7 @@ export function FocusTimer({
           started_at: startedAt,
         }),
       );
+      bumpSealedTodaySeconds(actual);
       const addedMinutes = Math.max(1, Math.round(actual / 60));
       const todayMinutes = bumpSealedTodayMinutes(addedMinutes);
       showFocusSealToast({
@@ -753,6 +778,7 @@ export function FocusTimer({
           started_at: startedAt,
         }),
       );
+      bumpSealedTodaySeconds(actual);
       const addedMinutes = Math.max(1, Math.round(actual / 60));
       bumpSealedTodayMinutes(addedMinutes);
     }

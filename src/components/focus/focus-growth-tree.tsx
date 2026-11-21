@@ -545,7 +545,8 @@ export function FocusGrowthTree({
       isStopwatch,
       elapsedSeconds: elapsed,
       durationSeconds: s.durationSeconds,
-      // Count-up sessions use absolute milestones; timed sessions mature at end.
+      // Count-up: mature ~60m, flourish through ~2h, legendary after.
+      // Timed: matures exactly when the countdown hits zero.
       goalSeconds: undefined,
     });
   });
